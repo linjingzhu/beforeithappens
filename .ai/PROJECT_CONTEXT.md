@@ -19,13 +19,13 @@ Primary user value:
 ## Architecture Map
 
 Core:
-- Dependency-free ES module web application; question content in `src/questions.js`, interaction state in `src/app.js`.
+- Dependency-free ES module web application; question content in `src/questions.js`, normalized two-role state in `src/state.js`, and UI workflow in `src/app.js`.
 
 UI:
 - Mobile-first single-question experience in `index.html` and `src/styles.css`.
 
 Persistence/Data:
-- Current executable slice uses device-local storage. Planned server model is documented in `docs/DATA_MODEL.md`.
+- Current executable slice uses validated device-local role A/B state with draft/submitted separation, reveal barriers, and two-role agreement approval. It is a workflow simulator, not a privacy boundary. Planned server model is documented in `docs/DATA_MODEL.md`.
 
 Tests:
 - Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
@@ -51,6 +51,7 @@ Targeted tests:
 
 - `src/questions.js` — structured question content
 - `src/app.js` — local state and question workflow
+- `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
 - `src/styles.css` — responsive product UI
 - `docs/PRODUCT_SPEC.md` — product contract
 - `docs/DATA_MODEL.md` — planned secure server model
