@@ -5,6 +5,46 @@
 .save-state { font-size: 10px; }
 .save-state.failed { color: #b64838; font-weight: 700; }
 button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #587fae; outline-offset: 3px; }
+.development-dashboard { max-width: 1180px; margin: 0 auto; padding: 74px 26px 110px; }
+.dashboard-hero { position: relative; padding-bottom: 46px; border-bottom: 1px solid var(--line); }
+.dashboard-hero h1 { max-width: 760px; margin: 16px 0; font: 500 clamp(42px, 6vw, 72px)/1.08 Georgia, serif; letter-spacing: -.045em; }
+.dashboard-hero h1 em { color: var(--coral); font-weight: 400; }
+.dashboard-hero > p { max-width: 640px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+.dashboard-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 150px)); gap: 10px; margin-top: 34px; }
+.dashboard-summary article { display: flex; flex-direction: column; gap: 5px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+.dashboard-summary strong { font: 500 28px/1 Georgia, serif; }
+.dashboard-summary span { color: var(--muted); font-size: 10px; }
+.dashboard-hero aside { position: absolute; right: 0; bottom: 46px; width: min(330px, 31%); padding: 22px; border-radius: 16px; background: #282724; color: white; }
+.dashboard-hero aside small { color: #dca492; font-size: 9px; font-weight: 800; letter-spacing: .12em; }
+.dashboard-hero aside strong { display: block; margin-top: 9px; font: 500 20px/1.35 Georgia, serif; }
+.dashboard-hero aside p { margin: 8px 0 0; color: #d6d0c8; font-size: 11px; line-height: 1.65; }
+.dashboard-tabs { display: flex; gap: 6px; margin: 34px 0 24px; }
+.dashboard-tabs button { min-height: 44px; padding: 0 18px; border: 1px solid var(--line); border-radius: 22px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+.dashboard-tabs button.active { border-color: #282724; background: #282724; color: white; }
+.development-stages { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.development-stage { display: grid; grid-template-columns: 48px 1fr; gap: 16px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.stage-check { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--soft); color: var(--muted); font: 700 11px/1 sans-serif; }
+.development-stage.complete .stage-check { background: #dce9df; color: #3d6c4b; font-size: 18px; }
+.development-stage.next { border-color: #d89a85; background: #fff9f5; }
+.development-stage.next .stage-check { background: var(--coral); color: white; font-size: 18px; }
+.development-stage small { color: var(--coral); font-size: 9px; font-weight: 800; letter-spacing: .08em; }
+.development-stage h3, .development-history h3 { margin: 6px 0; font: 500 18px/1.35 Georgia, serif; }
+.development-stage p, .development-history p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.development-history { border-top: 1px solid var(--line); }
+.development-history article { display: grid; grid-template-columns: 130px 1fr; gap: 30px; padding: 25px 8px; border-bottom: 1px solid var(--line); }
+.development-history time { color: var(--coral); font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+@media (max-width: 760px) {
+  .development-dashboard { padding: 46px 18px 80px; }
+  .dashboard-summary { grid-template-columns: repeat(3, 1fr); }
+  .dashboard-hero aside { position: static; width: auto; margin-top: 18px; }
+  .development-stages { grid-template-columns: 1fr; }
+  .development-history article { grid-template-columns: 1fr; gap: 6px; }
+}
+@media (max-width: 460px) {
+  .dashboard-summary { grid-template-columns: 1fr; }
+  .development-stage { grid-template-columns: 38px 1fr; padding: 18px 15px; }
+  .stage-check { width: 36px; height: 36px; }
+}
 .why-it-matters { margin: -12px 0 24px; border: 1px solid var(--line); border-radius: 12px; background: #fffaf6; }
 .why-it-matters summary { min-height: 44px; display: flex; align-items: center; padding: 0 15px; color: #8e5c50; font-size: 11px; font-weight: 800; cursor: pointer; }
 .why-it-matters summary:focus-visible { outline: 3px solid #587fae; outline-offset: 3px; }

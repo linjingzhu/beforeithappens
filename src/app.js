@@ -1,6 +1,7 @@
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
 import { escapeHtml } from "./html.js";
+import { developmentHistory, developmentStages, developmentSummary } from "./development.js";
 
 const STORAGE_KEY = "ab-couple-demo-v2";
 const ids = questions.map((question) => question.id);
@@ -9,7 +10,8 @@ const packIdentity = { id: marriagePack.id, version: marriagePack.version };
 let state = loadState();
 let saveStatus = "saved";
 let openRationaleQuestionId = null;
-let currentView = "questions";
+let currentView = "dashboard";
+let dashboardTab = "stages";
 
 function loadState() {
   try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)), ids, choiceIdsByQuestion, packIdentity); }
@@ -24,6 +26,7 @@ function saveState() {
 function roleName(role) { return role === "a" ? "나" : "파트너"; }
 
 function render() {
+  if (currentView === "dashboard") { renderDashboard(); return; }
   const sharedResults = buildSharedResults(state, ids, choiceIdsByQuestion, packIdentity);
   if (currentView === "results" && sharedResults.complete) { renderResultsScreen(sharedResults); return; }
   const question = questions[state.index];
@@ -69,6 +72,15 @@ function render() {
   bindEvents();
 }
 
+function renderDashboard() {
+  const summary = developmentSummary();
+  const stageContent = `<section class="development-stages" aria-label="개발 단계">${developmentStages.map((stage, index) => `<article class="development-stage ${stage.status}"><span class="stage-check" aria-hidden="true">${stage.status === "complete" ? "✓" : stage.status === "next" ? "→" : String(index + 1).padStart(2, "0")}</span><div><small>${stage.status === "complete" ? "개발 완료" : stage.status === "next" ? "다음 개발" : "개발 예정"}</small><h3>${escapeHtml(stage.title)}</h3><p>${escapeHtml(stage.detail)}</p></div></article>`).join("")}</section>`;
+  const historyContent = `<section class="development-history" aria-label="개발 히스토리">${developmentHistory.slice().reverse().map((item) => `<article><time datetime="${item.date}">${item.date}</time><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.detail)}</p></div></article>`).join("")}</section>`;
+  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="open-product">제품 데모 열기</button></header><main class="development-dashboard"><section class="dashboard-hero"><span class="eyebrow">AB PRODUCT DEVELOPMENT</span><h1>제품이 어디까지 왔는지<br><em>한눈에 확인해요.</em></h1><p>현재 저장소의 구현과 검증 기록을 기준으로 표시한 개발 대시보드입니다.</p><div class="dashboard-summary"><article><strong>${summary.complete}</strong><span>완료 단계</span></article><article><strong>${summary.total}</strong><span>전체 단계</span></article><article><strong>${Math.round(summary.complete / summary.total * 100)}%</strong><span>개발 진행률</span></article></div><aside><small>NEXT DEVELOPMENT</small><strong>${escapeHtml(summary.next.title)}</strong><p>${escapeHtml(summary.next.detail)}</p></aside></section><nav class="dashboard-tabs" aria-label="개발 대시보드"><button data-dashboard-tab="stages" aria-selected="${dashboardTab === "stages"}" class="${dashboardTab === "stages" ? "active" : ""}">개발 단계</button><button data-dashboard-tab="history" aria-selected="${dashboardTab === "history"}" class="${dashboardTab === "history" ? "active" : ""}">개발 히스토리</button></nav>${dashboardTab === "stages" ? stageContent : historyContent}</main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="open-product">제품 데모 열기</button></footer>`;
+  document.querySelectorAll("[data-dashboard-tab]").forEach((button) => button.addEventListener("click", () => { dashboardTab = button.dataset.dashboardTab; render(); }));
+  document.querySelectorAll('[data-action="open-product"]').forEach((button) => button.addEventListener("click", () => { currentView = "questions"; render(); }));
+}
+
 function renderLocked(questionState) {
   return `<section class="reveal-locked"><span aria-hidden="true">🔒</span><div><strong>답변은 아직 비공개예요.</strong><p>역할 A ${isSubmitted(questionState.roles.a) ? "제출 완료" : "제출 전"} · 역할 B ${isSubmitted(questionState.roles.b) ? "제출 완료" : "제출 전"}</p></div></section>`;
 }
@@ -88,11 +100,13 @@ function renderResultsScreen(results) {
   const statusLabel = (item) => item.agreement.status === "agreed" ? "공동 합의 완료" : item.agreement.status === "deferred" ? "다시 이야기할 항목" : item.agreement.status === "pending" ? "합의 승인 대기" : "아직 합의 없음";
   document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="back-to-questions">질문으로 돌아가기</button></header><p class="sr-only" role="status" aria-live="polite">결과가 준비되었습니다.</p><main class="results-page"><section class="results-hero"><span class="eyebrow">SHARED CONVERSATION RESULTS</span><h1 tabindex="-1">두 사람의 답을<br><em>한곳에 모았어요.</em></h1><p>이 숫자는 선택한 답변과 대화 상태만 설명하며 궁합 점수나 관계 진단이 아닙니다.</p></section><section class="results-summary" aria-label="공동 결과 요약"><article><strong>${results.alignedCount}</strong><span>같은 선택</span></article><article><strong>${results.discussCount}</strong><span>서로 다른 선택</span></article><article><strong>${results.agreedCount}</strong><span>공동 합의</span></article><article><strong>${results.deferredCount}</strong><span>다시 이야기하기</span></article><article><strong>${results.pendingCount}</strong><span>승인 대기</span></article><article><strong>${results.noneCount}</strong><span>합의 미작성</span></article></section><section class="results-list"><h2>질문별 대화 기록</h2>${results.items.map((item, index) => { const question = questions.find((entry) => entry.id === item.questionId); return `<article class="result-item"><div class="result-heading"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(question.chapter)}</span><h3>${escapeHtml(question.title)}</h3><i class="${item.comparison}">${item.comparison === "aligned" ? "같은 선택" : "서로 다른 선택"}</i></div><div class="result-answers"><p><small>역할 A</small>${escapeHtml(choiceLabel(question, item.submittedChoices.a))}</p><p><small>역할 B</small>${escapeHtml(choiceLabel(question, item.submittedChoices.b))}</p></div><div class="result-agreement ${item.agreement.status}"><strong>${statusLabel(item)}</strong>${item.agreement.status === "agreed" ? `<p>${escapeHtml(item.agreement.text)}</p>` : ""}</div></article>`; }).join("")}</section><section class="privacy-reminder"><strong>비공개 메모는 포함하지 않았어요.</strong><p>이 화면에는 두 사람이 제출한 선택과 공유 합의만 표시됩니다.</p></section></main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="reset">데모 기록 초기화</button></footer>`;
   document.querySelector('[data-action="back-to-questions"]')?.addEventListener("click", () => { currentView = "questions"; render(); });
+  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "dashboard"; render(); });
   document.querySelector('[data-action="reset"]')?.addEventListener("click", resetDemo);
   document.querySelector(".results-hero h1")?.focus();
 }
 
 function bindEvents() {
+  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "dashboard"; render(); });
   document.querySelectorAll("[data-role]").forEach((button) => button.addEventListener("click", () => { if (saveStatus === "failed") return; state.activeRole = button.dataset.role; saveState(); render(); }));
   document.querySelector('[data-action="show-results"]')?.addEventListener("click", () => { currentView = "results"; render(); });
   document.querySelector(".why-it-matters")?.addEventListener("toggle", (event) => { openRationaleQuestionId = event.target.open ? questions[state.index].id : null; });
