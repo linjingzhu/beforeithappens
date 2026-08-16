@@ -24,7 +24,20 @@ The first implementation proves the smallest useful loop before authentication o
 4. Auto-save the answer, note, and last position locally.
 5. Resume after refresh.
 
-The next slice adds two-role demo mode, an answer submission barrier, neutral comparison, and shared agreement.
+## Second executable slice
+
+The second implementation adds a device-local two-role simulator:
+
+1. Switch between role A and role B on one browser.
+2. Keep draft selections separate from submitted snapshots.
+3. Show only submission status until both roles submit the same question.
+4. Reveal both submitted selections together with neutral comparison language.
+5. Let one role propose an agreement and require the other role to approve it.
+6. Mark a question for a later conversation without treating it as an agreement.
+
+This simulator is not an authentication or privacy boundary. Role switching can expose both roles' local drafts and private notes to anyone using the same browser. Private notes are excluded from comparison and shared agreement UI, but real privacy requires the planned server-backed account model.
+
+The next slice adds real account separation, invite/join lifecycle, server persistence, and cross-device resume.
 
 ## Question state model
 
