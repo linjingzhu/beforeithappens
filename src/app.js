@@ -1,5 +1,6 @@
 import { marriagePack, questions } from "./questions.js";
-import { canApproveAgreement, comparisonFor, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { escapeHtml } from "./html.js";
 
 const STORAGE_KEY = "ab-couple-demo-v2";
 const ids = questions.map((question) => question.id);
@@ -8,6 +9,7 @@ const packIdentity = { id: marriagePack.id, version: marriagePack.version };
 let state = loadState();
 let saveStatus = "saved";
 let openRationaleQuestionId = null;
+let currentView = "questions";
 
 function loadState() {
   try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)), ids, choiceIdsByQuestion, packIdentity); }
@@ -19,13 +21,11 @@ function saveState() {
   catch { saveStatus = "failed"; return false; }
 }
 
-function escapeHtml(value = "") {
-  return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
-}
-
 function roleName(role) { return role === "a" ? "나" : "파트너"; }
 
 function render() {
+  const sharedResults = buildSharedResults(state, ids, choiceIdsByQuestion, packIdentity);
+  if (currentView === "results" && sharedResults.complete) { renderResultsScreen(sharedResults); return; }
   const question = questions[state.index];
   const questionState = state.questions[question.id];
   const mine = questionState.roles[state.activeRole];
@@ -37,7 +37,7 @@ function render() {
   document.querySelector("#app").innerHTML = `
     <header class="topbar">
       <a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a>
-      <div class="role-switcher" aria-label="데모 역할 선택"><span>현재 역할</span><button data-role="a" aria-pressed="${state.activeRole === "a"}" class="${state.activeRole === "a" ? "active" : ""}">나</button><button data-role="b" aria-pressed="${state.activeRole === "b"}" class="${state.activeRole === "b" ? "active" : ""}">파트너</button></div>
+      <div class="top-actions">${sharedResults.complete ? `<button class="results-link" data-action="show-results">공동 결과 보기</button>` : ""}<div class="role-switcher" aria-label="데모 역할 선택"><span>현재 역할</span><button data-role="a" aria-pressed="${state.activeRole === "a"}" class="${state.activeRole === "a" ? "active" : ""}">나</button><button data-role="b" aria-pressed="${state.activeRole === "b"}" class="${state.activeRole === "b" ? "active" : ""}">파트너</button></div></div>
     </header>
     <div class="role-announcement sr-only" role="status" aria-live="polite">현재 ${roleName(state.activeRole)} 역할입니다.</div>
     <main>
@@ -83,8 +83,18 @@ function renderReveal(question, questionState) {
   return `<section class="reveal-panel" aria-labelledby="comparison-title"><div class="reveal-heading"><span>TOGETHER · REVEALED</span><h3 id="comparison-title">${comparison.label}</h3><p>${comparison.detail}</p></div><div class="answer-pair"><article><small>역할 A 제출 답변</small><strong>${escapeHtml(label(questionState.roles.a.submittedChoice))}</strong></article><article><small>역할 B 제출 답변</small><strong>${escapeHtml(label(questionState.roles.b.submittedChoice))}</strong></article></div><label class="agreement"><span>${proposalLabel}</span><textarea ${approverView ? "disabled" : ""} placeholder="함께 지킬 원칙이나 다음 행동을 제안해 보세요.">${escapeHtml(shared.proposal)}</textarea></label><div class="agreement-actions"><button class="secondary ${shared.status === "deferred" ? "selected-status" : ""}" data-agreement="deferred">다시 이야기할 항목</button>${canApprove ? `<button class="secondary" data-agreement="revise">수정 제안하기</button><button class="primary" data-agreement="approve">상대의 합의안 승인</button>` : `<button class="primary" data-agreement="propose" ${shared.proposal.trim() ? "" : "disabled"}>${shared.proposedBy === state.activeRole && shared.status === "pending" ? "합의안 업데이트" : "합의안 제안"}</button>`}</div><p class="agreement-state" role="status">${shared.status === "agreed" ? "✓ 상대 역할의 승인까지 완료된 공동 합의입니다." : shared.status === "deferred" ? "↻ 다시 대화할 항목으로 표시했어요." : shared.status === "pending" ? `${roleName(shared.proposedBy)}이 제안했고 상대의 승인을 기다립니다.` : "아직 합의 상태를 정하지 않았어요."}</p></section>`;
 }
 
+function renderResultsScreen(results) {
+  const choiceLabel = (question, choiceId) => question.choices.find((choice) => choice.id === choiceId)?.label || "알 수 없는 선택";
+  const statusLabel = (item) => item.agreement.status === "agreed" ? "공동 합의 완료" : item.agreement.status === "deferred" ? "다시 이야기할 항목" : item.agreement.status === "pending" ? "합의 승인 대기" : "아직 합의 없음";
+  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="back-to-questions">질문으로 돌아가기</button></header><p class="sr-only" role="status" aria-live="polite">결과가 준비되었습니다.</p><main class="results-page"><section class="results-hero"><span class="eyebrow">SHARED CONVERSATION RESULTS</span><h1 tabindex="-1">두 사람의 답을<br><em>한곳에 모았어요.</em></h1><p>이 숫자는 선택한 답변과 대화 상태만 설명하며 궁합 점수나 관계 진단이 아닙니다.</p></section><section class="results-summary" aria-label="공동 결과 요약"><article><strong>${results.alignedCount}</strong><span>같은 선택</span></article><article><strong>${results.discussCount}</strong><span>서로 다른 선택</span></article><article><strong>${results.agreedCount}</strong><span>공동 합의</span></article><article><strong>${results.deferredCount}</strong><span>다시 이야기하기</span></article><article><strong>${results.pendingCount}</strong><span>승인 대기</span></article><article><strong>${results.noneCount}</strong><span>합의 미작성</span></article></section><section class="results-list"><h2>질문별 대화 기록</h2>${results.items.map((item, index) => { const question = questions.find((entry) => entry.id === item.questionId); return `<article class="result-item"><div class="result-heading"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(question.chapter)}</span><h3>${escapeHtml(question.title)}</h3><i class="${item.comparison}">${item.comparison === "aligned" ? "같은 선택" : "서로 다른 선택"}</i></div><div class="result-answers"><p><small>역할 A</small>${escapeHtml(choiceLabel(question, item.submittedChoices.a))}</p><p><small>역할 B</small>${escapeHtml(choiceLabel(question, item.submittedChoices.b))}</p></div><div class="result-agreement ${item.agreement.status}"><strong>${statusLabel(item)}</strong>${item.agreement.status === "agreed" ? `<p>${escapeHtml(item.agreement.text)}</p>` : ""}</div></article>`; }).join("")}</section><section class="privacy-reminder"><strong>비공개 메모는 포함하지 않았어요.</strong><p>이 화면에는 두 사람이 제출한 선택과 공유 합의만 표시됩니다.</p></section></main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="reset">데모 기록 초기화</button></footer>`;
+  document.querySelector('[data-action="back-to-questions"]')?.addEventListener("click", () => { currentView = "questions"; render(); });
+  document.querySelector('[data-action="reset"]')?.addEventListener("click", resetDemo);
+  document.querySelector(".results-hero h1")?.focus();
+}
+
 function bindEvents() {
   document.querySelectorAll("[data-role]").forEach((button) => button.addEventListener("click", () => { if (saveStatus === "failed") return; state.activeRole = button.dataset.role; saveState(); render(); }));
+  document.querySelector('[data-action="show-results"]')?.addEventListener("click", () => { currentView = "results"; render(); });
   document.querySelector(".why-it-matters")?.addEventListener("toggle", (event) => { openRationaleQuestionId = event.target.open ? questions[state.index].id : null; });
   document.querySelectorAll('.choice input[name="answer"]').forEach((input) => input.addEventListener("change", (event) => { state.questions[questions[state.index].id].roles[state.activeRole].draftChoice = event.target.value; saveState(); render(); }));
   document.querySelector(".memo textarea")?.addEventListener("input", (event) => { state.questions[questions[state.index].id].roles[state.activeRole].privateNote = event.target.value; if (!saveState()) render(); });
@@ -105,6 +115,7 @@ function resetDemo() {
   if (!confirm("두 역할의 답변, 비공개 메모와 합의를 모두 지울까요?")) return;
   try { localStorage.removeItem(STORAGE_KEY); } catch { saveStatus = "failed"; }
   state = normalizeState(null, ids, choiceIdsByQuestion, packIdentity);
+  currentView = "questions";
   render();
 }
 

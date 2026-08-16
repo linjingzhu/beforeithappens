@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canApproveAgreement, comparisonFor, createInitialState, isRevealed, normalizeState, submittedCount } from "../src/state.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, normalizeState, submittedCount } from "../src/state.js";
+import { escapeHtml } from "../src/html.js";
 
 const ids = ["q1", "q2"];
 const choiceIds = { q1: ["q1-a", "q1-b", "q1-c", "q1-d"], q2: ["q2-a", "q2-b", "q2-c", "q2-d"] };
@@ -69,4 +70,82 @@ test("answers from another pack version are not silently applied", () => {
   const restored = normalizeState(old, ids, choiceIds, pack);
   assert.equal(restored.packVersion, "1");
   assert.equal(restored.questions.q1.roles.a.submittedChoice, null);
+});
+
+test("shared results include submitted answers and agreements but never private notes", () => {
+  const state = createInitialState(ids);
+  state.questions.q1.roles.a.submittedChoice = "q1-a";
+  state.questions.q1.roles.b.submittedChoice = "q1-b";
+  state.questions.q1.roles.a.privateNote = "PRIVATE_A_MARKER";
+  state.questions.q1.roles.b.privateNote = "PRIVATE_B_MARKER";
+  state.questions.q1.roles.a.draftChoice = "DRAFT_SECRET_MARKER";
+  state.questions.q1.shared = { proposal: "매주 일요일에 확인한다", proposedBy: "a", approvedBy: "b", status: "agreed" };
+  const result = buildSharedResults(state, ids, choiceIds);
+  assert.equal(result.complete, false);
+  assert.equal(result.revealedCount, 1);
+  assert.equal(result.discussCount, 1);
+  assert.equal(result.agreedCount, 1);
+  assert.equal(/PRIVATE_|DRAFT_SECRET/.test(JSON.stringify(result)), false);
+});
+
+test("completion requires every question to be revealed", () => {
+  const state = createInitialState(ids);
+  for (const id of ids) {
+    state.questions[id].roles.a.submittedChoice = `${id}-a`;
+    state.questions[id].roles.b.submittedChoice = `${id}-a`;
+  }
+  const result = buildSharedResults(state, ids, choiceIds);
+  assert.equal(result.complete, true);
+  assert.equal(result.alignedCount, 2);
+  assert.equal(result.items.length, 2);
+  assert.equal(result.alignedCount + result.discussCount, ids.length);
+  assert.equal(result.agreedCount + result.deferredCount + result.pendingCount + result.noneCount, ids.length);
+});
+
+test("unknown choices and another pack version fail closed", () => {
+  const state = createInitialState(ids, pack);
+  for (const id of ids) {
+    state.questions[id].roles.a.submittedChoice = `${id}-a`;
+    state.questions[id].roles.b.submittedChoice = `${id}-a`;
+  }
+  state.questions.q2.roles.b.submittedChoice = "unknown-choice";
+  assert.equal(buildSharedResults(state, ids, choiceIds, pack).complete, false);
+  state.questions.q2.roles.b.submittedChoice = "q2-a";
+  assert.equal(buildSharedResults(state, ids, choiceIds, { id: "marriage", version: "2" }).complete, false);
+});
+
+test("malformed or self-approved agreements are never presented as shared", () => {
+  const state = createInitialState(["q1"]);
+  state.questions.q1.roles.a.submittedChoice = "q1-a";
+  state.questions.q1.roles.b.submittedChoice = "q1-b";
+  state.questions.q1.shared = { proposal: "<img src=x onerror=alert(1)>", proposedBy: "a", approvedBy: "a", status: "agreed" };
+  const result = buildSharedResults(state, ["q1"], { q1: choiceIds.q1 });
+  assert.equal(result.agreedCount, 0);
+  assert.equal(result.noneCount, 1);
+  assert.equal(result.items[0].agreement.text, "");
+});
+
+test("the free-pack gate requires all 12 revealed questions and never accepts an empty pack", () => {
+  const twelveIds = Array.from({ length: 12 }, (_, index) => `question-${index + 1}`);
+  const allowed = Object.fromEntries(twelveIds.map((id) => [id, [`${id}-a`, `${id}-b`]]));
+  const state = createInitialState(twelveIds);
+  for (const id of twelveIds) {
+    state.questions[id].roles.a.submittedChoice = `${id}-a`;
+    state.questions[id].roles.b.submittedChoice = `${id}-b`;
+  }
+  assert.equal(buildSharedResults(state, twelveIds, allowed).complete, true);
+  state.questions[twelveIds[11]].roles.b.submittedChoice = null;
+  assert.equal(buildSharedResults(state, twelveIds, allowed).complete, false);
+  assert.equal(buildSharedResults(createInitialState([]), [], {}).complete, false);
+});
+
+test("approved agreement HTML is escaped before insertion into results markup", () => {
+  const malicious = `<img src=x onerror="globalThis.pwned=true">`;
+  const state = createInitialState(["q1"]);
+  state.questions.q1.roles.a.submittedChoice = "q1-a";
+  state.questions.q1.roles.b.submittedChoice = "q1-b";
+  state.questions.q1.shared = { proposal: malicious, proposedBy: "a", approvedBy: "b", status: "agreed" };
+  const result = buildSharedResults(state, ["q1"], { q1: choiceIds.q1 });
+  assert.equal(result.items[0].agreement.text, malicious);
+  assert.equal(escapeHtml(result.items[0].agreement.text), "&lt;img src=x onerror=&quot;globalThis.pwned=true&quot;&gt;");
 });
