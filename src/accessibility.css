@@ -5,6 +5,13 @@
 .save-state { font-size: 10px; }
 .save-state.failed { color: #b64838; font-weight: 700; }
 button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #587fae; outline-offset: 3px; }
+.why-it-matters { margin: -12px 0 24px; border: 1px solid var(--line); border-radius: 12px; background: #fffaf6; }
+.why-it-matters summary { min-height: 44px; display: flex; align-items: center; padding: 0 15px; color: #8e5c50; font-size: 11px; font-weight: 800; cursor: pointer; }
+.why-it-matters summary:focus-visible { outline: 3px solid #587fae; outline-offset: 3px; }
+.why-it-matters > div { padding: 0 16px 16px; }
+.why-it-matters p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.why-it-matters ul { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 13px 0 0; list-style: none; }
+.why-it-matters li { padding: 5px 8px; border-radius: 12px; background: var(--soft); color: #8e5c50; font-size: 9px; }
 .completion { max-width: 900px; margin: auto; padding: 90px 26px 100px; }
 .completion h1 { font: 500 clamp(42px, 6vw, 68px)/1.08 Georgia, serif; letter-spacing: -.04em; margin: 18px 0; }
 .completion h1 em { color: var(--coral); font-weight: 400; }

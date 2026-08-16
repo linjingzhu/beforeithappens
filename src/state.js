@@ -4,9 +4,11 @@ function emptyRole() {
   return { draftChoice: null, privateNote: "", submittedChoice: null, submittedAt: null };
 }
 
-export function createInitialState(questionIds) {
+export function createInitialState(questionIds, pack = {}) {
   return {
-    version: 2,
+    version: 3,
+    packId: pack.id || null,
+    packVersion: pack.version || null,
     index: 0,
     activeRole: "a",
     questions: Object.fromEntries(questionIds.map((id) => [id, {
@@ -17,16 +19,18 @@ export function createInitialState(questionIds) {
   };
 }
 
-export function normalizeState(value, questionIds, choiceCount = 4) {
-  const clean = createInitialState(questionIds);
+export function normalizeState(value, questionIds, choiceIdsByQuestion = {}, pack = {}) {
+  const clean = createInitialState(questionIds, pack);
   if (!value || typeof value !== "object") return clean;
+  if (value.packId && (value.packId !== pack.id || value.packVersion !== pack.version)) return clean;
   clean.index = Number.isInteger(value.index) && value.index >= 0 && value.index < questionIds.length ? value.index : 0;
   clean.activeRole = ROLES.includes(value.activeRole) ? value.activeRole : "a";
   for (const id of questionIds) {
     const source = value.questions?.[id];
     for (const role of ROLES) {
       const input = source?.roles?.[role];
-      const valid = (choice) => Number.isInteger(choice) && choice >= 0 && choice < choiceCount ? choice : null;
+      const allowed = choiceIdsByQuestion[id] || [];
+      const valid = (choice) => typeof choice === "string" && allowed.includes(choice) ? choice : Number.isInteger(choice) && allowed[choice] ? allowed[choice] : null;
       const submittedChoice = valid(input?.submittedChoice);
       clean.questions[id].roles[role] = {
         draftChoice: valid(input?.draftChoice),
