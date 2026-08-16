@@ -4,52 +4,56 @@ Keep this file compact. It is a routing map, not full documentation.
 
 ## Repository
 
-repository_mode: auto
-base_branch: auto-detect
-primary_platform: Windows
+repository_mode: personal
+base_branch: stable
+primary_platform: Web / Windows
 
 ## Product
 
 Purpose:
-- TBD — Manager should infer from repository/user request and update only when evidence is clear.
+- Help couples discover expectations before major life events, discuss differences safely, and record shared agreements.
 
 Primary user value:
-- TBD
+- Prevent avoidable conflict by turning private assumptions into structured, psychologically safe conversations.
 
 ## Architecture Map
 
 Core:
-- TBD
+- Dependency-free ES module web application; question content in `src/questions.js`, interaction state in `src/app.js`.
 
 UI:
-- TBD
+- Mobile-first single-question experience in `index.html` and `src/styles.css`.
 
 Persistence/Data:
-- TBD
+- Current executable slice uses device-local storage. Planned server model is documented in `docs/DATA_MODEL.md`.
 
 Tests:
-- TBD
+- Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
 
 Build:
-- TBD
+- Dependency-free Node scripts copy the static application into `dist/`.
 
 ## Verified Commands
 
 Windows configure:
-- TBD
+- `npm install` (no external dependencies in the current slice)
 
 Windows targeted build:
-- TBD
+- `npm run build`
 
 Windows full build:
-- TBD
+- `npm run lint && npm test && npm run build`
 
 Targeted tests:
-- TBD
+- `npm test`
 
 ## Important Paths / Symbols
 
-- TBD
+- `src/questions.js` — structured question content
+- `src/app.js` — local state and question workflow
+- `src/styles.css` — responsive product UI
+- `docs/PRODUCT_SPEC.md` — product contract
+- `docs/DATA_MODEL.md` — planned secure server model
 
 ## Known Integration Hotspots
 
