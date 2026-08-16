@@ -1,0 +1,32 @@
+.couple-button { min-height: 44px; font-size: 12px; }
+.couple-button:disabled { cursor: not-allowed; opacity: .72; }
+.choice:has(input:focus-visible) { outline: 3px solid #587fae; outline-offset: 2px; }
+.actions button { min-height: 44px; height: auto; font-size: 12px; }
+.save-state { font-size: 10px; }
+.save-state.failed { color: #b64838; font-weight: 700; }
+button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #587fae; outline-offset: 3px; }
+.completion { max-width: 900px; margin: auto; padding: 90px 26px 100px; }
+.completion h1 { font: 500 clamp(42px, 6vw, 68px)/1.08 Georgia, serif; letter-spacing: -.04em; margin: 18px 0; }
+.completion h1 em { color: var(--coral); font-weight: 400; }
+.completion > p { max-width: 690px; color: var(--muted); font-size: 14px; line-height: 1.75; }
+.answer-review { display: grid; gap: 12px; margin-top: 42px; }
+.answer-review article { background: var(--card); border: 1px solid var(--line); border-radius: 15px; padding: 22px; }
+.answer-review small { color: var(--coral); font-size: 10px; font-weight: 800; }
+.answer-review h2 { font: 500 21px/1.4 Georgia, serif; margin: 8px 0; }
+.answer-review strong { font-size: 12px; }
+.answer-review p { color: var(--muted); font-size: 11px; }
+.answer-review button { min-height: 44px; border: 0; background: none; color: var(--coral); font-size: 11px; text-decoration: underline; cursor: pointer; }
+.completion-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.completion-actions button { min-height: 46px; padding: 0 18px; border-radius: 10px; font-weight: 700; font-size: 12px; }
+.completion-actions .secondary { background: white; }
+.completion-actions .primary { color: white; }
+@media (max-width: 760px) {
+  .journey { padding-bottom: 12px; }
+  .progress-card { display: flex; padding: 12px; }
+  .progress-card .progress-ring { width: 64px; }
+  .progress-card .progress-ring > div { width: 54px; }
+  .progress-ring strong { font-size: 17px; }
+  .completion { padding: 60px 18px; }
+  .completion-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .completion-actions button { width: 100%; }
+}
