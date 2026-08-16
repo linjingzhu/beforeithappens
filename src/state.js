@@ -65,3 +65,41 @@ export function submittedCount(state, role, questionIds) {
 export function canApproveAgreement(shared, role) {
   return shared?.status === "pending" && Boolean(shared.proposal?.trim()) && ROLES.includes(shared.proposedBy) && shared.proposedBy !== role;
 }
+
+export function buildSharedResults(state, questionIds, choiceIdsByQuestion = {}, packIdentity = null) {
+  const packMatches = !packIdentity || (state.packId === packIdentity.id && state.packVersion === packIdentity.version);
+  if (!packMatches) return { complete: false, revealedCount: 0, alignedCount: 0, discussCount: 0, agreedCount: 0, deferredCount: 0, pendingCount: 0, noneCount: 0, items: [] };
+  const items = questionIds.filter((id) => {
+    const question = state.questions[id];
+    const allowed = choiceIdsByQuestion[id] || [];
+    return isRevealed(question) && allowed.includes(question.roles.a.submittedChoice) && allowed.includes(question.roles.b.submittedChoice);
+  }).map((id) => {
+    const question = state.questions[id];
+    const shared = question.shared;
+    const validAgreed = shared.status === "agreed" && Boolean(shared.proposal?.trim()) && ROLES.includes(shared.proposedBy) && ROLES.includes(shared.approvedBy) && shared.proposedBy !== shared.approvedBy;
+    const validPending = shared.status === "pending" && Boolean(shared.proposal?.trim()) && ROLES.includes(shared.proposedBy);
+    const agreementStatus = validAgreed ? "agreed" : validPending ? "pending" : shared.status === "deferred" ? "deferred" : "none";
+    return {
+      questionId: id,
+      submittedChoices: { a: question.roles.a.submittedChoice, b: question.roles.b.submittedChoice },
+      comparison: comparisonFor(question).key,
+      agreement: {
+        text: agreementStatus === "agreed" ? shared.proposal : "",
+        status: agreementStatus,
+        proposedBy: ["pending", "agreed"].includes(agreementStatus) ? shared.proposedBy : null,
+        approvedBy: agreementStatus === "agreed" ? shared.approvedBy : null
+      }
+    };
+  });
+  return {
+    complete: questionIds.length > 0 && items.length === questionIds.length,
+    revealedCount: items.length,
+    alignedCount: items.filter((item) => item.comparison === "aligned").length,
+    discussCount: items.filter((item) => item.comparison === "discuss").length,
+    agreedCount: items.filter((item) => item.agreement.status === "agreed").length,
+    deferredCount: items.filter((item) => item.agreement.status === "deferred").length,
+    pendingCount: items.filter((item) => item.agreement.status === "pending").length,
+    noneCount: items.filter((item) => item.agreement.status === "none").length,
+    items
+  };
+}
