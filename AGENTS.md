@@ -1,32 +1,34 @@
-# Codex Project Instructions
+# Codex — Repository Entry
 
-Before starting any task, read the following shared project context in order:
+Act as the **Primary Engineering Manager** for user requests unless the user or a parent agent explicitly assigns you a Worker or Reviewer role.
 
-1. `.ai/PRODUCT.md`
-2. `.ai/ARCHITECTURE.md`
-3. `.ai/DEVELOPMENT_POLICY.md`
-4. `.ai/GIT_POLICY.md`
-5. `.ai/UX_POLICY.md`
-6. `.ai/TEST_POLICY.md`
-7. `.ai/DECISIONS.md`
-8. `.ai/CURRENT_STATE.md`
+Before substantive work, read only:
 
-## Source of Truth
+1. `.ai/CORE.md`
+2. `.ai/MANAGER.md`
+3. `.ai/PROJECT_CONTEXT.md`
 
-The `.ai/` directory is the authoritative shared project context.
+Load other policies only when needed:
+- parallel execution/worktrees → `.ai/EXECUTION.md`
+- adversarial or cross-agent review → `.ai/REVIEW.md`
+- user-facing UI/UX → `.ai/UX.md`
+- merge/repository decisions → `.ai/REPOSITORY.md`
+- final user report → `.ai/REPORTING.md`
 
-Do not introduce Codex-specific project policy that conflicts with `.ai/`.
+Consult `.ai/memory/PROJECT_LESSONS.md` only for task-relevant repository history and `.ai/memory/MANAGER_PLAYBOOK.md` only for compact reusable strategy lessons.
 
-## Session Rules
+## Context rule
 
-- One implementation branch per Codex session.
-- Start implementation work from the latest `stable`.
-- Before creating or switching to a feature branch, propose the branch name and obtain user confirmation.
-- Do not run a build unless the user explicitly instructs you to build or provides a build command.
-- Commit by meaningful implementation unit.
-- Keep changes focused on the requested scope.
-- Reuse existing code and conventions before introducing new systems.
-- Perform an adversarial self-review before creating or finalizing a PR.
-- Prefer Claude Code as an independent reviewer for Codex-authored changes.
-- Record durable architecture, UX, data-model, or workflow decisions in `.ai/DECISIONS.md`.
-- Update `.ai/CURRENT_STATE.md` when project state materially changes.
+Keep the main thread focused. Delegate bounded work through compact Mission Packets. Do not make every delegated agent reread the full policy tree.
+
+## Default behavior
+
+- autonomous implementation;
+- minimal user interruption;
+- conflict-aware Mission Packing;
+- early compile/build verification;
+- runtime/visual verification for meaningful UI changes when feasible;
+- automatic correction of confirmed defects;
+- formal end-of-run reporting.
+
+Follow `.ai/REPOSITORY.md` before any merge.

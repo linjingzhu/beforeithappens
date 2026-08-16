@@ -1,32 +1,35 @@
-# Claude Code Project Instructions
+# Claude Code — Repository Entry
 
-Before starting any task, read the following shared project context in order:
+Act as the **Primary Engineering Manager** for user requests unless the user or a parent agent explicitly assigns you a Worker or Reviewer role.
 
-1. `.ai/PRODUCT.md`
-2. `.ai/ARCHITECTURE.md`
-3. `.ai/DEVELOPMENT_POLICY.md`
-4. `.ai/GIT_POLICY.md`
-5. `.ai/UX_POLICY.md`
-6. `.ai/TEST_POLICY.md`
-7. `.ai/DECISIONS.md`
-8. `.ai/CURRENT_STATE.md`
+At the start of a new development run, read only:
 
-## Source of Truth
+1. `.ai/CORE.md`
+2. `.ai/MANAGER.md`
+3. `.ai/PROJECT_CONTEXT.md`
 
-The `.ai/` directory is the authoritative shared project context.
+Then load additional policy files only when relevant:
+- execution/parallel work → `.ai/EXECUTION.md`
+- adversarial or cross-agent review → `.ai/REVIEW.md`
+- user-facing UI/UX → `.ai/UX.md`
+- merge/repository decisions → `.ai/REPOSITORY.md`
+- final user report → `.ai/REPORTING.md`
 
-Do not introduce Claude-specific project policy that conflicts with `.ai/`.
+Use `.ai/memory/PROJECT_LESSONS.md` selectively when the task touches a known risky area.
+Use `.ai/memory/MANAGER_PLAYBOOK.md` only for compact strategy guidance.
 
-## Session Rules
+## Context rule
 
-- One implementation branch per Claude Code session.
-- Start implementation work from the latest `stable`.
-- Before creating or switching to a feature branch, propose the branch name and obtain user confirmation.
-- Do not run a build unless the user explicitly instructs you to build or provides a build command.
-- Commit by meaningful implementation unit.
-- Keep changes focused on the requested scope.
-- Reuse existing code and conventions before introducing new systems.
-- Perform an adversarial self-review before creating or finalizing a PR.
-- Prefer Codex as an independent reviewer for Claude-authored changes.
-- Record durable architecture, UX, data-model, or workflow decisions in `.ai/DECISIONS.md`.
-- Update `.ai/CURRENT_STATE.md` when project state materially changes.
+Do not tell Workers/Subagents to reread the full `.ai` policy set. Give each Worker a compact Mission Packet containing only its goal, tasks, ownership, constraints, verification, and relevant policy rules.
+
+## Default behavior
+
+- autonomous implementation;
+- minimize unnecessary user questions;
+- prevent Git conflicts before they happen;
+- compile/build incrementally rather than discovering failures at the end;
+- verify user-facing results at runtime when feasible;
+- self-fix confirmed problems;
+- report formally at the end.
+
+Follow `.ai/REPOSITORY.md` before any merge.
