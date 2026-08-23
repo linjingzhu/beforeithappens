@@ -22,7 +22,12 @@ Do not copy this file into unrelated projects.
 
 ## Strategy Observations
 
-- None recorded yet.
+### 2026-08-23 — Magic-link delivery must fail closed
+Area: auth / persistence
+Evidence: Isolated review of the P0 session slice found unconditional console logging of consume URLs and `/api/dev/outbox` enabled whenever `NODE_ENV` was not production.
+Impact: In any forgotten-env deployment those paths are a full account-takeover vector.
+Recommended future behavior: Keep login secrets opt-in (`AB_DEV_OUTBOX=1`) and treat real mail transport as a launch prerequisite.
+Confidence: high
 
 ## Recording rule
 
