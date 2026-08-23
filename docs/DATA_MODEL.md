@@ -21,7 +21,7 @@
 | `ReportSnapshot` | Reproducible report for a fixed pack version |
 | `AuditEvent` | Security- and support-relevant action history |
 
-The foundation slice persists `User`, magic-link tokens, and sessions. `CoupleWorkspace`, `CoupleMember`, `Invitation`, and `AnswerRound` are required model shapes for later packs; creating them must not unlock the pack without an accepted partner.
+The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace`, `CoupleMember`, and `Invitation`. Creating a buyer workspace must not unlock the pack without an accepted partner. `AnswerRound` remains a required shape for later packs.
 
 ## Identity and session
 

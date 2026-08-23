@@ -32,6 +32,19 @@ Signed-out `/`. Primary action: request a login link.
 
 Device-handoff copy is forbidden in the onboarding body. It may appear only next to logout.
 
+Invite-waiting home (buyer, no pack CTA):
+
+| State | Copy |
+|---|---|
+| Title | 파트너 초대 |
+| Status | 대기중 / 만료 남은 시간 / 마지막 발송 시각 |
+| Reissue CTA | 다시 보내기 |
+| Rule | 같은 메일로만 수락할 수 있어요. 같은 폰에서 두 계정을 동시에 쓸 수는 없어요. |
+| Success CTA after accept | 결혼 팩 시작하기 |
+| Expired invite | 초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요. |
+| Email mismatch | 이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요. |
+| Draft badge | 나만 보임 |
+
 ### Expected visible result
 
 1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes.

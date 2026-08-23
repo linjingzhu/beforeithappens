@@ -1,21 +1,30 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AUTH_COPY, AUTH_ERRORS, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "../src/auth.js";
-import { renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderSent } from "../src/auth-ui.js";
+import { AUTH_COPY, AUTH_ERRORS, INVITE_COPY, canOpenPack, consumeAuthLocation, emptySession, formatRemaining, resolveSignedInView, resolveSignedOutView } from "../src/auth.js";
+import { renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "../src/auth-ui.js";
 import { createAuth, hashToken, hasAcceptedPartner, isValidEmail, MAGIC_LINK_TTL_MS, normalizeEmail } from "../server/auth.mjs";
 import { createMemoryStore } from "../server/store.mjs";
+import { createCouple } from "../server/workspace.mjs";
 
 function authWithClock(start = Date.parse("2026-08-23T00:00:00.000Z")) {
   let now = start;
   let tokens = 0;
   const store = createMemoryStore();
+  const couple = createCouple({
+    store,
+    now: () => now,
+    randomToken: () => `invite-${++tokens}`
+  });
   const auth = createAuth({
     store,
     now: () => now,
-    randomToken: () => `token-${++tokens}`
+    randomToken: () => `token-${++tokens}`,
+    onLogin: (userId) => couple.ensureWorkspace(userId),
+    describeWorkspace: (userId) => couple.viewForUser(userId)
   });
   return {
     auth,
+    couple,
     store,
     advance(ms) { now += ms; }
   };
@@ -54,7 +63,11 @@ test("tokens are stored hashed and consume creates one session with the post-log
   assert.equal(session.user.email, "buyer@example.com");
   assert.equal(session.notice, "no-local-draft");
   assert.equal(session.workspace.acceptedPartner, false);
+  assert.ok(session.workspace.id);
+  assert.equal(session.workspace.role, "buyer");
   assert.equal(canOpenPack(session), false);
+  assert.equal(store.snapshot().workspaces.length, 1);
+  assert.equal(store.snapshot().members.length, 1);
 });
 
 test("a new login force-logs out the previous session", () => {
@@ -101,9 +114,22 @@ test("onboarding copy is exact and never includes device-handoff text", () => {
   assert.match(renderSent(), new RegExp(AUTH_COPY.sent));
   assert.match(renderLoginNotice(), new RegExp(AUTH_COPY.afterLogin));
   const home = renderInviteWaitingHome({ email: "buyer@example.com" });
+  assert.match(home, new RegExp(INVITE_COPY.title));
+  assert.match(home, new RegExp(INVITE_COPY.rule));
   assert.match(home, new RegExp(AUTH_COPY.logoutHandoff));
+  assert.equal(home.includes(INVITE_COPY.startPack), false);
   assert.equal(home.includes("data-action=\"open-product\""), false);
   assert.equal(home.includes("data-role="), false);
+  assert.equal(formatRemaining(7 * 24 * 60 * 60 * 1000), "7일 0시간");
+  assert.match(renderInviteAccept({ error: "expired" }), new RegExp(INVITE_COPY.expired));
+  assert.match(renderInviteAccept({ error: "mismatch" }), new RegExp(INVITE_COPY.mismatch));
+  assert.match(renderPackReady(), new RegExp(INVITE_COPY.startPack));
+  const waiting = renderInviteWaitingHome({
+    invite: { status: "waiting", remainingMs: 3 * 60 * 60 * 1000, lastSentAt: "2026-08-23T00:00:00.000Z" }
+  });
+  assert.match(waiting, new RegExp(INVITE_COPY.waiting));
+  assert.match(waiting, new RegExp(INVITE_COPY.resend));
+  assert.equal(waiting.includes(INVITE_COPY.startPack), false);
   assert.equal(resolveSignedOutView("sent"), "sent");
   assert.equal(resolveSignedInView({ notice: "no-local-draft" }, false), "notice");
   assert.equal(resolveSignedInView({ notice: null }, false), "home");

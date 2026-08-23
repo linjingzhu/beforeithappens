@@ -1,4 +1,4 @@
-import { AUTH_COPY } from "./auth.js";
+import { AUTH_COPY, INVITE_COPY, formatRemaining, formatSentAt } from "./auth.js";
 import { escapeHtml } from "./html.js";
 
 function brand(extraActions = "") {
@@ -65,15 +65,80 @@ export function renderLoginNotice({ email = "" } = {}) {
   `;
 }
 
-export function renderInviteWaitingHome({ email = "" } = {}) {
+export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite = null, error = "", busy = false } = {}) {
+  const hasInvite = Boolean(invite);
+  const remaining = hasInvite ? formatRemaining(invite.remainingMs) : "";
   return `
     ${brand(logoutCluster())}
     <main class="auth-shell">
       <section class="auth-card">
         <span class="eyebrow">AB · INVITE WAITING</span>
-        <h1>파트너가 초대를 수락하면 시작해요</h1>
-        <p>상대가 초대를 받기 전에는 결혼 준비 팩을 열 수 없어요. 지금은 초대를 기다리는 홈만 열려 있어요.</p>
+        <h1>${escapeHtml(INVITE_COPY.title)}</h1>
+        ${hasInvite ? `
+          <dl class="invite-status">
+            <div><dt>상태</dt><dd>${escapeHtml(invite.status === "expired" ? "만료됨" : INVITE_COPY.waiting)}</dd></div>
+            <div><dt>${escapeHtml(INVITE_COPY.remainingLabel)}</dt><dd>${escapeHtml(remaining)}</dd></div>
+            <div><dt>${escapeHtml(INVITE_COPY.lastSentLabel)}</dt><dd>${escapeHtml(formatSentAt(invite.lastSentAt))}</dd></div>
+          </dl>
+        ` : `<p>파트너 이메일로 초대를 보내면, 상대가 수락한 뒤에만 결혼 준비 팩이 열려요.</p>`}
+        <p>${escapeHtml(INVITE_COPY.rule)}</p>
+        <form class="auth-form" data-invite-form>
+          <label for="invite-email">파트너 이메일</label>
+          <input id="invite-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(partnerEmail || invite?.email || "")}" ${busy ? "disabled" : ""}>
+          <button class="primary auth-submit" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(hasInvite ? INVITE_COPY.resend : INVITE_COPY.send)}</button>
+        </form>
         ${email ? `<p class="auth-email-hint">${escapeHtml(email)}</p>` : ""}
+        ${error ? `<p class="auth-error" role="alert">${escapeHtml(error)}</p>` : ""}
+      </section>
+    </main>
+    ${footer()}
+  `;
+}
+
+export function renderInviteAccept({ email = "", error = "", preview = null, accepted = false, busy = false } = {}) {
+  const body = error === "expired"
+    ? INVITE_COPY.expired
+    : error === "mismatch"
+      ? INVITE_COPY.mismatch
+      : error === "unauthenticated"
+        ? INVITE_COPY.loginRequired
+        : accepted
+          ? "초대를 수락했어요. 두 사람 모두 결혼 준비 팩을 시작할 수 있어요."
+          : preview?.ok
+            ? INVITE_COPY.rule
+            : AUTH_COPY.body;
+  const action = accepted
+    ? `<button class="primary auth-submit" type="button" data-action="open-pack">${escapeHtml(INVITE_COPY.startPack)}</button>`
+    : error === "unauthenticated"
+      ? `<button class="primary auth-submit" type="button" data-action="back-to-onboarding">${escapeHtml(AUTH_COPY.cta)}</button>`
+      : preview?.ok && email
+        ? `<button class="primary auth-submit" type="button" data-action="accept-invite" ${busy ? "disabled" : ""}>${escapeHtml(INVITE_COPY.accept)}</button>`
+        : "";
+  return `
+    ${brand(email ? logoutCluster() : "")}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · INVITE</span>
+        <h1>${escapeHtml(INVITE_COPY.title)}</h1>
+        <p role="status">${escapeHtml(body)}</p>
+        ${email ? `<p class="auth-email-hint">${escapeHtml(email)}</p>` : ""}
+        ${action}
+      </section>
+    </main>
+    ${footer()}
+  `;
+}
+
+export function renderPackReady({ email = "" } = {}) {
+  return `
+    ${brand(logoutCluster())}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · PACK READY</span>
+        <h1>${escapeHtml(AUTH_COPY.title)}</h1>
+        <p>파트너가 초대를 수락했어요. 이제 두 사람이 결혼 준비 팩을 시작할 수 있어요.</p>
+        ${email ? `<p class="auth-email-hint">${escapeHtml(email)}</p>` : ""}
+        <button class="primary auth-submit" type="button" data-action="open-pack">${escapeHtml(INVITE_COPY.startPack)}</button>
       </section>
     </main>
     ${footer()}

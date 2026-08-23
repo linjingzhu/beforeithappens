@@ -42,7 +42,7 @@ export function hasAcceptedPartner(state, userId) {
   );
 }
 
-export function createAuth({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex") } = {}) {
+export function createAuth({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex"), onLogin, describeWorkspace } = {}) {
   if (!store) throw new Error("store is required");
 
   function expireUnusedLinks(email, at) {
@@ -68,10 +68,11 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
     if (!session) return { user: null, notice: null, workspace: { acceptedPartner: false } };
     const user = state.users.find((item) => item.id === session.userId);
     if (!user) return { user: null, notice: null, workspace: { acceptedPartner: false } };
+    const workspace = describeWorkspace?.(user.id) || { acceptedPartner: hasAcceptedPartner(state, user.id) };
     return {
       user: { id: user.id, email: user.email },
       notice: session.notice,
-      workspace: { acceptedPartner: hasAcceptedPartner(state, user.id) }
+      workspace
     };
   }
 
@@ -125,6 +126,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
         notice: LOGIN_NOTICE
       };
       store.mutate((state) => state.sessions.push(session));
+      onLogin?.(user.id);
       return { ok: true, sessionId: session.id, user: { id: user.id, email: user.email } };
     },
 

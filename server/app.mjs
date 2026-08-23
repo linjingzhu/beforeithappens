@@ -15,7 +15,14 @@ function cookieOptions(request) {
   return { secure: proto === "https" };
 }
 
-export function createListener({ auth, root, allowDevOutbox = false, outbox = [] } = {}) {
+function recordOutbox(outbox, allowDevOutbox, item) {
+  if (!allowDevOutbox) return;
+  outbox.unshift(item);
+  outbox.splice(20);
+  console.log(`${item.type} for ${item.email}: ${item.url}`);
+}
+
+export function createListener({ auth, couple, root, allowDevOutbox = false, outbox = [] } = {}) {
   if (!auth) throw new Error("auth is required");
   if (!root) throw new Error("root is required");
 
@@ -48,17 +55,13 @@ export function createListener({ auth, root, allowDevOutbox = false, outbox = []
           return;
         }
         const origin = requestOrigin(request);
-        const item = {
+        recordOutbox(outbox, allowDevOutbox, {
+          type: "magic-link",
           email: result.email,
           url: `${origin}/auth/consume?token=${encodeURIComponent(result.token)}`,
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
-        };
-        if (allowDevOutbox) {
-          outbox.unshift(item);
-          outbox.splice(20);
-          console.log(`Magic link for ${result.email}: ${item.url}`);
-        }
+        });
         sendJson(response, 200, { ok: true });
         return;
       }
@@ -76,8 +79,50 @@ export function createListener({ auth, root, allowDevOutbox = false, outbox = []
         return;
       }
 
-      if (request.method === "GET" && url.pathname === "/auth/consume") {
+      if (request.method === "GET" && (url.pathname === "/auth/consume" || url.pathname === "/invite/accept")) {
         await serveStatic(response, "/");
+        return;
+      }
+
+      if (couple && request.method === "POST" && url.pathname === "/api/invite") {
+        const body = await readJsonBody(request);
+        const result = couple.issueInvite(sessionId, body.email);
+        if (!result.ok) {
+          const status = result.error === "unauthenticated" ? 401 : result.error === "forbidden" ? 403 : 400;
+          sendJson(response, status, result);
+          return;
+        }
+        recordOutbox(outbox, allowDevOutbox, {
+          type: "invite",
+          email: result.email,
+          url: `${requestOrigin(request)}/invite/accept?token=${encodeURIComponent(result.token)}`,
+          createdAt: result.lastSentAt,
+          expiresAt: result.expiresAt
+        });
+        sendJson(response, 200, {
+          ok: true,
+          email: result.email,
+          expiresAt: result.expiresAt,
+          lastSentAt: result.lastSentAt,
+          workspace: auth.sessionFor(sessionId).workspace
+        });
+        return;
+      }
+
+      if (couple && request.method === "GET" && url.pathname === "/api/invite/preview") {
+        sendJson(response, 200, couple.previewInvite(url.searchParams.get("token")));
+        return;
+      }
+
+      if (couple && request.method === "POST" && url.pathname === "/api/invite/accept") {
+        const body = await readJsonBody(request);
+        const result = couple.acceptInvite(sessionId, body.token);
+        if (!result.ok) {
+          const status = result.error === "unauthenticated" ? 401 : 400;
+          sendJson(response, status, result);
+          return;
+        }
+        sendJson(response, 200, { ok: true, session: auth.sessionFor(sessionId) });
         return;
       }
 

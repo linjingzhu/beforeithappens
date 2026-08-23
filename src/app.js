@@ -1,5 +1,5 @@
-import { AUTH_ERRORS, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "./auth.js";
-import { renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderSent } from "./auth-ui.js";
+import { AUTH_ERRORS, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "./auth.js";
+import { renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
 import { escapeHtml } from "./html.js";
@@ -20,6 +20,12 @@ let authBusy = false;
 let authError = "";
 let emailDraft = "";
 let noticeDismissed = false;
+let inviteToken = "";
+let invitePreview = null;
+let inviteError = "";
+let inviteBusy = false;
+let inviteAccepted = false;
+let partnerEmailDraft = "";
 
 function loadState() {
   try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)), ids, choiceIdsByQuestion, packIdentity); }
@@ -35,10 +41,16 @@ function roleName(role) { return role === "a" ? "나" : "파트너"; }
 
 function render() {
   if (currentView === "dashboard") { renderDashboard(); return; }
-  if (!canOpenPack(session)) {
+  if (currentView !== "questions" && currentView !== "results") {
     renderAccountView();
     return;
   }
+  if (!canOpenPack(session)) {
+    currentView = "product";
+    renderAccountView();
+    return;
+  }
+  state.activeRole = session.workspace?.role === "partner" ? "b" : "a";
   const sharedResults = buildSharedResults(state, ids, choiceIdsByQuestion, packIdentity);
   if (currentView === "results" && sharedResults.complete) { renderResultsScreen(sharedResults); return; }
   const question = questions[state.index];
@@ -52,11 +64,11 @@ function render() {
   document.querySelector("#app").innerHTML = `
     <header class="topbar">
       <a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a>
-      <div class="top-actions">${sharedResults.complete ? `<button class="results-link" data-action="show-results">공동 결과 보기</button>` : ""}<div class="role-switcher" aria-label="데모 역할 선택"><span>현재 역할</span><button data-role="a" aria-pressed="${state.activeRole === "a"}" class="${state.activeRole === "a" ? "active" : ""}">나</button><button data-role="b" aria-pressed="${state.activeRole === "b"}" class="${state.activeRole === "b" ? "active" : ""}">파트너</button></div></div>
+      <div class="top-actions">${sharedResults.complete ? `<button class="results-link" data-action="show-results">공동 결과 보기</button>` : ""}<div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>로그아웃 후 이 기기를 넘겨주세요.</small></div></div>
     </header>
     <div class="role-announcement sr-only" role="status" aria-live="polite">현재 ${roleName(state.activeRole)} 역할입니다.</div>
     <main>
-      <section class="demo-notice"><strong>두 사람 데모 모드</strong><p>한 브라우저에서 역할을 바꿔 진행 과정을 시험합니다. 역할 전환으로 다른 역할의 초안과 메모에 접근할 수 있으므로 공유 기기에서는 안전하지 않습니다.</p></section>
+      <section class="demo-notice"><strong>두 사람 계정</strong><p>이 기기의 임시 답은 이어지지 않아요. 제출한 답과 합의만 함께 보여요.</p></section>
       <section class="journey">
         <div class="journey-copy"><span class="eyebrow">TWO-PERSON CONVERSATION · ROLE ${state.activeRole.toUpperCase()}</span><h1>${roleName(state.activeRole)}의 답을<br><em>먼저 생각해요.</em></h1><p>두 사람이 같은 질문에 제출하기 전에는 상대의 선택을 공개하지 않습니다.</p></div>
         <div class="progress-card"><div class="progress-ring" style="--progress:${progress * 3.6}deg"><div><strong>${progress}%</strong><span>${roleName(state.activeRole)} 제출률</span></div></div><div><span>${submitted} / ${questions.length} 제출</span><small>${roleName(otherRole)} 제출 ${submittedCount(state, otherRole, ids)} / ${questions.length}<br>이 기기에 자동 저장돼요.</small></div></div>
@@ -68,13 +80,13 @@ function render() {
           return `<button class="chapter ${index === state.index ? "active" : ""} ${status}" data-index="${index}"><i>${String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전"}</small></button>`;
         }).join("")}</aside>
         <article class="question-card">
-          <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${isSubmitted(mine) ? "제출 잠금" : "비공개 초안"}</i></div>
+          <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
           <h2>${escapeHtml(question.title)}</h2>
           <div class="intent"><strong>질문 안내</strong><p>${escapeHtml(question.intent)}</p><small>${escapeHtml(question.example)}</small></div>
           <details class="why-it-matters" ${openRationaleQuestionId === question.id ? "open" : ""}><summary>ⓘ 왜 중요한가요?</summary><div><p>${escapeHtml(question.whyItMatters)}</p><ul>${question.researchKeywords.map((keyword) => `<li>${escapeHtml(keyword)}</li>`).join("")}</ul></div></details>
           <fieldset ${isSubmitted(mine) ? "disabled" : ""}><legend class="sr-only">${roleName(state.activeRole)}의 답변을 하나 선택하세요</legend>${question.choices.map((choice, index) => `<label class="choice ${mine.draftChoice === choice.id ? "selected" : ""}"><input type="radio" name="answer" value="${escapeHtml(choice.id)}" ${mine.draftChoice === choice.id ? "checked" : ""}><span class="choice-key">${String.fromCharCode(65 + index)}</span><span>${escapeHtml(choice.label)}</span><i>✓</i></label>`).join("")}</fieldset>
           <label class="memo"><span>비공개 메모 <small>비교 화면과 공유 결과에는 포함되지 않아요</small></span><textarea ${isSubmitted(mine) ? "disabled" : ""} placeholder="이 데모는 역할 전환으로 메모를 볼 수 있으므로 공유 기기에서 사용하지 마세요.">${escapeHtml(mine.privateNote)}</textarea></label>
-          ${isSubmitted(mine) ? `<div class="submitted-panel"><strong>이번 라운드의 답변을 제출했어요.</strong><p>제출한 답변은 데모에서 수정할 수 없습니다. ${isSubmitted(questionState.roles[otherRole]) ? "두 사람의 답이 공개됐어요." : `${roleName(otherRole)}의 제출을 기다리고 있어요.`}</p>${!isSubmitted(questionState.roles[otherRole]) ? `<button class="handoff" data-action="handoff">${roleName(otherRole)} 역할로 전환 →</button>` : ""}</div>` : `<p class="submit-help">제출하면 이번 데모에서는 답변을 수정할 수 없어요.</p>`}
+          ${isSubmitted(mine) ? `<div class="submitted-panel"><strong>이번 라운드의 답변을 제출했어요.</strong><p>제출한 답변은 이 라운드에서 수정할 수 없습니다. ${isSubmitted(questionState.roles[otherRole]) ? "두 사람의 답이 공개됐어요." : `${roleName(otherRole)}의 제출을 기다리고 있어요.`}</p></div>` : `<p class="submit-help">제출하면 이번 라운드에서는 답변을 수정할 수 없어요.</p>`}
           <div class="actions"><button class="secondary" data-action="previous" ${state.index === 0 || saveStatus === "failed" ? "disabled" : ""}>이전 질문</button><span class="save-state ${saveStatus}" role="status" aria-live="polite">${saveStatus === "failed" ? `저장 실패 <button data-action="retry-save">다시 저장</button>` : "● 이 기기에 저장됨"}</span><button class="primary" data-action="submit" ${mine.draftChoice === null || isSubmitted(mine) || saveStatus === "failed" ? "disabled" : ""}>이 답변 제출</button></div>
           ${revealed ? renderReveal(question, questionState) : renderLocked(questionState)}
         </article>
@@ -119,10 +131,34 @@ function renderResultsScreen(results) {
 
 function renderAccountView() {
   if (session.user) {
-    const view = resolveSignedInView(session, noticeDismissed);
-    document.querySelector("#app").innerHTML = view === "notice"
-      ? renderLoginNotice({ email: session.user.email })
-      : renderInviteWaitingHome({ email: session.user.email });
+    const view = resolveSignedInView(session, noticeDismissed, Boolean(inviteToken) && !inviteAccepted && !session.workspace?.acceptedPartner);
+    if (view === "notice") {
+      document.querySelector("#app").innerHTML = renderLoginNotice({ email: session.user.email });
+    } else if (view === "invite") {
+      document.querySelector("#app").innerHTML = renderInviteAccept({
+        email: session.user.email,
+        error: inviteError,
+        preview: invitePreview,
+        accepted: inviteAccepted,
+        busy: inviteBusy
+      });
+    } else if (view === "ready") {
+      document.querySelector("#app").innerHTML = renderPackReady({ email: session.user.email });
+    } else {
+      document.querySelector("#app").innerHTML = renderInviteWaitingHome({
+        email: session.user.email,
+        partnerEmail: partnerEmailDraft,
+        invite: session.workspace?.invite,
+        error: inviteError,
+        busy: inviteBusy
+      });
+    }
+  } else if (inviteToken) {
+    document.querySelector("#app").innerHTML = renderInviteAccept({
+      error: inviteError || "unauthenticated",
+      preview: invitePreview,
+      accepted: false
+    });
   } else {
     const view = resolveSignedOutView(authScreen);
     document.querySelector("#app").innerHTML = view === "sent"
@@ -131,19 +167,28 @@ function renderAccountView() {
   }
   bindAccountNavigation();
   document.querySelector("[data-auth-form]")?.addEventListener("submit", submitMagicLink);
+  document.querySelector("[data-invite-form]")?.addEventListener("submit", submitInvite);
   document.querySelector('[data-action="back-to-onboarding"]')?.addEventListener("click", () => {
     authScreen = "onboarding";
     authError = "";
+    currentView = "product";
     render();
   });
   document.querySelector('[data-action="ack-notice"]')?.addEventListener("click", acknowledgeNotice);
   document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+  document.querySelector('[data-action="accept-invite"]')?.addEventListener("click", acceptInvite);
+  document.querySelector('[data-action="open-pack"]')?.addEventListener("click", () => {
+    if (!canOpenPack(session)) return;
+    currentView = "questions";
+    render();
+  });
 }
 
 function bindAccountNavigation() {
   document.querySelector(".brand")?.addEventListener("click", (event) => {
     event.preventDefault();
     currentView = "product";
+    if (session.workspace?.role === "buyer" && !session.workspace.acceptedPartner) inviteToken = "";
     render();
   });
   document.querySelectorAll('[data-action="show-dashboard"]').forEach((button) => button.addEventListener("click", () => {
@@ -163,6 +208,7 @@ function bindAccountNavigation() {
     currentView = "questions";
     render();
   }));
+  document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
 }
 
 async function refreshSession() {
@@ -226,6 +272,76 @@ async function consumeMagicLink(token) {
   authError = "";
 }
 
+async function submitInvite(event) {
+  event.preventDefault();
+  const input = document.querySelector("#invite-email");
+  partnerEmailDraft = input?.value.trim() || "";
+  inviteBusy = true;
+  inviteError = "";
+  render();
+  try {
+    const response = await fetch("/api/invite", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: partnerEmailDraft })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      inviteError = INVITE_ERRORS[payload.error] || AUTH_ERRORS[payload.error] || INVITE_ERRORS.failed;
+    } else {
+      session = { ...session, workspace: payload.workspace || session.workspace };
+      inviteError = "";
+    }
+  } catch {
+    inviteError = INVITE_ERRORS.failed;
+  } finally {
+    inviteBusy = false;
+    render();
+  }
+}
+
+async function loadInvitePreview(token) {
+  if (!token) return;
+  try {
+    const response = await fetch(`/api/invite/preview?token=${encodeURIComponent(token)}`, { credentials: "same-origin" });
+    invitePreview = await response.json();
+    if (!invitePreview?.ok) inviteError = invitePreview?.error || "invalid";
+  } catch {
+    invitePreview = { ok: false, error: "invalid" };
+    inviteError = "invalid";
+  }
+}
+
+async function acceptInvite() {
+  inviteBusy = true;
+  inviteError = "";
+  render();
+  try {
+    const response = await fetch("/api/invite/accept", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: inviteToken })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      inviteError = payload.error || "invalid";
+      inviteAccepted = false;
+    } else {
+      session = payload.session || session;
+      inviteAccepted = true;
+      inviteError = "";
+      try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
+    }
+  } catch {
+    inviteError = "failed";
+  } finally {
+    inviteBusy = false;
+    render();
+  }
+}
+
 async function acknowledgeNotice() {
   try {
     const response = await fetch("/api/auth/ack-notice", { method: "POST", credentials: "same-origin" });
@@ -247,12 +363,20 @@ async function logout() {
   authScreen = "onboarding";
   noticeDismissed = false;
   authError = "";
+  inviteAccepted = false;
+  inviteError = "";
   currentView = "product";
   render();
 }
 
 async function boot() {
   const locationInfo = consumeAuthLocation(window.location.pathname, window.location.search);
+  if (locationInfo.inviteToken) {
+    inviteToken = locationInfo.inviteToken;
+    try { sessionStorage.setItem(PENDING_INVITE_KEY, inviteToken); } catch { /* ignore */ }
+  } else {
+    try { inviteToken = sessionStorage.getItem(PENDING_INVITE_KEY) || ""; } catch { inviteToken = ""; }
+  }
   if (locationInfo.token) {
     try {
       await consumeMagicLink(locationInfo.token);
@@ -264,7 +388,13 @@ async function boot() {
   } else {
     await refreshSession();
     if (locationInfo.authError) authError = AUTH_ERRORS[locationInfo.authError] || AUTH_ERRORS.invalid;
-    if (locationInfo.authError || locationInfo.isConsumePath) history.replaceState({}, "", "/");
+    if (locationInfo.authError || locationInfo.isConsumePath || locationInfo.isInvitePath) history.replaceState({}, "", "/");
+  }
+  if (inviteToken) await loadInvitePreview(inviteToken);
+  if (session.user && invitePreview?.ok && session.user.email !== invitePreview.email) inviteError = "mismatch";
+  if (session.workspace?.acceptedPartner) {
+    inviteAccepted = true;
+    try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
   }
   if (!session.user) authScreen = resolveSignedOutView(authScreen);
   render();
@@ -288,6 +418,7 @@ function bindEvents() {
   document.querySelector('[data-agreement="deferred"]')?.addEventListener("click", () => { if (saveStatus === "failed") return; const shared = state.questions[questions[state.index].id].shared; shared.status = "deferred"; shared.approvedBy = null; saveState(); render(); });
   document.querySelector('[data-action="retry-save"]')?.addEventListener("click", () => { saveState(); render(); });
   document.querySelector('[data-action="reset"]')?.addEventListener("click", resetDemo);
+  document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
 }
 
 function resetDemo() {

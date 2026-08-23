@@ -13,7 +13,8 @@ const files = [
   "server/auth.mjs",
   "server/app.mjs",
   "server/store.mjs",
-  "server/http.mjs"
+  "server/http.mjs",
+  "server/workspace.mjs"
 ];
 for (const file of files) {
   const value = await readFile(file, "utf8");

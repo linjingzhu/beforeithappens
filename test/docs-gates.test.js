@@ -26,5 +26,8 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(model, /The invited partner is free/);
   assert.match(ux, /invite-waiting/);
   assert.match(ux, /The invited partner is free/);
+  assert.match(ux, /파트너 초대/);
+  assert.match(ux, /결혼 팩 시작하기/);
+  assert.match(ux, /같은 메일로만 수락할 수 있어요/);
   assert.match(ux, /forbidden in the onboarding body/);
 });
