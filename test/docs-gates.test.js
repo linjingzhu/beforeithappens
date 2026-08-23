@@ -32,7 +32,8 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(ux, /forbidden in the onboarding body/);
   assert.match(model, /The current slice persists/);
   assert.match(model, /AnswerRound/);
-  assert.match(model, /PublicLock` is specified but not implemented/);
+  assert.match(model, /PublicLock/);
+  assert.match(model, /never mutates the existing lock/);
 });
 
 test("pack UI has no local-sim role switch and keeps handoff copy next to logout only", async () => {

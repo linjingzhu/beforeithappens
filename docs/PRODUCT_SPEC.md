@@ -61,7 +61,7 @@ That simulator is not an authentication or privacy boundary. It is not the curre
 
 ## Later slices
 
-Later packs add public lock. Payment stays closed until a later commercial slice. Ghost workspaces still must not unlock the pack.
+This slice includes public lock: the second submit writes an immutable snapshot, and a later change opens a new private round. Payment stays closed until a later commercial slice. Ghost workspaces still must not unlock the pack.
 
 ## Question state model
 

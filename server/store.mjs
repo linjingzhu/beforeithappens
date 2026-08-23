@@ -14,6 +14,7 @@ export function emptyState() {
     answers: [],
     privateNotes: [],
     agreements: [],
+    publicLocks: [],
     progress: []
   };
 }

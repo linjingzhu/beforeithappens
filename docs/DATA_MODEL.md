@@ -21,7 +21,7 @@
 | `ReportSnapshot` | Reproducible report for a fixed pack version |
 | `AuditEvent` | Security- and support-relevant action history |
 
-The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace`, `CoupleMember`, `Invitation`, `AnswerRound`, `Answer`, `PrivateNote`, and `Agreement`. `PublicLock` is specified but not implemented in this slice. Creating a buyer workspace must not unlock the pack without an accepted partner.
+The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace`, `CoupleMember`, `Invitation`, `AnswerRound`, `Answer`, `PrivateNote`, `Agreement`, and `PublicLock`. Creating a buyer workspace must not unlock the pack without an accepted partner. A later change after lock opens a new private `AnswerRound` and never mutates the existing lock.
 
 ## Identity and session
 

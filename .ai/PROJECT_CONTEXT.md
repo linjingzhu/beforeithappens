@@ -25,7 +25,7 @@ UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
 
 Persistence/Data:
-- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, and `Agreement`. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. `PublicLock` is not implemented yet.
+- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, and immutable `PublicLock` snapshots. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
 
 Tests:
 - Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
@@ -54,7 +54,7 @@ Targeted tests:
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, onboarding and invite-waiting views
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
-- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold
+- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock
 - `src/development.js` — development stage and history dashboard data
 - `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
 - `src/styles.css` — responsive product UI

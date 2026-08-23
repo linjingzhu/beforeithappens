@@ -103,6 +103,10 @@ test("submitted answers persist and reveal only after both members submit", () =
   assert.equal(buyerAfter.roles.b.submittedChoice, "home-social");
   assert.equal(buyerAfter.roles.a.privateNote, "buyer note");
   assert.equal(buyerAfter.roles.b.privateNote, "");
+  assert.equal(buyerAfter.lock.roundNumber, 1);
+  assert.equal(buyerAfter.lock.submittedChoices.a, "home-rest");
+  assert.equal(buyerAfter.lock.submittedChoices.b, "home-social");
+  assert.equal(buyerAfter.lock.privateNote, undefined);
 });
 
 test("agree and hold persist for the paired workspace", () => {
@@ -224,7 +228,70 @@ test("HTTP pack routes persist drafts, submissions, and agree/hold for a logged-
     });
     assert.equal(hold.status, 200);
     assert.equal(hold.json.state.questions["home-01"].shared.status, "deferred");
+    assert.equal(hold.json.state.questions["home-01"].lock.submittedChoices.a, "home-rest");
+    assert.equal(hold.json.state.questions["home-01"].lock.submittedChoices.b, "home-growth");
+    assert.equal(JSON.stringify(hold.json.state.questions["home-01"].lock).includes("secret"), false);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("second submit writes an immutable public lock and a later change opens a new round", () => {
+  const { answers, pair, store } = system();
+  const { buyer, partner } = pair();
+  answers.saveDraft(buyer.sessionId, { questionId: "home-01", draftChoice: "home-rest", privateNote: "buyer-secret" });
+  answers.submit(buyer.sessionId, { questionId: "home-01" });
+  answers.saveDraft(partner.sessionId, { questionId: "home-01", draftChoice: "home-social", privateNote: "partner-secret" });
+  answers.submit(partner.sessionId, { questionId: "home-01" });
+
+  const locks = store.snapshot().publicLocks;
+  assert.equal(locks.length, 1);
+  const firstLock = structuredClone(locks[0]);
+  assert.equal(firstLock.roundNumber, 1);
+  assert.equal(firstLock.submissions.a.choice, "home-rest");
+  assert.equal(firstLock.submissions.b.choice, "home-social");
+  assert.equal(JSON.stringify(firstLock).includes("buyer-secret"), false);
+  assert.equal(JSON.stringify(firstLock).includes("partner-secret"), false);
+  assert.equal(JSON.stringify(firstLock).includes("privateNote"), false);
+
+  store.mutate((state) => {
+    for (const answer of state.answers) {
+      if (answer.questionId === "home-01" && answer.roundNumber === 1) answer.submittedChoice = "home-independent";
+    }
+  });
+  const fromLock = answers.stateFor(partner.sessionId).state.questions["home-01"];
+  assert.equal(fromLock.lock.submittedChoices.a, "home-rest");
+  assert.equal(fromLock.lock.submittedChoices.b, "home-social");
+  assert.equal(fromLock.roles.a.submittedChoice, "home-rest");
+  assert.equal(fromLock.roles.b.submittedChoice, "home-social");
+
+  const changed = answers.saveDraft(buyer.sessionId, { questionId: "home-01", draftChoice: "home-growth", privateNote: "new-private" });
+  assert.equal(changed.ok, true);
+  const rounds = store.snapshot().answerRounds.filter((row) => row.questionId === "home-01");
+  assert.equal(rounds.some((row) => row.roundNumber === 2), true);
+  const lockAfterChange = store.snapshot().publicLocks.find((row) => row.roundNumber === 1);
+  assert.deepEqual(lockAfterChange.submissions, firstLock.submissions);
+  assert.equal(lockAfterChange.lockedAt, firstLock.lockedAt);
+  assert.equal(lockAfterChange.id, firstLock.id);
+  const partnerSees = answers.stateFor(partner.sessionId).state.questions["home-01"];
+  assert.equal(partnerSees.lock.submittedChoices.a, "home-rest");
+  assert.equal(partnerSees.lock.submittedChoices.b, "home-social");
+  assert.equal(partnerSees.roles.a.draftChoice, null);
+  assert.equal(partnerSees.roles.a.privateNote, "");
+
+  answers.submit(buyer.sessionId, { questionId: "home-01" });
+  answers.saveDraft(partner.sessionId, { questionId: "home-01", draftChoice: "home-independent" });
+  answers.submit(partner.sessionId, { questionId: "home-01" });
+  const allLocks = store.snapshot().publicLocks;
+  assert.equal(allLocks.length, 2);
+  const stillFirst = allLocks.find((row) => row.id === firstLock.id);
+  assert.deepEqual(stillFirst.submissions, firstLock.submissions);
+  const second = allLocks.find((row) => row.roundNumber === 2);
+  assert.equal(second.submissions.a.choice, "home-growth");
+  assert.equal(second.submissions.b.choice, "home-independent");
+  const latest = answers.stateFor(buyer.sessionId).state.questions["home-01"];
+  assert.equal(latest.lock.roundNumber, 2);
+  assert.equal(latest.lock.submittedChoices.a, "home-growth");
+  assert.equal(latest.roles.a.privateNote, "new-private");
+  assert.equal(latest.roles.b.privateNote, "");
 });

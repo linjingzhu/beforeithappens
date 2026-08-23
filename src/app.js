@@ -42,9 +42,12 @@ function partnerSubmittedCount() {
 function applyPackState(next) {
   state = normalizeState(next, ids, choiceIdsByQuestion, packIdentity);
   for (const id of ids) {
-    if (next?.questions?.[id]?.roles) {
+    const source = next?.questions?.[id];
+    if (source?.round) state.questions[id].round = source.round;
+    if (source?.lock) state.questions[id].lock = source.lock;
+    if (source?.roles) {
       for (const role of ["a", "b"]) {
-        if (next.questions[id].roles[role]?.completed) state.questions[id].roles[role].completed = true;
+        if (source.roles[role]?.completed) state.questions[id].roles[role].completed = true;
       }
     }
   }
@@ -219,7 +222,7 @@ function render() {
           return `<button class="chapter ${index === state.index ? "active" : ""} ${status}" data-index="${index}"><i>${String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전"}</small></button>`;
         }).join("")}</aside>
         <article class="question-card">
-          <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
+          <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${questionState.lock ? "공개 잠금" : isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
           <h2>${escapeHtml(question.title)}</h2>
           <div class="intent"><strong>질문 안내</strong><p>${escapeHtml(question.intent)}</p><small>${escapeHtml(question.example)}</small></div>
           <details class="why-it-matters" ${openRationaleQuestionId === question.id ? "open" : ""}><summary>ⓘ 왜 중요한가요?</summary><div><p>${escapeHtml(question.whyItMatters)}</p><ul>${question.researchKeywords.map((keyword) => `<li>${escapeHtml(keyword)}</li>`).join("")}</ul></div></details>
