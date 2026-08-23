@@ -1,3 +1,5 @@
+import { AUTH_ERRORS, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "./auth.js";
+import { renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderSent } from "./auth-ui.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
 import { escapeHtml } from "./html.js";
@@ -10,8 +12,14 @@ const packIdentity = { id: marriagePack.id, version: marriagePack.version };
 let state = loadState();
 let saveStatus = "saved";
 let openRationaleQuestionId = null;
-let currentView = "dashboard";
+let currentView = "product";
 let dashboardTab = "stages";
+let session = emptySession();
+let authScreen = "onboarding";
+let authBusy = false;
+let authError = "";
+let emailDraft = "";
+let noticeDismissed = false;
 
 function loadState() {
   try { return normalizeState(JSON.parse(localStorage.getItem(STORAGE_KEY)), ids, choiceIdsByQuestion, packIdentity); }
@@ -27,6 +35,10 @@ function roleName(role) { return role === "a" ? "나" : "파트너"; }
 
 function render() {
   if (currentView === "dashboard") { renderDashboard(); return; }
+  if (!canOpenPack(session)) {
+    renderAccountView();
+    return;
+  }
   const sharedResults = buildSharedResults(state, ids, choiceIdsByQuestion, packIdentity);
   if (currentView === "results" && sharedResults.complete) { renderResultsScreen(sharedResults); return; }
   const question = questions[state.index];
@@ -76,9 +88,9 @@ function renderDashboard() {
   const summary = developmentSummary();
   const stageContent = `<section class="development-stages" aria-label="개발 단계">${developmentStages.map((stage, index) => `<article class="development-stage ${stage.status}"><span class="stage-check" aria-hidden="true">${stage.status === "complete" ? "✓" : stage.status === "next" ? "→" : String(index + 1).padStart(2, "0")}</span><div><small>${stage.status === "complete" ? "개발 완료" : stage.status === "next" ? "다음 개발" : "개발 예정"}</small><h3>${escapeHtml(stage.title)}</h3><p>${escapeHtml(stage.detail)}</p></div></article>`).join("")}</section>`;
   const historyContent = `<section class="development-history" aria-label="개발 히스토리">${developmentHistory.slice().reverse().map((item) => `<article><time datetime="${item.date}">${item.date}</time><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.detail)}</p></div></article>`).join("")}</section>`;
-  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="open-product">제품 데모 열기</button></header><main class="development-dashboard"><section class="dashboard-hero"><span class="eyebrow">AB PRODUCT DEVELOPMENT</span><h1>제품이 어디까지 왔는지<br><em>한눈에 확인해요.</em></h1><p>현재 저장소의 구현과 검증 기록을 기준으로 표시한 개발 대시보드입니다.</p><div class="dashboard-summary"><article><strong>${summary.complete}</strong><span>완료 단계</span></article><article><strong>${summary.total}</strong><span>전체 단계</span></article><article><strong>${Math.round(summary.complete / summary.total * 100)}%</strong><span>개발 진행률</span></article></div><aside><small>NEXT DEVELOPMENT</small><strong>${escapeHtml(summary.next.title)}</strong><p>${escapeHtml(summary.next.detail)}</p></aside></section><nav class="dashboard-tabs" aria-label="개발 대시보드"><button data-dashboard-tab="stages" aria-selected="${dashboardTab === "stages"}" class="${dashboardTab === "stages" ? "active" : ""}">개발 단계</button><button data-dashboard-tab="history" aria-selected="${dashboardTab === "history"}" class="${dashboardTab === "history" ? "active" : ""}">개발 히스토리</button></nav>${dashboardTab === "stages" ? stageContent : historyContent}</main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="open-product">제품 데모 열기</button></footer>`;
+  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="/" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="back-to-account">계정으로 가기</button></header><main class="development-dashboard"><section class="dashboard-hero"><span class="eyebrow">AB PRODUCT DEVELOPMENT</span><h1>제품이 어디까지 왔는지<br><em>한눈에 확인해요.</em></h1><p>현재 저장소의 구현과 검증 기록을 기준으로 표시한 개발 대시보드입니다.</p><div class="dashboard-summary"><article><strong>${summary.complete}</strong><span>완료 단계</span></article><article><strong>${summary.total}</strong><span>전체 단계</span></article><article><strong>${Math.round(summary.complete / summary.total * 100)}%</strong><span>개발 진행률</span></article></div><aside><small>NEXT DEVELOPMENT</small><strong>${escapeHtml(summary.next.title)}</strong><p>${escapeHtml(summary.next.detail)}</p></aside></section><nav class="dashboard-tabs" aria-label="개발 대시보드"><button data-dashboard-tab="stages" aria-selected="${dashboardTab === "stages"}" class="${dashboardTab === "stages" ? "active" : ""}">개발 단계</button><button data-dashboard-tab="history" aria-selected="${dashboardTab === "history"}" class="${dashboardTab === "history" ? "active" : ""}">개발 히스토리</button></nav>${dashboardTab === "stages" ? stageContent : historyContent}</main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="back-to-account">계정으로 가기</button></footer>`;
   document.querySelectorAll("[data-dashboard-tab]").forEach((button) => button.addEventListener("click", () => { dashboardTab = button.dataset.dashboardTab; render(); }));
-  document.querySelectorAll('[data-action="open-product"]').forEach((button) => button.addEventListener("click", () => { currentView = "questions"; render(); }));
+  bindAccountNavigation();
 }
 
 function renderLocked(questionState) {
@@ -100,13 +112,166 @@ function renderResultsScreen(results) {
   const statusLabel = (item) => item.agreement.status === "agreed" ? "공동 합의 완료" : item.agreement.status === "deferred" ? "다시 이야기할 항목" : item.agreement.status === "pending" ? "합의 승인 대기" : "아직 합의 없음";
   document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><button class="results-link" data-action="back-to-questions">질문으로 돌아가기</button></header><p class="sr-only" role="status" aria-live="polite">결과가 준비되었습니다.</p><main class="results-page"><section class="results-hero"><span class="eyebrow">SHARED CONVERSATION RESULTS</span><h1 tabindex="-1">두 사람의 답을<br><em>한곳에 모았어요.</em></h1><p>이 숫자는 선택한 답변과 대화 상태만 설명하며 궁합 점수나 관계 진단이 아닙니다.</p></section><section class="results-summary" aria-label="공동 결과 요약"><article><strong>${results.alignedCount}</strong><span>같은 선택</span></article><article><strong>${results.discussCount}</strong><span>서로 다른 선택</span></article><article><strong>${results.agreedCount}</strong><span>공동 합의</span></article><article><strong>${results.deferredCount}</strong><span>다시 이야기하기</span></article><article><strong>${results.pendingCount}</strong><span>승인 대기</span></article><article><strong>${results.noneCount}</strong><span>합의 미작성</span></article></section><section class="results-list"><h2>질문별 대화 기록</h2>${results.items.map((item, index) => { const question = questions.find((entry) => entry.id === item.questionId); return `<article class="result-item"><div class="result-heading"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(question.chapter)}</span><h3>${escapeHtml(question.title)}</h3><i class="${item.comparison}">${item.comparison === "aligned" ? "같은 선택" : "서로 다른 선택"}</i></div><div class="result-answers"><p><small>역할 A</small>${escapeHtml(choiceLabel(question, item.submittedChoices.a))}</p><p><small>역할 B</small>${escapeHtml(choiceLabel(question, item.submittedChoices.b))}</p></div><div class="result-agreement ${item.agreement.status}"><strong>${statusLabel(item)}</strong>${item.agreement.status === "agreed" ? `<p>${escapeHtml(item.agreement.text)}</p>` : ""}</div></article>`; }).join("")}</section><section class="privacy-reminder"><strong>비공개 메모는 포함하지 않았어요.</strong><p>이 화면에는 두 사람이 제출한 선택과 공유 합의만 표시됩니다.</p></section></main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p><button data-action="reset">데모 기록 초기화</button></footer>`;
   document.querySelector('[data-action="back-to-questions"]')?.addEventListener("click", () => { currentView = "questions"; render(); });
-  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "dashboard"; render(); });
+  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "product"; render(); });
   document.querySelector('[data-action="reset"]')?.addEventListener("click", resetDemo);
   document.querySelector(".results-hero h1")?.focus();
 }
 
+function renderAccountView() {
+  if (session.user) {
+    const view = resolveSignedInView(session, noticeDismissed);
+    document.querySelector("#app").innerHTML = view === "notice"
+      ? renderLoginNotice({ email: session.user.email })
+      : renderInviteWaitingHome({ email: session.user.email });
+  } else {
+    const view = resolveSignedOutView(authScreen);
+    document.querySelector("#app").innerHTML = view === "sent"
+      ? renderSent({ email: emailDraft })
+      : renderOnboarding({ email: emailDraft, error: authError, busy: authBusy });
+  }
+  bindAccountNavigation();
+  document.querySelector("[data-auth-form]")?.addEventListener("submit", submitMagicLink);
+  document.querySelector('[data-action="back-to-onboarding"]')?.addEventListener("click", () => {
+    authScreen = "onboarding";
+    authError = "";
+    render();
+  });
+  document.querySelector('[data-action="ack-notice"]')?.addEventListener("click", acknowledgeNotice);
+  document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+}
+
+function bindAccountNavigation() {
+  document.querySelector(".brand")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    currentView = "product";
+    render();
+  });
+  document.querySelectorAll('[data-action="show-dashboard"]').forEach((button) => button.addEventListener("click", () => {
+    currentView = "dashboard";
+    render();
+  }));
+  document.querySelectorAll('[data-action="back-to-account"]').forEach((button) => button.addEventListener("click", () => {
+    currentView = "product";
+    render();
+  }));
+  document.querySelectorAll('[data-action="open-product"]').forEach((button) => button.addEventListener("click", () => {
+    if (!canOpenPack(session)) {
+      currentView = "product";
+      render();
+      return;
+    }
+    currentView = "questions";
+    render();
+  }));
+}
+
+async function refreshSession() {
+  try {
+    const response = await fetch("/api/auth/session", { credentials: "same-origin" });
+    session = response.ok ? await response.json() : emptySession();
+  } catch {
+    session = emptySession();
+  }
+}
+
+async function submitMagicLink(event) {
+  event.preventDefault();
+  const input = document.querySelector("#auth-email");
+  emailDraft = input?.value.trim() || "";
+  authBusy = true;
+  authError = "";
+  render();
+  try {
+    const response = await fetch("/api/auth/magic-link", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: emailDraft })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      authError = AUTH_ERRORS[payload.error] || AUTH_ERRORS["invalid-email"];
+      authScreen = "onboarding";
+    } else {
+      authScreen = "sent";
+      authError = "";
+    }
+  } catch {
+    authError = AUTH_ERRORS.failed;
+    authScreen = "onboarding";
+  } finally {
+    authBusy = false;
+    render();
+  }
+}
+
+async function consumeMagicLink(token) {
+  const response = await fetch("/api/auth/consume", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ token })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    session = emptySession();
+    authScreen = "onboarding";
+    noticeDismissed = false;
+    authError = AUTH_ERRORS[payload.error] || AUTH_ERRORS.invalid;
+    return;
+  }
+  session = payload.session || emptySession();
+  noticeDismissed = false;
+  authScreen = "home";
+  authError = "";
+}
+
+async function acknowledgeNotice() {
+  try {
+    const response = await fetch("/api/auth/ack-notice", { method: "POST", credentials: "same-origin" });
+    if (response.ok) session = await response.json();
+  } catch {
+    session = { ...session, notice: null };
+  }
+  noticeDismissed = true;
+  render();
+}
+
+async function logout() {
+  try {
+    await fetch("/api/auth/force-logout", { method: "POST", credentials: "same-origin" });
+  } catch {
+    try { await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }); } catch { /* keep local signed-out state */ }
+  }
+  session = emptySession();
+  authScreen = "onboarding";
+  noticeDismissed = false;
+  authError = "";
+  currentView = "product";
+  render();
+}
+
+async function boot() {
+  const locationInfo = consumeAuthLocation(window.location.pathname, window.location.search);
+  if (locationInfo.token) {
+    try {
+      await consumeMagicLink(locationInfo.token);
+    } catch {
+      authError = AUTH_ERRORS.failed;
+      session = emptySession();
+    }
+    history.replaceState({}, "", "/");
+  } else {
+    await refreshSession();
+    if (locationInfo.authError) authError = AUTH_ERRORS[locationInfo.authError] || AUTH_ERRORS.invalid;
+    if (locationInfo.authError || locationInfo.isConsumePath) history.replaceState({}, "", "/");
+  }
+  if (!session.user) authScreen = resolveSignedOutView(authScreen);
+  render();
+}
+
 function bindEvents() {
-  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "dashboard"; render(); });
+  document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "product"; render(); });
   document.querySelectorAll("[data-role]").forEach((button) => button.addEventListener("click", () => { if (saveStatus === "failed") return; state.activeRole = button.dataset.role; saveState(); render(); }));
   document.querySelector('[data-action="show-results"]')?.addEventListener("click", () => { currentView = "results"; render(); });
   document.querySelector(".why-it-matters")?.addEventListener("toggle", (event) => { openRationaleQuestionId = event.target.open ? questions[state.index].id : null; });
@@ -129,8 +294,8 @@ function resetDemo() {
   if (!confirm("두 역할의 답변, 비공개 메모와 합의를 모두 지울까요?")) return;
   try { localStorage.removeItem(STORAGE_KEY); } catch { saveStatus = "failed"; }
   state = normalizeState(null, ids, choiceIdsByQuestion, packIdentity);
-  currentView = "questions";
+  currentView = canOpenPack(session) ? "questions" : "product";
   render();
 }
 
-render();
+boot();

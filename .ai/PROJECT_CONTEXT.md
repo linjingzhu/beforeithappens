@@ -19,13 +19,13 @@ Primary user value:
 ## Architecture Map
 
 Core:
-- Dependency-free ES module web application; question content in `src/questions.js`, normalized two-role state in `src/state.js`, and UI workflow in `src/app.js`.
+- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`). Question content is in `src/questions.js`; historical local two-role state stays in `src/state.js`; product entry and pack gating live in `src/app.js`.
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
 
 Persistence/Data:
-- Current executable slice uses validated device-local role A/B state with draft/submitted separation, reveal barriers, and two-role agreement approval. It is a workflow simulator, not a privacy boundary. Planned server model is documented in `docs/DATA_MODEL.md`.
+- Foundation slice uses a Node session store for `User`, hashed magic-link tokens, and one active session per email. Buyer home stays invite-waiting until an accepted partner exists. Historical local role A/B state remains a workflow simulator only and is not the auth path. Planned workspace/invite/round model is documented in `docs/DATA_MODEL.md`.
 
 Tests:
 - Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
@@ -50,7 +50,9 @@ Targeted tests:
 ## Important Paths / Symbols
 
 - `src/questions.js` — structured question content
-- `src/app.js` — local state and question workflow
+- `src/app.js` — session-gated product views and historical local question workflow
+- `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, onboarding and invite-waiting views
+- `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `src/development.js` — development stage and history dashboard data
 - `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
 - `src/styles.css` — responsive product UI

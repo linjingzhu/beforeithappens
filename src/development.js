@@ -4,8 +4,8 @@ export const developmentStages = [
   { id: "two-role", title: "두 역할 대화 시뮬레이터", detail: "독립 제출, 동시 공개, 합의 제안·승인과 다시 이야기하기", status: "complete" },
   { id: "content-model", title: "Marriage Pack 콘텐츠 모델", detail: "버전 고정 콘텐츠와 6개 영역·12개 무료 질문", status: "complete" },
   { id: "shared-results", title: "공동 결과 화면", detail: "비공개 메모를 제외한 선택·합의·재논의 결과 요약", status: "complete" },
-  { id: "accounts", title: "실제 계정 분리", detail: "구매자와 파트너의 인증·권한·개인 데이터 경계", status: "next" },
-  { id: "invite", title: "초대·참여 흐름", detail: "안전한 초대 링크, 만료·재발급과 커플 워크스페이스 참여", status: "planned" },
+  { id: "accounts", title: "실제 계정 분리", detail: "이메일 매직 링크 로그인, 단일 세션, 강제 로그아웃", status: "complete" },
+  { id: "invite", title: "초대·참여 흐름", detail: "안전한 초대 링크, 만료·재발급과 커플 워크스페이스 참여", status: "next" },
   { id: "server", title: "서버 저장·기기 간 복구", detail: "서버 데이터 모델, 동시성 제어와 여러 기기 진행 복구", status: "planned" },
   { id: "payment", title: "29,000원 결제 권한", detail: "검증된 웹훅을 통한 Pack 구매·권한 부여", status: "planned" },
   { id: "launch", title: "운영 준비·출시", detail: "보안·접근성·브라우저 검증, 관측과 배포 운영", status: "planned" }
@@ -17,7 +17,8 @@ export const developmentHistory = [
   { date: "2026-08-16", title: "첫 실행 가능한 질문 경험 완성", detail: "질문 선택, 비공개 메모, 로컬 자동 저장과 이어하기를 구현했습니다." },
   { date: "2026-08-16", title: "두 사람의 공개·합의 흐름 완성", detail: "역할별 독립 제출 후 공개하고, 합의안을 상대가 승인하도록 구현했습니다." },
   { date: "2026-08-16", title: "Marriage Pack 12문항 확장", detail: "버전이 고정된 콘텐츠 모델과 생활·재정·가족·갈등·연결·미래 질문을 구성했습니다." },
-  { date: "2026-08-16", title: "프라이버시 안전 공동 결과 추가", detail: "비공개 메모 없이 두 사람의 선택과 공유 합의만 결과 화면에 표시합니다." }
+  { date: "2026-08-16", title: "프라이버시 안전 공동 결과 추가", detail: "비공개 메모 없이 두 사람의 선택과 공유 합의만 결과 화면에 표시합니다." },
+  { date: "2026-08-23", title: "이메일 매직 링크 계정 기반", detail: "비밀번호 없는 10분 로그인 링크, 단일 세션, 로그인 후 초대 대기 홈을 추가했습니다." }
 ];
 
 export function developmentSummary(stages = developmentStages) {

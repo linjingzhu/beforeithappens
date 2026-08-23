@@ -1,0 +1,112 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { AUTH_COPY, AUTH_ERRORS, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "../src/auth.js";
+import { renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderSent } from "../src/auth-ui.js";
+import { createAuth, hashToken, hasAcceptedPartner, isValidEmail, MAGIC_LINK_TTL_MS, normalizeEmail } from "../server/auth.mjs";
+import { createMemoryStore } from "../server/store.mjs";
+
+function authWithClock(start = Date.parse("2026-08-23T00:00:00.000Z")) {
+  let now = start;
+  let tokens = 0;
+  const store = createMemoryStore();
+  const auth = createAuth({
+    store,
+    now: () => now,
+    randomToken: () => `token-${++tokens}`
+  });
+  return {
+    auth,
+    store,
+    advance(ms) { now += ms; }
+  };
+}
+
+test("email identity is unique after trim and lowercase", () => {
+  assert.equal(normalizeEmail("  Buyer@Example.com "), "buyer@example.com");
+  assert.equal(isValidEmail("buyer@example.com"), true);
+  assert.equal(isValidEmail("not-an-email"), false);
+});
+
+test("magic link lasts 10 minutes, is single-use, and reissue expires the previous token", () => {
+  const { auth, store, advance } = authWithClock();
+  const first = auth.requestMagicLink("buyer@example.com");
+  const second = auth.requestMagicLink("buyer@example.com");
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.equal(store.snapshot().users.length, 1);
+  assert.equal(auth.consumeMagicLink(first.token).error, "expired");
+  const consumed = auth.consumeMagicLink(second.token);
+  assert.equal(consumed.ok, true);
+  assert.equal(auth.consumeMagicLink(second.token).error, "used");
+  advance(MAGIC_LINK_TTL_MS + 1);
+  const late = auth.requestMagicLink("buyer@example.com");
+  advance(MAGIC_LINK_TTL_MS + 1);
+  assert.equal(auth.consumeMagicLink(late.token).error, "expired");
+});
+
+test("tokens are stored hashed and consume creates one session with the post-login notice", () => {
+  const { auth, store } = authWithClock();
+  const issued = auth.requestMagicLink("buyer@example.com");
+  assert.equal(store.snapshot().magicLinks[0].tokenHash, hashToken(issued.token));
+  assert.equal(store.snapshot().magicLinks[0].token, undefined);
+  const consumed = auth.consumeMagicLink(issued.token);
+  const session = auth.sessionFor(consumed.sessionId);
+  assert.equal(session.user.email, "buyer@example.com");
+  assert.equal(session.notice, "no-local-draft");
+  assert.equal(session.workspace.acceptedPartner, false);
+  assert.equal(canOpenPack(session), false);
+});
+
+test("a new login force-logs out the previous session", () => {
+  const { auth } = authWithClock();
+  const first = auth.consumeMagicLink(auth.requestMagicLink("buyer@example.com").token);
+  const second = auth.consumeMagicLink(auth.requestMagicLink("buyer@example.com").token);
+  assert.equal(auth.sessionFor(first.sessionId).user, null);
+  assert.equal(auth.sessionFor(second.sessionId).user.email, "buyer@example.com");
+  assert.equal(auth.forceLogout(second.sessionId).ok, true);
+  assert.equal(auth.sessionFor(second.sessionId).user, null);
+});
+
+test("ghost workspaces without an accepted partner do not unlock the pack", () => {
+  const store = createMemoryStore();
+  store.mutate((state) => {
+    state.users.push({ id: "usr_1", email: "buyer@example.com" });
+    state.workspaces.push({ id: "ws_1" });
+    state.members.push({ workspaceId: "ws_1", userId: "usr_1", status: "accepted" });
+  });
+  assert.equal(hasAcceptedPartner(store.snapshot(), "usr_1"), false);
+  store.mutate((state) => {
+    state.users.push({ id: "usr_2", email: "partner@example.com" });
+    state.members.push({ workspaceId: "ws_1", userId: "usr_2", status: "accepted" });
+  });
+  assert.equal(hasAcceptedPartner(store.snapshot(), "usr_1"), true);
+  assert.equal(canOpenPack({ user: { id: "usr_1" }, workspace: { acceptedPartner: false } }), false);
+  assert.equal(canOpenPack({ user: { id: "usr_1" }, workspace: { acceptedPartner: true } }), true);
+  assert.equal(canOpenPack(emptySession()), false);
+});
+
+test("onboarding copy is exact and never includes device-handoff text", () => {
+  assert.equal(AUTH_COPY.title, "두 사람의 결혼 준비, 한곳에");
+  assert.equal(AUTH_COPY.body, "비밀번호 없이 이메일로 로그인 링크를 보내드려요.");
+  assert.equal(AUTH_COPY.cta, "로그인 링크 보내기");
+  assert.equal(AUTH_COPY.sent, "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.");
+  assert.equal(AUTH_COPY.afterLogin, "이 기기 임시 답은 이어지지 않아요.");
+  assert.equal(AUTH_COPY.logoutHandoff, "로그아웃 후 이 기기를 넘겨주세요.");
+  const onboarding = renderOnboarding({ email: "buyer@example.com" });
+  assert.match(onboarding, new RegExp(AUTH_COPY.title));
+  assert.match(onboarding, new RegExp(AUTH_COPY.body));
+  assert.match(onboarding, new RegExp(AUTH_COPY.cta));
+  assert.equal(onboarding.includes(AUTH_COPY.logoutHandoff), false);
+  assert.equal(onboarding.includes("data-action=\"open-product\""), false);
+  assert.match(renderSent(), new RegExp(AUTH_COPY.sent));
+  assert.match(renderLoginNotice(), new RegExp(AUTH_COPY.afterLogin));
+  const home = renderInviteWaitingHome({ email: "buyer@example.com" });
+  assert.match(home, new RegExp(AUTH_COPY.logoutHandoff));
+  assert.equal(home.includes("data-action=\"open-product\""), false);
+  assert.equal(home.includes("data-role="), false);
+  assert.equal(resolveSignedOutView("sent"), "sent");
+  assert.equal(resolveSignedInView({ notice: "no-local-draft" }, false), "notice");
+  assert.equal(resolveSignedInView({ notice: null }, false), "home");
+  assert.equal(consumeAuthLocation("/auth/consume", "?token=abc").token, "abc");
+  assert.equal(AUTH_ERRORS.expired.includes("만료"), true);
+});
