@@ -1,20 +1,26 @@
 import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
+import { marriagePack, questions } from "../src/questions.js";
+import { createAnswers } from "../server/answers.mjs";
+import { createAuth } from "../server/auth.mjs";
+import { createListener } from "../server/app.mjs";
+import { createFileStore } from "../server/store.mjs";
+import { createCouple } from "../server/workspace.mjs";
 
 const root = process.cwd();
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8" };
-const server = createServer(async (request, response) => {
-  try {
-    const requested = new URL(request.url, "http://localhost").pathname;
-    const relative = normalize(requested === "/" ? "index.html" : requested.slice(1));
-    if (relative.startsWith("..")) throw new Error("Invalid path");
-    const path = join(root, relative);
-    if (!(await stat(path)).isFile()) throw new Error("Not found");
-    response.writeHead(200, { "content-type": types[extname(path)] ?? "application/octet-stream" });
-    response.end(await readFile(path));
-  } catch {
-    response.writeHead(404); response.end("Not found");
-  }
+const store = await createFileStore(fileURLToPath(new URL("../data/ab-store.json", import.meta.url)));
+const couple = createCouple({ store });
+const answers = createAnswers({
+  store,
+  questionIds: questions.map((question) => question.id),
+  choiceIdsByQuestion: Object.fromEntries(questions.map((question) => [question.id, question.choices.map((choice) => choice.id)])),
+  pack: { id: marriagePack.id, version: marriagePack.version }
 });
+const auth = createAuth({
+  store,
+  onLogin: (userId) => couple.ensureWorkspace(userId),
+  describeWorkspace: (userId) => couple.viewForUser(userId)
+});
+const allowDevOutbox = process.env.AB_DEV_OUTBOX === "1" && process.env.NODE_ENV !== "production";
+const server = createServer(createListener({ auth, couple, answers, root, allowDevOutbox }));
 server.listen(4173, "0.0.0.0", () => console.log("AB running at http://localhost:4173"));

@@ -19,13 +19,13 @@ Primary user value:
 ## Architecture Map
 
 Core:
-- Dependency-free ES module web application; question content in `src/questions.js`, normalized two-role state in `src/state.js`, and UI workflow in `src/app.js`.
+- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
 
 Persistence/Data:
-- Current executable slice uses validated device-local role A/B state with draft/submitted separation, reveal barriers, and two-role agreement approval. It is a workflow simulator, not a privacy boundary. Planned server model is documented in `docs/DATA_MODEL.md`.
+- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, and immutable `PublicLock` snapshots. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
 
 Tests:
 - Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
@@ -50,7 +50,11 @@ Targeted tests:
 ## Important Paths / Symbols
 
 - `src/questions.js` — structured question content
-- `src/app.js` — local state and question workflow
+- `src/app.js` — session-gated product views and historical local question workflow
+- `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, onboarding and invite-waiting views
+- `server/auth.mjs` — User session, 10-minute magic links, forced logout
+- `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
+- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock
 - `src/development.js` — development stage and history dashboard data
 - `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
 - `src/styles.css` — responsive product UI

@@ -5,8 +5,8 @@ import { developmentHistory, developmentStages, developmentSummary } from "../sr
 test("development dashboard has one explicit next stage", () => {
   const summary = developmentSummary();
   assert.equal(developmentStages.filter((stage) => stage.status === "next").length, 1);
-  assert.equal(summary.next.id, "accounts");
-  assert.equal(summary.complete, 5);
+  assert.equal(summary.next.id, "payment");
+  assert.equal(summary.complete, 8);
   assert.equal(summary.total, 10);
 });
 
