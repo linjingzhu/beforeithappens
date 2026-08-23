@@ -666,7 +666,7 @@ async function boot() {
     try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
   }
   if (!session.user) authScreen = resolveSignedOutView(authScreen);
-  const installView = resolveInstallView(window.location.pathname) || (locationInfo.isInstallPath ? "install" : locationInfo.isStartPath ? "start" : "");
+  const installView = resolveInstallView(window.location.pathname);
   if (installView) currentView = installView;
   render();
 }
@@ -749,7 +749,13 @@ function bindEvents() {
 
 window.addEventListener("popstate", () => {
   const view = resolveInstallView(window.location.pathname);
-  currentView = view || "product";
+  if (view) {
+    currentView = view;
+  } else if ((lastPackView === "questions" || lastPackView === "results") && canOpenPack(session)) {
+    currentView = lastPackView;
+  } else {
+    currentView = "product";
+  }
   render();
 });
 

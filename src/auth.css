@@ -179,7 +179,8 @@
 
 .install-banner-cta,
 .install-banner-skip,
-.install-store-actions a {
+.install-store-actions a,
+.auth-card > a.auth-submit {
   min-height: 44px;
   min-width: 44px;
   padding: 0 16px;
@@ -190,6 +191,10 @@
   display: inline-grid;
   place-items: center;
   cursor: pointer;
+}
+
+.auth-card > a.auth-submit {
+  min-width: 160px;
 }
 
 .logout-cluster {
