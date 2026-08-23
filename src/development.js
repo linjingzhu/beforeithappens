@@ -6,8 +6,8 @@ export const developmentStages = [
   { id: "shared-results", title: "공동 결과 화면", detail: "비공개 메모를 제외한 선택·합의·재논의 결과 요약", status: "complete" },
   { id: "accounts", title: "실제 계정 분리", detail: "이메일 매직 링크 로그인, 단일 세션, 강제 로그아웃", status: "complete" },
   { id: "invite", title: "초대·참여 흐름", detail: "이메일 고정 초대, 7일 만료·재발급, 수락 후 팩 개방", status: "complete" },
-  { id: "server", title: "서버 저장·기기 간 복구", detail: "서버 데이터 모델, 동시성 제어와 여러 기기 진행 복구", status: "next" },
-  { id: "payment", title: "29,000원 결제 권한", detail: "검증된 웹훅을 통한 Pack 구매·권한 부여", status: "planned" },
+  { id: "server", title: "서버 저장·기기 간 복구", detail: "서버 데이터 모델, 동시성 제어와 여러 기기 진행 복구", status: "complete" },
+  { id: "payment", title: "29,000원 결제 권한", detail: "검증된 웹훅을 통한 Pack 구매·권한 부여", status: "next" },
   { id: "launch", title: "운영 준비·출시", detail: "보안·접근성·브라우저 검증, 관측과 배포 운영", status: "planned" }
 ];
 
@@ -19,7 +19,8 @@ export const developmentHistory = [
   { date: "2026-08-16", title: "Marriage Pack 12문항 확장", detail: "버전이 고정된 콘텐츠 모델과 생활·재정·가족·갈등·연결·미래 질문을 구성했습니다." },
   { date: "2026-08-16", title: "프라이버시 안전 공동 결과 추가", detail: "비공개 메모 없이 두 사람의 선택과 공유 합의만 결과 화면에 표시합니다." },
   { date: "2026-08-23", title: "이메일 매직 링크 계정 기반", detail: "비밀번호 없는 10분 로그인 링크, 단일 세션, 로그인 후 초대 대기 홈을 추가했습니다." },
-  { date: "2026-08-23", title: "커플 워크스페이스와 초대 수락", detail: "구매자 워크스페이스, 이메일 고정 초대, 수락 후에만 결혼 팩을 열도록 했습니다." }
+  { date: "2026-08-23", title: "커플 워크스페이스와 초대 수락", detail: "구매자 워크스페이스, 이메일 고정 초대, 수락 후에만 결혼 팩을 열도록 했습니다." },
+  { date: "2026-08-23", title: "기기 넘김과 답변 서버 저장", detail: "강제 로그아웃 후 같은 기기에서 파트너가 로그인하고, 제출·합의와 초안·메모를 서버에 저장합니다." }
 ];
 
 export function developmentSummary(stages = developmentStages) {

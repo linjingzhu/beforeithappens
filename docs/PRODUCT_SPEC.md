@@ -61,7 +61,7 @@ That simulator is not an authentication or privacy boundary. It is not the curre
 
 ## Later slices
 
-Later packs, in order, add workspace + invite, device handoff, answer rounds, and public lock. Payment stays closed until a later commercial slice. Ghost workspaces still must not unlock the pack.
+Later packs add public lock. Payment stays closed until a later commercial slice. Ghost workspaces still must not unlock the pack.
 
 ## Question state model
 

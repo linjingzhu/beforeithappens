@@ -10,7 +10,11 @@ export function emptyState() {
     workspaces: [],
     members: [],
     invitations: [],
-    answerRounds: []
+    answerRounds: [],
+    answers: [],
+    privateNotes: [],
+    agreements: [],
+    progress: []
   };
 }
 

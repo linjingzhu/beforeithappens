@@ -22,7 +22,13 @@ function recordOutbox(outbox, allowDevOutbox, item) {
   console.log(`${item.type} for ${item.email}: ${item.url}`);
 }
 
-export function createListener({ auth, couple, root, allowDevOutbox = false, outbox = [] } = {}) {
+function packErrorStatus(error) {
+  if (error === "unauthenticated") return 401;
+  if (error === "forbidden" || error === "locked") return 403;
+  return 400;
+}
+
+export function createListener({ auth, couple, answers, root, allowDevOutbox = false, outbox = [] } = {}) {
   if (!auth) throw new Error("auth is required");
   if (!root) throw new Error("root is required");
 
@@ -160,6 +166,49 @@ export function createListener({ auth, couple, root, allowDevOutbox = false, out
         sendJson(response, 200, { ok: true }, {
           "set-cookie": sessionCookieHeader(SESSION_COOKIE, "", { ...cookieOptions(request), clear: true })
         });
+        return;
+      }
+
+      if (answers && request.method === "GET" && url.pathname === "/api/pack/state") {
+        const result = answers.stateFor(sessionId);
+        if (!result.ok) {
+          sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (answers && request.method === "PATCH" && url.pathname === "/api/pack/draft") {
+        const body = await readJsonBody(request);
+        const result = answers.saveDraft(sessionId, body);
+        if (!result.ok) {
+          sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (answers && request.method === "POST" && url.pathname === "/api/pack/submit") {
+        const body = await readJsonBody(request);
+        const result = answers.submit(sessionId, body);
+        if (!result.ok) {
+          sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (answers && request.method === "POST" && url.pathname === "/api/pack/agreement") {
+        const body = await readJsonBody(request);
+        const result = answers.saveAgreement(sessionId, body);
+        if (!result.ok) {
+          sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
         return;
       }
 

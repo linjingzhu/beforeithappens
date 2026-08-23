@@ -120,6 +120,33 @@ test("HTTP magic-link request, consume, notice, and forced logout", async () => 
   }
 });
 
+test("device handoff is logout then a new login; the old buyer cookie cannot stay signed in", async () => {
+  const { server, port } = await startServer();
+  try {
+    const buyerCookie = await login(port, "buyer@example.com");
+    const before = await request(port, "/api/auth/session", { cookie: buyerCookie });
+    assert.equal(before.json.user.email, "buyer@example.com");
+
+    const logout = await request(port, "/api/auth/force-logout", { method: "POST", cookie: buyerCookie });
+    assert.equal(logout.status, 200);
+    const cleared = await request(port, "/api/auth/session", { cookie: buyerCookie });
+    assert.equal(cleared.json.user, null);
+
+    const partnerCookie = await login(port, "partner@example.com");
+    const partner = await request(port, "/api/auth/session", { cookie: partnerCookie });
+    assert.equal(partner.json.user.email, "partner@example.com");
+    const staleBuyer = await request(port, "/api/auth/session", { cookie: buyerCookie });
+    assert.equal(staleBuyer.json.user, null);
+
+    const regular = await request(port, "/api/auth/logout", { method: "POST", cookie: partnerCookie });
+    assert.equal(regular.status, 200);
+    const afterPartner = await request(port, "/api/auth/session", { cookie: partnerCookie });
+    assert.equal(afterPartner.json.user, null);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 async function login(port, email) {
   await request(port, "/api/auth/magic-link", { method: "POST", body: { email } });
   const outbox = await request(port, "/api/dev/outbox");

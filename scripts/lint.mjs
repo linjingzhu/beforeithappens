@@ -14,7 +14,8 @@ const files = [
   "server/app.mjs",
   "server/store.mjs",
   "server/http.mjs",
-  "server/workspace.mjs"
+  "server/workspace.mjs",
+  "server/answers.mjs"
 ];
 for (const file of files) {
   const value = await readFile(file, "utf8");

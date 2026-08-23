@@ -80,6 +80,19 @@ test("a new login force-logs out the previous session", () => {
   assert.equal(auth.sessionFor(second.sessionId).user, null);
 });
 
+test("logout and forceLogout both clear the user's only session", () => {
+  const { auth, store } = authWithClock();
+  const buyer = auth.consumeMagicLink(auth.requestMagicLink("buyer@example.com").token);
+  assert.equal(auth.logout(buyer.sessionId).ok, true);
+  assert.equal(auth.sessionFor(buyer.sessionId).user, null);
+  assert.equal(store.snapshot().sessions.length, 0);
+
+  const again = auth.consumeMagicLink(auth.requestMagicLink("buyer@example.com").token);
+  assert.equal(auth.forceLogout(again.sessionId).ok, true);
+  assert.equal(auth.sessionFor(again.sessionId).user, null);
+  assert.equal(store.snapshot().sessions.length, 0);
+});
+
 test("ghost workspaces without an accepted partner do not unlock the pack", () => {
   const store = createMemoryStore();
   store.mutate((state) => {

@@ -145,10 +145,13 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
     },
 
     logout(sessionId) {
-      if (!sessionId) return { ok: true };
-      store.mutate((state) => {
-        state.sessions = state.sessions.filter((session) => session.id !== sessionId);
-      });
+      const session = store.snapshot().sessions.find((item) => item.id === sessionId);
+      if (session) forceLogoutUser(session.userId);
+      else if (sessionId) {
+        store.mutate((state) => {
+          state.sessions = state.sessions.filter((item) => item.id !== sessionId);
+        });
+      }
       return { ok: true };
     },
 

@@ -30,4 +30,25 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(ux, /결혼 팩 시작하기/);
   assert.match(ux, /같은 메일로만 수락할 수 있어요/);
   assert.match(ux, /forbidden in the onboarding body/);
+  assert.match(model, /The current slice persists/);
+  assert.match(model, /AnswerRound/);
+  assert.match(model, /PublicLock` is specified but not implemented/);
+});
+
+test("pack UI has no local-sim role switch and keeps handoff copy next to logout only", async () => {
+  const app = await readFile("src/app.js", "utf8");
+  const onboarding = await readFile("src/auth-ui.js", "utf8");
+  assert.equal(app.includes("localStorage"), false);
+  assert.equal(app.includes("STORAGE_KEY"), false);
+  assert.equal(app.includes("saveState("), false);
+  assert.equal(app.includes('data-action="handoff"'), false);
+  assert.equal(app.includes("[data-role]"), false);
+  assert.equal(app.includes("데모 기록 초기화"), false);
+  assert.equal(app.includes("이 기기에 자동 저장돼요"), false);
+  assert.match(app, /서버에 저장됨/);
+  assert.match(app, /AUTH_COPY\.logoutHandoff/);
+  assert.match(app, /INVITE_COPY\.draftBadge/);
+  const onboardingFn = onboarding.slice(onboarding.indexOf("export function renderOnboarding"), onboarding.indexOf("export function renderSent"));
+  assert.equal(onboardingFn.includes("logoutHandoff"), false);
+  assert.equal(onboardingFn.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
 });
