@@ -48,7 +48,10 @@ function expireUnusedInvites(store, workspaceId, at) {
     if (invite.workspaceId === workspaceId && !invite.usedAt && new Date(invite.expiresAt).getTime() > at) {
       store.mutate((state) => {
         const row = state.invitations.find((item) => item.id === invite.id);
-        if (row && !row.usedAt) row.expiresAt = iso(at);
+        if (row && !row.usedAt) {
+          row.expiresAt = iso(at);
+          row.shareToken = "";
+        }
       });
     }
   }

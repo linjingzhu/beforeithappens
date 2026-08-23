@@ -64,7 +64,7 @@ test("invite is email-bound, single-use, 7 days, and reissue expires the previou
 });
 
 test("editing the invite email and resending immediately expires the previous token", () => {
-  const { couple, login } = system();
+  const { couple, login, store } = system();
   const buyer = login("buyer@example.com");
   const typo = couple.issueInvite(buyer.sessionId, "typo@example.com");
   const corrected = couple.issueInvite(buyer.sessionId, "partner@example.com");
@@ -80,6 +80,8 @@ test("editing the invite email and resending immediately expires the previous to
   const preview = couple.previewInvite(corrected.token);
   assert.equal(preview.url, undefined);
   assert.equal(preview.shareToken, undefined);
+  const expiredRow = store.snapshot().invitations.find((item) => item.email === "typo@example.com");
+  assert.equal(expiredRow.shareToken, "");
 });
 
 test("same-session accept cannot succeed for another logged-in account", () => {

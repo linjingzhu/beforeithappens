@@ -197,3 +197,33 @@ test("HTTP invite send, email-bound accept, and pack gate", async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("same-session accept stays blocked until force logout and invited-email magic link", async () => {
+  const { server, port } = await startServer();
+  try {
+    const buyerCookie = await login(port, "buyer@example.com");
+    const sent = await request(port, "/api/invite", { method: "POST", cookie: buyerCookie, body: { email: "partner@example.com" } });
+    const token = new URL(sent.json.url).searchParams.get("token");
+
+    const blocked = await request(port, "/api/invite/accept", { method: "POST", cookie: buyerCookie, body: { token } });
+    assert.equal(blocked.json.error, "mismatch");
+    assert.equal(blocked.json.ok, false);
+
+    const logout = await request(port, "/api/auth/force-logout", { method: "POST", cookie: buyerCookie });
+    assert.equal(logout.status, 200);
+    const afterLogout = await request(port, "/api/auth/session", { cookie: buyerCookie });
+    assert.equal(afterLogout.json.user, null);
+
+    const stillWaiting = await request(port, `/api/invite/preview?token=${token}`);
+    assert.equal(stillWaiting.json.ok, true);
+    assert.equal(stillWaiting.json.email, "partner@example.com");
+
+    const partnerCookie = await login(port, "partner@example.com");
+    const accept = await request(port, "/api/invite/accept", { method: "POST", cookie: partnerCookie, body: { token } });
+    assert.equal(accept.status, 200);
+    assert.equal(accept.json.session.workspace.role, "partner");
+    assert.equal(accept.json.session.workspace.acceptedPartner, true);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

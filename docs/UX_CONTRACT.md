@@ -38,7 +38,8 @@ Invite-waiting home (buyer, no pack CTA):
 |---|---|
 | Title | 파트너 초대 |
 | Status | 대기중 / 만료 남은 시간 / 마지막 발송 시각 |
-| Reissue CTA | 다시 보내기 |
+| First-send CTA | 초대 보내기 |
+| Reissue CTA | 이메일 수정하고 다시 보내기 |
 | Rule | 같은 메일로만 수락할 수 있어요. 같은 폰에서 두 계정을 동시에 쓸 수는 없어요. |
 | Share copy | 링크를 보내 파트너를 초대하세요. |
 | Share buttons | 링크 복사 / 인스타그램 / 카카오톡 |

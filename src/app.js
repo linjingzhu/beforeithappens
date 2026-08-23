@@ -501,8 +501,12 @@ function currentInviteShareUrl() {
 async function shareInvite(channel) {
   const url = currentInviteShareUrl();
   if (!url) return;
-  const result = await shareInviteChannel(url, channel);
-  inviteCopied = result === "copied";
+  try {
+    const result = await shareInviteChannel(url, channel);
+    inviteCopied = result === "copied";
+  } catch {
+    inviteCopied = false;
+  }
   render();
 }
 
@@ -535,11 +539,11 @@ async function logout(options = {}) {
   inviteCopied = false;
   inviteError = "";
   currentView = "product";
+  openedWhileSignedIn = false;
+  try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
   if (continueInvite) {
     emailDraft = invitePreview?.email || emailDraft;
-    openedWhileSignedIn = false;
     preferInviteLogin = true;
-    try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
   }
   render();
 }
