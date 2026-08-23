@@ -41,6 +41,8 @@ The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace
 - Reissue immediately expires the previous invite token.
 - Accept creates the partner `CoupleMember` and marks that invite consumed.
 - A visitor who is not logged in, or is logged in as a different email, cannot accept from the link alone.
+- The buyer may share the current unused invite URL. Reissue or editing the invited email immediately expires the previous token so the old share link cannot be accepted.
+- Opening an invite while another account is logged in cannot accept. The web recovery is force logout, then magic-link accept for the invited email. There is no role switch.
 
 ## Persistence rules
 

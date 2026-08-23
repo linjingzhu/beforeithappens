@@ -1,6 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { SESSION_COOKIE } from "./auth.mjs";
+import { inviteAcceptUrl } from "../src/auth.js";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
 
 const types = {
@@ -110,6 +111,7 @@ export function createListener({ auth, couple, answers, root, allowDevOutbox = f
           email: result.email,
           expiresAt: result.expiresAt,
           lastSentAt: result.lastSentAt,
+          url: inviteAcceptUrl(requestOrigin(request), result.token),
           workspace: auth.sessionFor(sessionId).workspace
         });
         return;

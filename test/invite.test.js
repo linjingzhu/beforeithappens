@@ -63,6 +63,37 @@ test("invite is email-bound, single-use, 7 days, and reissue expires the previou
   assert.equal(other.couple.previewInvite(late.token).error, "expired");
 });
 
+test("editing the invite email and resending immediately expires the previous token", () => {
+  const { couple, login } = system();
+  const buyer = login("buyer@example.com");
+  const typo = couple.issueInvite(buyer.sessionId, "typo@example.com");
+  const corrected = couple.issueInvite(buyer.sessionId, "partner@example.com");
+  assert.equal(typo.ok, true);
+  assert.equal(corrected.ok, true);
+  assert.equal(couple.previewInvite(typo.token).error, "expired");
+  assert.equal(couple.previewInvite(corrected.token).ok, true);
+  assert.equal(couple.previewInvite(corrected.token).email, "partner@example.com");
+  const view = couple.viewForUser(buyer.user.id);
+  assert.equal(view.invite.email, "partner@example.com");
+  assert.equal(view.invite.url, `/invite/accept?token=${corrected.token}`);
+  assert.equal(view.invite.url.includes(typo.token), false);
+  const preview = couple.previewInvite(corrected.token);
+  assert.equal(preview.url, undefined);
+  assert.equal(preview.shareToken, undefined);
+});
+
+test("same-session accept cannot succeed for another logged-in account", () => {
+  const { couple, login } = system();
+  const buyer = login("buyer@example.com");
+  const invite = couple.issueInvite(buyer.sessionId, "partner@example.com");
+  assert.equal(couple.acceptInvite(buyer.sessionId, invite.token).error, "mismatch");
+  const stranger = login("other@example.com");
+  assert.equal(couple.acceptInvite(stranger.sessionId, invite.token).error, "mismatch");
+  assert.equal(couple.previewInvite(invite.token).ok, true);
+  const partner = login("partner@example.com");
+  assert.equal(couple.acceptInvite(partner.sessionId, invite.token).ok, true);
+});
+
 test("link-only and mismatched email cannot accept", () => {
   const { couple, login } = system();
   const buyer = login("buyer@example.com");

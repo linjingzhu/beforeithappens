@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AUTH_COPY, AUTH_ERRORS, INVITE_COPY, canOpenPack, consumeAuthLocation, emptySession, formatRemaining, resolveSignedInView, resolveSignedOutView } from "../src/auth.js";
+import { AUTH_COPY, AUTH_ERRORS, INVITE_COPY, absoluteInviteUrl, canOpenPack, classifyInviteConflict, consumeAuthLocation, emptySession, formatRemaining, inviteAcceptUrl, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel } from "../src/auth.js";
 import { renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "../src/auth-ui.js";
 import { createAuth, hashToken, hasAcceptedPartner, isValidEmail, MAGIC_LINK_TTL_MS, normalizeEmail } from "../server/auth.mjs";
 import { createMemoryStore } from "../server/store.mjs";
@@ -138,14 +138,76 @@ test("onboarding copy is exact and never includes device-handoff text", () => {
   assert.match(renderInviteAccept({ error: "mismatch" }), new RegExp(INVITE_COPY.mismatch));
   assert.match(renderPackReady(), new RegExp(INVITE_COPY.startPack));
   const waiting = renderInviteWaitingHome({
-    invite: { status: "waiting", remainingMs: 3 * 60 * 60 * 1000, lastSentAt: "2026-08-23T00:00:00.000Z" }
+    invite: {
+      status: "waiting",
+      remainingMs: 3 * 60 * 60 * 1000,
+      lastSentAt: "2026-08-23T00:00:00.000Z",
+      url: "/invite/accept?token=share-1"
+    }
   });
   assert.match(waiting, new RegExp(INVITE_COPY.waiting));
-  assert.match(waiting, new RegExp(INVITE_COPY.resend));
+  assert.match(waiting, new RegExp(INVITE_COPY.share));
+  assert.match(waiting, new RegExp(INVITE_COPY.copyLink));
+  assert.match(waiting, new RegExp(INVITE_COPY.instagram));
+  assert.match(waiting, new RegExp(INVITE_COPY.kakao));
+  assert.match(waiting, new RegExp(INVITE_COPY.deviceRule));
+  assert.match(waiting, new RegExp(INVITE_COPY.emailCheck));
+  assert.match(waiting, new RegExp(INVITE_COPY.editResend));
   assert.equal(waiting.includes(INVITE_COPY.startPack), false);
+  assert.equal(waiting.includes("Kakao.Auth"), false);
+  assert.equal(waiting.includes("kauth.kakao.com"), false);
+  const copied = renderInviteWaitingHome({
+    invite: { status: "waiting", remainingMs: 60000, lastSentAt: "2026-08-23T00:00:00.000Z", url: "/invite/accept?token=share-1" },
+    copied: true
+  });
+  assert.match(copied, new RegExp(INVITE_COPY.copied));
+  assert.match(renderInviteAccept({ error: "other-session" }), new RegExp(INVITE_COPY.otherSession));
+  assert.match(renderInviteAccept({ error: "other-session" }), new RegExp(INVITE_COPY.logoutContinue));
+  assert.equal(renderInviteAccept({ error: "other-session", preview: { ok: true }, email: "buyer@example.com" }).includes(INVITE_COPY.accept), false);
   assert.equal(resolveSignedOutView("sent"), "sent");
   assert.equal(resolveSignedInView({ notice: "no-local-draft" }, false), "notice");
+  assert.equal(resolveSignedInView({ notice: "no-local-draft" }, false, true, true), "invite");
   assert.equal(resolveSignedInView({ notice: null }, false), "home");
   assert.equal(consumeAuthLocation("/auth/consume", "?token=abc").token, "abc");
   assert.equal(AUTH_ERRORS.expired.includes("만료"), true);
+});
+
+test("invite share helpers copy or system-share the existing link", async () => {
+  assert.equal(inviteAcceptUrl("", "tok 1"), "/invite/accept?token=tok%201");
+  assert.equal(inviteAcceptUrl("https://ab.example", "tok"), "https://ab.example/invite/accept?token=tok");
+  assert.equal(absoluteInviteUrl("https://ab.example", "/invite/accept?token=tok"), "https://ab.example/invite/accept?token=tok");
+  const writes = [];
+  assert.equal(await shareInviteChannel("https://ab.example/invite/accept?token=a", "copy", {
+    clipboard: { writeText: async (value) => writes.push(value) }
+  }), "copied");
+  assert.deepEqual(writes, ["https://ab.example/invite/accept?token=a"]);
+  const shared = [];
+  assert.equal(await shareInviteChannel("https://ab.example/invite/accept?token=a", "kakao", {
+    share: async (payload) => shared.push(payload)
+  }), "shared");
+  assert.equal(shared[0].url, "https://ab.example/invite/accept?token=a");
+  assert.equal(shared[0].text, INVITE_COPY.share);
+  assert.equal(await shareInviteChannel("https://ab.example/invite/accept?token=a", "instagram", {
+    share: async () => { throw Object.assign(new Error("no share"), { name: "AbortError" }); }
+  }), "cancelled");
+  assert.equal(classifyInviteConflict({
+    sessionEmail: "buyer@example.com",
+    inviteEmail: "partner@example.com",
+    openedWhileSignedIn: true
+  }), "other-session");
+  assert.equal(classifyInviteConflict({
+    sessionEmail: "other@example.com",
+    inviteEmail: "partner@example.com",
+    openedWhileSignedIn: false
+  }), "mismatch");
+  assert.equal(resolveInviteAcceptError({
+    preview: { ok: true, email: "partner@example.com" },
+    session: { user: { email: "buyer@example.com" } },
+    openedWhileSignedIn: true
+  }), "other-session");
+  assert.equal(resolveInviteAcceptError({
+    preview: { ok: true, email: "partner@example.com" },
+    session: { user: { email: "partner@example.com" } },
+    openedWhileSignedIn: true
+  }), "");
 });

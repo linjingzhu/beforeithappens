@@ -21,7 +21,8 @@ export const developmentHistory = [
   { date: "2026-08-23", title: "이메일 매직 링크 계정 기반", detail: "비밀번호 없는 10분 로그인 링크, 단일 세션, 로그인 후 초대 대기 홈을 추가했습니다." },
   { date: "2026-08-23", title: "커플 워크스페이스와 초대 수락", detail: "구매자 워크스페이스, 이메일 고정 초대, 수락 후에만 결혼 팩을 열도록 했습니다." },
   { date: "2026-08-23", title: "기기 넘김과 답변 서버 저장", detail: "강제 로그아웃 후 같은 기기에서 파트너가 로그인하고, 제출·합의와 초안·메모를 서버에 저장합니다." },
-  { date: "2026-08-23", title: "공개 잠금 스냅샷", detail: "두 번째 제출이 불변 PublicLock을 만들고, 이후 변경은 새 비공개 라운드를 엽니다." }
+  { date: "2026-08-23", title: "공개 잠금 스냅샷", detail: "두 번째 제출이 불변 PublicLock을 만들고, 이후 변경은 새 비공개 라운드를 엽니다." },
+  { date: "2026-08-23", title: "웹 초대 이탈 복구와 공유", detail: "구매자 홈에서 초대 링크를 복사·공유하고, 이메일 오타 재발송과 다른 계정 로그인 수락을 막습니다." }
 ];
 
 export function developmentSummary(stages = developmentStages) {

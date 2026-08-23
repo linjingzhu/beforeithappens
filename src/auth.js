@@ -22,6 +22,16 @@ export const INVITE_COPY = {
   lastSentLabel: "마지막 발송 시각",
   send: "초대 보내기",
   resend: "다시 보내기",
+  share: "링크를 보내 파트너를 초대하세요.",
+  copyLink: "링크 복사",
+  instagram: "인스타그램",
+  kakao: "카카오톡",
+  copied: "링크를 복사했어요.",
+  deviceRule: "같은 폰에서 두 계정을 동시에 쓸 수는 없어요.",
+  emailCheck: "초대 메일이 맞는지 다시 확인해 주세요.",
+  editResend: "이메일 수정하고 다시 보내기",
+  otherSession: "이 기기에 다른 계정으로 로그인되어 있어요.",
+  logoutContinue: "로그아웃하고 넘기기",
   rule: "같은 메일로만 수락할 수 있어요. 같은 폰에서 두 계정을 동시에 쓸 수는 없어요.",
   startPack: "결혼 팩 시작하기",
   expired: "초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.",
@@ -40,6 +50,8 @@ export const INVITE_ERRORS = {
 };
 
 export const PENDING_INVITE_KEY = "ab-pending-invite";
+export const INVITE_CONFLICT_KEY = "ab-invite-conflict";
+export const INVITE_OTHER_SESSION = "other-session";
 
 export function formatRemaining(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return "만료됨";
@@ -84,9 +96,78 @@ export function resolveSignedOutView(screen) {
   return screen === "sent" ? "sent" : "onboarding";
 }
 
-export function resolveSignedInView(session, noticeDismissed = false, inviteFlow = false) {
+export function resolveSignedInView(session, noticeDismissed = false, inviteFlow = false, invitePriority = false) {
+  if (inviteFlow && invitePriority) return "invite";
   if (session?.notice && !noticeDismissed) return "notice";
   if (inviteFlow) return "invite";
   if (session?.workspace?.acceptedPartner) return "ready";
   return "home";
+}
+
+export function inviteAcceptUrl(origin, token) {
+  const base = String(origin || "").replace(/\/$/, "");
+  return `${base}/invite/accept?token=${encodeURIComponent(String(token || ""))}`;
+}
+
+export function absoluteInviteUrl(origin, url) {
+  const value = String(url || "").trim();
+  if (!value) return "";
+  try {
+    return new URL(value, String(origin || "http://localhost").replace(/\/$/, "") || "http://localhost").href;
+  } catch {
+    return value;
+  }
+}
+
+export function emailsMatch(left, right) {
+  return String(left || "").trim().toLowerCase() === String(right || "").trim().toLowerCase();
+}
+
+export function classifyInviteConflict({ sessionEmail = "", inviteEmail = "", openedWhileSignedIn = false } = {}) {
+  if (!sessionEmail || !inviteEmail || emailsMatch(sessionEmail, inviteEmail)) return "";
+  return openedWhileSignedIn ? INVITE_OTHER_SESSION : "mismatch";
+}
+
+export function resolveInviteAcceptError({ preview = null, session = null, openedWhileSignedIn = false, accepted = false } = {}) {
+  if (accepted) return "";
+  if (!preview) return session?.user ? "" : "unauthenticated";
+  if (!preview.ok) return preview.error || "invalid";
+  if (!session?.user) return "unauthenticated";
+  return classifyInviteConflict({
+    sessionEmail: session.user.email,
+    inviteEmail: preview.email,
+    openedWhileSignedIn
+  });
+}
+
+export function isInvitePriorityError(error) {
+  return error === INVITE_OTHER_SESSION || error === "mismatch" || error === "expired" || error === "used" || error === "invalid";
+}
+
+export async function copyText(value, clipboard = globalThis.navigator?.clipboard) {
+  if (!value) return false;
+  if (clipboard?.writeText) {
+    await clipboard.writeText(value);
+    return true;
+  }
+  return false;
+}
+
+export async function shareInviteChannel(url, channel, io = {}) {
+  if (!url) return "failed";
+  const payload = { title: "AB", text: INVITE_COPY.share, url };
+  if (channel !== "copy") {
+    const share = io.share || (typeof globalThis.navigator?.share === "function"
+      ? globalThis.navigator.share.bind(globalThis.navigator)
+      : null);
+    if (typeof share === "function") {
+      try {
+        await share(payload);
+        return "shared";
+      } catch (error) {
+        if (error?.name === "AbortError") return "cancelled";
+      }
+    }
+  }
+  return await copyText(url, io.clipboard) ? "copied" : "failed";
 }
