@@ -44,6 +44,23 @@ function sessionCookie(setCookie) {
   return setCookie.find((value) => value.startsWith("ab_session="))?.split(";")[0] || "";
 }
 
+test("dev outbox is closed unless explicitly enabled", async () => {
+  const store = createMemoryStore();
+  const outbox = [];
+  const auth = createAuth({ store });
+  const server = createServer(createListener({ auth, root: process.cwd(), allowDevOutbox: false, outbox }));
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const { port } = server.address();
+    await request(port, "/api/auth/magic-link", { method: "POST", body: { email: "buyer@example.com" } });
+    const hidden = await request(port, "/api/dev/outbox");
+    assert.equal(hidden.status, 404);
+    assert.equal(outbox.length, 0);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("HTTP magic-link request, consume, notice, and forced logout", async () => {
   const { server, port } = await startServer();
   try {

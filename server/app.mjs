@@ -54,9 +54,11 @@ export function createListener({ auth, root, allowDevOutbox = false, outbox = []
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         };
-        outbox.unshift(item);
-        outbox.splice(20);
-        console.log(`Magic link for ${result.email}: ${item.url}`);
+        if (allowDevOutbox) {
+          outbox.unshift(item);
+          outbox.splice(20);
+          console.log(`Magic link for ${result.email}: ${item.url}`);
+        }
         sendJson(response, 200, { ok: true });
         return;
       }
