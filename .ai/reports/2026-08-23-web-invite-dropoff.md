@@ -13,6 +13,8 @@
 - Tests: 47 passed
 - Static build: passed
 - Isolated review: PASS_WITH_NOTES; follow-up fixed contract CTA drift, logout conflict cleanup, expired share-token scrub, and composed HTTP recovery test
+- Runtime/visual: buyer home, share + typo recovery, copy success, same-session block, and logout-continue onboarding observed
+- GitHub CI on the branch: success
 
 ## Remaining risk
 
