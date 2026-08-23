@@ -1,4 +1,5 @@
 import { AUTH_COPY, INVITE_COPY, formatRemaining, formatSentAt } from "./auth.js";
+import { INSTALL_COPY, INSTALL_PATH, STORE_URLS, instagramStartHref } from "./install.js";
 import { escapeHtml } from "./html.js";
 
 function brand(extraActions = "") {
@@ -11,6 +12,62 @@ function footer(extra = "") {
 
 function logoutCluster() {
   return `<div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small></div>`;
+}
+
+function inAppHintBlock(inAppBrowser) {
+  if (!inAppBrowser) return "";
+  return `
+          <div class="install-inapp" role="status">
+            <p>${escapeHtml(INSTALL_COPY.inAppHint)}</p>
+            <button class="secondary auth-submit" type="button" data-action="open-system-browser">${escapeHtml(INSTALL_COPY.openBrowser)}</button>
+          </div>
+        `;
+}
+
+export function renderInstallBanner({ visible = false } = {}) {
+  if (!visible) return "";
+  return `
+    <aside class="install-banner" role="region" aria-label="${escapeHtml(INSTALL_COPY.banner)}">
+      <p>${escapeHtml(INSTALL_COPY.banner)}</p>
+      <div class="install-banner-actions">
+        <a class="primary install-banner-cta" href="${escapeHtml(INSTALL_PATH)}" data-action="show-install">${escapeHtml(INSTALL_COPY.bannerCta)}</a>
+        <button class="secondary install-banner-skip" type="button" data-action="skip-install">${escapeHtml(INSTALL_COPY.bannerSkip)}</button>
+      </div>
+    </aside>
+  `;
+}
+
+export function renderInstallLanding({ inAppBrowser = false } = {}) {
+  return `
+    ${brand()}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · INSTALL</span>
+        <h1>${escapeHtml(INSTALL_COPY.landingTitle)}</h1>
+        ${inAppHintBlock(inAppBrowser)}
+        <div class="install-store-actions">
+          <a class="primary auth-submit" href="${escapeHtml(STORE_URLS.appStore)}" target="_blank" rel="noopener noreferrer">${escapeHtml(INSTALL_COPY.appStore)}</a>
+          <a class="primary auth-submit" href="${escapeHtml(STORE_URLS.googlePlay)}" target="_blank" rel="noopener noreferrer">${escapeHtml(INSTALL_COPY.googlePlay)}</a>
+        </div>
+        <button class="secondary auth-submit" type="button" data-action="continue-web">${escapeHtml(INSTALL_COPY.webContinue)}</button>
+      </section>
+    </main>
+    ${footer()}
+  `;
+}
+
+export function renderInstagramStart({ inAppBrowser = false } = {}) {
+  return `
+    ${brand()}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · START</span>
+        ${inAppHintBlock(inAppBrowser)}
+        <a class="primary auth-submit" href="${escapeHtml(instagramStartHref())}" data-action="show-install">${escapeHtml(INSTALL_COPY.instagramStart)}</a>
+      </section>
+    </main>
+    ${footer()}
+  `;
 }
 
 export function renderOnboarding({ email = "", error = "", busy = false } = {}) {
@@ -65,7 +122,7 @@ export function renderLoginNotice({ email = "" } = {}) {
   `;
 }
 
-export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite = null, error = "", busy = false, copied = false } = {}) {
+export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite = null, error = "", busy = false, copied = false, banner = "" } = {}) {
   const hasInvite = Boolean(invite);
   const shareUrl = invite?.url || "";
   const remaining = hasInvite ? formatRemaining(invite.remainingMs) : "";
@@ -90,6 +147,7 @@ export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite 
   return `
     ${brand(logoutCluster())}
     <main class="auth-shell">
+      ${banner}
       <section class="auth-card">
         <span class="eyebrow">AB · INVITE WAITING</span>
         <h1>${escapeHtml(INVITE_COPY.title)}</h1>
@@ -153,10 +211,11 @@ export function renderInviteAccept({ email = "", error = "", preview = null, acc
   `;
 }
 
-export function renderPackReady({ email = "" } = {}) {
+export function renderPackReady({ email = "", banner = "" } = {}) {
   return `
     ${brand(logoutCluster())}
     <main class="auth-shell">
+      ${banner}
       <section class="auth-card">
         <span class="eyebrow">AB · PACK READY</span>
         <h1>${escapeHtml(AUTH_COPY.title)}</h1>

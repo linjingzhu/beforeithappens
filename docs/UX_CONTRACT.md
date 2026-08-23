@@ -54,7 +54,21 @@ Invite-waiting home (buyer, no pack CTA):
 | Email mismatch | 이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요. |
 | Draft badge | 나만 보임 |
 
-Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not add Kakao login. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join, store landing, and universal links are out of this slice.
+Recommended web install (not a gate):
+
+| State | Copy |
+|---|---|
+| Logged-in banner | 앱에서 보면 초대와 알림이 더 쉬워요. |
+| Banner CTA | 앱 설치하기 |
+| Banner skip | 웹에서 계속 |
+| Install landing title | 앱을 설치하면 시작할 수 있어요. |
+| Store CTAs | App Store / Google Play |
+| Landing secondary | 지금은 웹에서 시작할래요. |
+| Instagram CTA | 시작하기 |
+| In-app browser | 바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요. |
+| In-app CTA | 브라우저에서 열기 |
+
+Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not add Kakao login. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join screens and universal links stay out of this slice. `시작하기` opens the web install landing and never the store. Install is recommended and skippable; the web path is never blocked on install.
 
 ### Expected visible result
 
@@ -63,7 +77,9 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 3. Buyer home is invite-waiting. It has no pack CTA and does not open the marriage pack.
 4. After the first send, buyer home shows share copy, copy/Instagram/KakaoTalk actions for the existing invite link, the device rule, and the email-typo field with `이메일 수정하고 다시 보내기`.
 5. Opening an invite while another account is logged in shows the same-session copy and `로그아웃하고 넘기기`. Accept cannot succeed. The CTA force-logs out and continues magic-link accept for the invited email.
-6. Logout returns the user to onboarding and invalidates the session.
+6. Logged-in buyer home and pack may show the install banner. `앱 설치하기` opens `/install`. `웹에서 계속` or `지금은 웹에서 시작할래요.` keeps the web flow open.
+7. Instagram `시작하기` opens `/install`. In Instagram/Kakao in-app browsers the landing shows the in-app hint and `브라우저에서 열기`.
+8. Logout returns the user to onboarding and invalidates the session.
 
 ### Important states
 
@@ -72,6 +88,7 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 - post-login notice;
 - invite waiting, share/copy, email typo resend, expired invite, invalid invite;
 - same-session other account, email mismatch;
+- recommended install banner, skipped banner, install landing, Instagram start, in-app browser hint;
 - unanswered, editing, saving, saved, save failed;
 - only me submitted, only partner submitted, both submitted;
 - revealed, revised, needs reconfirmation;
@@ -83,6 +100,7 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 - Empty or invalid email cannot send a link.
 - Unauthenticated sessions cannot open the pack.
 - Sessions without an accepted partner cannot open the pack, including ghost workspaces.
+- Install is never required. Skip and web-continue always return to the web flow.
 - Onboarding does not migrate or resume local-simulator drafts.
 
 ### Error feedback and recovery

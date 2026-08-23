@@ -140,6 +140,58 @@
   font-weight: 700;
 }
 
+.install-banner {
+  display: grid;
+  gap: 12px;
+  max-width: 1180px;
+  margin: 0 auto 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--soft);
+}
+
+.auth-shell > .install-banner {
+  margin: 0 0 20px;
+}
+
+.install-banner p,
+.install-inapp p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.install-banner-actions,
+.install-store-actions,
+.install-inapp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.install-inapp {
+  display: grid;
+  margin: 0 0 20px;
+}
+
+.install-banner-cta,
+.install-banner-skip,
+.install-store-actions a {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
 .logout-cluster {
   display: flex;
   flex-direction: column;

@@ -227,3 +227,20 @@ test("same-session accept stays blocked until force logout and invited-email mag
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("install and start routes serve the web app without requiring install", async () => {
+  const { server, port } = await startServer();
+  try {
+    const install = await request(port, "/install");
+    const start = await request(port, "/start");
+    assert.equal(install.status, 200);
+    assert.equal(start.status, 200);
+    assert.match(install.text, /<div id="app">/);
+    assert.match(start.text, /<div id="app">/);
+    const session = await request(port, "/api/auth/session");
+    assert.equal(session.status, 200);
+    assert.equal(session.json.user, null);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
