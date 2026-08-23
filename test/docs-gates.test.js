@@ -17,10 +17,14 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(spec, /No Kakao/);
   assert.match(spec, /ghost workspace/i);
   assert.match(spec, /local-simulator drafts are not migrated/i);
+  assert.match(spec, /The invited partner is free/);
+  assert.match(spec, /Payment and the 100-question lifecycle line are out of this slice/);
   assert.match(model, /7 days/);
   assert.match(model, /accepting user's email must equal the invite email/);
   assert.match(model, /PublicLock/);
   assert.match(model, /never mutates or reopens the same lock/);
+  assert.match(model, /The invited partner is free/);
   assert.match(ux, /invite-waiting/);
+  assert.match(ux, /The invited partner is free/);
   assert.match(ux, /forbidden in the onboarding body/);
 });

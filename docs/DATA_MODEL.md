@@ -49,7 +49,9 @@ The foundation slice persists `User`, magic-link tokens, and sessions. `CoupleWo
 - `(workspaceId, questionId, roundNumber, userId)` is unique on `AnswerRound` / `Answer`.
 - A `PublicLock` is an immutable snapshot. Re-answer creates a new private `AnswerRound` and never mutates or reopens the same lock.
 - Published pack versions and their children are immutable.
-- Payment order IDs and webhook event IDs are unique. Payment entities exist in the model but do not grant pack access in this slice.
+- The invited partner is free. The pack opens only after the partner accepts the invite. Payment and the 100-question lifecycle line are out of this slice.
+- Payment entities do not grant pack access in this slice. A workspace with no accepted partner is a ghost workspace and must not unlock the pack.
+- Payment order IDs and webhook event IDs are unique.
 - Private notes have a separate authorization path and never join report queries.
 - Database timestamps use UTC; presentation uses the user's locale.
 
