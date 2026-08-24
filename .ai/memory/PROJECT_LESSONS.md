@@ -18,7 +18,12 @@ Do not copy this file into unrelated projects.
 
 ## Domain Risk Lessons
 
-- None recorded yet.
+### 2026-08-23 — Invite latest-row ties
+Area: couple invite view
+Evidence: Two `issueInvite` calls in the same clock ms left `latestInvite` pointing at the first row when sort compared only `createdAt`.
+Impact: Email-typo resend expired the old token but buyer home could still show the old address/share URL.
+Recommended future behavior: Break invite recency ties by last-sent time, then by insertion order.
+Confidence: high
 
 ## Strategy Observations
 

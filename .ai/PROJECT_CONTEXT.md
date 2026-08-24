@@ -51,7 +51,7 @@ Targeted tests:
 
 - `src/questions.js` — structured question content
 - `src/app.js` — session-gated product views and historical local question workflow
-- `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, onboarding and invite-waiting views
+- `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock

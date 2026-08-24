@@ -1,5 +1,6 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { hashToken, hasAcceptedPartner, isValidEmail, normalizeEmail } from "./auth.mjs";
+import { inviteAcceptUrl } from "../src/auth.js";
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -31,10 +32,15 @@ function acceptedCount(state, workspaceId) {
 }
 
 function latestInvite(state, workspaceId) {
-  return state.invitations
-    .filter((invite) => invite.workspaceId === workspaceId)
-    .slice()
-    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())[0] || null;
+  return state.invitations.reduce((latest, invite) => {
+    if (invite.workspaceId !== workspaceId) return latest;
+    if (!latest) return invite;
+    const latestAt = new Date(latest.lastSentAt || latest.createdAt).getTime();
+    const inviteAt = new Date(invite.lastSentAt || invite.createdAt).getTime();
+    if (inviteAt > latestAt) return invite;
+    if (inviteAt === latestAt) return invite;
+    return latest;
+  }, null);
 }
 
 function expireUnusedInvites(store, workspaceId, at) {
@@ -42,7 +48,10 @@ function expireUnusedInvites(store, workspaceId, at) {
     if (invite.workspaceId === workspaceId && !invite.usedAt && new Date(invite.expiresAt).getTime() > at) {
       store.mutate((state) => {
         const row = state.invitations.find((item) => item.id === invite.id);
-        if (row && !row.usedAt) row.expiresAt = iso(at);
+        if (row && !row.usedAt) {
+          row.expiresAt = iso(at);
+          row.shareToken = "";
+        }
       });
     }
   }
@@ -79,7 +88,8 @@ export function workspaceView(state, userId, now = Date.now) {
       status: remainingMs > 0 ? "waiting" : "expired",
       expiresAt: inviteRow.expiresAt,
       lastSentAt: inviteRow.lastSentAt || inviteRow.createdAt,
-      remainingMs: Math.max(0, remainingMs)
+      remainingMs: Math.max(0, remainingMs),
+      url: inviteRow.shareToken ? inviteAcceptUrl("", inviteRow.shareToken) : ""
     };
   }
   return {
@@ -155,13 +165,21 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
         invitedByUserId: access.user.id,
         email,
         tokenHash: hashToken(token),
+        shareToken: token,
         createdAt: iso(at),
         lastSentAt: iso(at),
         expiresAt: iso(at + INVITE_TTL_MS),
         usedAt: null
       };
       store.mutate((state) => state.invitations.push(invite));
-      return { ok: true, email, token, expiresAt: invite.expiresAt, lastSentAt: invite.lastSentAt };
+      return {
+        ok: true,
+        email,
+        token,
+        url: inviteAcceptUrl("", token),
+        expiresAt: invite.expiresAt,
+        lastSentAt: invite.lastSentAt
+      };
     },
 
     previewInvite(rawToken) {

@@ -12,7 +12,11 @@ These gates are current product law. Later slices may implement them, but must n
 - One active `CoupleWorkspace` per user. Two members maximum: the buyer and one invited partner.
 - No Kakao. Onboarding is magic-link email only. There is no password.
 - Payment is out of the current foundation slice. The marriage pack does not open until the invited partner accepts. Buyer home after login is invite-waiting only. A workspace without an accepted partner (a ghost workspace) must not unlock the pack.
-- Invite is single-use and expires after 7 days. Reissue immediately expires the previous token. Accept creates a `CoupleMember` and consumes that invite. Accept email must equal the invite email. A link-only visitor with the wrong login, or no login, cannot accept.
+- Invite is single-use and expires after 7 days. Reissue immediately expires the previous token. Editing the invited email and resending immediately expires the previous token. Accept creates a `CoupleMember` and consumes that invite. Accept email must equal the invite email. A link-only visitor with the wrong login, or no login, cannot accept. Opening the invite while another account is logged in cannot accept; the web path is force logout, then magic-link accept for the invited email. There is no role switch.
+- Buyer invite-waiting share copy is `링크를 보내 파트너를 초대하세요.` with buttons `링크 복사` / `인스타그램` / `카카오톡` and copy success `링크를 복사했어요.` Those buttons share the existing invite link through copy or the system share intent. Do not add Kakao login.
+- Email typo recovery copy is `초대 메일이 맞는지 다시 확인해 주세요.` with CTA `이메일 수정하고 다시 보내기`, using the same email field as the first send.
+- Same-session accept copy is `이 기기에 다른 계정으로 로그인되어 있어요.` with CTA `로그아웃하고 넘기기`. Expired and mismatch copies stay `초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.` and `이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요.`
+- This slice is web-only. Do not add a native join screen, store landing, or universal links.
 - One-device two-role simulation is discarded as a product path. Device handoff is buyer forced logout, then handing the phone. There is no role switch.
 - Local-simulator drafts are not migrated into an account.
 - Persisted shared records are submitted answers and agree/hold. Drafts and private notes autosave to the server after login and stay author-only.
@@ -38,7 +42,9 @@ Authentication is a real `User` session, not another local role:
 3. Consume a valid link and receive one server session.
 4. See the post-login notice that local temporary answers do not continue.
 5. Land on invite-waiting buyer home. The pack stays closed until a partner accepts.
-6. Log out. Forced logout invalidates the user's only session so a later handoff can clear this device.
+6. After sending an invite, share the existing link (copy / Instagram / KakaoTalk system share). Confirm the invited email and resend if needed; resend expires the previous token.
+7. If an invite link is opened while another account is logged in, block accept, force logout, and continue the web magic-link accept for the invited email.
+8. Log out. Forced logout invalidates the user's only session so a later handoff can clear this device.
 
 Onboarding copy is fixed:
 

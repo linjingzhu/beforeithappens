@@ -1,4 +1,4 @@
-import { AUTH_COPY, AUTH_ERRORS, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, canOpenPack, consumeAuthLocation, emptySession, resolveSignedInView, resolveSignedOutView } from "./auth.js";
+import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel } from "./auth.js";
 import { renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
@@ -24,6 +24,9 @@ let invitePreview = null;
 let inviteError = "";
 let inviteBusy = false;
 let inviteAccepted = false;
+let inviteCopied = false;
+let openedWhileSignedIn = false;
+let preferInviteLogin = false;
 let partnerEmailDraft = "";
 
 function emptyPackState() {
@@ -273,7 +276,8 @@ function renderResultsScreen(results) {
 
 function renderAccountView() {
   if (session.user) {
-    const view = resolveSignedInView(session, noticeDismissed, Boolean(inviteToken) && !inviteAccepted && !session.workspace?.acceptedPartner);
+    const inviteFlow = Boolean(inviteToken) && !inviteAccepted && !session.workspace?.acceptedPartner;
+    const view = resolveSignedInView(session, noticeDismissed, inviteFlow, inviteFlow && isInvitePriorityError(inviteError));
     if (view === "notice") {
       document.querySelector("#app").innerHTML = renderLoginNotice({ email: session.user.email });
     } else if (view === "invite") {
@@ -292,10 +296,11 @@ function renderAccountView() {
         partnerEmail: partnerEmailDraft,
         invite: session.workspace?.invite,
         error: inviteError,
-        busy: inviteBusy
+        busy: inviteBusy,
+        copied: inviteCopied
       });
     }
-  } else if (inviteToken) {
+  } else if (inviteToken && !preferInviteLogin) {
     document.querySelector("#app").innerHTML = renderInviteAccept({
       error: inviteError || "unauthenticated",
       preview: invitePreview,
@@ -318,8 +323,13 @@ function renderAccountView() {
   });
   document.querySelector('[data-action="ack-notice"]')?.addEventListener("click", acknowledgeNotice);
   document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+  document.querySelector('[data-action="logout-continue-invite"]')?.addEventListener("click", () => logout({ continueInvite: true }));
+  document.querySelector('[data-action="continue-invite-login"]')?.addEventListener("click", continueInviteLogin);
   document.querySelector('[data-action="accept-invite"]')?.addEventListener("click", acceptInvite);
   document.querySelector('[data-action="open-pack"]')?.addEventListener("click", openPack);
+  document.querySelector('[data-action="copy-invite-link"]')?.addEventListener("click", () => shareInvite("copy"));
+  document.querySelector('[data-action="share-instagram"]')?.addEventListener("click", () => shareInvite("instagram"));
+  document.querySelector('[data-action="share-kakao"]')?.addEventListener("click", () => shareInvite("kakao"));
 }
 
 function bindAccountNavigation() {
@@ -422,6 +432,7 @@ async function submitInvite(event) {
     } else {
       session = { ...session, workspace: payload.workspace || session.workspace };
       inviteError = "";
+      inviteCopied = false;
     }
   } catch {
     inviteError = INVITE_ERRORS.failed;
@@ -483,7 +494,35 @@ async function acknowledgeNotice() {
   render();
 }
 
-async function logout() {
+function currentInviteShareUrl() {
+  return absoluteInviteUrl(window.location.origin, session.workspace?.invite?.url || "");
+}
+
+async function shareInvite(channel) {
+  const url = currentInviteShareUrl();
+  if (!url) return;
+  try {
+    const result = await shareInviteChannel(url, channel);
+    inviteCopied = result === "copied";
+  } catch {
+    inviteCopied = false;
+  }
+  render();
+}
+
+function continueInviteLogin() {
+  emailDraft = invitePreview?.email || emailDraft;
+  authScreen = "onboarding";
+  authError = "";
+  inviteError = "";
+  openedWhileSignedIn = false;
+  preferInviteLogin = true;
+  try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
+  render();
+}
+
+async function logout(options = {}) {
+  const continueInvite = options.continueInvite === true;
   try {
     await fetch("/api/auth/force-logout", { method: "POST", credentials: "same-origin" });
   } catch {
@@ -497,8 +536,15 @@ async function logout() {
   noticeDismissed = false;
   authError = "";
   inviteAccepted = false;
+  inviteCopied = false;
   inviteError = "";
   currentView = "product";
+  openedWhileSignedIn = false;
+  try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
+  if (continueInvite) {
+    emailDraft = invitePreview?.email || emailDraft;
+    preferInviteLogin = true;
+  }
   render();
 }
 
@@ -524,7 +570,18 @@ async function boot() {
     if (locationInfo.authError || locationInfo.isConsumePath || locationInfo.isInvitePath) history.replaceState({}, "", "/");
   }
   if (inviteToken) await loadInvitePreview(inviteToken);
-  if (session.user && invitePreview?.ok && session.user.email !== invitePreview.email) inviteError = "mismatch";
+  if (locationInfo.isInvitePath && session.user && invitePreview?.ok && session.user.email !== invitePreview.email) {
+    openedWhileSignedIn = true;
+    try { sessionStorage.setItem(INVITE_CONFLICT_KEY, "other-session"); } catch { /* ignore */ }
+  } else {
+    try { openedWhileSignedIn = sessionStorage.getItem(INVITE_CONFLICT_KEY) === "other-session"; } catch { openedWhileSignedIn = false; }
+  }
+  inviteError = resolveInviteAcceptError({
+    preview: inviteToken ? invitePreview : null,
+    session,
+    openedWhileSignedIn,
+    accepted: inviteAccepted
+  });
   if (session.workspace?.acceptedPartner) {
     inviteAccepted = true;
     try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
