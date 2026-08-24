@@ -81,14 +81,18 @@ export function canOpenPack(session) {
 
 export function consumeAuthLocation(pathname = "/", search = "") {
   const params = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
-  const token = params.get("token") || "";
   const isInvitePath = pathname === "/invite/accept";
+  const isInstallPath = pathname === "/install";
+  const isStartPath = pathname === "/start";
+  const token = isInvitePath || isInstallPath || isStartPath ? "" : (params.get("token") || "");
   return {
-    token: isInvitePath ? "" : token,
-    inviteToken: isInvitePath ? token : (params.get("invite") || ""),
+    token,
+    inviteToken: isInvitePath ? (params.get("token") || "") : (params.get("invite") || ""),
     authError: params.get("authError") || "",
     isConsumePath: pathname === "/auth/consume",
-    isInvitePath
+    isInvitePath,
+    isInstallPath,
+    isStartPath
   };
 }
 

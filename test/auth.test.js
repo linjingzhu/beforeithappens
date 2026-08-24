@@ -169,6 +169,9 @@ test("onboarding copy is exact and never includes device-handoff text", () => {
   assert.equal(resolveSignedInView({ notice: "no-local-draft" }, false, true, true), "invite");
   assert.equal(resolveSignedInView({ notice: null }, false), "home");
   assert.equal(consumeAuthLocation("/auth/consume", "?token=abc").token, "abc");
+  assert.equal(consumeAuthLocation("/install").isInstallPath, true);
+  assert.equal(consumeAuthLocation("/install", "?token=abc").token, "");
+  assert.equal(consumeAuthLocation("/start").isStartPath, true);
   assert.equal(AUTH_ERRORS.expired.includes("만료"), true);
 });
 

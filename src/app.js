@@ -1,5 +1,6 @@
 import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel } from "./auth.js";
-import { renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
+import { renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
+import { INSTALL_PATH, START_PATH, isInAppBrowser, openInSystemBrowser, readInstallSkip, resolveInstallView, writeInstallSkip } from "./install.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
 import { escapeHtml } from "./html.js";
@@ -28,6 +29,8 @@ let inviteCopied = false;
 let openedWhileSignedIn = false;
 let preferInviteLogin = false;
 let partnerEmailDraft = "";
+let installSkipped = readInstallSkip();
+let lastPackView = "product";
 
 function emptyPackState() {
   return createInitialState(ids, packIdentity);
@@ -184,8 +187,75 @@ async function openPack() {
   }
 }
 
+function inAppBrowserNow() {
+  return isInAppBrowser(globalThis.navigator?.userAgent || "");
+}
+
+function accountBannerHtml() {
+  return renderInstallBanner({ visible: Boolean(session.user) && !installSkipped });
+}
+
+function showInstallLanding() {
+  currentView = "install";
+  history.pushState({ view: "install" }, "", INSTALL_PATH);
+  render();
+}
+
+function continueOnWeb() {
+  writeInstallSkip();
+  installSkipped = true;
+  currentView = lastPackView === "questions" || lastPackView === "results" ? lastPackView : "product";
+  if (!canOpenPack(session) && (currentView === "questions" || currentView === "results")) currentView = "product";
+  history.replaceState({ view: currentView }, "", "/");
+  render();
+}
+
+async function openSystemBrowser() {
+  const pageUrl = currentView === "start"
+    ? new URL(START_PATH, window.location.origin).href
+    : new URL(INSTALL_PATH, window.location.origin).href;
+  await openInSystemBrowser(pageUrl, {
+    userAgent: globalThis.navigator?.userAgent || "",
+    clipboard: globalThis.navigator?.clipboard,
+    assign: (href) => { window.location.href = href; }
+  });
+}
+
+function bindInstallActions() {
+  document.querySelectorAll('[data-action="show-install"]').forEach((node) => {
+    node.addEventListener("click", (event) => {
+      event.preventDefault();
+      showInstallLanding();
+    });
+  });
+  document.querySelectorAll('[data-action="skip-install"], [data-action="continue-web"]').forEach((node) => {
+    node.addEventListener("click", (event) => {
+      event.preventDefault();
+      continueOnWeb();
+    });
+  });
+  document.querySelectorAll('[data-action="open-system-browser"]').forEach((node) => {
+    node.addEventListener("click", (event) => {
+      event.preventDefault();
+      openSystemBrowser();
+    });
+  });
+}
+
+function renderInstallView() {
+  document.querySelector("#app").innerHTML = renderInstallLanding({ inAppBrowser: inAppBrowserNow() });
+  bindAccountNavigation();
+}
+
+function renderStartView() {
+  document.querySelector("#app").innerHTML = renderInstagramStart({ inAppBrowser: inAppBrowserNow() });
+  bindAccountNavigation();
+}
+
 function render() {
   if (currentView === "dashboard") { renderDashboard(); return; }
+  if (currentView === "install") { renderInstallView(); return; }
+  if (currentView === "start") { renderStartView(); return; }
   if (currentView !== "questions" && currentView !== "results") {
     renderAccountView();
     return;
@@ -197,6 +267,7 @@ function render() {
   }
   state.activeRole = viewerRole();
   const sharedResults = buildSharedResults(state, ids, choiceIdsByQuestion, packIdentity);
+  lastPackView = currentView;
   if (currentView === "results" && sharedResults.complete) { renderResultsScreen(sharedResults); return; }
   const question = questions[state.index];
   const questionState = state.questions[question.id];
@@ -211,6 +282,7 @@ function render() {
       <a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a>
       <div class="top-actions">${sharedResults.complete ? `<button class="results-link" data-action="show-results">공동 결과 보기</button>` : ""}<div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small></div></div>
     </header>
+    ${accountBannerHtml()}
     <div class="role-announcement sr-only" role="status" aria-live="polite">현재 ${roleName(state.activeRole)} 역할입니다.</div>
     <main>
       <section class="demo-notice"><strong>두 사람 계정</strong><p>초안과 메모는 나만 보여요. 제출한 답과 합의만 함께 보여요.</p></section>
@@ -267,10 +339,12 @@ function renderReveal(question, questionState) {
 function renderResultsScreen(results) {
   const choiceLabel = (question, choiceId) => question.choices.find((choice) => choice.id === choiceId)?.label || "알 수 없는 선택";
   const statusLabel = (item) => item.agreement.status === "agreed" ? "공동 합의 완료" : item.agreement.status === "deferred" ? "다시 이야기할 항목" : item.agreement.status === "pending" ? "합의 승인 대기" : "아직 합의 없음";
-  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><div class="top-actions"><button class="results-link" data-action="back-to-questions">질문으로 돌아가기</button><div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small></div></div></header><p class="sr-only" role="status" aria-live="polite">결과가 준비되었습니다.</p><main class="results-page"><section class="results-hero"><span class="eyebrow">SHARED CONVERSATION RESULTS</span><h1 tabindex="-1">두 사람의 답을<br><em>한곳에 모았어요.</em></h1><p>이 숫자는 선택한 답변과 대화 상태만 설명하며 궁합 점수나 관계 진단이 아닙니다.</p></section><section class="results-summary" aria-label="공동 결과 요약"><article><strong>${results.alignedCount}</strong><span>같은 선택</span></article><article><strong>${results.discussCount}</strong><span>서로 다른 선택</span></article><article><strong>${results.agreedCount}</strong><span>공동 합의</span></article><article><strong>${results.deferredCount}</strong><span>다시 이야기하기</span></article><article><strong>${results.pendingCount}</strong><span>승인 대기</span></article><article><strong>${results.noneCount}</strong><span>합의 미작성</span></article></section><section class="results-list"><h2>질문별 대화 기록</h2>${results.items.map((item, index) => { const question = questions.find((entry) => entry.id === item.questionId); return `<article class="result-item"><div class="result-heading"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(question.chapter)}</span><h3>${escapeHtml(question.title)}</h3><i class="${item.comparison}">${item.comparison === "aligned" ? "같은 선택" : "서로 다른 선택"}</i></div><div class="result-answers"><p><small>역할 A</small>${escapeHtml(choiceLabel(question, item.submittedChoices.a))}</p><p><small>역할 B</small>${escapeHtml(choiceLabel(question, item.submittedChoices.b))}</p></div><div class="result-agreement ${item.agreement.status}"><strong>${statusLabel(item)}</strong>${item.agreement.status === "agreed" ? `<p>${escapeHtml(item.agreement.text)}</p>` : ""}</div></article>`; }).join("")}</section><section class="privacy-reminder"><strong>비공개 메모는 포함하지 않았어요.</strong><p>이 화면에는 두 사람이 제출한 선택과 공유 합의만 표시됩니다.</p></section></main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p></footer>`;
+  lastPackView = "results";
+  document.querySelector("#app").innerHTML = `<header class="topbar"><a class="brand" href="#" aria-label="AB 홈"><span>AB</span><strong>Before life changes, talk.</strong></a><div class="top-actions"><button class="results-link" data-action="back-to-questions">질문으로 돌아가기</button><div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small></div></div></header>${accountBannerHtml()}<p class="sr-only" role="status" aria-live="polite">결과가 준비되었습니다.</p><main class="results-page"><section class="results-hero"><span class="eyebrow">SHARED CONVERSATION RESULTS</span><h1 tabindex="-1">두 사람의 답을<br><em>한곳에 모았어요.</em></h1><p>이 숫자는 선택한 답변과 대화 상태만 설명하며 궁합 점수나 관계 진단이 아닙니다.</p></section><section class="results-summary" aria-label="공동 결과 요약"><article><strong>${results.alignedCount}</strong><span>같은 선택</span></article><article><strong>${results.discussCount}</strong><span>서로 다른 선택</span></article><article><strong>${results.agreedCount}</strong><span>공동 합의</span></article><article><strong>${results.deferredCount}</strong><span>다시 이야기하기</span></article><article><strong>${results.pendingCount}</strong><span>승인 대기</span></article><article><strong>${results.noneCount}</strong><span>합의 미작성</span></article></section><section class="results-list"><h2>질문별 대화 기록</h2>${results.items.map((item, index) => { const question = questions.find((entry) => entry.id === item.questionId); return `<article class="result-item"><div class="result-heading"><span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(question.chapter)}</span><h3>${escapeHtml(question.title)}</h3><i class="${item.comparison}">${item.comparison === "aligned" ? "같은 선택" : "서로 다른 선택"}</i></div><div class="result-answers"><p><small>역할 A</small>${escapeHtml(choiceLabel(question, item.submittedChoices.a))}</p><p><small>역할 B</small>${escapeHtml(choiceLabel(question, item.submittedChoices.b))}</p></div><div class="result-agreement ${item.agreement.status}"><strong>${statusLabel(item)}</strong>${item.agreement.status === "agreed" ? `<p>${escapeHtml(item.agreement.text)}</p>` : ""}</div></article>`; }).join("")}</section><section class="privacy-reminder"><strong>비공개 메모는 포함하지 않았어요.</strong><p>이 화면에는 두 사람이 제출한 선택과 공유 합의만 표시됩니다.</p></section></main><footer><span>AB</span><p>다가올 삶을, 함께 준비하다.</p></footer>`;
   document.querySelector('[data-action="back-to-questions"]')?.addEventListener("click", () => { currentView = "questions"; render(); });
   document.querySelector(".brand")?.addEventListener("click", (event) => { event.preventDefault(); currentView = "product"; render(); });
   document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+  bindInstallActions();
   document.querySelector(".results-hero h1")?.focus();
 }
 
@@ -289,7 +363,7 @@ function renderAccountView() {
         busy: inviteBusy
       });
     } else if (view === "ready") {
-      document.querySelector("#app").innerHTML = renderPackReady({ email: session.user.email });
+      document.querySelector("#app").innerHTML = renderPackReady({ email: session.user.email, banner: accountBannerHtml() });
     } else {
       document.querySelector("#app").innerHTML = renderInviteWaitingHome({
         email: session.user.email,
@@ -297,7 +371,8 @@ function renderAccountView() {
         invite: session.workspace?.invite,
         error: inviteError,
         busy: inviteBusy,
-        copied: inviteCopied
+        copied: inviteCopied,
+        banner: accountBannerHtml()
       });
     }
   } else if (inviteToken && !preferInviteLogin) {
@@ -337,6 +412,9 @@ function bindAccountNavigation() {
     event.preventDefault();
     currentView = "product";
     if (session.workspace?.role === "buyer" && !session.workspace.acceptedPartner) inviteToken = "";
+    if (window.location.pathname === INSTALL_PATH || window.location.pathname === START_PATH) {
+      history.replaceState({ view: "product" }, "", "/");
+    }
     render();
   });
   document.querySelectorAll('[data-action="show-dashboard"]').forEach((button) => button.addEventListener("click", () => {
@@ -349,6 +427,7 @@ function bindAccountNavigation() {
   }));
   document.querySelectorAll('[data-action="open-product"]').forEach((button) => button.addEventListener("click", openPack));
   document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+  bindInstallActions();
 }
 
 async function refreshSession() {
@@ -587,6 +666,8 @@ async function boot() {
     try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
   }
   if (!session.user) authScreen = resolveSignedOutView(authScreen);
+  const installView = resolveInstallView(window.location.pathname);
+  if (installView) currentView = installView;
   render();
 }
 
@@ -663,6 +744,19 @@ function bindEvents() {
     render();
   });
   document.querySelector('[data-action="logout"]')?.addEventListener("click", logout);
+  bindInstallActions();
 }
+
+window.addEventListener("popstate", () => {
+  const view = resolveInstallView(window.location.pathname);
+  if (view) {
+    currentView = view;
+  } else if ((lastPackView === "questions" || lastPackView === "results") && canOpenPack(session)) {
+    currentView = lastPackView;
+  } else {
+    currentView = "product";
+  }
+  render();
+});
 
 boot();

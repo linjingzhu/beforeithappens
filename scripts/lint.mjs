@@ -6,6 +6,7 @@ const files = [
   "src/auth.js",
   "src/auth-ui.js",
   "src/auth.css",
+  "src/install.js",
   "src/state.js",
   "src/questions.js",
   "src/styles.css",

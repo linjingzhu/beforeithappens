@@ -86,7 +86,7 @@ export function createListener({ auth, couple, answers, root, allowDevOutbox = f
         return;
       }
 
-      if (request.method === "GET" && (url.pathname === "/auth/consume" || url.pathname === "/invite/accept")) {
+      if (request.method === "GET" && (url.pathname === "/auth/consume" || url.pathname === "/invite/accept" || url.pathname === "/install" || url.pathname === "/start")) {
         await serveStatic(response, "/");
         return;
       }

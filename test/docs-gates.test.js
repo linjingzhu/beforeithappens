@@ -43,7 +43,17 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(spec, /초대 메일이 맞는지 다시 확인해 주세요/);
   assert.match(spec, /이 기기에 다른 계정으로 로그인되어 있어요/);
   assert.match(spec, /Do not add Kakao login/);
-  assert.match(spec, /native join screen, store landing, or universal links/);
+  assert.match(spec, /native join screen or universal links/);
+  assert.match(spec, /앱에서 보면 초대와 알림이 더 쉬워요/);
+  assert.match(spec, /앱을 설치하면 시작할 수 있어요/);
+  assert.match(spec, /지금은 웹에서 시작할래요/);
+  assert.match(spec, /never blocked on install/);
+  assert.match(ux, /앱에서 보면 초대와 알림이 더 쉬워요/);
+  assert.match(ux, /웹에서 계속/);
+  assert.match(ux, /시작하기/);
+  assert.match(ux, /브라우저에서 열기/);
+  assert.match(ux, /never blocked on install/);
+  assert.match(model, /App install is not a persisted gate/);
   assert.match(ux, /forbidden in the onboarding body/);
   assert.match(model, /The current slice persists/);
   assert.match(model, /AnswerRound/);
@@ -69,10 +79,11 @@ test("pack UI has no local-sim role switch and keeps handoff copy next to logout
   assert.equal(onboardingFn.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
 });
 
-test("web invite drop-off does not add Kakao login, store landing, or universal links", async () => {
+test("web invite drop-off does not add Kakao login or universal links", async () => {
   const files = [
     await readFile("src/app.js", "utf8"),
     await readFile("src/auth.js", "utf8"),
+    await readFile("src/install.js", "utf8"),
     await readFile("src/auth-ui.js", "utf8"),
     await readFile("index.html", "utf8"),
     await readFile("server/app.mjs", "utf8")
@@ -83,6 +94,13 @@ test("web invite drop-off does not add Kakao login, store landing, or universal 
     assert.equal(text.includes("accounts.kakao.com"), false);
     assert.equal(text.includes("apple-app-site-association"), false);
     assert.equal(text.includes("assetlinks.json"), false);
+  }
+  const inviteCore = [
+    await readFile("src/auth.js", "utf8"),
+    await readFile("index.html", "utf8"),
+    await readFile("server/app.mjs", "utf8")
+  ];
+  for (const text of inviteCore) {
     assert.equal(text.includes("apps.apple.com"), false);
     assert.equal(text.includes("play.google.com"), false);
   }
