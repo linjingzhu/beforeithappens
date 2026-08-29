@@ -16,7 +16,7 @@ These gates are current product law. Later slices may implement them, but must n
 - Buyer invite-waiting share copy is `링크를 보내 파트너를 초대하세요.` with buttons `링크 복사` / `인스타그램` / `카카오톡` and copy success `링크를 복사했어요.` Those buttons share the existing invite link through copy or the system share intent. Do not add Kakao login.
 - Email typo recovery copy is `초대 메일이 맞는지 다시 확인해 주세요.` with CTA `이메일 수정하고 다시 보내기`, using the same email field as the first send.
 - Same-session accept copy is `이 기기에 다른 계정으로 로그인되어 있어요.` with CTA `로그아웃하고 넘기기`. Expired and mismatch copies stay `초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.` and `이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요.`
-- This slice is web-only. Logged-in web may recommend the app with `앱에서 보면 초대와 알림이 더 쉬워요.`, CTA `앱 설치하기` to the web install landing (`/install`, not the store), and skip `웹에서 계속`. The landing title is `앱을 설치하면 시작할 수 있어요.` with App Store / Google Play placeholder store homepages (do not invent a fake app listing) and secondary `지금은 웹에서 시작할래요.` Install is recommended, not a hard gate. The web path is never blocked on install.
+- Logged-in web may recommend the app with `앱에서 보면 초대와 알림이 더 쉬워요.`, CTA `앱 설치하기` to the web install landing (`/install`, not the store), and skip `웹에서 계속`. The landing title is `앱을 설치하면 시작할 수 있어요.` with App Store / Google Play placeholder store homepages (do not invent a fake app listing) and secondary `지금은 웹에서 시작할래요.` Install is recommended, not a hard gate. The web path is never blocked on install. The S1 install landing is web only. Do not put an install or store screen in the native app.
 - Instagram `시작하기` opens the web install landing and never deep-links to the store. In Instagram/Kakao in-app browsers show `바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요.` with CTA `브라우저에서 열기`.
 - Do not add a native join screen or universal links. Do not implement native app signup screens. Do not change locked invite expiry, mismatch, or partner-not-installed copies.
 - One-device two-role simulation is discarded as a product path. Device handoff is buyer forced logout, then handing the phone. There is no role switch.
@@ -67,6 +67,20 @@ Earlier implementation proved the question loop on one browser:
 3. Use a device-local two-role simulator to submit, reveal, and agree.
 
 That simulator is not an authentication or privacy boundary. It is not the current product entry. Role switching is not offered as a way to sign in or hand off a device.
+
+## LoveMe native S0
+
+LoveMe is the same product as the web AB service, not a second app. Native iOS and Android targets live in `mobile/` and share one UI.
+
+S0 splash lasts 1.2 seconds and has no buttons. Wordmark `LoveMe`. Copy `두 사람의 결혼 준비, 한곳에`.
+
+After splash, a logged-out session routes into S2 magic-link signup. S2–S3 owns the login screens. This slice does not implement S2 send/consume, S3 workspace, invite, pack CTA, Kakao, payment, or universal links. If S2 screens are not in this PR, splash lands on a signup placeholder that is not the web install landing and is not empty home as the product destination.
+
+Locked S2 copies, when shown, stay:
+
+- `비밀번호 없이 이메일로 로그인 링크를 보내드려요.`
+- `로그인 링크 보내기`
+- `메일을 확인해 주세요. 링크는 10분 동안만 유효해요.`
 
 ## Later slices
 

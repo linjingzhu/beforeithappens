@@ -54,6 +54,12 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(ux, /브라우저에서 열기/);
   assert.match(ux, /never blocked on install/);
   assert.match(model, /App install is not a persisted gate/);
+  assert.match(spec, /LoveMe native S0/);
+  assert.match(spec, /S1 install landing is web only/);
+  assert.match(spec, /Do not put an install or store screen in the native app/);
+  assert.match(ux, /S1 install landing is web only/);
+  assert.match(ux, /signup placeholder/);
+  assert.match(model, /LoveMe native S0 shell persists nothing/);
   assert.match(ux, /forbidden in the onboarding body/);
   assert.match(model, /The current slice persists/);
   assert.match(model, /AnswerRound/);

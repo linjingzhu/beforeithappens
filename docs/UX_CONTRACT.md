@@ -68,7 +68,28 @@ Recommended web install (not a gate):
 | In-app browser | 바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요. |
 | In-app CTA | 브라우저에서 열기 |
 
-Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not add Kakao login. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join screens and universal links stay out of this slice. `시작하기` opens the web install landing and never the store. Install is recommended and skippable; the web path is never blocked on install.
+Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not add Kakao login. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join screens and universal links stay out of this slice. `시작하기` opens the web install landing and never the store. Install is recommended and skippable; the web path is never blocked on install. The S1 install landing is web only and must not appear in the native app.
+
+## LoveMe native S0
+
+### Entry point
+
+Open the installed LoveMe app. Primary action: none on splash.
+
+### Required copy
+
+| State | Copy |
+|---|---|
+| Wordmark | LoveMe |
+| Splash line | 두 사람의 결혼 준비, 한곳에 |
+
+Splash lasts 1.2 seconds and has no buttons. After splash, a logged-out user goes to S2 signup (magic link), owned by S2–S3. If those screens are in another PR, land on a signup placeholder that is not `/install` and not empty home as the product destination. Do not show App Store, Google Play, or `지금은 웹에서 시작할래요.` in the native app.
+
+### Expected visible result
+
+1. Splash shows only the LoveMe wordmark and the one-line copy.
+2. After 1.2 seconds the logged-out path is S2 signup, or a signup placeholder with the S2 body copy.
+3. Native never opens the web install landing as the post-splash destination.
 
 ### Expected visible result
 

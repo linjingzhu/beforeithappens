@@ -6,7 +6,7 @@ Keep this file compact. It is a routing map, not full documentation.
 
 repository_mode: personal
 base_branch: stable
-primary_platform: Web / Windows
+primary_platform: Web / Windows; native Expo iOS+Android in `mobile/`
 
 ## Product
 
@@ -23,6 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
+- LoveMe native S0 splash (shared iOS/Android UI) lives in `mobile/`. S1 install landing stays web-only (`src/install.js`). S2–S3 owns native magic-link screens.
 
 Persistence/Data:
 - File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, and immutable `PublicLock` snapshots. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
@@ -53,6 +54,7 @@ Targeted tests:
 - `src/app.js` — session-gated product views and historical local question workflow
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
+- `mobile/` — Expo LoveMe app (S0 splash → logged-out S2 signup placeholder); `ios/` and `android/` targets committed
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock

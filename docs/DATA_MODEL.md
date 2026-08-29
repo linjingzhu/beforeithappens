@@ -44,6 +44,7 @@ The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace
 - The buyer may share the current unused invite URL. Reissue or editing the invited email immediately expires the previous token so the old share link cannot be accepted.
 - Opening an invite while another account is logged in cannot accept. The web recovery is force logout, then magic-link accept for the invited email. There is no role switch.
 - App install is not a persisted gate. Skipping the recommended install leaves the web session and pack access unchanged.
+- The LoveMe native S0 shell persists nothing. Native splash does not write a session. S2–S3 owns magic-link login state.
 
 ## Persistence rules
 

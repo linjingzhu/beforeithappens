@@ -16,7 +16,12 @@ const files = [
   "server/store.mjs",
   "server/http.mjs",
   "server/workspace.mjs",
-  "server/answers.mjs"
+  "server/answers.mjs",
+  "mobile/App.js",
+  "mobile/src/copy.js",
+  "mobile/src/session.js",
+  "mobile/src/screens.js",
+  "mobile/src/theme.js"
 ];
 for (const file of files) {
   const value = await readFile(file, "utf8");
