@@ -28,6 +28,7 @@ struct PackLock: Equatable {
     var id: String
     var roundNumber: Int
     var submittedChoices: [String: String]
+    var comparisonKey: String?
 }
 
 struct PackRoleState: Equatable {

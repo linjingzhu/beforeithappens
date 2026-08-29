@@ -14,4 +14,10 @@ enum PackGate {
     static func startCTA(for session: PackSession) -> String {
         canStartPack(session) ? PackCopy.startPack : ""
     }
+
+    static func requiresPaywall(_ lockCount: Int = 0) -> Bool { false }
+
+    static func canContinuePack(_ session: PackSession, lockCount: Int = 0) -> Bool {
+        canStartPack(session) && !requiresPaywall(lockCount)
+    }
 }

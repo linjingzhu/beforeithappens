@@ -123,6 +123,9 @@ fun PackRevealScreen(model: PackViewModel) {
         Text(question.title)
         Text(PackCopy.LOCK_BADGE)
         Text(PackCopy.LOCK_HINT)
+        if (model.comparisonLabel.isNotEmpty()) {
+            Text(model.comparisonLabel)
+        }
         model.lock?.let { lock ->
             val mineKey = model.session.roleKey
             val theirKey = if (mineKey == "a") "b" else "a"

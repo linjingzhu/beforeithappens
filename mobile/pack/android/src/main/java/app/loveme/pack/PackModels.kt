@@ -25,7 +25,8 @@ data class PackQuestion(
 data class PackLock(
     val id: String,
     val roundNumber: Int,
-    val submittedChoices: Map<String, String>
+    val submittedChoices: Map<String, String>,
+    val comparisonKey: String? = null
 )
 
 data class PackRoleState(

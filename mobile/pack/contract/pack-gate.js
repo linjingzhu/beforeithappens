@@ -1,7 +1,18 @@
 import { PACK_COPY } from "./pack-copy.js";
 
+export const SAMPLE_LOCK_COUNT = 3;
+
 export function canStartPack(session) {
   return Boolean(session?.user && session.workspace?.acceptedPartner === true);
+}
+
+/** Paywall is a later pack after the third sample lock. S6–S8 never charge. */
+export function requiresPaywall(_lockCount = 0) {
+  return false;
+}
+
+export function canContinuePack(session, { lockCount = 0 } = {}) {
+  return canStartPack(session) && !requiresPaywall(lockCount);
 }
 
 export function packReadyScreen(session) {

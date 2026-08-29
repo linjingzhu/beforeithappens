@@ -31,13 +31,28 @@ export const PACK_COPY = Object.freeze({
   agreedStatus: "두 사람이 승인한 합의",
   pendingStatus: "합의 승인 대기",
   holdStatus: "다음에 미룸",
-  noneStatus: "아직 합의 상태를 정하지 않았어요."
+  noneStatus: "아직 합의 상태를 정하지 않았어요.",
+  aligned: "ALIGNED",
+  close: "CLOSE",
+  discuss: "DISCUSS"
+});
+
+export const COMPARISON_LABELS = Object.freeze({
+  aligned: "ALIGNED",
+  close: "CLOSE",
+  discuss: "DISCUSS"
 });
 
 export const FORBIDDEN_PACK_SURFACES = Object.freeze([
   "payment",
+  "paywall",
   "결제",
   "29,000",
+  "29000",
+  "구독",
+  "subscription",
+  "파트너 결제",
+  "관계가 틀렸다",
   "install landing",
   "앱 설치하기",
   "앱을 설치하면 시작할 수 있어요.",

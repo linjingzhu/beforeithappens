@@ -17,6 +17,11 @@ struct PackRevealView: View {
                     Text(PackCopy.lockHint)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    if !model.comparisonLabel.isEmpty {
+                        Text(model.comparisonLabel)
+                            .font(.caption.weight(.bold))
+                            .accessibilityIdentifier("comparison-label")
+                    }
                     if let lock = model.lock {
                         lockRow(label: "나", choiceId: lock.submittedChoices[model.session.role == "partner" ? "b" : "a"], question: question)
                         lockRow(label: "상대", choiceId: lock.submittedChoices[model.session.role == "partner" ? "a" : "b"], question: question)

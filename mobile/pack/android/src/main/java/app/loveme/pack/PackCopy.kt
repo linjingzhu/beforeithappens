@@ -25,4 +25,7 @@ object PackCopy {
     const val RETRY = "다시 저장"
     const val EMPTY_SUBMIT = "답을 선택한 뒤에 제출할 수 있어요."
     const val AGREEMENT_PLACEHOLDER = "함께 지킬 원칙이나 다음 행동을 제안해 보세요."
+    const val ALIGNED = "ALIGNED"
+    const val CLOSE = "CLOSE"
+    const val DISCUSS = "DISCUSS"
 }

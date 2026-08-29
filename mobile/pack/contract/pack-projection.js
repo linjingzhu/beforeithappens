@@ -1,4 +1,4 @@
-import { PACK_COPY } from "./pack-copy.js";
+import { COMPARISON_LABELS, PACK_COPY } from "./pack-copy.js";
 import { choiceLabel, questionAt } from "./pack-catalog.js";
 
 export function viewerRole(session) {
@@ -47,6 +47,16 @@ export function agreementAction(shared, role) {
   return "propose";
 }
 
+export function comparisonLabel(lock, questionState) {
+  const raw = String(lock?.comparison?.key || lock?.comparison || "").toLowerCase();
+  if (raw === "aligned" || raw === "close" || raw === "discuss") return COMPARISON_LABELS[raw];
+  const left = lock?.submittedChoices?.a || questionState?.roles?.a?.submittedChoice;
+  const right = lock?.submittedChoices?.b || questionState?.roles?.b?.submittedChoice;
+  if (left && right && left === right) return COMPARISON_LABELS.aligned;
+  if (left && right) return COMPARISON_LABELS.discuss;
+  return "";
+}
+
 export function projectQuestionScreen({
   pack,
   state,
@@ -91,6 +101,7 @@ export function projectQuestionScreen({
     agreementAction: agreementAction(shared, role),
     partnerWaiting: isSubmitted(mine) && !isSubmitted(theirs),
     partnerStatus: isSubmitted(theirs) ? PACK_COPY.bothSubmitted : PACK_COPY.waitingPartner,
+    comparisonLabel: revealed ? comparisonLabel(lock, questionState) : "",
     lockHint: lock ? PACK_COPY.lockHint : "",
     myChoiceLabel: choiceLabel(question, mine.submittedChoice || mine.draftChoice),
     theirChoiceLabel: revealed ? choiceLabel(question, theirs.submittedChoice) : "",

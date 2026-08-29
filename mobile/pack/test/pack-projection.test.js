@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { loadMarriagePack } from "../contract/pack-catalog.js";
 import {
   agreementAction,
+  comparisonLabel,
   isReanswerDraft,
   projectQuestionScreen,
   shouldOpenNewRound
@@ -87,4 +88,27 @@ test("re-answer mode returns to a private draft badge on a new round", () => {
   assert.equal(view.privacyBadge, "나만 보임");
   assert.equal(view.canEditDraft, true);
   assert.equal(view.lock.roundNumber, 1);
+});
+
+test("comparison labels are ALIGNED, CLOSE, or DISCUSS only", () => {
+  assert.equal(comparisonLabel({ comparison: { key: "aligned" } }), "ALIGNED");
+  assert.equal(comparisonLabel({ comparison: { key: "close" } }), "CLOSE");
+  assert.equal(comparisonLabel({ comparison: { key: "discuss" } }), "DISCUSS");
+  assert.equal(comparisonLabel({ submittedChoices: { a: "home-rest", b: "home-rest" } }), "ALIGNED");
+  assert.equal(comparisonLabel({ submittedChoices: { a: "home-rest", b: "home-social" } }), "DISCUSS");
+  assert.equal(comparisonLabel({ comparison: { key: "broken", label: "관계가 틀렸다" } }, {
+    roles: { a: { submittedChoice: "home-rest" }, b: { submittedChoice: "home-social" } }
+  }), "DISCUSS");
+  const view = projectQuestionScreen({
+    pack,
+    state: questionState({
+      mine: { submittedChoice: "home-rest" },
+      theirs: { submittedChoice: "home-rest", completed: true },
+      lock: { id: "lock_1", roundNumber: 1, submittedChoices: { a: "home-rest", b: "home-rest" }, comparison: { key: "aligned" } }
+    }),
+    session: { workspace: { role: "buyer", acceptedPartner: true } }
+  });
+  assert.equal(view.comparisonLabel, "ALIGNED");
+  assert.equal(["ALIGNED", "CLOSE", "DISCUSS"].includes(view.comparisonLabel), true);
+  assert.equal(view.comparisonLabel.includes("틀렸다"), false);
 });

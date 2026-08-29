@@ -11,4 +11,9 @@ object PackGate {
 
     fun startCta(session: PackSession): String =
         if (canStartPack(session)) PackCopy.START_PACK else ""
+
+    fun requiresPaywall(lockCount: Int = 0): Boolean = false
+
+    fun canContinuePack(session: PackSession, lockCount: Int = 0): Boolean =
+        canStartPack(session) && !requiresPaywall(lockCount)
 }

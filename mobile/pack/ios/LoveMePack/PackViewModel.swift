@@ -37,6 +37,16 @@ final class PackViewModel: ObservableObject {
     var canGoNext: Bool { index + 1 < questions.count }
     var agreeLabel: String { PackCopy.agree }
     var holdLabel: String { PackCopy.hold }
+    var comparisonLabel: String {
+        let raw = lock?.comparisonKey?.lowercased() ?? ""
+        if raw == "aligned" { return PackCopy.aligned }
+        if raw == "close" { return PackCopy.close }
+        if raw == "discuss" { return PackCopy.discuss }
+        let left = lock?.submittedChoices["a"]
+        let right = lock?.submittedChoices["b"]
+        if let left, let right { return left == right ? PackCopy.aligned : PackCopy.discuss }
+        return ""
+    }
 
     func startPack() async {
         guard PackGate.canStartPack(session) else {
@@ -199,7 +209,9 @@ final class PackViewModel: ObservableObject {
             lock: lockRaw == nil ? nil : PackLock(
                 id: lockRaw?["id"] as? String ?? "",
                 roundNumber: lockRaw?["roundNumber"] as? Int ?? 1,
-                submittedChoices: lockChoices ?? [:]
+                submittedChoices: lockChoices ?? [:],
+                comparisonKey: ((lockRaw?["comparison"] as? [String: Any])?["key"] as? String)
+                    ?? (lockRaw?["comparison"] as? String)
             )
         )
     }

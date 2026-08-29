@@ -25,4 +25,7 @@ enum PackCopy {
     static let retry = "다시 저장"
     static let emptySubmit = "답을 선택한 뒤에 제출할 수 있어요."
     static let agreementPlaceholder = "함께 지킬 원칙이나 다음 행동을 제안해 보세요."
+    static let aligned = "ALIGNED"
+    static let close = "CLOSE"
+    static let discuss = "DISCUSS"
 }

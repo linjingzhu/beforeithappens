@@ -40,6 +40,18 @@ class PackViewModel(
     val startBody: String get() = if (session.acceptedPartner) PackCopy.START_BODY else PackCopy.LOCKED_BODY
     val agreeLabel: String get() = PackCopy.AGREE
     val holdLabel: String get() = PackCopy.HOLD
+    val comparisonLabel: String
+        get() {
+            val raw = lock?.comparisonKey?.lowercase().orEmpty()
+            if (raw == "aligned") return PackCopy.ALIGNED
+            if (raw == "close") return PackCopy.CLOSE
+            if (raw == "discuss") return PackCopy.DISCUSS
+            val left = lock?.submittedChoices?.get("a")
+            val right = lock?.submittedChoices?.get("b")
+            return if (left != null && right != null) {
+                if (left == right) PackCopy.ALIGNED else PackCopy.DISCUSS
+            } else ""
+        }
 
     fun startPack() {
         if (!PackGate.canStartPack(session)) {
@@ -169,7 +181,9 @@ class PackViewModel(
                 PackLock(
                     id = it.optString("id"),
                     roundNumber = it.optInt("roundNumber", 1),
-                    submittedChoices = lockChoices
+                    submittedChoices = lockChoices,
+                    comparisonKey = it.optJSONObject("comparison")?.optString("key")
+                        ?.ifBlank { it.optString("comparison") }
                 )
             }
         )
