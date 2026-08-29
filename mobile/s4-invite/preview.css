@@ -1,0 +1,231 @@
+:root {
+  --ink: #2b2521;
+  --muted: #81756e;
+  --paper: #f8f3ed;
+  --card: #fffdfa;
+  --line: #e7ddd5;
+  --coral: #ee775f;
+  --soft: #fce8e1;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 82% 3%, #f8dfd5 0, transparent 28rem), var(--paper);
+  color: var(--ink);
+  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+.phone {
+  max-width: 390px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: var(--paper);
+}
+
+.topbar {
+  min-height: 72px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand > span {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: white;
+  font: 500 15px Georgia, serif;
+}
+
+.brand strong { font-size: 12px; }
+
+.logout-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.logout-cluster small {
+  max-width: 16rem;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.results-link {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-decoration: underline;
+  font-size: 13px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.auth-shell { padding: 12px 16px 64px; }
+
+.auth-card {
+  padding: 28px 18px 32px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.eyebrow {
+  color: var(--coral);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+
+.auth-card h1 {
+  margin: 16px 0 14px;
+  font: 500 34px/1.12 Georgia, serif;
+  letter-spacing: -.04em;
+}
+
+.auth-card > p {
+  max-width: 34rem;
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.invite-status {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+.invite-status div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.invite-status dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.invite-status dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.invite-share {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 24px;
+}
+
+.invite-share > p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.invite-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.invite-share-button,
+.auth-submit,
+.secondary,
+.primary {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary {
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.primary {
+  border: 0;
+  background: var(--coral);
+  color: white;
+}
+
+.auth-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-form label {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.auth-form input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font: 16px/1.4 inherit;
+  background: white;
+}
+
+.invite-copied {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.auth-error {
+  margin: 16px 0 0;
+  color: #b64838;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-email-hint {
+  margin-top: 12px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.fixtures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 16px 0;
+}
+
+.fixtures a {
+  color: var(--muted);
+  font-size: 11px;
+}
