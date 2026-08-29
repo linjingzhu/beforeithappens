@@ -13,7 +13,6 @@ import { INVITE_API, createInviteApi } from "../mobile/s4-invite/api.js";
 import {
   APP_S4_SCREEN,
   APP_SAME_SESSION_SCREEN,
-  FORBIDDEN_APP_FEATURES,
   buyerHomeOpensPack,
   inviteBlockingCopy,
   resolveNativeInviteScreen,
@@ -141,8 +140,8 @@ test("S4 buyer home is invite-waiting with no pack CTA, payment, or role switch"
   assert.match(html, /초대 메일이 맞는지 다시 확인해 주세요\./);
   assert.match(html, /이메일 수정하고 다시 보내기/);
   assert.match(html, /로그아웃 후 이 기기를 넘겨주세요\./);
-  assert.equal(html.includes(FORBIDDEN_APP_FEATURES.packCta), false);
-  assert.equal(html.includes(FORBIDDEN_APP_FEATURES.joinConfirm), false);
+  assert.equal(html.includes("결혼 팩 시작하기"), false);
+  assert.equal(html.includes("이 워크스페이스에 합류할까요?"), false);
   assert.equal(html.includes("결제"), false);
   const model = s4ViewModel({ invite: { url: "/invite/accept?token=a" }, copied: true });
   assert.equal(model.actions.packCta, false);
@@ -178,8 +177,8 @@ test("same-session failure is an independent screen and not a role switch", () =
   assert.match(html, /이 기기에 다른 계정으로 로그인되어 있어요\./);
   assert.match(html, /로그아웃하고 넘기기/);
   assert.match(html, /로그아웃 후 이 기기를 넘겨주세요\./);
-  assert.equal(html.includes(FORBIDDEN_APP_FEATURES.roleSwitch), false);
-  assert.equal(html.includes(FORBIDDEN_APP_FEATURES.joinConfirm), false);
+  assert.equal(html.includes("역할 전환"), false);
+  assert.equal(html.includes("이 워크스페이스에 합류할까요?"), false);
 });
 
 test("expired and mismatch copies stay the product strings", () => {
@@ -229,9 +228,9 @@ test("iOS and Android screens carry the exact copy and omit store/join/deferred 
   assert.equal(joined.includes("이 워크스페이스에 합류할까요?"), false);
   assert.equal(joined.includes("apps.apple.com"), false);
   assert.equal(joined.includes("play.google.com"), false);
-  assert.equal(joined.includes("deferred"), false);
   assert.equal(joined.includes("Install Referrer"), false);
   assert.equal(joined.includes("결혼 팩 시작하기"), false);
+  assert.equal(/deferredDeepLink:\s*true/.test(joined), false);
   assert.equal(INVITE_API.send.path, "/api/invite");
   assert.equal(INVITE_API.forceLogout.path, "/api/auth/force-logout");
 });

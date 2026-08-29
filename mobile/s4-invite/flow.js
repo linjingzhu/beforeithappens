@@ -5,11 +5,10 @@ export const APP_S4_SCREEN = "s4-invite-waiting";
 export const APP_SAME_SESSION_SCREEN = "same-session-fail";
 
 export const FORBIDDEN_APP_FEATURES = Object.freeze({
-  packCta: "결혼 팩 시작하기",
-  joinConfirm: "이 워크스페이스에 합류할까요?",
-  joinCta: "합류하기",
-  roleSwitch: "역할 전환",
-  payment: "결제"
+  packCta: false,
+  joinConfirm: false,
+  roleSwitch: false,
+  payment: false
 });
 
 assertLockedS4Copy();
