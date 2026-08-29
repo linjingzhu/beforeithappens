@@ -42,6 +42,14 @@ test("startPackDecision refuses ghost workspaces even if a client asks for state
   assert.equal(transport.ok, false);
   assert.equal(transport.screen, "ready");
   assert.equal(transport.error, "failed");
+
+  const locked = startPackDecision(
+    { user: { id: "u1" }, workspace: { acceptedPartner: true } },
+    { ok: false, error: "locked", status: 403 }
+  );
+  assert.equal(locked.ok, false);
+  assert.equal(locked.screen, "locked");
+  assert.equal(locked.error, "locked");
 });
 
 test("S7–S8 stay open after sample locks and never require 29000 KRW", () => {

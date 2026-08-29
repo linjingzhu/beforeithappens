@@ -39,7 +39,7 @@ struct PackClient {
 
     private func request(path: String, method: String, body: [String: Any]? = nil) async throws -> [String: Any] {
         guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
-            throw PackClientError.http(0, "invalid-url")
+            throw PackClientError.http(status: 0, error: "invalid-url")
         }
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -56,12 +56,24 @@ struct PackClient {
         let (data, response) = try await send(request)
         let json = (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw PackClientError.http(http.statusCode, json["error"] as? String ?? "failed")
+            throw PackClientError.http(status: http.statusCode, error: json["error"] as? String ?? "failed")
         }
         return json
     }
 }
 
 enum PackClientError: Error {
-    case http(Int, String)
+    case http(status: Int, error: String)
+
+    var status: Int {
+        switch self {
+        case .http(let status, _): return status
+        }
+    }
+
+    var code: String {
+        switch self {
+        case .http(_, let error): return error
+        }
+    }
 }

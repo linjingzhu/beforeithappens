@@ -90,6 +90,23 @@ test("re-answer mode returns to a private draft badge on a new round", () => {
   assert.equal(view.lock.roundNumber, 1);
 });
 
+test("lock snapshot stays on reveal after submit even if draft differs", () => {
+  const view = projectQuestionScreen({
+    pack,
+    state: questionState({
+      mine: { draftChoice: "home-growth", submittedChoice: "home-rest" },
+      theirs: { submittedChoice: "home-social", completed: true },
+      lock: { id: "lock_1", roundNumber: 1, submittedChoices: { a: "home-rest", b: "home-social" } }
+    }),
+    session: { workspace: { role: "buyer", acceptedPartner: true } },
+    reanswering: false
+  });
+  assert.equal(view.screen, "reveal");
+  assert.equal(view.canReanswer, true);
+  assert.equal(view.lock.roundNumber, 1);
+  assert.equal(view.privacyBadge, "공개 잠금");
+});
+
 test("comparison labels are ALIGNED, CLOSE, or DISCUSS only", () => {
   assert.equal(comparisonLabel({ comparison: { key: "aligned" } }), "ALIGNED");
   assert.equal(comparisonLabel({ comparison: { key: "close" } }), "CLOSE");

@@ -67,8 +67,7 @@ final class PackViewModel: ObservableObject {
             apply(raw)
             error = ""
         } catch {
-            self.error = "failed"
-            screen = .ready
+            applyClientError(error, fallbackScreen: .ready)
         }
     }
 
@@ -224,9 +223,6 @@ final class PackViewModel: ObservableObject {
         shared = questionState.shared
         proposal = shared.proposal
         let submitted = mine.submittedChoice != nil || mine.completed
-        if let lock, let draft = mine.draftChoice, draft != lock.submittedChoices[roleKey] {
-            reanswering = true
-        }
         canEdit = reanswering || !submitted
         canSubmitAnswer = mine.draftChoice != nil && canEdit && saveStatus != "failed"
         privacyBadge = reanswering
@@ -238,5 +234,22 @@ final class PackViewModel: ObservableObject {
         let theySubmitted = questionState.roles[other]?.submittedChoice != nil || questionState.roles[other]?.completed == true
         partnerStatus = theySubmitted ? PackCopy.bothSubmitted : PackCopy.waitingPartner
         if lock != nil && !reanswering { screen = .reveal } else { screen = .question }
+    }
+
+    private func applyClientError(_ error: Error, fallbackScreen: PackScreen) {
+        guard let packError = error as? PackClientError else {
+            self.error = "failed"
+            screen = fallbackScreen
+            return
+        }
+        let code = packError.code
+        self.error = code
+        if code == "unauthenticated" || packError.status == 401 {
+            screen = .signedOut
+        } else if code == "locked" || code == "forbidden" || packError.status == 403 {
+            screen = .locked
+        } else {
+            screen = fallbackScreen
+        }
     }
 }

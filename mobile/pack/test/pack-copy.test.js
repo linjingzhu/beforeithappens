@@ -43,13 +43,40 @@ test("iOS and Android copy tables match the locked strings", () => {
 });
 
 test("native HTTP clients keep real PATCH and API path shape", () => {
-  const android = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackClient.kt", "utf8");
+  const android = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackClient.kt", "utf8")
+    + readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackHttp.kt", "utf8");
   const ios = readFileSync("mobile/pack/ios/LoveMePack/PackClient.swift", "utf8");
-  assert.match(android, /connection\.requestMethod = method/);
+  assert.match(android, /PATCH/);
+  assert.match(android, /\/api\/pack\/draft/);
+  assert.match(android, /append\(method\)/);
+  assert.equal(/java\.net\.HttpURLConnection/.test(android), false);
   assert.equal(android.includes("X-HTTP-Method-Override"), false);
   assert.equal(android.includes("if (method == \"PATCH\") \"POST\""), false);
   assert.match(ios, /URL\(string: path, relativeTo: baseURL\)/);
   assert.equal(ios.includes("appendingPathComponent"), false);
+});
+
+test("iOS maps GET /api/pack/state 403 locked onto the locked screen", () => {
+  const viewModel = readFileSync("mobile/pack/ios/LoveMePack/PackViewModel.swift", "utf8");
+  const client = readFileSync("mobile/pack/ios/LoveMePack/PackClient.swift", "utf8");
+  assert.match(client, /PackClientError\.http\(status:/);
+  assert.match(viewModel, /applyClientError/);
+  assert.match(viewModel, /PackClientError/);
+  assert.match(viewModel, /code == "locked" \|\| code == "forbidden" \|\| packError\.status == 403/);
+  assert.match(viewModel, /screen = \.locked/);
+});
+
+test("native VMs stay on the lock snapshot after submit until beginReanswer", () => {
+  const ios = readFileSync("mobile/pack/ios/LoveMePack/PackViewModel.swift", "utf8");
+  const android = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackViewModel.kt", "utf8");
+  assert.equal(ios.includes("draft != lock.submittedChoices"), false);
+  assert.equal(android.includes("mine.draftChoice != lockedChoice"), false);
+  assert.match(ios, /reanswering = false/);
+  assert.match(android, /reanswering = false/);
+  assert.match(ios, /func beginReanswer/);
+  assert.match(android, /fun beginReanswer/);
+  assert.match(ios, /if lock != nil && !reanswering \{ screen = \.reveal \}/);
+  assert.match(android, /lock != null && !reanswering/);
 });
 
 test("native screens bind the locked copy constants and stay off install/payment", () => {

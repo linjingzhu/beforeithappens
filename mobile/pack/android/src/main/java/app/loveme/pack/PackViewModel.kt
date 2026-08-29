@@ -198,10 +198,6 @@ class PackViewModel(
         shared = questionState.shared
         proposal = shared.proposal
         val submitted = mine.submittedChoice != null || mine.completed
-        val lockedChoice = lock?.submittedChoices?.get(session.roleKey)
-        if (lock != null && mine.draftChoice != null && mine.draftChoice != lockedChoice) {
-            reanswering = true
-        }
         canEdit = reanswering || !submitted
         canSubmitAnswer = mine.draftChoice != null && canEdit && saveStatus != "failed"
         privacyBadge = when {

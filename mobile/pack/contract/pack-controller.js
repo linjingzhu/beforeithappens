@@ -25,7 +25,22 @@ export function createPackController({
 
   function view() {
     const ready = packReadyScreen(session);
-    if (screen === "ready" || screen === "locked" || screen === "signed-out") {
+    if (screen === "signed-out") {
+      return { ...ready, screen: "signed-out", canStart: false, cta: "", saveStatus, error, question: null };
+    }
+    if (screen === "locked") {
+      return {
+        screen: "locked",
+        canStart: false,
+        cta: "",
+        title: PACK_COPY.title,
+        body: PACK_COPY.lockedBody,
+        saveStatus,
+        error,
+        question: null
+      };
+    }
+    if (screen === "ready") {
       return { ...ready, saveStatus, error, question: null };
     }
     const question = projectQuestionScreen({ pack, state, session, reanswering, saveStatus });

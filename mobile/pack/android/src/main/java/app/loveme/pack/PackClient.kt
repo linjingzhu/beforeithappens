@@ -1,8 +1,6 @@
 package app.loveme.pack
 
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
 class PackClient(
     private val baseUrl: String,
@@ -15,9 +13,9 @@ class PackClient(
     fun saveDraft(questionId: String, draftChoice: String?, privateNote: String, index: Int): JSONObject {
         val body = JSONObject()
             .put("questionId", questionId)
-            .put("draftChoice", draftChoice)
             .put("privateNote", privateNote)
             .put("index", index)
+        if (draftChoice != null) body.put("draftChoice", draftChoice)
         return request("PATCH", "/api/pack/draft", body)
     }
 
@@ -37,20 +35,14 @@ class PackClient(
 
     private fun request(method: String, path: String, body: JSONObject? = null): JSONObject {
         send?.let { return it(method, path, body) }
-        val connection = URL("$baseUrl$path").openConnection() as HttpURLConnection
-        // The web pack API only matches the real HTTP method. Do not rewrite PATCH to POST.
-        connection.requestMethod = method
-        connection.setRequestProperty("Accept", "application/json")
-        if (sessionId.isNotEmpty()) {
-            connection.setRequestProperty("Cookie", "$sessionCookieName=$sessionId")
-        }
-        if (body != null) {
-            connection.doOutput = true
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.outputStream.use { it.write(body.toString().toByteArray()) }
-        }
-        val text = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream)
-            .bufferedReader().readText()
-        return JSONObject(text.ifBlank { "{}" })
+        // Default java.net cannot send a reliable PATCH. Write the method on the wire.
+        return PackHttp.request(
+            baseUrl = baseUrl,
+            method = method,
+            path = path,
+            sessionCookieName = sessionCookieName,
+            sessionId = sessionId,
+            body = body
+        )
     }
 }

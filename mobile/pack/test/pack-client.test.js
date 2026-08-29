@@ -172,6 +172,23 @@ test("pack client stays locked until partner accept, then persists draft/submit/
   }
 });
 
+test("startPack maps GET /api/pack/state locked 403 to the locked screen", async () => {
+  const session = { user: { id: "u1" }, workspace: { acceptedPartner: true, role: "buyer" } };
+  const controller = createPackController({
+    pack,
+    session,
+    client: {
+      async getState() {
+        return { ok: false, error: "locked", status: 403 };
+      }
+    }
+  });
+  const view = await controller.startPack();
+  assert.equal(view.screen, "locked");
+  assert.equal(view.error, "locked");
+  assert.equal(view.cta, "");
+});
+
 test("controller starts only after accept, never migrates local-sim drafts", async () => {
   const storage = {
     "ab-local-simulator": JSON.stringify({ home: "rest" }),
@@ -221,6 +238,7 @@ test("controller 합의 and 다음에 미룸 go through public-lock agreement ac
   answers.submit(partner.sessionId, { questionId: "home-01" });
   view = await controller.startPack();
   assert.equal(view.question.lock.roundNumber, 1);
+  assert.equal(view.question.screen, "reveal");
   assert.equal(view.question.agreeLabel, "합의");
   assert.equal(view.question.holdLabel, "다음에 미룸");
 
@@ -237,4 +255,42 @@ test("controller 합의 and 다음에 미룸 go through public-lock agreement ac
   assert.equal(view.state.questions["home-01"].roles.a.draftChoice, "home-growth");
   assert.equal(view.state.questions["home-01"].lock.roundNumber, 1);
   assert.deepEqual(view.state.questions["home-01"].lock.submittedChoices, firstLock.submittedChoices);
+});
+
+test("refresh after submit stays on the lock snapshot when draft differs", async () => {
+  const { answers, auth, couple } = system();
+  const buyer = auth.consumeMagicLink(auth.requestMagicLink("buyer@example.com").token);
+  const invite = couple.issueInvite(buyer.sessionId, "partner@example.com");
+  const partner = auth.consumeMagicLink(auth.requestMagicLink("partner@example.com").token);
+  assert.equal(couple.acceptInvite(partner.sessionId, invite.token).ok, true);
+
+  let divergeDraft = false;
+  const session = { user: { id: "buyer" }, workspace: { acceptedPartner: true, role: "buyer" } };
+  const client = {
+    async getState() {
+      const result = answers.stateFor(buyer.sessionId);
+      if (divergeDraft && result.state?.questions?.["home-01"]) {
+        result.state.questions["home-01"].roles.a.draftChoice = "home-growth";
+      }
+      return result;
+    },
+    async saveDraft(body) { return answers.saveDraft(buyer.sessionId, body); },
+    async submit(body) { return answers.submit(buyer.sessionId, body); },
+    async saveAgreement(body) { return answers.saveAgreement(buyer.sessionId, body); }
+  };
+  const controller = createPackController({ pack, client, session });
+  await controller.startPack();
+  await controller.saveDraft({ draftChoice: "home-rest" });
+  await controller.submit();
+  answers.saveDraft(partner.sessionId, { questionId: "home-01", draftChoice: "home-social" });
+  answers.submit(partner.sessionId, { questionId: "home-01" });
+
+  divergeDraft = true;
+  const view = await controller.startPack();
+  assert.equal(view.question.lock.roundNumber, 1);
+  assert.equal(view.question.lock.submittedChoices.a, "home-rest");
+  assert.equal(view.question.mine.draftChoice, "home-growth");
+  assert.equal(view.question.reanswering, false);
+  assert.equal(view.question.screen, "reveal");
+  assert.equal(view.question.canReanswer, true);
 });

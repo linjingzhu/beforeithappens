@@ -12,7 +12,7 @@ Out of this pack: payment/paywall (a later pack after the third sample lock), th
 
 ## Integration
 
-S4–S5 should present the pack-ready screen after partner accept and pass the existing `ab_session` cookie plus workspace role. Do not add a join or install landing here. Native hosts should inject an HTTP stack that can send a real `PATCH` (URLSession / OkHttp). Do not rewrite pack draft calls to `POST`.
+S4–S5 should present the pack-ready screen after partner accept and pass the existing `ab_session` cookie plus workspace role. Do not add a join or install landing here. Android `PackHttp` writes the real HTTP method on the socket, including `PATCH /api/pack/draft`. Hosts may still inject OkHttp via `PackClient.send`. Do not rewrite drafts to `POST` and do not add pack endpoints.
 
 ```text
 GET    /api/pack/state
