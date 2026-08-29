@@ -12,11 +12,19 @@ export default function App() {
   const [screen, setScreen] = useState("splash");
 
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
-    const timer = setTimeout(() => {
-      setScreen(afterSplashScreen());
-    }, SPLASH_MS);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    let timer;
+    (async () => {
+      await SplashScreen.hideAsync().catch(() => {});
+      if (cancelled) return;
+      timer = setTimeout(() => {
+        if (!cancelled) setScreen(afterSplashScreen());
+      }, SPLASH_MS);
+    })();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   return (

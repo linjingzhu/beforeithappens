@@ -65,9 +65,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.ink,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
     fontSize: 32,
-    lineHeight: 38,
+    lineHeight: 44,
     fontWeight: "500",
     letterSpacing: -0.8,
     marginBottom: 14
