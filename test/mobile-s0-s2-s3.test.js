@@ -95,11 +95,16 @@ test("S2 copy matches the locked web magic-link contract and 10-minute TTL", () 
   assert.equal(S2_COPY.cta, "로그인 링크 보내기");
   assert.equal(S2_COPY.sent, "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.");
   assert.equal(S2_COPY.afterLogin, "이 기기 임시 답은 이어지지 않아요.");
+  assert.equal(S2_COPY.title, "두 사람의 결혼 준비, 한곳에");
   assert.equal(S2_COPY.title, AUTH_COPY.title);
   assert.equal(S2_COPY.body, AUTH_COPY.body);
   assert.equal(S2_COPY.cta, AUTH_COPY.cta);
   assert.equal(S2_COPY.sent, AUTH_COPY.sent);
   assert.equal(S2_COPY.afterLogin, AUTH_COPY.afterLogin);
+  assert.equal(S2_COPY.title.includes("한곳에"), true);
+  assert.equal(S2_COPY.sent.includes("유효해요"), true);
+  assert.equal(S2_COPY.sent.includes("유횤"), false);
+  assert.equal(S2_COPY.body.includes("암호 없이"), false);
   assert.equal(S2_ERRORS.expired, AUTH_ERRORS.expired);
   assert.equal(APP_TTL, MAGIC_LINK_TTL_MS);
   assert.equal(APP_TTL, 10 * 60 * 1000);
@@ -142,12 +147,13 @@ test("native flow is splash → signup → sent → notice → workspace, never 
   assert.equal(resolveNativeScreen(state), "sent");
   assert.match(renderS2SentScreen({ email: state.sentEmail }), /10분 동안만 유효해요/);
 
-  state = consumeSucceeded(state, {
-    user: { id: "usr_1", email: "buyer@example.com" },
-    notice: "no-local-draft",
-    workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
-  });
-  assert.equal(state.screen, "notice");
+    state = consumeSucceeded(state, {
+      user: { id: "usr_1", email: "buyer@example.com" },
+      notice: "no-local-draft",
+      workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
+    });
+    assert.equal(state.screen, "notice");
+    assert.notEqual(state.screen, "workspace");
   assert.match(renderS2LoginNoticeScreen({ email: "buyer@example.com" }), /이 기기 임시 답은 이어지지 않아요/);
 
   state = noticeAcknowledged(state, { ...state.session, notice: null });
@@ -175,6 +181,17 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.equal(extractMagicLinkToken("https://ab.example/install?token=abc"), "");
     const invalid = await api.requestMagicLink("nope");
     assert.equal(invalid.ok, false);
+
+    const rawSend = await fetch(`http://127.0.0.1:${port}/api/auth/magic-link`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "buyer@example.com" })
+    });
+    const sentBody = await rawSend.json();
+    assert.equal(sentBody.ok, true);
+    assert.equal(sentBody.token, undefined);
+    assert.equal(Object.hasOwn(sentBody, "token"), false);
+    assert.deepEqual(Object.keys(sentBody), ["ok"]);
 
     let state = finishSplash(createNativeFlow());
     state = setEmail(state, " Buyer@Example.com ");
