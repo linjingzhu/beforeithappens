@@ -112,13 +112,15 @@ test("S2 copy matches the native pack lock and 10-minute TTL", () => {
 });
 
 test("S0 splash is brand-only and S3 is workspace-created with invite CTA", () => {
+  assert.equal(S0_COPY.brand, "LoveMe");
   assert.equal(S0_COPY.title, "두 사람의 결혼 준비, 한곳에");
+  assert.equal(S0_COPY.holdMs, 1200);
   assert.equal(S3_COPY.created, "워크스페이스가 만들어졌어요.");
   assert.equal(S3_COPY.inviteCta, "파트너 초대하기");
   const splash = renderS0SplashScreen();
   const workspace = renderS3WorkspaceCreatedScreen({ email: "buyer@example.com" });
+  assert.match(splash, /LoveMe/);
   assert.match(splash, /두 사람의 결혼 준비, 한곳에/);
-  assert.match(splash, /다가올 삶을, 함께 준비하다/);
   assert.equal(splash.includes("앱 설치하기"), false);
   assert.equal(splash.includes("/install"), false);
   assert.match(workspace, /워크스페이스가 만들어졌어요/);

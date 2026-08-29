@@ -1,10 +1,9 @@
 export const MAGIC_LINK_TTL_MS = 10 * 60 * 1000;
 
 export const S0_COPY = {
-  brand: "AB",
+  brand: "LoveMe",
   title: "두 사람의 결혼 준비, 한곳에",
-  tagline: "다가올 삶을, 함께 준비하다.",
-  english: "Before life changes, talk."
+  holdMs: 1200
 };
 
 export const S2_COPY = {

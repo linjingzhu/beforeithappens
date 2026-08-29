@@ -11,16 +11,14 @@ function escapeHtml(value = "") {
 }
 
 function brand() {
-  return `<header class="loveme-topbar"><span class="loveme-mark">${escapeHtml(S0_COPY.brand)}</span><strong>${escapeHtml(S0_COPY.english)}</strong></header>`;
+  return `<header class="loveme-topbar"><strong>${escapeHtml(S0_COPY.brand)}</strong></header>`;
 }
 
 export function renderS0SplashScreen() {
   return `
     <section class="loveme-screen loveme-splash" data-screen="splash">
-      <span class="loveme-mark loveme-mark-lg">${escapeHtml(S0_COPY.brand)}</span>
-      <h1>${escapeHtml(S0_COPY.title)}</h1>
-      <p>${escapeHtml(S0_COPY.tagline)}</p>
-      <small>${escapeHtml(S0_COPY.english)}</small>
+      <h1>${escapeHtml(S0_COPY.brand)}</h1>
+      <p>${escapeHtml(S0_COPY.title)}</p>
     </section>
   `;
 }
