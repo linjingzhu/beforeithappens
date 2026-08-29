@@ -21,7 +21,9 @@ const files = [
   "mobile/src/copy.js",
   "mobile/src/session.js",
   "mobile/src/screens.js",
-  "mobile/src/theme.js"
+  "mobile/src/theme.js",
+  "mobile/src/host.js",
+  "mobile/src/s9-mount.js"
 ];
 for (const file of files) {
   const value = await readFile(file, "utf8");

@@ -1,8 +1,15 @@
-# LoveMe native app
+# LoveMe host app
 
-Same product as the mobile-first web app in this repository. Shared UI for iOS and Android via Expo.
+This is the installable iOS and Android app (Expo / React Native). It is not a wrapper folder.
+
+- Open iOS: `ios/LoveMe.xcodeproj` (run `pod install` on a Mac first)
+- Open Android: `android/` in Android Studio, or `npm run android`
+- Shared JS UI: `App.js` + `src/`
+- Other packs mount under `mobile/<pack>/` (for example `mobile/s9/`). The host imports them. Do not copy pack UI into `src/`.
 
 This folder owns **S0 splash** and the logged-out handoff into **S2 signup**. The S1 install landing (`/install`, App Store / Google Play, `지금은 웹에서 시작할래요.`) stays on the web. Do not add it here.
+
+S9 logout chrome (`로그아웃 후 이 기기를 넘겨주세요.`) is owned by `mobile/s9/`. `src/s9-mount.js` attaches it beside an existing logout control when that pack is present and the user is logged in. Splash and signup do not show it.
 
 ## Screens in this slice
 

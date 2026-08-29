@@ -8,7 +8,9 @@ const mobileFiles = [
   "mobile/src/copy.js",
   "mobile/src/session.js",
   "mobile/src/screens.js",
-  "mobile/src/theme.js"
+  "mobile/src/theme.js",
+  "mobile/src/host.js",
+  "mobile/src/s9-mount.js"
 ];
 
 async function readMobileSource() {
@@ -65,11 +67,38 @@ test("native app does not include the web-only S1 install landing", async () => 
   }
 });
 
+test("host leaves an S9 mount and does not duplicate logout chrome", async () => {
+  const { access } = await import("node:fs/promises");
+  const host = await readFile("mobile/src/host.js", "utf8");
+  const mount = await readFile("mobile/src/s9-mount.js", "utf8");
+  const screens = await readFile("mobile/src/screens.js", "utf8");
+  const app = await readFile("mobile/App.js", "utf8");
+  assert.match(host, /"s9"/);
+  assert.match(host, /attachS9IfPresent/);
+  assert.match(host, /mobile\/\$\{id\}\//);
+  assert.match(mount, /s9\/logout-chrome\.js/);
+  assert.match(mount, /composeLogoutChrome/);
+  assert.equal(screens.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
+  assert.equal(app.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
+  assert.equal(host.includes("LogoutHandoffCaption"), false);
+  try {
+    await access("mobile/s9/logout-chrome.js");
+    assert.match(mount, /composeLogoutChrome/);
+  } catch {
+    assert.match(mount, /s9\/logout-chrome\.js/);
+  }
+});
+
 test("iOS and Android project targets exist for LoveMe", async () => {
   await access("mobile/ios/LoveMe.xcodeproj/project.pbxproj");
   await access("mobile/ios/LoveMe/Info.plist");
   await access("mobile/android/app/src/main/AndroidManifest.xml");
   await access("mobile/android/app/build.gradle");
+  await access("mobile/android/gradlew");
+  await access("mobile/android/app/src/main/java/com/beforeithappens/loveme/MainActivity.kt");
+  await access("mobile/ios/LoveMe/AppDelegate.swift");
+  await access("mobile/package.json");
+  await access("mobile/App.js");
   const plist = await readFile("mobile/ios/LoveMe/Info.plist", "utf8");
   const manifest = await readFile("mobile/android/app/src/main/AndroidManifest.xml", "utf8");
   const strings = await readFile("mobile/android/app/src/main/res/values/strings.xml", "utf8");

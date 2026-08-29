@@ -54,7 +54,7 @@ Targeted tests:
 - `src/app.js` — session-gated product views and historical local question workflow
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
-- `mobile/` — Expo LoveMe app (S0 splash → logged-out S2 signup placeholder); `ios/` and `android/` targets committed
+- `mobile/` — Expo LoveMe host app (S0 splash → logged-out S2 signup placeholder); committed `ios/` + `android/` are the installable targets. Other packs mount under `mobile/<pack>/` (S9 via `src/s9-mount.js`).
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock
