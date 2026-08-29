@@ -91,20 +91,21 @@ function startServer() {
 }
 
 test("S2 copy matches the native pack lock and 10-minute TTL", () => {
-  assert.equal(S2_COPY.body, "암호 없이 이메일로 로그인 링크를 보내드려요.");
+  assert.equal(S2_COPY.body, "비밀번호 없이 이메일로 로그인 링크를 보내드려요.");
   assert.equal(S2_COPY.cta, "로그인 링크 보내기");
   assert.equal(S2_COPY.sent, "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.");
   assert.equal(S2_COPY.afterLogin, "이 기기 임시 답은 이어지지 않아요.");
   assert.equal(S2_COPY.title, "두 사람의 결혼 준비, 한곳에");
   assert.equal(S2_COPY.title, AUTH_COPY.title);
+  assert.equal(S2_COPY.body, AUTH_COPY.body);
   assert.equal(S2_COPY.cta, AUTH_COPY.cta);
   assert.equal(S2_COPY.sent, AUTH_COPY.sent);
   assert.equal(S2_COPY.afterLogin, AUTH_COPY.afterLogin);
   assert.equal(S2_COPY.title.includes("한곳에"), true);
   assert.equal(S2_COPY.sent.includes("유효해요"), true);
   assert.equal(S2_COPY.sent.includes("유횤"), false);
-  assert.equal(S2_COPY.body.includes("암호 없이"), true);
-  assert.equal(S2_COPY.body.includes("비밀번호 없이"), false);
+  assert.equal(S2_COPY.body.includes("비밀번호 없이"), true);
+  assert.equal(S2_COPY.body.includes("암호 없이"), false);
   assert.equal(S2_ERRORS.expired, AUTH_ERRORS.expired);
   assert.equal(APP_TTL, MAGIC_LINK_TTL_MS);
   assert.equal(APP_TTL, 10 * 60 * 1000);
@@ -133,7 +134,7 @@ test("native flow is splash → signup → sent → notice → workspace, never 
   state = finishSplash(state);
   assert.equal(state.screen, "signup");
   const signup = renderS2SignupScreen({ email: "" });
-  assert.match(signup, /암호 없이 이메일로 로그인 링크를 보내드려요/);
+  assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(signup, /로그인 링크 보내기/);
   assert.equal(signup.includes("type=\"password\""), false);
   assert.equal(s2HasKakaoLogin(), false);
@@ -257,7 +258,7 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
     assert.ok(text.trim());
   }
   const s2 = texts[2] + texts[3];
-  assert.match(s2, /암호 없이 이메일로 로그인 링크를 보내드려요/);
+  assert.match(s2, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(s2, /로그인 링크 보내기/);
   assert.match(s2, /메일을 확인해 주세요\. 링크는 10분 동안만 유효해요/);
   assert.match(s2, /이 기기 임시 답은 이어지지 않아요/);

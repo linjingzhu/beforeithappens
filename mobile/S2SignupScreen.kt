@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 
 object LoveMeS2Copy {
     const val title = "두 사람의 결혼 준비, 한곳에"
-    const val body = "암호 없이 이메일로 로그인 링크를 보내드려요."
+    const val body = "비밀번호 없이 이메일로 로그인 링크를 보내드려요."
     const val cta = "로그인 링크 보내기"
     const val sent = "메일을 확인해 주세요. 링크는 10분 동안만 유효해요."
     const val afterLogin = "이 기기 임시 답은 이어지지 않아요."
