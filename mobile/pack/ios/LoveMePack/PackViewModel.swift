@@ -47,16 +47,18 @@ final class PackViewModel: ObservableObject {
         do {
             let payload = try await client.getState()
             guard payload["ok"] as? Bool == true, let raw = payload["state"] as? [String: Any] else {
-                screen = .locked
-                error = payload["error"] as? String ?? "locked"
+                let code = payload["error"] as? String ?? "failed"
+                error = code
+                if code == "unauthenticated" { screen = .signedOut }
+                else if code == "locked" || code == "forbidden" { screen = .locked }
+                else { screen = .ready }
                 return
             }
             apply(raw)
-            screen = lock == nil ? .question : .reveal
             error = ""
         } catch {
             self.error = "failed"
-            screen = .locked
+            screen = .ready
         }
     }
 
@@ -160,9 +162,11 @@ final class PackViewModel: ObservableObject {
         index = raw["index"] as? Int ?? index
         let activeRole = raw["activeRole"] as? String ?? roleKey
         var mapped: [String: PackQuestionState] = [:]
-        if let questionsRaw = raw["questions"] as? [String: [String: Any]] {
+        if let questionsRaw = raw["questions"] as? [String: Any] {
             for (id, value) in questionsRaw {
-                mapped[id] = decodeQuestion(value)
+                if let object = value as? [String: Any] {
+                    mapped[id] = decodeQuestion(object)
+                }
             }
         }
         state = PackState(index: index, activeRole: activeRole, questions: mapped)
@@ -208,11 +212,14 @@ final class PackViewModel: ObservableObject {
         shared = questionState.shared
         proposal = shared.proposal
         let submitted = mine.submittedChoice != nil || mine.completed
+        if let lock, let draft = mine.draftChoice, draft != lock.submittedChoices[roleKey] {
+            reanswering = true
+        }
         canEdit = reanswering || !submitted
         canSubmitAnswer = mine.draftChoice != nil && canEdit && saveStatus != "failed"
-        privacyBadge = reanswering && !submitted
+        privacyBadge = reanswering
             ? PackCopy.draftBadge
-            : lock != nil && !reanswering
+            : lock != nil
                 ? PackCopy.lockBadge
                 : submitted ? PackCopy.submitBadge : PackCopy.draftBadge
         let other = roleKey == "a" ? "b" : "a"

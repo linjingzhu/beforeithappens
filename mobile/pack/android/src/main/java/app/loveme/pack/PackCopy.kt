@@ -22,6 +22,7 @@ object PackCopy {
     const val LOCK_HINT = "이 스냅샷은 바뀌지 않아요. 다시 답하면 새 비공개 라운드가 열려요."
     const val SAVED = "서버에 저장됨"
     const val SAVE_FAILED = "저장 실패"
+    const val RETRY = "다시 저장"
     const val EMPTY_SUBMIT = "답을 선택한 뒤에 제출할 수 있어요."
     const val AGREEMENT_PLACEHOLDER = "함께 지킬 원칙이나 다음 행동을 제안해 보세요."
 }

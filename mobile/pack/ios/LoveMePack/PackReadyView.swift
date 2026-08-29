@@ -21,6 +21,11 @@ struct PackReadyView: View {
                 Text(PackCopy.lockedBody)
                     .foregroundStyle(.secondary)
             }
+            if !model.error.isEmpty && model.screen != .locked {
+                Text(model.error)
+                    .foregroundStyle(.red)
+                    .font(.footnote)
+            }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

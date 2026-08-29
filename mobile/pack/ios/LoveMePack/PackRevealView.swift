@@ -41,6 +41,14 @@ struct PackRevealView: View {
                     }
                     .frame(minHeight: 44)
                     .accessibilityIdentifier("reanswer")
+                    HStack {
+                        Button(PackCopy.previous) { model.go(-1) }
+                            .disabled(!model.canGoPrevious)
+                            .frame(minHeight: 44)
+                        Button(PackCopy.next) { model.go(1) }
+                            .disabled(!model.canGoNext)
+                            .frame(minHeight: 44)
+                    }
                 }
             }
             .padding(20)

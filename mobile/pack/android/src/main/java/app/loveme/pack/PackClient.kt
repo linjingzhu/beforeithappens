@@ -38,8 +38,8 @@ class PackClient(
     private fun request(method: String, path: String, body: JSONObject? = null): JSONObject {
         send?.let { return it(method, path, body) }
         val connection = URL("$baseUrl$path").openConnection() as HttpURLConnection
-        connection.requestMethod = if (method == "PATCH") "POST" else method
-        if (method == "PATCH") connection.setRequestProperty("X-HTTP-Method-Override", "PATCH")
+        // The web pack API only matches the real HTTP method. Do not rewrite PATCH to POST.
+        connection.requestMethod = method
         connection.setRequestProperty("Accept", "application/json")
         if (sessionId.isNotEmpty()) {
             connection.setRequestProperty("Cookie", "$sessionCookieName=$sessionId")

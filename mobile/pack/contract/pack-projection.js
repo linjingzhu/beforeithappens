@@ -38,6 +38,10 @@ export function shouldOpenNewRound(lock, role, incomingChoice) {
   return incomingChoice !== lock.submittedChoices?.[role];
 }
 
+export function isReanswerDraft(lock, role, draftChoice) {
+  return shouldOpenNewRound(lock, role, draftChoice);
+}
+
 export function agreementAction(shared, role) {
   if (shared?.status === "pending" && shared.proposedBy && shared.proposedBy !== role) return "approve";
   return "propose";

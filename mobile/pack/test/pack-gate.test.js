@@ -34,4 +34,12 @@ test("startPackDecision refuses ghost workspaces even if a client asks for state
   );
   assert.equal(allowed.ok, true);
   assert.equal(allowed.screen, "question");
+
+  const transport = startPackDecision(
+    { user: { id: "u1" }, workspace: { acceptedPartner: true } },
+    { ok: false, error: "failed" }
+  );
+  assert.equal(transport.ok, false);
+  assert.equal(transport.screen, "ready");
+  assert.equal(transport.error, "failed");
 });

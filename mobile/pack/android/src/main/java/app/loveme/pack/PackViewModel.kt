@@ -50,11 +50,15 @@ class PackViewModel(
         val payload = client.getState()
         if (payload.optBoolean("ok") && payload.has("state")) {
             apply(payload.getJSONObject("state"))
-            screen = if (lock == null) PackScreen.QUESTION else PackScreen.REVEAL
             error = ""
         } else {
-            screen = PackScreen.LOCKED
-            error = payload.optString("error", "locked")
+            val code = payload.optString("error", "failed")
+            error = code
+            screen = when (code) {
+                "unauthenticated" -> PackScreen.SIGNED_OUT
+                "locked", "forbidden" -> PackScreen.LOCKED
+                else -> PackScreen.READY
+            }
         }
     }
 
@@ -71,7 +75,7 @@ class PackViewModel(
         saveStatus = "saving"
         val payload = client.saveDraft(question.id, mine.draftChoice, mine.privateNote, index)
         if (payload.has("state")) apply(payload.getJSONObject("state"))
-        saveStatus = if (payload.optBoolean("ok", true)) "saved" else "failed"
+        saveStatus = if (payload.optBoolean("ok")) "saved" else "failed"
     }
 
     fun updateNote(text: String) {
@@ -90,7 +94,7 @@ class PackViewModel(
         val payload = client.submit(question.id, index)
         if (payload.has("state")) apply(payload.getJSONObject("state"))
         reanswering = false
-        saveStatus = if (payload.optBoolean("ok", true)) "saved" else "failed"
+        saveStatus = if (payload.optBoolean("ok")) "saved" else "failed"
     }
 
     fun agree() {
@@ -99,7 +103,7 @@ class PackViewModel(
         saveStatus = "saving"
         val payload = client.saveAgreement(question.id, action, proposal, index)
         if (payload.has("state")) apply(payload.getJSONObject("state"))
-        saveStatus = "saved"
+        saveStatus = if (payload.optBoolean("ok")) "saved" else "failed"
     }
 
     fun hold() {
@@ -107,7 +111,7 @@ class PackViewModel(
         saveStatus = "saving"
         val payload = client.saveAgreement(question.id, "deferred", proposal, index)
         if (payload.has("state")) apply(payload.getJSONObject("state"))
-        saveStatus = "saved"
+        saveStatus = if (payload.optBoolean("ok")) "saved" else "failed"
     }
 
     fun beginReanswer() {
@@ -180,11 +184,15 @@ class PackViewModel(
         shared = questionState.shared
         proposal = shared.proposal
         val submitted = mine.submittedChoice != null || mine.completed
+        val lockedChoice = lock?.submittedChoices?.get(session.roleKey)
+        if (lock != null && mine.draftChoice != null && mine.draftChoice != lockedChoice) {
+            reanswering = true
+        }
         canEdit = reanswering || !submitted
         canSubmitAnswer = mine.draftChoice != null && canEdit && saveStatus != "failed"
         privacyBadge = when {
-            reanswering && !submitted -> PackCopy.DRAFT_BADGE
-            lock != null && !reanswering -> PackCopy.LOCK_BADGE
+            reanswering -> PackCopy.DRAFT_BADGE
+            lock != null -> PackCopy.LOCK_BADGE
             submitted -> PackCopy.SUBMIT_BADGE
             else -> PackCopy.DRAFT_BADGE
         }

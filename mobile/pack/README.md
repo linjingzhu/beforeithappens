@@ -12,7 +12,7 @@ Out of this pack: payment, the 100-question line, install landing, magic-link, i
 
 ## Integration
 
-S4–S5 should present the pack-ready screen after partner accept and pass the existing `ab_session` cookie plus workspace role. Do not add a join or install landing here.
+S4–S5 should present the pack-ready screen after partner accept and pass the existing `ab_session` cookie plus workspace role. Do not add a join or install landing here. Native hosts should inject an HTTP stack that can send a real `PATCH` (URLSession / OkHttp). Do not rewrite pack draft calls to `POST`.
 
 ```text
 GET    /api/pack/state

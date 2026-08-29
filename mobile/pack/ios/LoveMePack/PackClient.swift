@@ -11,12 +11,13 @@ struct PackClient {
     }
 
     func saveDraft(questionId: String, draftChoice: String?, privateNote: String, index: Int) async throws -> [String: Any] {
-        try await request(path: "/api/pack/draft", method: "PATCH", body: [
+        var body: [String: Any] = [
             "questionId": questionId,
-            "draftChoice": draftChoice as Any,
             "privateNote": privateNote,
             "index": index
-        ])
+        ]
+        if let draftChoice { body["draftChoice"] = draftChoice }
+        return try await request(path: "/api/pack/draft", method: "PATCH", body: body)
     }
 
     func submit(questionId: String, index: Int) async throws -> [String: Any] {
@@ -37,7 +38,10 @@ struct PackClient {
     }
 
     private func request(path: String, method: String, body: [String: Any]? = nil) async throws -> [String: Any] {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
+            throw PackClientError.http(0, "invalid-url")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if !sessionId.isEmpty {
@@ -45,7 +49,9 @@ struct PackClient {
         }
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            var payload = body
+            if payload["draftChoice"] == nil { payload.removeValue(forKey: "draftChoice") }
+            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         }
         let (data, response) = try await send(request)
         let json = (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]

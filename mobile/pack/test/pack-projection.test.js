@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { loadMarriagePack } from "../contract/pack-catalog.js";
 import {
   agreementAction,
-  privacyBadge,
+  isReanswerDraft,
   projectQuestionScreen,
   shouldOpenNewRound
 } from "../contract/pack-projection.js";
@@ -67,6 +67,8 @@ test("S8 lock snapshot and 합의/다음에 미룸 never reopen the same lock", 
   assert.equal(view.lock.roundNumber, 1);
   assert.equal(shouldOpenNewRound(lock, "a", "home-rest"), false);
   assert.equal(shouldOpenNewRound(lock, "a", "home-growth"), true);
+  assert.equal(isReanswerDraft(lock, "a", "home-growth"), true);
+  assert.equal(isReanswerDraft(lock, "a", "home-rest"), false);
   assert.equal(agreementAction(view.shared, "a"), "propose");
   assert.equal(agreementAction({ status: "pending", proposedBy: "a" }, "b"), "approve");
 });

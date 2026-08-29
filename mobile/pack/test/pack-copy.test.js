@@ -35,6 +35,16 @@ test("iOS and Android copy tables match the locked strings", () => {
   }
 });
 
+test("native HTTP clients keep real PATCH and API path shape", () => {
+  const android = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackClient.kt", "utf8");
+  const ios = readFileSync("mobile/pack/ios/LoveMePack/PackClient.swift", "utf8");
+  assert.match(android, /connection\.requestMethod = method/);
+  assert.equal(android.includes("X-HTTP-Method-Override"), false);
+  assert.equal(android.includes("if (method == \"PATCH\") \"POST\""), false);
+  assert.match(ios, /URL\(string: path, relativeTo: baseURL\)/);
+  assert.equal(ios.includes("appendingPathComponent"), false);
+});
+
 test("native screens bind the locked copy constants and stay off install/payment", () => {
   const ready = readFileSync("mobile/pack/ios/LoveMePack/PackReadyView.swift", "utf8")
     + readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackScreens.kt", "utf8");
@@ -46,6 +56,11 @@ test("native screens bind the locked copy constants and stay off install/payment
     + readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackScreens.kt", "utf8");
   assert.match(reveal, /agree|AGREE/);
   assert.match(reveal, /hold|HOLD/);
+  assert.match(reveal, /NEXT|next|이전 질문/);
+  const androidScreens = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackScreens.kt", "utf8");
+  assert.match(androidScreens, /submittedChoices/);
+  assert.match(androidScreens, /PackCopy\.NEXT/);
+  assert.match(androidScreens, /partnerStatus/);
   for (const file of screenFiles) {
     const text = readFileSync(file, "utf8");
     for (const banned of FORBIDDEN_PACK_SURFACES) {

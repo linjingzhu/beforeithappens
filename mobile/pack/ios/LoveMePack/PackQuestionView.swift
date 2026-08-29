@@ -24,6 +24,8 @@ struct PackQuestionView: View {
                     Text(PackCopy.privacyRule)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    Text(model.partnerStatus)
+                        .font(.footnote)
                     Text(question.intent)
                         .font(.subheadline)
                     ForEach(question.choices) { choice in
@@ -64,23 +66,30 @@ struct PackQuestionView: View {
                             Task { await model.persistDraft() }
                         }
                     }
-                    Text(model.saveStatus == "failed" ? PackCopy.saveFailed : PackCopy.saved)
-                        .font(.caption2)
+                    if model.saveStatus == "failed" {
+                        Text(PackCopy.saveFailed)
+                            .font(.caption2)
+                        Button(PackCopy.retry) {
+                            Task { await model.persistDraft() }
+                        }
+                        .frame(minHeight: 44)
+                    } else {
+                        Text(PackCopy.saved)
+                            .font(.caption2)
+                    }
                     HStack {
                         Button(PackCopy.previous) { model.go(-1) }
                             .disabled(!model.canGoPrevious)
                             .frame(minHeight: 44)
-                        Spacer()
+                        Button(PackCopy.next) { model.go(1) }
+                            .disabled(!model.canGoNext)
+                            .frame(minHeight: 44)
                         Button(PackCopy.submit) {
                             Task { await model.submit() }
                         }
                         .disabled(!model.canSubmitAnswer)
                         .buttonStyle(.borderedProminent)
                         .frame(minHeight: 44)
-                    }
-                    if model.canGoNext {
-                        Button(PackCopy.next) { model.go(1) }
-                            .frame(minHeight: 44)
                     }
                 }
             }

@@ -32,12 +32,10 @@ export function startPackDecision(session, packStateResult) {
     return { ok: false, screen: ready.screen, error: ready.screen === "signed-out" ? "unauthenticated" : "locked" };
   }
   if (!packStateResult?.ok) {
-    const error = packStateResult?.error || "locked";
-    return {
-      ok: false,
-      screen: error === "unauthenticated" ? "signed-out" : "locked",
-      error
-    };
+    const error = packStateResult?.error || "failed";
+    if (error === "unauthenticated") return { ok: false, screen: "signed-out", error };
+    if (error === "locked" || error === "forbidden") return { ok: false, screen: "locked", error };
+    return { ok: false, screen: "ready", error };
   }
   return { ok: true, screen: "question", state: packStateResult.state };
 }

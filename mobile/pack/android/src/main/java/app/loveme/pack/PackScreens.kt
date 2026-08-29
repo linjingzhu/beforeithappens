@@ -43,6 +43,9 @@ fun PackReadyScreen(model: PackViewModel) {
         } else {
             Text(PackCopy.LOCKED_BODY)
         }
+        if (model.error.isNotEmpty() && model.screen != PackScreen.LOCKED) {
+            Text(model.error)
+        }
     }
 }
 
@@ -64,6 +67,7 @@ fun PackQuestionScreen(model: PackViewModel) {
         }
         Text(question.title)
         Text(PackCopy.PRIVACY_RULE)
+        Text(model.partnerStatus)
         question.choices.forEach { choice ->
             Row(
                 Modifier
@@ -86,14 +90,23 @@ fun PackQuestionScreen(model: PackViewModel) {
             enabled = model.canEdit,
             modifier = Modifier.fillMaxWidth()
         )
-        Text(if (model.saveStatus == "failed") PackCopy.SAVE_FAILED else PackCopy.SAVED)
+        if (model.saveStatus == "failed") {
+            Text(PackCopy.SAVE_FAILED)
+            OutlinedButton(onClick = { model.persistDraft() }) { Text(PackCopy.RETRY) }
+        } else {
+            Text(PackCopy.SAVED)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(onClick = { model.go(-1) }, enabled = model.current?.number != 1) {
+            OutlinedButton(onClick = { model.go(-1) }, enabled = (model.current?.number ?: 1) > 1) {
                 Text(PackCopy.PREVIOUS)
             }
             Button(onClick = { model.submit() }, enabled = model.canSubmitAnswer) {
                 Text(PackCopy.SUBMIT)
             }
+            OutlinedButton(
+                onClick = { model.go(1) },
+                enabled = (model.current?.number ?: 1) < model.questions.size
+            ) { Text(PackCopy.NEXT) }
         }
     }
 }
@@ -110,6 +123,15 @@ fun PackRevealScreen(model: PackViewModel) {
         Text(question.title)
         Text(PackCopy.LOCK_BADGE)
         Text(PackCopy.LOCK_HINT)
+        model.lock?.let { lock ->
+            val mineKey = model.session.roleKey
+            val theirKey = if (mineKey == "a") "b" else "a"
+            Text("나")
+            Text(question.choices.firstOrNull { it.id == lock.submittedChoices[mineKey] }?.label ?: "")
+            Text("상대")
+            Text(question.choices.firstOrNull { it.id == lock.submittedChoices[theirKey] }?.label ?: "")
+        }
+        Text(model.partnerStatus)
         OutlinedTextField(
             value = model.proposal,
             onValueChange = { model.proposal = it },
@@ -130,5 +152,14 @@ fun PackRevealScreen(model: PackViewModel) {
             onClick = { model.beginReanswer() },
             modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = PackCopy.REANSWER }
         ) { Text(PackCopy.REANSWER) }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(onClick = { model.go(-1) }, enabled = (model.current?.number ?: 1) > 1) {
+                Text(PackCopy.PREVIOUS)
+            }
+            OutlinedButton(
+                onClick = { model.go(1) },
+                enabled = (model.current?.number ?: 1) < model.questions.size
+            ) { Text(PackCopy.NEXT) }
+        }
     }
 }
