@@ -1,0 +1,46 @@
+/** Locked LoveMe S6–S8 copy. Do not invent payment or install-landing strings. */
+export const PACK_COPY = Object.freeze({
+  title: "두 사람의 결혼 준비, 한곳에",
+  startPack: "결혼 팩 시작하기",
+  startBody: "파트너가 초대를 수락했어요. 이제 두 사람이 결혼 준비 팩을 시작할 수 있어요.",
+  lockedBody: "파트너가 초대를 수락한 뒤에만 결혼 팩을 시작할 수 있어요.",
+  draftBadge: "나만 보임",
+  agree: "합의",
+  hold: "다음에 미룸",
+  reanswer: "다시 답하기",
+  submit: "이 답변 제출",
+  previous: "이전 질문",
+  next: "다음 질문",
+  noteLabel: "비공개 메모",
+  noteHint: "메모는 나만 보여요. 서버에만 저장돼요.",
+  noteExclude: "비교 화면과 공유 결과에는 포함되지 않아요",
+  privacyRule: "초안과 메모는 나만 보여요. 제출한 답과 합의만 함께 보여요.",
+  waitingPartner: "상대의 제출을 기다리고 있어요.",
+  bothSubmitted: "두 사람의 답이 공개됐어요.",
+  submittedMine: "이번 라운드의 답변을 제출했어요.",
+  submitHelp: "제출하면 이번 라운드에서는 답변을 수정할 수 없어요.",
+  lockBadge: "공개 잠금",
+  submitBadge: "제출 잠금",
+  lockHint: "이 스냅샷은 바뀌지 않아요. 다시 답하면 새 비공개 라운드가 열려요.",
+  saved: "서버에 저장됨",
+  saving: "저장 중",
+  saveFailed: "저장 실패",
+  retry: "다시 저장",
+  emptySubmit: "답을 선택한 뒤에 제출할 수 있어요.",
+  agreementPlaceholder: "함께 지킬 원칙이나 다음 행동을 제안해 보세요.",
+  agreedStatus: "두 사람이 승인한 합의",
+  pendingStatus: "합의 승인 대기",
+  holdStatus: "다음에 미룸",
+  noneStatus: "아직 합의 상태를 정하지 않았어요."
+});
+
+export const FORBIDDEN_PACK_SURFACES = Object.freeze([
+  "payment",
+  "결제",
+  "29,000",
+  "install landing",
+  "앱 설치하기",
+  "앱을 설치하면 시작할 수 있어요.",
+  "100-question",
+  "100문"
+]);
