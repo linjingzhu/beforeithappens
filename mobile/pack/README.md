@@ -4,7 +4,7 @@ Native iOS and Android marriage-pack slice. It reuses the web AnswerRound and pu
 
 ## Screens
 
-- **S6** `PackReadyView` / `PackReadyScreen` — CTA `발행 팩 시작하기` only when `session.workspace.acceptedPartner === true`. Ghost workspaces stay locked.
+- **S6** `PackReadyView` / `PackReadyScreen` — CTA `결혼 팩 시작하기` only when `session.workspace.acceptedPartner === true`. Ghost workspaces stay locked.
 - **S7** one question per screen. Drafts and private notes show `나만 보임` and stay author-only. Submit writes the current private round. Local-simulator drafts are never read or migrated.
 - **S8** both submits write an immutable public lock. Shared actions are `합의` and `다음에 미룸`. `다시 답하기` opens a new private round and never mutates the previous lock.
 

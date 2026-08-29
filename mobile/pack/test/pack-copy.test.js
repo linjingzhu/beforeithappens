@@ -16,7 +16,7 @@ const screenFiles = [
 ];
 
 test("S6–S8 copy is locked", () => {
-  assert.equal(PACK_COPY.startPack, "발행 팩 시작하기");
+  assert.equal(PACK_COPY.startPack, "결혼 팩 시작하기");
   assert.equal(PACK_COPY.draftBadge, "나만 보임");
   assert.equal(PACK_COPY.agree, "합의");
   assert.equal(PACK_COPY.hold, "다음에 미룸");
@@ -26,7 +26,7 @@ test("S6–S8 copy is locked", () => {
 test("iOS and Android copy tables match the locked strings", () => {
   for (const file of copyFiles) {
     const text = readFileSync(file, "utf8");
-    assert.match(text, /발행 팩 시작하기/);
+    assert.match(text, /결혼 팩 시작하기/);
     assert.match(text, /나만 보임/);
     assert.match(text, /합의/);
     assert.match(text, /다음에 미룸/);
