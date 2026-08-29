@@ -19,6 +19,7 @@
       finishSplash,
       invitePartner,
       noticeAcknowledged,
+      restoreSessionAfterSplash,
       setEmail,
       submitMagicLink
     } from "./s0-s2-s3-flow.js";
@@ -95,9 +96,9 @@
       });
     } else if (!start) {
       paint();
-      window.setTimeout(() => {
+      window.setTimeout(async () => {
         if (state.screen === "splash") {
-          state = finishSplash(state);
+          state = await restoreSessionAfterSplash(state, api);
           paint();
         }
       }, 1200);

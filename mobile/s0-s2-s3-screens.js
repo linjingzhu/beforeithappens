@@ -55,7 +55,7 @@ export function renderS2SentScreen({ email = "" } = {}) {
   `;
 }
 
-export function renderS2LoginNoticeScreen({ email = "" } = {}) {
+export function renderS2LoginNoticeScreen({ email = "", error = "", busy = false } = {}) {
   return `
     ${brand()}
     <section class="loveme-screen loveme-card" data-screen="notice">
@@ -63,7 +63,8 @@ export function renderS2LoginNoticeScreen({ email = "" } = {}) {
       <h1>${escapeHtml(S2_COPY.title)}</h1>
       <p role="status">${escapeHtml(S2_COPY.afterLogin)}</p>
       ${email ? `<p class="loveme-email">${escapeHtml(email)}</p>` : ""}
-      <button class="loveme-primary" type="button" data-action="ack-notice">${escapeHtml(S2_COPY.ack)}</button>
+      <button class="loveme-primary" type="button" data-action="ack-notice" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.ack)}</button>
+      ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
     </section>
   `;
 }
@@ -83,7 +84,7 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
-  if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "" });
+  if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "", error: state.error, busy: state.busy });
   if (state.screen === "workspace") return renderS3WorkspaceCreatedScreen({ email: state.session?.user?.email || "" });
   return renderS2SignupScreen({ email: state.email, error: state.error, busy: state.busy });
 }

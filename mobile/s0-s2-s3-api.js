@@ -45,8 +45,10 @@ export function createAuthApi({
       headers,
       body: body ? JSON.stringify(body) : undefined
     });
-    const setCookieHeader = response.headers?.getSetCookie?.() || response.headers?.get?.("set-cookie");
-    if (setCookie && setCookieHeader) setCookie(cookieHeader(setCookieHeader));
+    const listed = response.headers?.getSetCookie?.() || [];
+    const single = response.headers?.get?.("set-cookie");
+    const setCookieHeader = listed.length ? listed : (single ? [single] : []);
+    if (setCookie && setCookieHeader.length) setCookie(cookieHeader(setCookieHeader));
     const payload = await response.json().catch(() => ({}));
     return { ok: response.ok, status: response.status, payload };
   }

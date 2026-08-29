@@ -30,6 +30,7 @@ import {
   requestLinkFailed,
   requestLinkStarted,
   resolveNativeScreen,
+  restoreSessionAfterSplash,
   s0ShowsInstallLanding,
   s2HasKakaoLogin,
   s3AllowsPackCta,
@@ -55,7 +56,9 @@ const nativeFiles = [
   "mobile/S3WorkspaceCreatedScreen.swift",
   "mobile/S3WorkspaceCreatedScreen.kt",
   "mobile/LoveMeAuthApi.swift",
-  "mobile/LoveMeAuthApi.kt"
+  "mobile/LoveMeAuthApi.kt",
+  "mobile/LoveMeS0S2S3Host.swift",
+  "mobile/LoveMeS0S2S3Host.kt"
 ];
 
 function wiredAuth(store) {
@@ -195,6 +198,14 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.equal(state.session.notice, null);
     assert.equal(nativeCanOpenPack(state.session), false);
 
+    const restored = await restoreSessionAfterSplash(createNativeFlow(), api);
+    assert.equal(restored.screen, "workspace");
+    assert.equal(restored.session.user.email, "buyer@example.com");
+    assert.equal(nativeCanOpenPack(restored.session), false);
+
+    const noticeHtml = renderS2LoginNoticeScreen({ email: "buyer@example.com", error: S2_ERRORS.failed });
+    assert.match(noticeHtml, /로그인 링크를 보내지 못했어요/);
+
     const failed = requestLinkFailed(finishSplash(createNativeFlow()), "expired");
     assert.match(failed.error, /만료/);
     const back = backToSignup({ ...finishSplash(createNativeFlow()), sentEmail: "buyer@example.com" });
@@ -239,6 +250,11 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   const api = texts[6] + texts[7];
   assert.match(api, /\/api\/auth\/magic-link/);
   assert.match(api, /\/api\/auth\/consume/);
+  assert.match(api, /\/api\/auth\/session/);
+  assert.match(api, /\/api\/auth\/ack-notice/);
+  const hosts = texts[8] + texts[9];
+  assert.match(hosts, /currentSession/);
+  assert.match(hosts, /acknowledgeNotice/);
   assert.equal(s0ShowsInstallLanding(), false);
   for (const html of [
     renderS0SplashScreen(),

@@ -1,6 +1,8 @@
 package com.beforeithappens.loveme
 
+import java.net.HttpURLConnection
 import java.net.URI
+import java.net.URL
 
 object LoveMeAuthApi {
     const val magicLinkPath = "/api/auth/magic-link"
@@ -10,12 +12,64 @@ object LoveMeAuthApi {
     const val magicLinkTtlMs = 10 * 60 * 1000
 
     fun extractMagicLinkToken(url: String): String? {
-        val uri = URI(url)
+        val uri = runCatching { URI(url) }.getOrNull() ?: return null
         if (uri.path == "/invite/accept" || uri.path == "/install" || uri.path == "/start") return null
         return uri.query
             ?.split("&")
             ?.map { it.split("=", limit = 2) }
             ?.firstOrNull { it.getOrNull(0) == "token" }
             ?.getOrNull(1)
+    }
+}
+
+class LoveMeAuthClient(
+    private val origin: String,
+    private val cookie: MutableList<String> = mutableListOf()
+) {
+    fun requestMagicLink(email: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.magicLinkPath, """{"email":${jsonString(email)}}""")
+    }
+
+    fun consumeMagicLink(token: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.consumePath, """{"token":${jsonString(token)}}""")
+    }
+
+    fun currentSession(): Map<String, Any?> {
+        return get(LoveMeAuthApi.sessionPath)
+    }
+
+    fun acknowledgeNotice(): Map<String, Any?> {
+        return post(LoveMeAuthApi.ackNoticePath, "{}")
+    }
+
+    private fun jsonString(value: String): String {
+        return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+    }
+
+    private fun get(path: String): Map<String, Any?> = request("GET", path, null)
+
+    private fun post(path: String, body: String): Map<String, Any?> = request("POST", path, body)
+
+    private fun request(method: String, path: String, body: String?): Map<String, Any?> {
+        val connection = URL(origin.trimEnd('/') + path).openConnection() as HttpURLConnection
+        connection.requestMethod = method
+        connection.connectTimeout = 8000
+        connection.readTimeout = 8000
+        connection.doInput = true
+        if (cookie.isNotEmpty()) connection.setRequestProperty("Cookie", cookie.joinToString("; "))
+        if (body != null) {
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.outputStream.use { it.write(body.toByteArray()) }
+        }
+        connection.getHeaderField("Set-Cookie")?.let { header ->
+            cookie.clear()
+            cookie.add(header.split(";").first())
+        }
+        val text = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream)
+            ?.bufferedReader()
+            ?.readText()
+            ?: "{}"
+        return mapOf("status" to connection.responseCode, "body" to text)
     }
 }

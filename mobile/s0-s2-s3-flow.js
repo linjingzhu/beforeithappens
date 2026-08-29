@@ -151,12 +151,29 @@ export async function consumeOpenedLink(state, api, tokenOrUrl) {
   }
 }
 
+export async function restoreSessionAfterSplash(state, api) {
+  const next = finishSplash(state);
+  try {
+    const session = await api.session();
+    if (!session?.user) return next;
+    return applyScreen({
+      ...next,
+      session,
+      noticeDismissed: !session.notice,
+      error: ""
+    });
+  } catch {
+    return next;
+  }
+}
+
 export async function acknowledgeLoginNotice(state, api) {
+  const pending = { ...state, busy: true, error: "" };
   try {
     const result = await api.acknowledgeNotice();
-    if (!result.ok) return { ...state, error: S2_ERRORS.failed };
-    return noticeAcknowledged(state, result.session);
+    if (!result.ok) return { ...pending, busy: false, error: S2_ERRORS.failed };
+    return { ...noticeAcknowledged(pending, result.session), busy: false, error: "" };
   } catch {
-    return { ...state, error: S2_ERRORS.failed };
+    return { ...pending, busy: false, error: S2_ERRORS.failed };
   }
 }
