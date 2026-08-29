@@ -53,21 +53,29 @@ test("native HTTP clients keep real PATCH and API path shape", () => {
   assert.match(android, /PATCH/);
   assert.match(android, /\/api\/pack\/draft/);
   assert.match(android, /append\(method\)/);
+  assert.match(android, /decodeChunked/);
+  assert.match(android, /transfer-encoding/);
   assert.equal(/java\.net\.HttpURLConnection/.test(android), false);
   assert.equal(android.includes("X-HTTP-Method-Override"), false);
   assert.equal(android.includes("if (method == \"PATCH\") \"POST\""), false);
   assert.match(ios, /URL\(string: path, relativeTo: baseURL\)/);
+  assert.match(ios, /returnGateErrors: true/);
   assert.equal(ios.includes("appendingPathComponent"), false);
 });
 
 test("iOS maps GET /api/pack/state 403 locked onto the locked screen", () => {
   const viewModel = readFileSync("mobile/pack/ios/LoveMePack/PackViewModel.swift", "utf8");
   const client = readFileSync("mobile/pack/ios/LoveMePack/PackClient.swift", "utf8");
-  assert.match(client, /PackClientError\.http\(status:/);
+  const ready = readFileSync("mobile/pack/ios/LoveMePack/PackReadyView.swift", "utf8");
+  assert.match(client, /returnGateErrors: true/);
+  assert.match(client, /PackClientError\.isGate/);
+  assert.match(viewModel, /applyGatePayload/);
   assert.match(viewModel, /applyClientError/);
-  assert.match(viewModel, /PackClientError/);
-  assert.match(viewModel, /code == "locked" \|\| code == "forbidden" \|\| packError\.status == 403/);
+  assert.match(viewModel, /code == "locked" \|\| code == "forbidden" \|\| status == 403/);
   assert.match(viewModel, /screen = \.locked/);
+  assert.match(viewModel, /var showsStartCTA/);
+  assert.match(ready, /showsStartCTA/);
+  assert.equal(ready.includes("PackGate.canStartPack(model.session)"), false);
 });
 
 test("native VMs stay on the lock snapshot after submit until beginReanswer", () => {
@@ -75,6 +83,10 @@ test("native VMs stay on the lock snapshot after submit until beginReanswer", ()
   const android = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackViewModel.kt", "utf8");
   assert.equal(ios.includes("draft != lock.submittedChoices"), false);
   assert.equal(android.includes("mine.draftChoice != lockedChoice"), false);
+  assert.equal(ios.includes("reanswering = true") && ios.includes("func beginReanswer"), true);
+  assert.equal(android.includes("if (lock != null && lockedChoice != id) reanswering = true"), false);
+  assert.match(ios, /canEdit = reanswering \|\| \(lock == nil && !submitted\)/);
+  assert.match(android, /canEdit = reanswering \|\| \(lock == null && !submitted\)/);
   assert.match(ios, /reanswering = false/);
   assert.match(android, /reanswering = false/);
   assert.match(ios, /func beginReanswer/);

@@ -10,16 +10,13 @@ struct PackReadyView: View {
                 .accessibilityAddTraits(.isHeader)
             Text(model.startBody)
                 .foregroundStyle(.secondary)
-            if PackGate.canStartPack(model.session) {
+            if model.showsStartCTA {
                 Button(PackCopy.startPack) {
                     Task { await model.startPack() }
                 }
                 .buttonStyle(.borderedProminent)
                 .frame(minHeight: 44)
                 .accessibilityIdentifier("start-pack")
-            } else {
-                Text(PackCopy.lockedBody)
-                    .foregroundStyle(.secondary)
             }
             if !model.error.isEmpty && model.screen != .locked {
                 Text(model.error)

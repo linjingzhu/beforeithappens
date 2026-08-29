@@ -31,8 +31,9 @@ final class PackViewModel: ObservableObject {
         self.current = questions.first
     }
 
-    var startCTA: String { PackGate.startCTA(for: session) }
-    var startBody: String { session.acceptedPartner ? PackCopy.startBody : PackCopy.lockedBody }
+    var startCTA: String { showsStartCTA ? PackCopy.startPack : "" }
+    var startBody: String { screen == .locked || !session.acceptedPartner ? PackCopy.lockedBody : PackCopy.startBody }
+    var showsStartCTA: Bool { screen == .ready && PackGate.canStartPack(session) }
     var canGoPrevious: Bool { index > 0 }
     var canGoNext: Bool { index + 1 < questions.count }
     var agreeLabel: String { PackCopy.agree }
@@ -51,17 +52,13 @@ final class PackViewModel: ObservableObject {
     func startPack() async {
         guard PackGate.canStartPack(session) else {
             screen = PackGate.screen(for: session)
-            error = screen == .signedOut ? "unauthenticated" : "locked"
+            error = ""
             return
         }
         do {
             let payload = try await client.getState()
             guard payload["ok"] as? Bool == true, let raw = payload["state"] as? [String: Any] else {
-                let code = payload["error"] as? String ?? "failed"
-                error = code
-                if code == "unauthenticated" { screen = .signedOut }
-                else if code == "locked" || code == "forbidden" { screen = .locked }
-                else { screen = .ready }
+                applyGatePayload(payload)
                 return
             }
             apply(raw)
@@ -73,9 +70,6 @@ final class PackViewModel: ObservableObject {
 
     func selectChoice(_ id: String) async {
         guard canEdit else { return }
-        if let lock, lock.submittedChoices[session.role == "partner" ? "b" : "a"] != id {
-            reanswering = true
-        }
         mine.draftChoice = id
         await persistDraft()
     }
@@ -223,7 +217,7 @@ final class PackViewModel: ObservableObject {
         shared = questionState.shared
         proposal = shared.proposal
         let submitted = mine.submittedChoice != nil || mine.completed
-        canEdit = reanswering || !submitted
+        canEdit = reanswering || (lock == nil && !submitted)
         canSubmitAnswer = mine.draftChoice != nil && canEdit && saveStatus != "failed"
         privacyBadge = reanswering
             ? PackCopy.draftBadge
@@ -236,19 +230,30 @@ final class PackViewModel: ObservableObject {
         if lock != nil && !reanswering { screen = .reveal } else { screen = .question }
     }
 
+    private func applyGatePayload(_ payload: [String: Any]) {
+        let code = payload["error"] as? String ?? "failed"
+        let status = payload["status"] as? Int ?? 0
+        applyGate(code: code, status: status, fallbackScreen: .ready)
+    }
+
     private func applyClientError(_ error: Error, fallbackScreen: PackScreen) {
         guard let packError = error as? PackClientError else {
             self.error = "failed"
             screen = fallbackScreen
             return
         }
-        let code = packError.code
-        self.error = code
-        if code == "unauthenticated" || packError.status == 401 {
+        applyGate(code: packError.code, status: packError.status, fallbackScreen: fallbackScreen)
+    }
+
+    private func applyGate(code: String, status: Int, fallbackScreen: PackScreen) {
+        if code == "unauthenticated" || status == 401 {
+            error = ""
             screen = .signedOut
-        } else if code == "locked" || code == "forbidden" || packError.status == 403 {
+        } else if code == "locked" || code == "forbidden" || status == 403 {
+            error = ""
             screen = .locked
         } else {
+            error = code.isEmpty ? "failed" : code
             screen = fallbackScreen
         }
     }

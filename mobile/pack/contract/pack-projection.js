@@ -25,12 +25,13 @@ export function privacyBadge(questionState, mine, { reanswering = false } = {}) 
   return PACK_COPY.draftBadge;
 }
 
-export function canEditDraft(mine, { reanswering = false } = {}) {
+export function canEditDraft(mine, { reanswering = false, lock = null } = {}) {
+  if (lock && !reanswering) return false;
   return reanswering || !isSubmitted(mine);
 }
 
-export function canSubmit(mine, { reanswering = false, saveStatus = "saved" } = {}) {
-  return Boolean(mine?.draftChoice) && canEditDraft(mine, { reanswering }) && saveStatus !== "failed";
+export function canSubmit(mine, { reanswering = false, saveStatus = "saved", lock = null } = {}) {
+  return Boolean(mine?.draftChoice) && canEditDraft(mine, { reanswering, lock }) && saveStatus !== "failed";
 }
 
 export function shouldOpenNewRound(lock, role, incomingChoice) {
@@ -74,7 +75,7 @@ export function projectQuestionScreen({
   const revealed = isRevealed(questionState);
   const lock = questionState.lock || null;
   const shared = questionState.shared || { proposal: "", status: "none" };
-  const editing = canEditDraft(mine, { reanswering });
+  const editing = canEditDraft(mine, { reanswering, lock });
 
   return {
     screen: revealed && !reanswering ? "reveal" : "question",
@@ -92,7 +93,7 @@ export function projectQuestionScreen({
     noteLabel: PACK_COPY.noteLabel,
     noteHint: PACK_COPY.noteHint,
     canEditDraft: editing,
-    canSubmit: canSubmit(mine, { reanswering, saveStatus }),
+    canSubmit: canSubmit(mine, { reanswering, saveStatus, lock }),
     canReanswer: Boolean(lock) && !reanswering,
     submitLabel: PACK_COPY.submit,
     agreeLabel: PACK_COPY.agree,

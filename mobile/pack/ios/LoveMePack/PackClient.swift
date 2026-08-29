@@ -7,7 +7,7 @@ struct PackClient {
     var send: (URLRequest) async throws -> (Data, URLResponse)
 
     func getState() async throws -> [String: Any] {
-        try await request(path: "/api/pack/state", method: "GET")
+        try await request(path: "/api/pack/state", method: "GET", returnGateErrors: true)
     }
 
     func saveDraft(questionId: String, draftChoice: String?, privateNote: String, index: Int) async throws -> [String: Any] {
@@ -37,7 +37,7 @@ struct PackClient {
         return try await request(path: "/api/pack/agreement", method: "POST", body: body)
     }
 
-    private func request(path: String, method: String, body: [String: Any]? = nil) async throws -> [String: Any] {
+    private func request(path: String, method: String, body: [String: Any]? = nil, returnGateErrors: Bool = false) async throws -> [String: Any] {
         guard let url = URL(string: path, relativeTo: baseURL)?.absoluteURL else {
             throw PackClientError.http(status: 0, error: "invalid-url")
         }
@@ -56,7 +56,15 @@ struct PackClient {
         let (data, response) = try await send(request)
         let json = (try JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
         if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw PackClientError.http(status: http.statusCode, error: json["error"] as? String ?? "failed")
+            let code = json["error"] as? String ?? (http.statusCode == 401 ? "unauthenticated" : http.statusCode == 403 ? "locked" : "failed")
+            if returnGateErrors, PackClientError.isGate(status: http.statusCode, code: code) {
+                var result = json
+                result["ok"] = false
+                result["error"] = code
+                result["status"] = http.statusCode
+                return result
+            }
+            throw PackClientError.http(status: http.statusCode, error: code)
         }
         return json
     }
@@ -75,5 +83,9 @@ enum PackClientError: Error {
         switch self {
         case .http(_, let error): return error
         }
+    }
+
+    static func isGate(status: Int, code: String) -> Bool {
+        status == 401 || status == 403 || code == "locked" || code == "forbidden" || code == "unauthenticated"
     }
 }

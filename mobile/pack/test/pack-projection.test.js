@@ -105,6 +105,7 @@ test("lock snapshot stays on reveal after submit even if draft differs", () => {
   });
   assert.equal(view.screen, "reveal");
   assert.equal(view.canReanswer, true);
+  assert.equal(view.canEditDraft, false);
   assert.equal(view.lock.roundNumber, 1);
   assert.equal(view.privacyBadge, "공개 잠금");
 });

@@ -1,6 +1,6 @@
 import { canStartPack, packReadyScreen, startPackDecision } from "./pack-gate.js";
 import { neverMigrateLocalSim } from "./pack-client.js";
-import { nextIndex, projectQuestionScreen, shouldOpenNewRound, viewerRole } from "./pack-projection.js";
+import { nextIndex, projectQuestionScreen, viewerRole } from "./pack-projection.js";
 import { PACK_COPY } from "./pack-copy.js";
 
 export function createPackController({
@@ -65,24 +65,27 @@ export function createPackController({
       const ready = packReadyScreen(session);
       if (!ready.canStart) {
         screen = ready.screen;
-        error = ready.screen === "signed-out" ? "unauthenticated" : "locked";
+        error = "";
         return view();
       }
       saveStatus = "saving";
       const result = await client.getState();
       const decision = startPackDecision(session, result);
       saveStatus = decision.ok ? "saved" : "failed";
-      error = decision.ok ? "" : decision.error;
       screen = decision.screen;
+      if (decision.screen === "locked" || decision.screen === "signed-out") {
+        error = "";
+      } else {
+        error = decision.ok ? "" : decision.error;
+      }
       if (decision.ok) applyState(decision.state);
       return view();
     },
     async saveDraft({ draftChoice, privateNote } = {}) {
       const current = projectQuestionScreen({ pack, state, session, reanswering, saveStatus });
       if (!current) return view();
-      const previousLock = current.lock;
+      if (current.lock && !reanswering) return view();
       const incoming = draftChoice === undefined ? current.mine.draftChoice : draftChoice;
-      if (previousLock && shouldOpenNewRound(previousLock, current.role, incoming)) reanswering = true;
       saveStatus = "saving";
       const result = await client.saveDraft({
         questionId: current.question.id,
@@ -98,13 +101,6 @@ export function createPackController({
       applyState(result.state);
       saveStatus = "saved";
       error = "";
-      const latestLock = state.questions[current.question.id]?.lock;
-      if (previousLock && shouldOpenNewRound(previousLock, current.role, incoming)) {
-        reanswering = true;
-      }
-      if (latestLock && previousLock && latestLock.roundNumber > previousLock.roundNumber) {
-        reanswering = false;
-      }
       return view();
     },
     async submit() {

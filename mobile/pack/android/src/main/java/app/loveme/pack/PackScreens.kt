@@ -33,15 +33,13 @@ fun PackReadyScreen(model: PackViewModel) {
     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(PackCopy.TITLE)
         Text(model.startBody)
-        if (PackGate.canStartPack(model.session)) {
+        if (model.showsStartCta) {
             Button(
                 onClick = { model.startPack() },
                 modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = PackCopy.START_PACK }
             ) {
                 Text(PackCopy.START_PACK)
             }
-        } else {
-            Text(PackCopy.LOCKED_BODY)
         }
         if (model.error.isNotEmpty() && model.screen != PackScreen.LOCKED) {
             Text(model.error)

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { connect } from "node:net";
 import { createAnswers } from "../../../server/answers.mjs";
 import { createAuth } from "../../../server/auth.mjs";
 import { createListener } from "../../../server/app.mjs";
@@ -185,8 +186,9 @@ test("startPack maps GET /api/pack/state locked 403 to the locked screen", async
   });
   const view = await controller.startPack();
   assert.equal(view.screen, "locked");
-  assert.equal(view.error, "locked");
+  assert.equal(view.error, "");
   assert.equal(view.cta, "");
+  assert.equal(view.body, "파트너가 초대를 수락한 뒤에만 결혼 팩을 시작할 수 있어요.");
 });
 
 test("controller starts only after accept, never migrates local-sim drafts", async () => {
@@ -248,6 +250,10 @@ test("controller 합의 and 다음에 미룸 go through public-lock agreement ac
   assert.equal(view.state.questions["home-01"].shared.status, "deferred");
 
   const firstLock = structuredClone(view.state.questions["home-01"].lock);
+  view = await controller.saveDraft({ draftChoice: "home-growth" });
+  assert.equal(view.question.screen, "reveal");
+  assert.equal(view.question.reanswering, false);
+  assert.equal(view.state.questions["home-01"].roles.a.draftChoice, "home-rest");
   view = controller.beginReanswer();
   assert.equal(view.question.privacyBadge, "나만 보임");
   view = await controller.saveDraft({ draftChoice: "home-growth" });
@@ -293,4 +299,150 @@ test("refresh after submit stays on the lock snapshot when draft differs", async
   assert.equal(view.question.reanswering, false);
   assert.equal(view.question.screen, "reveal");
   assert.equal(view.question.canReanswer, true);
+});
+
+function parseAndroidPackHttp(raw) {
+  const bytes = Buffer.isBuffer(raw) ? raw : Buffer.from(raw);
+  const split = bytes.indexOf(Buffer.from("\r\n\r\n"));
+  const headerBlock = (split >= 0 ? bytes.subarray(0, split) : bytes).toString("latin1");
+  let body = split >= 0 ? bytes.subarray(split + 4) : Buffer.alloc(0);
+  const status = Number(headerBlock.split("\r\n")[0]?.split(" ")[1] || 0);
+  const headers = Object.fromEntries(
+    headerBlock.split("\r\n").slice(1).map((line) => {
+      const index = line.indexOf(":");
+      return index < 0 ? ["", ""] : [line.slice(0, index).trim().toLowerCase(), line.slice(index + 1).trim()];
+    })
+  );
+  if (String(headers["transfer-encoding"] || "").includes("chunked")) {
+    const chunks = [];
+    let index = 0;
+    while (index < body.length) {
+      const lineEnd = body.indexOf("\r\n", index);
+      if (lineEnd < 0) break;
+      const size = Number.parseInt(body.subarray(index, lineEnd).toString("ascii").trim().split(";")[0], 16);
+      if (!size) break;
+      const start = lineEnd + 2;
+      chunks.push(body.subarray(start, start + size));
+      index = start + size + 2;
+    }
+    body = Buffer.concat(chunks);
+  }
+  const text = body.toString("utf8").trim();
+  const json = text ? JSON.parse(text) : {};
+  if (status) json.status = json.status ?? status;
+  if (json.ok == null) json.ok = status >= 200 && status < 300;
+  return json;
+}
+
+function androidPackHttp({ host, port, method, path, cookie, body }) {
+  const payload = body ? Buffer.from(JSON.stringify(body)) : Buffer.alloc(0);
+  const request = Buffer.concat([
+    Buffer.from(
+      `${method} ${path} HTTP/1.1\r\n` +
+      `Host: ${host}:${port}\r\n` +
+      `Accept: application/json\r\n` +
+      (cookie ? `Cookie: ${cookie}\r\n` : "") +
+      (payload.length ? `Content-Type: application/json\r\nContent-Length: ${payload.length}\r\n` : "") +
+      "Connection: close\r\n\r\n"
+    ),
+    payload
+  ]);
+  return new Promise((resolve, reject) => {
+    const socket = connect({ host, port }, () => socket.write(request));
+    const chunks = [];
+    socket.on("data", (chunk) => chunks.push(chunk));
+    socket.on("end", () => {
+      try {
+        resolve(parseAndroidPackHttp(Buffer.concat(chunks)));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    socket.on("error", reject);
+  });
+}
+
+test("Android PackHttp wire format saves a real PATCH draft", async () => {
+  const { couple, answers, auth } = system();
+  const outbox = [];
+  const methods = [];
+  const inner = createListener({
+    auth,
+    couple,
+    answers,
+    root: process.cwd(),
+    allowDevOutbox: true,
+    outbox
+  });
+  const server = createServer((request, response) => {
+    methods.push(request.method);
+    inner(request, response);
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const { port } = server.address();
+    async function login(email) {
+      await fetch(`http://127.0.0.1:${port}/api/auth/magic-link`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const box = await fetch(`http://127.0.0.1:${port}/api/dev/outbox`).then((response) => response.json());
+      const item = box.items.find((entry) => entry.type === "magic-link" && entry.email === email);
+      const token = new URL(item.url).searchParams.get("token");
+      const consume = await fetch(`http://127.0.0.1:${port}/api/auth/consume`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token })
+      });
+      return cookieHeader(consume.headers.getSetCookie?.() || []);
+    }
+
+    const buyerCookie = await login("buyer@example.com");
+    const locked = await androidPackHttp({
+      host: "127.0.0.1",
+      port,
+      method: "GET",
+      path: "/api/pack/state",
+      cookie: buyerCookie
+    });
+    assert.equal(locked.status, 403);
+    assert.equal(locked.error, "locked");
+    assert.equal(locked.ok, false);
+
+    await fetch(`http://127.0.0.1:${port}/api/invite`, {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: buyerCookie },
+      body: JSON.stringify({ email: "partner@example.com" })
+    });
+    const box = await fetch(`http://127.0.0.1:${port}/api/dev/outbox`).then((response) => response.json());
+    const inviteToken = new URL(box.items.find((entry) => entry.type === "invite").url).searchParams.get("token");
+    const partnerCookie = await login("partner@example.com");
+    const accepted = await fetch(`http://127.0.0.1:${port}/api/invite/accept`, {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: partnerCookie },
+      body: JSON.stringify({ token: inviteToken })
+    });
+    assert.equal(accepted.status, 200);
+
+    const draft = await androidPackHttp({
+      host: "127.0.0.1",
+      port,
+      method: "PATCH",
+      path: "/api/pack/draft",
+      cookie: buyerCookie,
+      body: {
+        questionId: "home-01",
+        draftChoice: "home-rest",
+        privateNote: "안드로이드 초안",
+        index: 0
+      }
+    });
+    assert.equal(methods.includes("PATCH"), true);
+    assert.equal(draft.ok, true);
+    assert.equal(draft.state.questions["home-01"].roles.a.draftChoice, "home-rest");
+    assert.equal(draft.state.questions["home-01"].roles.a.privateNote, "안드로이드 초안");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });

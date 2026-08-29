@@ -36,8 +36,9 @@ class PackViewModel(
     private var state: PackState? = null
     private var index: Int = 0
 
-    val startCta: String get() = PackGate.startCta(session)
-    val startBody: String get() = if (session.acceptedPartner) PackCopy.START_BODY else PackCopy.LOCKED_BODY
+    val startCta: String get() = if (showsStartCta) PackCopy.START_PACK else ""
+    val startBody: String get() = if (screen == PackScreen.LOCKED || !session.acceptedPartner) PackCopy.LOCKED_BODY else PackCopy.START_BODY
+    val showsStartCta: Boolean get() = screen == PackScreen.READY && PackGate.canStartPack(session)
     val agreeLabel: String get() = PackCopy.AGREE
     val holdLabel: String get() = PackCopy.HOLD
     val comparisonLabel: String
@@ -56,7 +57,7 @@ class PackViewModel(
     fun startPack() {
         if (!PackGate.canStartPack(session)) {
             screen = PackGate.screen(session)
-            error = if (screen == PackScreen.SIGNED_OUT) "unauthenticated" else "locked"
+            error = ""
             return
         }
         val payload = client.getState()
@@ -64,20 +65,12 @@ class PackViewModel(
             apply(payload.getJSONObject("state"))
             error = ""
         } else {
-            val code = payload.optString("error", "failed")
-            error = code
-            screen = when (code) {
-                "unauthenticated" -> PackScreen.SIGNED_OUT
-                "locked", "forbidden" -> PackScreen.LOCKED
-                else -> PackScreen.READY
-            }
+            applyGate(payload.optString("error", "failed"), payload.optInt("status", 0))
         }
     }
 
     fun selectChoice(id: String) {
         if (!canEdit) return
-        val lockedChoice = lock?.submittedChoices?.get(session.roleKey)
-        if (lock != null && lockedChoice != id) reanswering = true
         mine = mine.copy(draftChoice = id)
         persistDraft()
     }
@@ -198,7 +191,7 @@ class PackViewModel(
         shared = questionState.shared
         proposal = shared.proposal
         val submitted = mine.submittedChoice != null || mine.completed
-        canEdit = reanswering || !submitted
+        canEdit = reanswering || (lock == null && !submitted)
         canSubmitAnswer = mine.draftChoice != null && canEdit && saveStatus != "failed"
         privacyBadge = when {
             reanswering -> PackCopy.DRAFT_BADGE
@@ -210,5 +203,18 @@ class PackViewModel(
         val theySubmitted = questionState.roles[other]?.submittedChoice != null || questionState.roles[other]?.completed == true
         partnerStatus = if (theySubmitted) PackCopy.BOTH_SUBMITTED else PackCopy.WAITING_PARTNER
         screen = if (lock != null && !reanswering) PackScreen.REVEAL else PackScreen.QUESTION
+    }
+
+    private fun applyGate(code: String, status: Int) {
+        if (code == "unauthenticated" || status == 401) {
+            error = ""
+            screen = PackScreen.SIGNED_OUT
+        } else if (code == "locked" || code == "forbidden" || status == 403) {
+            error = ""
+            screen = PackScreen.LOCKED
+        } else {
+            error = code.ifBlank { "failed" }
+            screen = PackScreen.READY
+        }
     }
 }
