@@ -18,7 +18,7 @@ test("S6 start CTA appears only after partner accept", () => {
   const ready = packReadyScreen({ user: { id: "u1", email: "a@b.c" }, workspace: { acceptedPartner: true, role: "buyer" } });
   assert.equal(ready.screen, "ready");
   assert.equal(ready.canStart, true);
-  assert.equal(ready.cta, "결혼 팩 시작하기");
+  assert.equal(ready.cta, "활시 결혼 팩 시작하기");
   assert.equal(ready.title, "두 사람의 결혼 준비, 한곳에");
 });
 

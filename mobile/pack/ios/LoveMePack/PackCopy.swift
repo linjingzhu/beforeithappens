@@ -2,7 +2,7 @@ import Foundation
 
 enum PackCopy {
     static let title = "두 사람의 결혼 준비, 한곳에"
-    static let startPack = "결혼 팩 시작하기"
+    static let startPack = "활시 결혼 팩 시작하기"
     static let startBody = "파트너가 초대를 수락했어요. 이제 두 사람이 결혼 준비 팩을 시작할 수 있어요."
     static let lockedBody = "파트너가 초대를 수락한 뒤에만 결혼 팩을 시작할 수 있어요."
     static let draftBadge = "나만 보임"

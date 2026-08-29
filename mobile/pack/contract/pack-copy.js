@@ -1,7 +1,7 @@
 /** Locked LoveMe S6–S8 copy. Do not invent payment or install-landing strings. */
 export const PACK_COPY = Object.freeze({
   title: "두 사람의 결혼 준비, 한곳에",
-  startPack: "결혼 팩 시작하기",
+  startPack: "활시 결혼 팩 시작하기",
   startBody: "파트너가 초대를 수락했어요. 이제 두 사람이 결혼 준비 팩을 시작할 수 있어요.",
   lockedBody: "파트너가 초대를 수락한 뒤에만 결혼 팩을 시작할 수 있어요.",
   draftBadge: "나만 보임",
@@ -42,5 +42,6 @@ export const FORBIDDEN_PACK_SURFACES = Object.freeze([
   "앱 설치하기",
   "앱을 설치하면 시작할 수 있어요.",
   "100-question",
-  "100문"
+  "100문",
+  "보류"
 ]);
