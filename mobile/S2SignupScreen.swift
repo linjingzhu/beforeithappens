@@ -2,7 +2,7 @@ import SwiftUI
 
 enum LoveMeS2Copy {
     static let title = "두 사람의 결혼 준비, 한곳에"
-    static let body = "비밀번호 없이 이메일로 로그인 링크를 보내드려요."
+    static let body = "암호 없이 이메일로 로그인 링크를 보내드려요."
     static let cta = "로그인 링크 보내기"
     static let sent = "메일을 확인해 주세요. 링크는 10분 동안만 유효해요."
     static let afterLogin = "이 기기 임시 답은 이어지지 않아요."
