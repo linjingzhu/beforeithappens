@@ -20,6 +20,8 @@ test("S6–S8 copy is locked", () => {
   assert.equal(PACK_COPY.draftBadge, "나만 보임");
   assert.equal(PACK_COPY.agree, "합의");
   assert.equal(PACK_COPY.hold, "다음에 미룸");
+  assert.equal(PACK_COPY.reanswer, "다시 답하기");
+  assert.notEqual(PACK_COPY.reanswer, "재시 답하기");
   assert.notEqual(PACK_COPY.hold, "보류");
   assert.equal(PACK_COPY.aligned, "ALIGNED");
   assert.equal(PACK_COPY.close, "CLOSE");
@@ -33,6 +35,8 @@ test("iOS and Android copy tables match the locked strings", () => {
     assert.match(text, /나만 보임/);
     assert.match(text, /합의/);
     assert.match(text, /다음에 미룸/);
+    assert.match(text, /다시 답하기/);
+    assert.equal(text.includes("재시 답하기"), false, `${file} contains 재시 답하기`);
     assert.match(text, /ALIGNED/);
     assert.match(text, /CLOSE/);
     assert.match(text, /DISCUSS/);
@@ -90,6 +94,7 @@ test("native screens bind the locked copy constants and stay off install/payment
     + readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackScreens.kt", "utf8");
   assert.match(reveal, /agree|AGREE/);
   assert.match(reveal, /hold|HOLD/);
+  assert.match(reveal, /reanswer|REANSWER/);
   assert.match(reveal, /NEXT|next|이전 질문/);
   const androidScreens = readFileSync("mobile/pack/android/src/main/java/app/loveme/pack/PackScreens.kt", "utf8");
   assert.match(androidScreens, /submittedChoices/);

@@ -63,5 +63,6 @@ export const FORBIDDEN_PACK_SURFACES = Object.freeze([
   "미룼",
   "미뢴",
   "활시",
-  "발행 팩"
+  "발행 팩",
+  "재시 답하기"
 ]);

@@ -64,6 +64,8 @@ test("S8 lock snapshot and 합의/다음에 미룸 never reopen the same lock", 
   assert.equal(view.privacyBadge, "공개 잠금");
   assert.equal(view.agreeLabel, "합의");
   assert.equal(view.holdLabel, "다음에 미룸");
+  assert.equal(view.reanswerLabel, "다시 답하기");
+  assert.notEqual(view.reanswerLabel, "재시 답하기");
   assert.equal(view.canReanswer, true);
   assert.equal(view.lock.roundNumber, 1);
   assert.equal(shouldOpenNewRound(lock, "a", "home-rest"), false);
