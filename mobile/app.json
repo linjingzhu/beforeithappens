@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "LoveMe",
-    "slug": "loveme",
+    "slug": "love-me",
+    "owner": "jeongsulims-team",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -42,6 +43,11 @@
           "resizeMode": "contain"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0ec4ea96-f071-4d0a-885f-57a3aa218a51"
+      }
+    }
   }
 }
