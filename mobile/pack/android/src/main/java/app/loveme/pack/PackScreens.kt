@@ -21,10 +21,15 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PackRootScreen(model: PackViewModel) {
-    when (model.screen) {
-        PackScreen.READY, PackScreen.LOCKED, PackScreen.SIGNED_OUT -> PackReadyScreen(model)
-        PackScreen.QUESTION -> PackQuestionScreen(model)
-        PackScreen.REVEAL -> PackRevealScreen(model)
+    androidx.compose.foundation.layout.Box {
+        when (model.screen) {
+            PackScreen.READY, PackScreen.LOCKED, PackScreen.SIGNED_OUT -> PackReadyScreen(model)
+            PackScreen.QUESTION -> PackQuestionScreen(model)
+            PackScreen.REVEAL -> PackRevealScreen(model)
+        }
+        if (model.showsRemainingGate) {
+            RemainingGateOverlay(model)
+        }
     }
 }
 

@@ -66,6 +66,8 @@ test("partner surface has no purchase button; buyer CTA is the only price", () =
   assert.equal(partnerAndroid.includes("model.purchase"), false);
   assert.equal(partnerRn.includes("onPurchase"), false);
   assert.equal(partnerRn.includes("paywall-purchase"), false);
+  assert.match(ios, /purchaseRemaining/);
+  assert.match(android, /purchaseRemaining/);
   assert.match(ios, /PaywallCopy\.buyerCta/);
   assert.match(android, /PaywallCopy\.BUYER_CTA/);
   assert.match(rn, /testID="paywall-purchase"/);

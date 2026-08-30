@@ -47,6 +47,9 @@ function partnerSubmittedCount() {
 
 function applyPackState(next) {
   state = normalizeState(next, ids, choiceIdsByQuestion, packIdentity);
+  state.entitlement = next?.entitlement || state.entitlement || { entitled: false };
+  state.remainingLocked = next?.remainingLocked ?? !state.entitlement.entitled;
+  if (state.remainingLocked && state.index > 2) state.index = 2;
   for (const id of ids) {
     const source = next?.questions?.[id];
     if (source?.round) state.questions[id].round = source.round;
@@ -57,6 +60,10 @@ function applyPackState(next) {
       }
     }
   }
+}
+
+function remainingQuestionOpen(index) {
+  return index < 3 || state.entitlement?.entitled === true;
 }
 
 function viewerRole() {
@@ -80,6 +87,10 @@ async function packRequest(path, { method = "GET", body } = {}) {
 }
 
 async function persistDraft() {
+  if (!remainingQuestionOpen(state.index)) {
+    state.index = Math.min(state.index, 2);
+    return true;
+  }
   saveStatus = "saving";
   try {
     const question = questions[state.index];
@@ -688,7 +699,9 @@ function bindEvents() {
   });
   document.querySelectorAll(".chapter").forEach((button) => button.addEventListener("click", async () => {
     if (saveStatus === "failed") return;
-    state.index = Number(button.dataset.index);
+    const nextIndex = Number(button.dataset.index);
+    if (!remainingQuestionOpen(nextIndex)) return;
+    state.index = nextIndex;
     openRationaleQuestionId = null;
     await persistDraft();
     render();

@@ -112,6 +112,8 @@ test("native screens bind the locked copy constants and stay off install/payment
   assert.match(androidScreens, /submittedChoices/);
   assert.match(androidScreens, /PackCopy\.NEXT/);
   assert.match(androidScreens, /partnerStatus/);
+  assert.match(androidScreens, /RemainingGateOverlay/);
+  assert.match(androidScreens, /showsRemainingGate/);
   assert.match(reveal, /comparisonLabel/);
   for (const file of screenFiles) {
     const text = readFileSync(file, "utf8");

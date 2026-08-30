@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PaywallBuyerView: View {
     @ObservedObject var model: PaywallViewModel
+    var onPurchase: (() async -> Void)?
+    var onLater: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -11,14 +13,14 @@ struct PaywallBuyerView: View {
                 .foregroundStyle(.secondary)
             labelRow
             Button(PaywallCopy.buyerCta) {
-                Task { await model.purchase() }
+                Task { if let onPurchase { await onPurchase() } else { await model.purchase() } }
             }
             .buttonStyle(.borderedProminent)
             .tint(Color(red: 0.933, green: 0.467, blue: 0.373))
             .frame(minHeight: 44)
             .accessibilityIdentifier("paywall-purchase")
             Button(PaywallCopy.later) {
-                model.later()
+                if let onLater { onLater() } else { model.later() }
             }
             .frame(minHeight: 44)
             .accessibilityIdentifier("paywall-later")
@@ -51,6 +53,7 @@ struct PaywallBuyerView: View {
 
 struct PaywallPartnerView: View {
     @ObservedObject var model: PaywallViewModel
+    var onLater: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -65,6 +68,11 @@ struct PaywallPartnerView: View {
             }
             .font(.caption.weight(.bold))
             .accessibilityIdentifier("paywall-labels")
+            Button(PaywallCopy.later) {
+                if let onLater { onLater() } else { model.later() }
+            }
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("paywall-later")
         }
         .padding(24)
         .background(Color(red: 1, green: 0.992, blue: 0.980))
@@ -75,16 +83,18 @@ struct PaywallPartnerView: View {
 
 struct PaywallOverlay: View {
     @ObservedObject var model: PaywallViewModel
+    var onPurchase: (() async -> Void)?
+    var onLater: (() -> Void)?
 
     var body: some View {
         if model.visible {
             ZStack(alignment: .bottom) {
                 Color(red: 0.973, green: 0.953, blue: 0.929).opacity(0.72)
                 if model.variant == "partner" {
-                    PaywallPartnerView(model: model)
+                    PaywallPartnerView(model: model, onLater: onLater)
                         .padding(20)
                 } else {
-                    PaywallBuyerView(model: model)
+                    PaywallBuyerView(model: model, onPurchase: onPurchase, onLater: onLater)
                         .padding(20)
                 }
             }
@@ -97,7 +107,11 @@ struct RemainingPackGateHost: View {
     @ObservedObject var model: PackViewModel
 
     var body: some View {
-        PaywallOverlay(model: model.remainingGate)
+        PaywallOverlay(
+            model: model.remainingGate,
+            onPurchase: { await model.purchaseRemaining() },
+            onLater: { model.later() }
+        )
     }
 }
 
@@ -105,9 +119,6 @@ struct PaywallPackRootView: View {
     @ObservedObject var model: PackViewModel
 
     var body: some View {
-        ZStack {
-            PackRootView(model: model)
-            RemainingPackGateHost(model: model)
-        }
+        PackRootView(model: model)
     }
 }

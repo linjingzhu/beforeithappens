@@ -55,7 +55,9 @@ export function PaywallBuyerScreen({
 export function PaywallPartnerScreen({
   title = PAYWALL_COPY.partnerTitle,
   body = PAYWALL_COPY.partnerBody,
-  labels
+  secondary = PAYWALL_COPY.later,
+  labels,
+  onLater
 }) {
   return (
     <View style={styles.overlay} testID="paywall-partner" accessibilityLabel="paywall-partner">
@@ -63,6 +65,11 @@ export function PaywallPartnerScreen({
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.body}>{body}</Text>
         <ComparisonLabels labels={labels} />
+        {onLater ? (
+          <Pressable testID="paywall-later" accessibilityRole="button" onPress={onLater} style={styles.secondary}>
+            <Text style={styles.secondaryLabel}>{secondary}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -71,7 +78,7 @@ export function PaywallPartnerScreen({
 export function PaywallOverlay({ view, onPurchase, onLater }) {
   if (!view?.visible) return null;
   if (view.variant === "partner") {
-    return <PaywallPartnerScreen title={view.title} body={view.body} labels={view.labels} />;
+    return <PaywallPartnerScreen title={view.title} body={view.body} labels={view.labels} onLater={onLater} />;
   }
   return (
     <PaywallBuyerScreen

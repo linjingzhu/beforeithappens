@@ -50,7 +50,11 @@ fun ComparisonLabels(labels: List<String> = listOf(PaywallCopy.ALIGNED, PaywallC
 }
 
 @Composable
-fun PaywallBuyerScreen(model: PaywallViewModel) {
+fun PaywallBuyerScreen(
+    model: PaywallViewModel,
+    onPurchase: () -> Unit = { model.purchase() },
+    onLater: () -> Unit = { model.later() }
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -63,7 +67,7 @@ fun PaywallBuyerScreen(model: PaywallViewModel) {
         Text(PaywallCopy.BUYER_BODY, color = Muted)
         ComparisonLabels(model.labels)
         Button(
-            onClick = { model.purchase() },
+            onClick = onPurchase,
             enabled = !model.busy,
             colors = ButtonDefaults.buttonColors(containerColor = Coral),
             modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = PaywallCopy.BUYER_CTA }
@@ -71,7 +75,7 @@ fun PaywallBuyerScreen(model: PaywallViewModel) {
             Text(PaywallCopy.BUYER_CTA)
         }
         OutlinedButton(
-            onClick = { model.later() },
+            onClick = onLater,
             modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = PaywallCopy.LATER }
         ) {
             Text(PaywallCopy.LATER)
@@ -81,7 +85,10 @@ fun PaywallBuyerScreen(model: PaywallViewModel) {
 }
 
 @Composable
-fun PaywallPartnerScreen(model: PaywallViewModel) {
+fun PaywallPartnerScreen(
+    model: PaywallViewModel,
+    onLater: () -> Unit = { model.later() }
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -93,11 +100,21 @@ fun PaywallPartnerScreen(model: PaywallViewModel) {
         Text(PaywallCopy.PARTNER_TITLE, color = Ink)
         Text(PaywallCopy.PARTNER_BODY, color = Muted)
         ComparisonLabels(model.labels)
+        OutlinedButton(
+            onClick = onLater,
+            modifier = Modifier.heightIn(min = 44.dp).semantics { contentDescription = PaywallCopy.LATER }
+        ) {
+            Text(PaywallCopy.LATER)
+        }
     }
 }
 
 @Composable
-fun PaywallOverlay(model: PaywallViewModel) {
+fun PaywallOverlay(
+    model: PaywallViewModel,
+    onPurchase: () -> Unit = { model.purchase() },
+    onLater: () -> Unit = { model.later() }
+) {
     if (!model.visible) return
     Box(
         Modifier
@@ -106,20 +123,25 @@ fun PaywallOverlay(model: PaywallViewModel) {
         contentAlignment = Alignment.BottomCenter
     ) {
         Box(Modifier.padding(20.dp)) {
-            if (model.variant == "partner") PaywallPartnerScreen(model) else PaywallBuyerScreen(model)
+            if (model.variant == "partner") {
+                PaywallPartnerScreen(model, onLater = onLater)
+            } else {
+                PaywallBuyerScreen(model, onPurchase = onPurchase, onLater = onLater)
+            }
         }
     }
 }
 
 @Composable
 fun RemainingPackGateHost(model: PackViewModel) {
-    PaywallOverlay(model.remainingGate)
+    PaywallOverlay(
+        model = model.remainingGate,
+        onPurchase = { model.purchaseRemaining() },
+        onLater = { model.later() }
+    )
 }
 
 @Composable
 fun PaywallPackRootScreen(model: PackViewModel) {
-    Box(Modifier.fillMaxSize()) {
-        PackRootScreen(model)
-        RemainingPackGateHost(model)
-    }
+    PackRootScreen(model)
 }

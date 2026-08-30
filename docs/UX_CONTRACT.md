@@ -3,7 +3,7 @@
 ## Experience rules
 
 - The product entry is magic-link email onboarding. There is no password, Kakao button, or role switcher on the signed-out path.
-- Explain expected time and the reveal rule before answering starts. The pack opens only after the partner accepts the invite. The invited partner is free. Payment and the 100-question lifecycle line are out of this slice.
+- Explain expected time and the reveal rule before answering starts. The pack opens only after the partner accepts the invite. The invited partner is free. After the third sample lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. The 100-question lifecycle line is out of this slice.
 - Use one question per screen with explicit save state and resume behavior.
 - Let one person continue while waiting for the partner, after the pack is unlocked.
 - Reveal only questions submitted by both people.
