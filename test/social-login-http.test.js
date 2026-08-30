@@ -27,6 +27,7 @@ function startServer({ allowDevOAuth = true, oauthEnv = {} } = {}) {
     allowDevOutbox: true,
     allowDevOAuth,
     oauthEnv,
+    mailEnv: {},
     outbox
   }));
   return new Promise((resolve) => {

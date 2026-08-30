@@ -25,6 +25,7 @@ function startServer() {
     couple,
     root: process.cwd(),
     allowDevOutbox: true,
+    mailEnv: {},
     outbox
   }));
   return new Promise((resolve) => {
@@ -60,11 +61,21 @@ test("dev outbox is closed unless explicitly enabled", async () => {
   const store = createMemoryStore();
   const outbox = [];
   const { auth, couple } = wiredAuth(store);
-  const server = createServer(createListener({ auth, couple, root: process.cwd(), allowDevOutbox: false, outbox }));
+  const server = createServer(createListener({
+    auth,
+    couple,
+    root: process.cwd(),
+    allowDevOutbox: false,
+    mailEnv: {},
+    outbox
+  }));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     const { port } = server.address();
-    await request(port, "/api/auth/magic-link", { method: "POST", body: { email: "buyer@example.com" } });
+    const sent = await request(port, "/api/auth/magic-link", { method: "POST", body: { email: "buyer@example.com" } });
+    assert.equal(sent.status, 502);
+    assert.equal(sent.json.ok, false);
+    assert.equal(sent.json.error, "failed");
     const hidden = await request(port, "/api/dev/outbox");
     assert.equal(hidden.status, 404);
     assert.equal(outbox.length, 0);

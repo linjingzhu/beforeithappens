@@ -19,7 +19,7 @@ Primary user value:
 ## Architecture Map
 
 Core:
-- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). `scripts/server.mjs` listens on `Number(process.env.PORT) || 4173`. Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
+- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), Resend login/email-bind mail (`server/mail.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). `scripts/server.mjs` listens on `Number(process.env.PORT) || 4173`. Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
@@ -59,6 +59,7 @@ Targeted tests:
 - `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`). Metro project root is `mobile/`; `mobile/metro.config.js` watchFolders repo-root `src/` so S4 can import `../../src/auth.js`.
 - `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
 - `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
+- `server/mail.mjs` — Resend transactional login/email-bind only; invites stay share links
 - `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed. The S2 social pack is not shippable; preview iOS stays on `stable`.
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
