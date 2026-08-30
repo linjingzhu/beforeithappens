@@ -13,7 +13,7 @@ import {
   startHostFlow,
   startHostSocial
 } from "./src/session.js";
-import { backToSignup, setEmail } from "./s0-s2-s3-flow.js";
+import { backToSignup, finishSplash, setEmail } from "./s0-s2-s3-flow.js";
 import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
@@ -36,8 +36,13 @@ export default function App() {
       const opened = startHostFlow();
       timer = setTimeout(async () => {
         if (cancelled) return;
-        const next = await finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
-        setState(next.screen ? next : await finishHostSplash(opened, api));
+        try {
+          const next = await finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
+          if (cancelled) return;
+          setState(next.screen ? next : await finishHostSplash(opened, api));
+        } catch {
+          if (!cancelled) setState(finishSplash(opened));
+        }
       }, SPLASH_MS);
     })();
     return () => {

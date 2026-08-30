@@ -1,4 +1,5 @@
 import { S2_ERRORS, S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
+import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -168,10 +169,10 @@ export async function consumeOpenedLink(state, api, tokenOrUrl) {
   }
 }
 
-export async function restoreSessionAfterSplash(state, api) {
+export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSION_FETCH_MS } = {}) {
   const next = finishSplash(state);
   try {
-    const session = await api.session();
+    const session = await withTimeout(Promise.resolve().then(() => api.session()), timeoutMs);
     if (!session?.user) return next;
     return applyScreen({
       ...next,

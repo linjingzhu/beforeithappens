@@ -7,6 +7,30 @@ export const AUTH_API = {
   emailBind: "/api/auth/email-bind"
 };
 
+export const SESSION_FETCH_MS = 2000;
+
+export function emptyAuthSession() {
+  return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
+}
+
+export function hasApiOrigin(origin) {
+  return Boolean(String(origin || "").trim());
+}
+
+export async function withTimeout(promise, ms = SESSION_FETCH_MS) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), ms);
+      })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function extractMagicLinkToken(url) {
   try {
     const parsed = new URL(String(url || ""), "https://ab.local");
@@ -32,7 +56,8 @@ export function createAuthApi({
   fetchImpl = globalThis.fetch,
   origin = "",
   getCookie,
-  setCookie
+  setCookie,
+  sessionTimeoutMs = SESSION_FETCH_MS
 } = {}) {
   if (typeof fetchImpl !== "function") throw new Error("fetchImpl is required");
 
@@ -73,7 +98,8 @@ export function createAuthApi({
     },
 
     async session() {
-      const result = await request(AUTH_API.session);
+      if (!hasApiOrigin(origin)) return emptyAuthSession();
+      const result = await withTimeout(request(AUTH_API.session), sessionTimeoutMs);
       return result.payload;
     },
 
