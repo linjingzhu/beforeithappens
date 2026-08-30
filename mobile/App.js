@@ -5,20 +5,24 @@ import { SPLASH_MS } from "./src/copy.js";
 import { NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen } from "./src/screens.js";
 import {
   ackHostNotice,
-  consumeHostMagicLink,
   createHostApi,
   finishHostSplash,
+  hostCookieAccess,
   sendHostMagicLink,
   startHostFlow
 } from "./src/session.js";
-import { backToSignup, invitePartner, setEmail } from "./s0-s2-s3-flow.js";
+import { backToSignup, setEmail } from "./s0-s2-s3-flow.js";
 import { colors } from "./src/theme.js";
+import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
+import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
+import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function App() {
   const [state, setState] = useState(startHostFlow);
   const api = createHostApi();
+  const inviteApi = createHostInviteApi(hostCookieAccess());
 
   useEffect(() => {
     let cancelled = false;
@@ -26,16 +30,11 @@ export default function App() {
     (async () => {
       await SplashScreen.hideAsync().catch(() => {});
       if (cancelled) return;
-      const params = typeof location !== "undefined" ? new URLSearchParams(location.search) : null;
-      const token = params?.get("token") || "";
       const opened = startHostFlow();
       timer = setTimeout(async () => {
         if (cancelled) return;
-        if (token) {
-          setState(await consumeHostMagicLink(opened, token, api));
-          return;
-        }
-        setState(await finishHostSplash(opened, api));
+        const next = await finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
+        setState(next.screen ? next : await finishHostSplash(opened, api));
       }, SPLASH_MS);
     })();
     return () => {
@@ -70,7 +69,26 @@ export default function App() {
       {state.screen === "workspace" ? (
         <WorkspaceScreen
           email={state.session?.user?.email || ""}
-          onInvitePartner={() => setState(invitePartner(state))}
+          onInvitePartner={() => setState(openS4FromWorkspace(state))}
+        />
+      ) : null}
+      {state.screen === APP_S4_SCREEN ? (
+        <InviteWaitingScreen
+          email={state.session?.user?.email || ""}
+          partnerEmail={state.partnerEmail || ""}
+          invite={state.invite}
+          copied={state.copied}
+          error={state.error}
+          onCopy={async () => setState(await shareS4FromHost(state, "copy"))}
+          onShareInstagram={async () => setState(await shareS4FromHost(state, "instagram"))}
+          onShareChat={async () => setState(await shareS4FromHost(state, "kakao"))}
+          onSendOrResend={async (email) => setState(await sendS4Invite(state, email, inviteApi))}
+          onLogout={async () => setState(await logoutFromS4Home(state, inviteApi))}
+        />
+      ) : null}
+      {state.screen === APP_SAME_SESSION_SCREEN ? (
+        <SameSessionFailScreen
+          onLogoutAndContinue={async () => setState(await logoutAndContinueFromS4(state, inviteApi))}
         />
       ) : null}
     </>

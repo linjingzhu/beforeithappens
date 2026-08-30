@@ -23,6 +23,8 @@ import {
   shareS4Invite
 } from "../mobile/s4-invite/flow.js";
 import { renderInviteBlock, renderS4BuyerHome, renderSameSessionFail } from "../mobile/s4-invite/render.js";
+import { finishHostOpen, openS4FromWorkspace, readHostOpenParams } from "../mobile/s4-invite/host-mount.js";
+import { noticeAcknowledged, consumeSucceeded, createNativeFlow, finishSplash } from "../mobile/s0-s2-s3-flow.js";
 
 async function walkFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -267,4 +269,42 @@ test("mobile invite API reuses web send/resend (expires previous token) and forc
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("stable host mounts S4 on invite-partner and same-session invite open", async () => {
+  const app = await readFile("mobile/App.js", "utf8");
+  assert.match(app, /InviteWaitingScreen/);
+  assert.match(app, /SameSessionFailScreen/);
+  assert.match(app, /openS4FromWorkspace/);
+  assert.match(app, /WorkspaceScreen/);
+  assert.equal(app.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
+  assert.equal(app.includes("Kakao"), false);
+  assert.deepEqual(readHostOpenParams({ pathname: "/invite/accept", search: "?token=inv-1" }), {
+    magicToken: "",
+    inviteToken: "inv-1"
+  });
+  assert.deepEqual(readHostOpenParams({ pathname: "/auth/consume", search: "?token=login-1" }), {
+    magicToken: "login-1",
+    inviteToken: ""
+  });
+
+  let state = finishSplash(createNativeFlow());
+  state = consumeSucceeded(state, {
+    user: { id: "usr_1", email: "buyer@example.com" },
+    notice: null,
+    workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
+  });
+  state = noticeAcknowledged(state, state.session);
+  state = openS4FromWorkspace(state);
+  assert.equal(state.screen, APP_S4_SCREEN);
+  assert.equal(state.action, "invite-partner");
+  assert.equal(buyerHomeOpensPack(state.session), false);
+
+  const same = await finishHostOpen(
+    finishSplash(createNativeFlow()),
+    { session: async () => ({ user: { email: "buyer@example.com" }, notice: null, workspace: { acceptedPartner: false } }) },
+    { preview: async () => ({ payload: { ok: true, email: "partner@example.com" } }) },
+    { pathname: "/invite/accept", search: "?token=inv-2" }
+  );
+  assert.equal(same.screen, APP_SAME_SESSION_SCREEN);
 });

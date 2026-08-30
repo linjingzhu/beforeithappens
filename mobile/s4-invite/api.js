@@ -8,7 +8,12 @@ export const INVITE_API = Object.freeze({
 });
 
 export function createInviteApi(io = {}) {
-  const request = io.request || defaultRequest(io.fetch || globalThis.fetch.bind(globalThis));
+  const request = io.request || defaultRequest({
+    fetchImpl: io.fetch || globalThis.fetch.bind(globalThis),
+    origin: String(io.origin || "").replace(/\/$/, ""),
+    getCookie: io.getCookie,
+    setCookie: io.setCookie
+  });
 
   return {
     async session() {
@@ -42,14 +47,24 @@ export function createInviteApi(io = {}) {
   };
 }
 
-function defaultRequest(fetchImpl) {
+function defaultRequest({ fetchImpl, origin = "", getCookie, setCookie } = {}) {
   return async function request({ method, path, body } = {}) {
-    const response = await fetchImpl(path, {
+    const headers = {};
+    if (body) headers["content-type"] = "application/json";
+    const cookie = getCookie?.();
+    if (cookie) headers.cookie = cookie;
+    const response = await fetchImpl(`${origin}${path}`, {
       method,
-      credentials: "same-origin",
-      headers: body ? { "content-type": "application/json" } : undefined,
+      credentials: origin ? "include" : "same-origin",
+      headers,
       body: body ? JSON.stringify(body) : undefined
     });
+    const listed = response.headers?.getSetCookie?.() || [];
+    const single = response.headers?.get?.("set-cookie");
+    const setCookieHeader = listed.length ? listed : (single ? [single] : []);
+    if (setCookie && setCookieHeader.length) {
+      setCookie(setCookieHeader.map((value) => String(value).split(";")[0].trim()).filter(Boolean).join("; "));
+    }
     const payload = await response.json().catch(() => ({ ok: false, error: "invalid-json" }));
     return { status: response.status, ok: response.ok && payload?.ok !== false, payload };
   };
