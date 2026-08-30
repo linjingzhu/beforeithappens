@@ -5,6 +5,10 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_ORIGIN": "https://loveme-api.onrender.com"
+      },
       "ios": {
         "simulator": false
       }
