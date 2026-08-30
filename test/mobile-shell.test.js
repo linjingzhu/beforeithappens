@@ -112,3 +112,28 @@ test("iOS and Android project targets exist for LoveMe", async () => {
   assert.match(manifest, /android.intent.category.LAUNCHER/);
   assert.equal(manifest.includes("applinks"), false);
 });
+
+test("EAS preview profile is internal iOS device, not simulator, and docs stay honest", async () => {
+  await access("mobile/eas.json");
+  await access("docs/IOS_INSTALL.md");
+  const eas = JSON.parse(await readFile("mobile/eas.json", "utf8"));
+  const app = JSON.parse(await readFile("mobile/app.json", "utf8"));
+  const docs = await readFile("docs/IOS_INSTALL.md", "utf8");
+  const readme = await readFile("mobile/README.md", "utf8");
+  assert.equal(app.expo.ios.bundleIdentifier, "com.beforeithappens.loveme");
+  assert.equal(eas.build.preview.distribution, "internal");
+  assert.equal(eas.build.preview.ios.simulator, false);
+  assert.equal(eas.build.production.distribution, "store");
+  assert.equal(eas.build.preview.developmentClient, undefined);
+  const easText = JSON.stringify(eas);
+  assert.equal(easText.includes("kakao"), false);
+  assert.equal(easText.includes("gift"), false);
+  assert.match(docs, /blocked on Apple Developer \+ Expo login/);
+  assert.match(docs, /cannot.*custom-native iOS binary/i);
+  assert.match(docs, /eas-cli@latest login/);
+  assert.match(docs, /eas-cli@latest build --platform ios --profile preview/);
+  assert.match(docs, /TestFlight/);
+  assert.equal(docs.includes("testflight.apple.com/join/"), false);
+  assert.equal(docs.includes("kauth.kakao.com"), false);
+  assert.match(readme, /eas-cli@latest build --platform ios --profile preview/);
+});

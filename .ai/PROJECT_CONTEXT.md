@@ -67,6 +67,7 @@ Targeted tests:
 - `src/styles.css` — responsive product UI
 - `docs/PRODUCT_SPEC.md` — product contract
 - `docs/DATA_MODEL.md` — planned secure server model
+- `mobile/eas.json` — EAS `preview` (internal iOS device) and `production` (store / TestFlight). Real IPA requires Apple Developer + `eas login`; see `docs/IOS_INSTALL.md`.
 
 ## Known Integration Hotspots
 

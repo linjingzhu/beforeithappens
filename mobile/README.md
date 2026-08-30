@@ -45,7 +45,20 @@ Or open `android/` in Android Studio. Package: `com.beforeithappens.loveme`.
 
 Requires a local Android SDK. This Linux VM may not have one; Expo web is the fallback check.
 
-### iOS (macOS)
+### iOS on a physical iPhone (EAS preview)
+
+There is no IPA or TestFlight URL in this repo. Expo cannot sign a custom-native iOS binary without an Apple Developer team.
+
+From `mobile/` after `eas login` and Apple credentials exist:
+
+```bash
+npx eas-cli@latest whoami
+npx eas-cli@latest build --platform ios --profile preview
+```
+
+`eas.json` `preview` is internal / ad hoc (`simulator: false`, bundle id `com.beforeithappens.loveme`). `production` is the store profile for later TestFlight (`eas submit`). Full checklist: `docs/IOS_INSTALL.md`.
+
+### iOS (macOS / local Xcode)
 
 ```bash
 cd ios && pod install && cd ..

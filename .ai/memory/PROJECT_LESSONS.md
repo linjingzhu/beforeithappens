@@ -18,6 +18,14 @@ Do not copy this file into unrelated projects.
 
 ## Domain Risk Lessons
 
+### 2026-08-30 — Physical iPhone IPA is blocked on Apple, not on eas.json
+Area: native iOS distribution
+Evidence: `npx eas-cli@latest whoami` on the Linux cloud agent returned `Not logged in`; `EXPO_TOKEN` and Apple API keys were unset. LoveMe has custom native Swift/Kotlin, so Expo Go is not a substitute.
+Impact: Adding `mobile/eas.json` preview/internal does not produce a TestFlight or Expo install URL. Inventing one would be false.
+Recommended future behavior: Stop after a failed `eas whoami`. Do not start `eas build` or invent a `testflight.apple.com/join/` link. Checklist lives in `docs/IOS_INSTALL.md`.
+Confidence: high
+
+
 ### 2026-08-23 — Invite latest-row ties
 Area: couple invite view
 Evidence: Two `issueInvite` calls in the same clock ms left `latestInvite` pointing at the first row when sort compared only `createdAt`.
