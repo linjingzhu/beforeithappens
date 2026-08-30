@@ -385,11 +385,12 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
 
   const signup = screens.slice(screens.indexOf("export function SignupScreen"), screens.indexOf("export function EmailBindScreen"));
   const bind = screens.slice(screens.indexOf("export function EmailBindScreen"), screens.indexOf("export function SentScreen"));
-  assert.match(signup, /keyboardShouldPersistTaps="handled"/);
-  assert.match(bind, /keyboardShouldPersistTaps="handled"/);
+  assert.match(screens, /function AuthKeyboardShell/);
+  assert.match(signup, /<AuthKeyboardShell testID="signup">/);
+  assert.match(bind, /<AuthKeyboardShell testID="bind">/);
   const ctaAt = signup.indexOf("AUTH_COPY.cta");
   const errorAt = signup.indexOf("{error ?");
-  const kakaoAt = signup.indexOf("onStartKakao");
+  const kakaoAt = signup.indexOf("testID=\"signup-kakao\"");
   assert.ok(ctaAt >= 0 && errorAt > ctaAt && kakaoAt > errorAt);
 
   const html = renderS2SignupScreen({ error: S2_ERRORS["invalid-email"] });
