@@ -25,11 +25,17 @@ function recordOutbox(outbox, allowDevOutbox, item) {
 
 function packErrorStatus(error) {
   if (error === "unauthenticated") return 401;
+  if (error === "forbidden" || error === "locked" || error === "paywall") return 403;
+  return 400;
+}
+
+function entitlementErrorStatus(error) {
+  if (error === "unauthenticated") return 401;
   if (error === "forbidden" || error === "locked") return 403;
   return 400;
 }
 
-export function createListener({ auth, couple, answers, root, allowDevOutbox = false, outbox = [] } = {}) {
+export function createListener({ auth, couple, answers, entitlement, root, allowDevOutbox = false, outbox = [] } = {}) {
   if (!auth) throw new Error("auth is required");
   if (!root) throw new Error("root is required");
 
@@ -208,6 +214,37 @@ export function createListener({ auth, couple, answers, root, allowDevOutbox = f
         const result = answers.saveAgreement(sessionId, body);
         if (!result.ok) {
           sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (entitlement && request.method === "GET" && url.pathname === "/api/entitlement") {
+        const result = entitlement.viewFor(sessionId);
+        if (!result.ok) {
+          sendJson(response, entitlementErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (entitlement && request.method === "POST" && url.pathname === "/api/purchase") {
+        const result = entitlement.createPurchase(sessionId);
+        if (!result.ok) {
+          sendJson(response, entitlementErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (entitlement && request.method === "POST" && url.pathname === "/api/purchase/webhook") {
+        const body = await readJsonBody(request);
+        const result = entitlement.applyWebhook(body);
+        if (!result.ok) {
+          sendJson(response, 400, result);
           return;
         }
         sendJson(response, 200, result);

@@ -103,7 +103,7 @@ fun PackQuestionScreen(model: PackViewModel) {
             }
             OutlinedButton(
                 onClick = { model.go(1) },
-                enabled = (model.current?.number ?: 1) < model.questions.size
+                enabled = model.canGoNext
             ) { Text(PackCopy.NEXT) }
         }
     }
@@ -159,7 +159,7 @@ fun PackRevealScreen(model: PackViewModel) {
             }
             OutlinedButton(
                 onClick = { model.go(1) },
-                enabled = (model.current?.number ?: 1) < model.questions.size
+                enabled = model.canGoNext
             ) { Text(PackCopy.NEXT) }
         }
     }

@@ -17,13 +17,18 @@ const files = [
   "server/http.mjs",
   "server/workspace.mjs",
   "server/answers.mjs",
+  "server/entitlement.mjs",
   "mobile/App.js",
   "mobile/src/copy.js",
   "mobile/src/session.js",
   "mobile/src/screens.js",
   "mobile/src/theme.js",
   "mobile/src/host.js",
-  "mobile/src/s9-mount.js"
+  "mobile/src/s9-mount.js",
+  "mobile/paywall/screens.js",
+  "mobile/paywall/host-mount.js",
+  "mobile/paywall/contract/paywall-copy.js",
+  "mobile/paywall/contract/paywall-gate.js"
 ];
 for (const file of files) {
   const value = await readFile(file, "utf8");

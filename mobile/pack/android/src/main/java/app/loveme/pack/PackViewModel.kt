@@ -1,12 +1,17 @@
 package app.loveme.pack
 
+import app.loveme.paywall.PaywallClient
+import app.loveme.paywall.PaywallGate
+import app.loveme.paywall.PaywallViewModel
 import org.json.JSONObject
 
 class PackViewModel(
     val session: PackSession,
     val questions: List<PackQuestion>,
-    private val client: PackClient
+    private val client: PackClient,
+    remainingClient: PaywallClient? = null
 ) {
+    val remainingGate = PaywallViewModel(session, remainingClient)
     var screen: PackScreen = PackGate.screen(session)
         private set
     var saveStatus: String = "saved"
@@ -35,6 +40,9 @@ class PackViewModel(
 
     private var state: PackState? = null
     private var index: Int = 0
+    private var entitled: Boolean = false
+    val showsRemainingGate: Boolean get() = remainingGate.visible
+    val canGoNext: Boolean get() = PaywallGate.canOpenQuestion(index + 1, entitled) && index + 1 < questions.size
 
     val startCta: String get() = if (showsStartCta) PackCopy.START_PACK else ""
     val startBody: String get() = if (screen == PackScreen.LOCKED || !session.acceptedPartner) PackCopy.LOCKED_BODY else PackCopy.START_BODY
@@ -128,7 +136,19 @@ class PackViewModel(
     }
 
     fun go(delta: Int) {
-        index = (index + delta).coerceIn(0, (questions.size - 1).coerceAtLeast(0))
+        val next = (index + delta).coerceIn(0, (questions.size - 1).coerceAtLeast(0))
+        if (!PaywallGate.canOpenQuestion(next, entitled)) return
+        index = next
+        refreshFromState()
+    }
+
+    fun later() {
+        remainingGate.later()
+    }
+
+    fun purchaseRemaining() {
+        remainingGate.purchase()
+        if (remainingGate.entitled) entitled = true
         refreshFromState()
     }
 
@@ -140,6 +160,9 @@ class PackViewModel(
             mapped[id] = decodeQuestion(questionsRaw.getJSONObject(id))
         }
         state = PackState(index, raw.optString("activeRole", session.roleKey), mapped)
+        raw.optJSONObject("entitlement")?.let {
+            entitled = it.optBoolean("entitled")
+        }
         refreshFromState()
     }
 
@@ -203,6 +226,10 @@ class PackViewModel(
         val theySubmitted = questionState.roles[other]?.submittedChoice != null || questionState.roles[other]?.completed == true
         partnerStatus = if (theySubmitted) PackCopy.BOTH_SUBMITTED else PackCopy.WAITING_PARTNER
         screen = if (lock != null && !reanswering) PackScreen.REVEAL else PackScreen.QUESTION
+        val sampleLocks = questions.take(PaywallGate.SAMPLE_LOCK_COUNT).count { question ->
+            state?.questions?.get(question.id)?.lock != null
+        }
+        remainingGate.apply(sampleLocks, entitled, index)
     }
 
     private fun applyGate(code: String, status: Int) {

@@ -19,14 +19,19 @@ final class PackViewModel: ObservableObject {
 
     let session: PackSession
     let questions: [PackQuestion]
+    let remainingGate: PaywallViewModel
     private let client: PackClient
     private var state: PackState?
     private var index = 0
+    private var entitled = false
 
-    init(session: PackSession, questions: [PackQuestion], client: PackClient) {
+    var showsRemainingGate: Bool { remainingGate.visible }
+
+    init(session: PackSession, questions: [PackQuestion], client: PackClient, remainingClient: PaywallClient? = nil) {
         self.session = session
         self.questions = questions
         self.client = client
+        self.remainingGate = PaywallViewModel(session: session, client: remainingClient)
         self.screen = PackGate.screen(for: session)
         self.current = questions.first
     }
@@ -35,7 +40,7 @@ final class PackViewModel: ObservableObject {
     var startBody: String { screen == .locked || !session.acceptedPartner ? PackCopy.lockedBody : PackCopy.startBody }
     var showsStartCTA: Bool { screen == .ready && PackGate.canStartPack(session) }
     var canGoPrevious: Bool { index > 0 }
-    var canGoNext: Bool { index + 1 < questions.count }
+    var canGoNext: Bool { PaywallGate.canOpenQuestion(index + 1, entitled: entitled) && index + 1 < questions.count }
     var agreeLabel: String { PackCopy.agree }
     var holdLabel: String { PackCopy.hold }
     var comparisonLabel: String {
@@ -155,7 +160,19 @@ final class PackViewModel: ObservableObject {
     }
 
     func go(_ delta: Int) {
-        index = min(max(0, index + delta), questions.count - 1)
+        let next = min(max(0, index + delta), questions.count - 1)
+        guard PaywallGate.canOpenQuestion(next, entitled: entitled) else { return }
+        index = next
+        refreshFromState()
+    }
+
+    func later() {
+        remainingGate.later()
+    }
+
+    func purchaseRemaining() async {
+        await remainingGate.purchase()
+        if remainingGate.entitled { entitled = true }
         refreshFromState()
     }
 
@@ -173,6 +190,9 @@ final class PackViewModel: ObservableObject {
             }
         }
         state = PackState(index: index, activeRole: activeRole, questions: mapped)
+        if let entitlement = raw["entitlement"] as? [String: Any] {
+            entitled = entitlement["entitled"] as? Bool ?? false
+        }
         refreshFromState()
     }
 
@@ -228,6 +248,10 @@ final class PackViewModel: ObservableObject {
         let theySubmitted = questionState.roles[other]?.submittedChoice != nil || questionState.roles[other]?.completed == true
         partnerStatus = theySubmitted ? PackCopy.bothSubmitted : PackCopy.waitingPartner
         if lock != nil && !reanswering { screen = .reveal } else { screen = .question }
+        let sampleLocks = questions.prefix(PaywallGate.sampleLockCount).filter { question in
+            state?.questions[question.id]?.lock != nil
+        }.count
+        remainingGate.apply(sampleLocks: sampleLocks, entitled: entitled, index: index)
     }
 
     private func applyGatePayload(_ payload: [String: Any]) {

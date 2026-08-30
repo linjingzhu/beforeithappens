@@ -18,7 +18,9 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(spec, /ghost workspace/i);
   assert.match(spec, /local-simulator drafts are not migrated/i);
   assert.match(spec, /The invited partner is free/);
-  assert.match(spec, /Payment and the 100-question lifecycle line are out of this slice/);
+  assert.match(spec, /29,000 KRW/);
+  assert.match(spec, /100-question lifecycle line/);
+  assert.match(spec, /remaining pack stays locked until buyer entitlement exists/);
   assert.match(model, /7 days/);
   assert.match(model, /accepting user's email must equal the invite email/);
   assert.match(model, /PublicLock/);

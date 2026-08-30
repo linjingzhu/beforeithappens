@@ -8,7 +8,7 @@ Native iOS and Android marriage-pack slice. It reuses the web AnswerRound and pu
 - **S7** one question per screen. Drafts and private notes show `나만 보임` and stay author-only. Submit writes the current private round. Local-simulator drafts are never read or migrated.
 - **S8** both submits write an immutable public lock. Shared actions are `합의` and `다음에 미룸`. `다시 답하기` opens a new private round and never mutates the previous lock.
 
-Out of this pack: payment/paywall (a later pack after the third sample lock), the 100-question line, install landing, magic-link, invite wait/join, and session handoff. S7–S8 stay open after sample questions; they are not gated on 29,000 KRW, a subscription, or partner billing. If a comparison label is shown it is only `ALIGNED`, `CLOSE`, or `DISCUSS` — never a relationship diagnosis.
+Out of this pack: payment copy (owned by `mobile/paywall/` after the third sample lock), the 100-question line, install landing, magic-link, invite wait/join, and session handoff. S7–S8 sample questions stay open after partner accept. Remaining questions stay locked until buyer entitlement. If a comparison label is shown it is only `ALIGNED`, `CLOSE`, or `DISCUSS` — never a relationship diagnosis.
 
 ## Integration
 

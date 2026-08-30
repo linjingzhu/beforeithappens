@@ -16,6 +16,7 @@ import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
 import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.js";
+import { PaywallBuyerScreen, PaywallPartnerScreen } from "./paywall/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -42,6 +43,19 @@ export default function App() {
       clearTimeout(timer);
     };
   }, []);
+
+  const paywallPreview = typeof location !== "undefined"
+    ? new URLSearchParams(location.search || "").get("paywall")
+    : "";
+
+  if (paywallPreview === "buyer" || paywallPreview === "partner") {
+    return (
+      <>
+        <StatusBar style="dark" backgroundColor={colors.paper} />
+        {paywallPreview === "partner" ? <PaywallPartnerScreen /> : <PaywallBuyerScreen />}
+      </>
+    );
+  }
 
   return (
     <>

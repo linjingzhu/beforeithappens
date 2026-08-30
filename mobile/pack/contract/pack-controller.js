@@ -2,18 +2,22 @@ import { canStartPack, packReadyScreen, startPackDecision } from "./pack-gate.js
 import { neverMigrateLocalSim } from "./pack-client.js";
 import { nextIndex, projectQuestionScreen, viewerRole } from "./pack-projection.js";
 import { PACK_COPY } from "./pack-copy.js";
+import { canOpenQuestion } from "../../paywall/contract/paywall-gate.js";
+import { createPaywallController } from "../../paywall/contract/paywall-controller.js";
 
 export function createPackController({
   pack,
   client,
   session = { user: null, workspace: { acceptedPartner: false } },
-  storage = null
+  storage = null,
+  paywallClient = null
 } = {}) {
   let state = null;
   let screen = packReadyScreen(session).screen;
   let saveStatus = "saved";
   let reanswering = false;
   let error = "";
+  const paywall = createPaywallController({ pack, session, client: paywallClient });
 
   function applyState(next) {
     if (!next) return;
@@ -44,6 +48,7 @@ export function createPackController({
       return { ...ready, saveStatus, error, question: null };
     }
     const question = projectQuestionScreen({ pack, state, session, reanswering, saveStatus });
+    const gate = paywall.view();
     return {
       screen: question?.screen || screen,
       canStart: false,
@@ -53,7 +58,10 @@ export function createPackController({
       saveStatus,
       error,
       question,
-      state
+      state,
+      paywall: gate,
+      remainingLocked: gate.remainingLocked,
+      canGoNext: question ? canOpenQuestion((question.index ?? 0) + 1, { entitled: gate.entitled }) : false
     };
   }
 
@@ -78,7 +86,10 @@ export function createPackController({
       } else {
         error = decision.ok ? "" : decision.error;
       }
-      if (decision.ok) applyState(decision.state);
+      if (decision.ok) {
+        applyState(decision.state);
+        paywall.applyPackState(decision.state);
+      }
       return view();
     },
     async saveDraft({ draftChoice, privateNote } = {}) {
@@ -99,6 +110,7 @@ export function createPackController({
         return view();
       }
       applyState(result.state);
+      paywall.applyPackState(result.state);
       saveStatus = "saved";
       error = "";
       return view();
@@ -117,6 +129,7 @@ export function createPackController({
         return view();
       }
       applyState(result.state);
+      paywall.applyPackState(result.state);
       saveStatus = "saved";
       error = "";
       reanswering = false;
@@ -139,6 +152,7 @@ export function createPackController({
         return view();
       }
       applyState(result.state);
+      paywall.applyPackState(result.state);
       saveStatus = "saved";
       error = "";
       return view();
@@ -158,6 +172,7 @@ export function createPackController({
         return view();
       }
       applyState(result.state);
+      paywall.applyPackState(result.state);
       saveStatus = "saved";
       error = "";
       return view();
@@ -170,7 +185,27 @@ export function createPackController({
     },
     async go(delta) {
       if (!state) return view();
-      state = { ...state, index: nextIndex(state, pack, delta) };
+      const next = nextIndex(state, pack, delta);
+      if (!canOpenQuestion(next, { entitled: Boolean(state.entitlement?.entitled) })) {
+        return view();
+      }
+      state = { ...state, index: next };
+      paywall.applyPackState(state);
+      return view();
+    },
+    later() {
+      return { ...view(), paywall: paywall.later() };
+    },
+    async purchase() {
+      const next = await paywall.purchase();
+      if (next.entitled && state) {
+        state = {
+          ...state,
+          entitlement: { ...(state.entitlement || {}), entitled: true, canPurchase: false },
+          remainingLocked: false,
+          paywallRequired: false
+        };
+      }
       return view();
     }
   };
