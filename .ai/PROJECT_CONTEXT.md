@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash then S2–S3 magic-link + social start / workspace screens. S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash then S2 magic-link signup (no Kakao/Naver/Google CTAs) and S3 workspace. S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
@@ -57,6 +57,7 @@ Targeted tests:
 - `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
 - `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`). Metro project root is `mobile/`; `mobile/metro.config.js` watchFolders repo-root `src/` so S4 can import `../../src/auth.js`.
+- `mobile/s0-s2-s3-api.js` — native/Expo auth client; `AUTH_FETCH_MS` 25s for magic-link, `OAUTH_FETCH_MS` 5s fail-fast
 - `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
 - `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
 - `server/mail.mjs` — Resend transactional login/email-bind only; invites stay share links

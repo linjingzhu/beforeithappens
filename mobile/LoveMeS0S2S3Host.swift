@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 enum LoveMeNativeScreen {
     case splash
@@ -30,10 +29,7 @@ struct LoveMeS0S2S3Host: View {
                     email: email,
                     error: error,
                     busy: busy,
-                    onSubmitEmail: requestLink,
-                    onStartKakao: { startOAuth("kakao") },
-                    onStartNaver: { startOAuth("naver") },
-                    onStartGoogle: { startOAuth("google") }
+                    onSubmitEmail: requestLink
                 )
             case .sent:
                 S2SignupScreen(phase: .sent, email: email, error: error, onUseOtherEmail: { screen = .signup; error = "" })
@@ -100,22 +96,6 @@ struct LoveMeS0S2S3Host: View {
                 self.error = "로그인 링크가 유효하지 않아요."
                 screen = .signup
             }
-        }
-    }
-
-    private func startOAuth(_ provider: String) {
-        busy = true
-        error = ""
-        Task {
-            do {
-                let payload = try await client.startOAuth(provider: provider)
-                if let urlString = payload["url"] as? String, let url = URL(string: urlString) {
-                    await MainActor.run { UIApplication.shared.open(url) }
-                }
-            } catch {
-                self.error = LoveMeS2Copy.oauthUnconfigured
-            }
-            busy = false
         }
     }
 

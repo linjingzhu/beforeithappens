@@ -1,4 +1,4 @@
-import { S2_ERRORS, S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
+import { S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -127,7 +127,7 @@ export function s2HasKakaoLogin() {
 }
 
 export function s2SocialStartLabels() {
-  return [S2_SOCIAL_COPY.kakao, S2_SOCIAL_COPY.naver, S2_SOCIAL_COPY.google];
+  return [];
 }
 
 export function socialStartPending(state) {

@@ -30,10 +30,6 @@ object LoveMeS2Copy {
     const val emailLabel = "이메일"
     const val ack = "확인"
     const val otherEmail = "다른 이메일로 요청"
-    const val kakaoStart = "카카오로 시작"
-    const val naverStart = "네이버로 시작"
-    const val googleStart = "Google로 시작"
-    const val divider = "또는"
     const val bindTitle = "이메일을 연결해 주세요."
     const val bindCta = "이메일 연결하기"
     const val bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
@@ -51,9 +47,6 @@ fun S2SignupScreen(
     onSubmitEmail: (String) -> Unit = {},
     onUseOtherEmail: () -> Unit = {},
     onAcknowledgeNotice: () -> Unit = {},
-    onStartKakao: () -> Unit = {},
-    onStartNaver: () -> Unit = {},
-    onStartGoogle: () -> Unit = {},
     onBindEmail: (String) -> Unit = {}
 ) {
     var emailDraft by remember { mutableStateOf(email) }
@@ -88,30 +81,6 @@ fun S2SignupScreen(
                         .heightIn(min = 48.dp)
                         .padding(top = 8.dp)
                 ) { Text(LoveMeS2Copy.cta) }
-                Text(LoveMeS2Copy.divider, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
-                OutlinedButton(
-                    onClick = onStartKakao,
-                    enabled = !busy,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                ) { Text(LoveMeS2Copy.kakaoStart) }
-                OutlinedButton(
-                    onClick = onStartNaver,
-                    enabled = !busy,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .padding(top = 8.dp)
-                ) { Text(LoveMeS2Copy.naverStart) }
-                OutlinedButton(
-                    onClick = onStartGoogle,
-                    enabled = !busy,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .padding(top = 8.dp)
-                ) { Text(LoveMeS2Copy.googleStart) }
             }
             S2SignupPhase.Bind -> {
                 Text(LoveMeS2Copy.bindBody, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))

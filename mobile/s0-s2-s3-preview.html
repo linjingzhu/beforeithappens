@@ -9,7 +9,6 @@
 <body>
   <div id="app" class="preview-frame"></div>
   <script type="module">
-    import { S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
     import { renderNativeScreen } from "./s0-s2-s3-screens.js";
     import {
       acknowledgeLoginNotice,
@@ -94,9 +93,6 @@
       const action = event.target.closest("[data-action]")?.dataset.action;
       if (!action) return;
       if (action === "back-to-signup") state = backToSignup(state);
-      else if (action === "oauth-kakao" || action === "oauth-naver" || action === "oauth-google") {
-        state = { ...state, error: S2_SOCIAL_COPY.oauthUnconfigured };
-      }
       else if (action === "ack-notice") {
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })

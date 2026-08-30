@@ -2,7 +2,7 @@
 
 ## Experience rules
 
-- The product entry is magic-link email onboarding plus Kakao/Naver/Google start. There is no password or role switcher. Kakao login copy is `카카오로 시작`. S4 share stays `카카오톡`.
+- The product entry is magic-link email onboarding plus Kakao/Naver/Google start. There is no password or role switcher. Kakao login copy is `카카오로 시작`. S4 share stays `카카오톡`. iOS measurement signup omits those social stubs and keeps magic-link only.
 - Explain expected time and the reveal rule before answering starts. The pack opens only after the partner accepts the invite. The invited partner is free. After the third sample lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. The 100-question lifecycle line is out of this slice.
 - Use one question per screen with explicit save state and resume behavior.
 - Let one person continue while waiting for the partner, after the pack is unlocked.
@@ -76,7 +76,7 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 
 ### Expected visible result
 
-1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes. S2 also shows `카카오로 시작` / `네이버로 시작` / `Google로 시작` without replacing the magic-link form.
+1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes. Web S2 also shows `카카오로 시작` / `네이버로 시작` / `Google로 시작` without replacing the magic-link form. iOS measurement signup does not show those social stubs.
 2. A valid link establishes one server session and shows the post-login notice before anything else.
 3. Buyer home is invite-waiting. It has no pack CTA and does not open the marriage pack.
 4. After the first send, buyer home shows share copy, copy/Instagram/KakaoTalk actions for the existing invite link, the device rule, and the email-typo field with `이메일 수정하고 다시 보내기`.

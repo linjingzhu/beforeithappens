@@ -10,7 +10,7 @@ These gates are current product law. Later slices may implement them, but must n
 
 - One email identity and one active session per user.
 - One active `CoupleWorkspace` per user. Two members maximum: the buyer and one invited partner.
-- Onboarding is magic-link email plus Kakao/Naver/Google start. There is no password. Kakao login copy is `카카오로 시작`, not S4 KakaoTalk share.
+- Onboarding is magic-link email plus Kakao/Naver/Google start. There is no password. Kakao login copy is `카카오로 시작`, not S4 KakaoTalk share. iOS measurement signup is magic-link only: do not show Kakao/Naver/Google start buttons on that screen until real social login ships.
 - Payment is out of the current foundation slice. The marriage pack does not open until the invited partner accepts. Buyer home after login is invite-waiting only. A workspace without an accepted partner (a ghost workspace) must not unlock the pack.
 - Invite is single-use and expires after 7 days. Reissue immediately expires the previous token. Editing the invited email and resending immediately expires the previous token. Accept creates a `CoupleMember` and consumes that invite. Accept email must equal the invite email. A link-only visitor with the wrong login, or no login, cannot accept. Opening the invite while another account is logged in cannot accept; the web path is force logout, then magic-link accept for the invited email. There is no role switch.
 - Buyer invite-waiting share copy is `링크를 보내 파트너를 초대하세요.` with buttons `링크 복사` / `인스타그램` / `카카오톡` and copy success `링크를 복사했어요.` Those buttons share the existing invite link through copy or the system share intent. Do not replace KakaoTalk share with Kakao login.

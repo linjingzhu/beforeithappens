@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { AUTH_COPY, LINE, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { AUTH_COPY, LINE, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
 function pressableStyle(...parts) {
@@ -34,7 +34,7 @@ export function SplashScreenView() {
   );
 }
 
-export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail, onStartKakao, onStartNaver, onStartGoogle }) {
+export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
     <AuthKeyboardShell testID="signup">
@@ -62,16 +62,6 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
         <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Text style={styles.divider}>{S2_SOCIAL_COPY.divider}</Text>
-      <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.kakao}</Text>
-      </Pressable>
-      <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.naver}</Text>
-      </Pressable>
-      <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.google}</Text>
-      </Pressable>
     </AuthKeyboardShell>
   );
 }
@@ -269,14 +259,6 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontSize: 15,
     fontWeight: "700"
-  },
-  divider: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: 20,
-    marginBottom: 4
   },
   email: {
     color: colors.ink,

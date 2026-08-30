@@ -11,10 +11,9 @@ import {
   sendHostEmailBind,
   sendHostMagicLink,
   splashOpenResult,
-  startHostFlow,
-  startHostSocial
+  startHostFlow
 } from "./src/session.js";
-import { backToSignup, finishSplash, requestLinkStarted, setEmail, socialStartPending } from "./s0-s2-s3-flow.js";
+import { backToSignup, finishSplash, requestLinkStarted, setEmail } from "./s0-s2-s3-flow.js";
 import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
@@ -53,14 +52,6 @@ export default function App() {
     };
   }, []);
 
-  const startSocial = async (provider) => {
-    const pending = socialStartPending(state);
-    setState(pending);
-    const next = await startHostSocial(pending, provider, api);
-    if (next.oauthUrl && typeof location !== "undefined") location.assign(next.oauthUrl);
-    setState(next);
-  };
-
   const paywallPreview = typeof location !== "undefined"
     ? new URLSearchParams(location.search || "").get("paywall")
     : "";
@@ -89,9 +80,6 @@ export default function App() {
             if (!started.busy) return;
             setState(await sendHostMagicLink(started, api));
           }}
-          onStartKakao={() => startSocial("kakao")}
-          onStartNaver={() => startSocial("naver")}
-          onStartGoogle={() => startSocial("google")}
         />
       ) : null}
       {state.screen === "bind" ? (

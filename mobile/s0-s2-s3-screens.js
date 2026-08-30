@@ -1,4 +1,4 @@
-import { FORBIDDEN_APP_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { FORBIDDEN_APP_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -36,12 +36,6 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
         <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.cta)}</button>
         ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
       </form>
-      <p class="loveme-social-divider">${escapeHtml(S2_SOCIAL_COPY.divider)}</p>
-      <div class="loveme-social" role="group">
-        <button class="loveme-secondary" type="button" data-action="oauth-kakao" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.kakao)}</button>
-        <button class="loveme-secondary" type="button" data-action="oauth-naver" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.naver)}</button>
-        <button class="loveme-secondary" type="button" data-action="oauth-google" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.google)}</button>
-      </div>
     </section>
   `;
 }

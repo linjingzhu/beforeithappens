@@ -1,9 +1,6 @@
 package com.beforeithappens.loveme
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,24 +22,6 @@ fun LoveMeS0S2S3Host(
     var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-
-    fun startOAuth(provider: String) {
-        busy = true
-        error = ""
-        scope.launch {
-            val result = withContext(Dispatchers.IO) { client.startOAuth(provider) }
-            val status = result["status"] as? Int ?: 500
-            val body = result["body"] as? String ?: ""
-            val url = Regex("\"url\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1)
-            if (status == 200 && !url.isNullOrEmpty()) {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-            } else {
-                error = LoveMeS2Copy.oauthUnconfigured
-            }
-            busy = false
-        }
-    }
 
     when (screen) {
         LoveMeNativeScreen.Splash -> S0SplashScreen {
@@ -80,10 +59,7 @@ fun LoveMeS0S2S3Host(
                     else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
                     busy = false
                 }
-            },
-            onStartKakao = { startOAuth("kakao") },
-            onStartNaver = { startOAuth("naver") },
-            onStartGoogle = { startOAuth("google") }
+            }
         )
         LoveMeNativeScreen.Sent -> S2SignupScreen(
             phase = S2SignupPhase.Sent,

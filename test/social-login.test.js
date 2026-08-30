@@ -56,7 +56,10 @@ test("S2 social copy is locked and is not S4 KakaoTalk share", async () => {
   assert.match(native, /이메일을 연결해 주세요\./);
   assert.match(native, /이메일 연결하기/);
   assert.match(native, /이 로그인은 아직 준비 중이에요\. 이메일 링크로 시작해 주세요\./);
-  assert.match(native, /카카오로 시작/);
+  assert.equal(native.includes("카카오로 시작"), false);
+  assert.equal(native.includes("네이버로 시작"), false);
+  assert.equal(native.includes("Google로 시작"), false);
+  assert.equal(native.includes("onStartKakao"), false);
   assert.equal(native.includes("카카오톡"), false);
 });
 

@@ -9,10 +9,6 @@ enum LoveMeS2Copy {
     static let emailLabel = "이메일"
     static let ack = "확인"
     static let otherEmail = "다른 이메일로 요청"
-    static let kakaoStart = "카카오로 시작"
-    static let naverStart = "네이버로 시작"
-    static let googleStart = "Google로 시작"
-    static let divider = "또는"
     static let bindTitle = "이메일을 연결해 주세요."
     static let bindCta = "이메일 연결하기"
     static let bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
@@ -34,9 +30,6 @@ struct S2SignupScreen: View {
     var onSubmitEmail: (String) -> Void = { _ in }
     var onUseOtherEmail: () -> Void = {}
     var onAcknowledgeNotice: () -> Void = {}
-    var onStartKakao: () -> Void = {}
-    var onStartNaver: () -> Void = {}
-    var onStartGoogle: () -> Void = {}
     var onBindEmail: (String) -> Void = { _ in }
 
     @State private var emailDraft = ""
@@ -64,19 +57,6 @@ struct S2SignupScreen: View {
                     .disabled(busy)
                 Button(LoveMeS2Copy.cta) { onSubmitEmail(emailDraft) }
                     .buttonStyle(LoveMePrimaryButtonStyle())
-                    .disabled(busy)
-                Text(LoveMeS2Copy.divider)
-                    .font(.footnote.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-                Button(LoveMeS2Copy.kakaoStart, action: onStartKakao)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .disabled(busy)
-                Button(LoveMeS2Copy.naverStart, action: onStartNaver)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .disabled(busy)
-                Button(LoveMeS2Copy.googleStart, action: onStartGoogle)
-                    .frame(maxWidth: .infinity, minHeight: 48)
                     .disabled(busy)
             } else if phase == .bind {
                 Text(LoveMeS2Copy.bindBody)
