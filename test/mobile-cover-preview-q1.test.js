@@ -29,7 +29,7 @@ test("cover copy and login-gate copy are designer-locked", () => {
   assert.equal(COVER_COPY.title, "두 사람의 결혼 준비, 한곳에");
   assert.equal(COVER_COPY.line1, "질문은 나만 먼저 답해요.");
   assert.equal(COVER_COPY.line2, "비교는 둘이 낸 뒤에만 열려요.");
-  assert.equal(COVER_COPY.cta, "미리 한 질문 보기");
+  assert.equal(COVER_COPY.cta, "미리 질문 하나 보기");
   assert.equal(S2_KEEP_COPY.title, "이 답을 남기려면 로그인해 주세요");
   assert.equal(S2_KEEP_COPY.body, S2_COPY.body);
   assert.equal(coverHasInvite(), false);
@@ -44,7 +44,7 @@ test("splash opens the workbook cover, not signup", () => {
   assert.match(cover, /두 사람의 결혼 준비, 한곳에/);
   assert.match(cover, /질문은 나만 먼저 답해요\./);
   assert.match(cover, /비교는 둘이 낸 뒤에만 열려요\./);
-  assert.match(cover, /미리 한 질문 보기/);
+  assert.match(cover, /미리 질문 하나 보기/);
   assert.match(cover, /loveme-cover-brand/);
   assert.match(cover, /loveme-cover-line/);
   assert.match(cover, /notebook/);
@@ -94,7 +94,7 @@ test("keeping Q1 opens the login gate, not the cover", () => {
   assert.equal(gate.includes("카카오로 시작"), false);
   assert.equal(gate.includes("네이버로 시작"), false);
   assert.equal(gate.includes("Google로 시작"), false);
-  assert.equal(gate.includes("미리 한 질문 보기"), false);
+  assert.equal(gate.includes("미리 질문 하나 보기"), false);
   assert.equal(gate.includes("질문은 나만 먼저 답해요"), false);
 });
 
