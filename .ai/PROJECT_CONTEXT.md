@@ -19,7 +19,7 @@ Primary user value:
 ## Architecture Map
 
 Core:
-- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
+- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). `scripts/server.mjs` listens on `Number(process.env.PORT) || 4173`. Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
