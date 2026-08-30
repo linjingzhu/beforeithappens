@@ -110,6 +110,23 @@ test("sendLoginEmail posts to Resend with to/from/subject/url", async () => {
   assertLoginMailPayload(calls[0].body, { to: "buyer@example.com", url });
 });
 
+test("sendLoginEmail uses MAIL_FROM when set", async () => {
+  const { fetchImpl, calls } = mockResend();
+  const url = consumeUrl("https://loveme.example", "tok_2");
+  const result = await sendLoginEmail({
+    to: "buyer@example.com",
+    url,
+    fetchImpl,
+    env: { RESEND_API_KEY: "re_test_key", MAIL_FROM: "LoveMe <login@loveme.example>" }
+  });
+  assert.equal(result.ok, true);
+  assertLoginMailPayload(calls[0].body, {
+    to: "buyer@example.com",
+    url,
+    from: "LoveMe <login@loveme.example>"
+  });
+});
+
 test("Resend non-2xx is a send failure", async () => {
   const { fetchImpl } = mockResend({ status: 401 });
   const result = await sendLoginEmail({
