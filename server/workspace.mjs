@@ -1,6 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { hashToken, hasAcceptedPartner, isValidEmail, normalizeEmail } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
+import { formatPairCode, generatePairCode, normalizePairCode } from "../src/pair-code.js";
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -92,10 +93,13 @@ export function workspaceView(state, userId, now = Date.now) {
       url: inviteRow.shareToken ? inviteAcceptUrl("", inviteRow.shareToken) : ""
     };
   }
+  const workspace = state.workspaces.find((item) => item.id === membership.workspaceId);
   return {
     id: membership.workspaceId,
     role: membership.role,
     acceptedPartner: hasAcceptedPartner(state, userId),
+    pairCode: workspace?.pairCode || "",
+    pairCodeDisplay: workspace?.pairCode ? formatPairCode(workspace.pairCode) : "",
     invite
   };
 }
@@ -192,6 +196,100 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
       if (invite.usedAt) return { ok: false, error: "used" };
       if (new Date(invite.expiresAt).getTime() <= now()) return { ok: false, error: "expired" };
       return { ok: true, email: invite.email, expiresAt: invite.expiresAt };
+    },
+
+    ensurePairCode(sessionId) {
+      const session = store.snapshot().sessions.find((item) => item.id === sessionId);
+      if (!session) return { ok: false, error: "unauthenticated" };
+      const user = store.snapshot().users.find((item) => item.id === session.userId);
+      if (!user) return { ok: false, error: "unauthenticated" };
+      const workspaceId = ensureWorkspace(user.id);
+      const existing = store.snapshot().workspaces.find((item) => item.id === workspaceId);
+      if (existing?.pairCode) {
+        return { ok: true, code: existing.pairCode, display: formatPairCode(existing.pairCode) };
+      }
+      const taken = new Set(store.snapshot().workspaces.map((item) => normalizePairCode(item.pairCode)).filter(Boolean));
+      let code = "";
+      for (let i = 0; i < 8 && !code; i++) {
+        const next = generatePairCode(() => randomBytes(8));
+        if (!taken.has(normalizePairCode(next))) code = next;
+      }
+      if (!code) return { ok: false, error: "failed" };
+      store.mutate((state) => {
+        const row = state.workspaces.find((item) => item.id === workspaceId);
+        if (row && !row.pairCode) row.pairCode = code;
+      });
+      const saved = store.snapshot().workspaces.find((item) => item.id === workspaceId)?.pairCode || code;
+      return { ok: true, code: saved, display: formatPairCode(saved) };
+    },
+
+    connectByPairCode(sessionId, rawCode) {
+      const session = store.snapshot().sessions.find((item) => item.id === sessionId);
+      if (!session) return { ok: false, error: "unauthenticated" };
+      const user = store.snapshot().users.find((item) => item.id === session.userId);
+      if (!user) return { ok: false, error: "unauthenticated" };
+      const code = normalizePairCode(rawCode);
+      if (!code) return { ok: false, error: "invalid-code" };
+      const target = store.snapshot().workspaces.find((item) =>
+        item.status === "active" && item.pairCode && normalizePairCode(item.pairCode) === code
+      );
+      if (!target) return { ok: false, error: "not-found" };
+      ensureWorkspace(user.id);
+      const membership = activeMembership(store.snapshot(), user.id);
+      if (membership?.workspaceId === target.id) return { ok: false, error: "self" };
+      if (hasAcceptedPartner(store.snapshot(), user.id)) return { ok: false, error: "already-paired" };
+      if (acceptedCount(store.snapshot(), target.id) >= 2) return { ok: false, error: "full" };
+      const at = now();
+      const fromId = membership?.workspaceId || "";
+      archiveGhostOwnedBy(store, user.id, target.id, at);
+      store.mutate((state) => {
+        const existing = state.members.find((member) => member.workspaceId === target.id && member.userId === user.id);
+        if (existing) {
+          existing.status = "accepted";
+          existing.role = "partner";
+        } else {
+          state.members.push({
+            id: createId("mem"),
+            workspaceId: target.id,
+            userId: user.id,
+            role: "partner",
+            status: "accepted",
+            createdAt: iso(at)
+          });
+        }
+        if (fromId && fromId !== target.id) {
+          for (const answer of state.answers || []) {
+            if (answer.userId !== user.id || answer.workspaceId !== fromId) continue;
+            const clash = state.answers.some((item) =>
+              item.workspaceId === target.id
+              && item.questionId === answer.questionId
+              && item.roundNumber === answer.roundNumber
+              && item.userId === user.id
+            );
+            if (!clash) answer.workspaceId = target.id;
+          }
+          for (const note of state.privateNotes || []) {
+            if (note.userId !== user.id || note.workspaceId !== fromId) continue;
+            note.workspaceId = target.id;
+          }
+          for (const round of [...(state.answerRounds || [])]) {
+            if (round.workspaceId !== fromId) continue;
+            const exists = state.answerRounds.some((item) =>
+              item.workspaceId === target.id
+              && item.questionId === round.questionId
+              && item.roundNumber === round.roundNumber
+            );
+            if (!exists) {
+              state.answerRounds.push({
+                ...round,
+                id: createId("rnd"),
+                workspaceId: target.id
+              });
+            }
+          }
+        }
+      });
+      return { ok: true, workspace: workspaceView(store.snapshot(), user.id, now) };
     },
 
     acceptInvite(sessionId, rawToken) {

@@ -27,6 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>loveme</string>
           <string>com.beforeithappens.loveme</string>
         </array>
       </dict>

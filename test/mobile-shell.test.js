@@ -33,7 +33,7 @@ test("logged-out splash routes to cover, then notice, then S3 workspace", async 
   const app = await readFile("mobile/App.js", "utf8");
   const session = await readFile("mobile/src/session.js", "utf8");
   const screens = await readFile("mobile/src/screens.js", "utf8");
-  assert.match(session, /return loggedIn \? "session" : "cover"/);
+  assert.match(session, /return loggedIn \? "pack-list" : "cover"/);
   assert.match(app, /finishHostSplash/);
   assert.match(app, /SPLASH_MS/);
   assert.match(app, /SignupScreen/);

@@ -178,14 +178,14 @@ test("native flow is splash → cover, never pack", () => {
   assert.match(renderS2LoginNoticeScreen({ email: "buyer@example.com" }), /이 기기 임시 답은 이어지지 않아요/);
 
   state = noticeAcknowledged(state, { ...state.session, notice: null });
-  assert.equal(state.screen, "workspace");
+  assert.equal(state.screen, "pack-list");
   assert.equal(nativeCanOpenPack(state.session), false);
   assert.equal(canOpenPack(state.session), false);
   assert.equal(s3AllowsPackCta(state), false);
   assert.equal(s3HasPayment(), false);
-  state = invitePartner(state);
-  assert.equal(state.action, "invite-partner");
+  assert.equal(state.action, "");
   assert.equal(renderNativeScreen(state).includes(FORBIDDEN_APP_COPY.packCta), false);
+  assert.match(renderNativeScreen(state), /질문집/);
 });
 
 test("mobile API client reuses web magic-link and workspace session", async () => {
@@ -199,6 +199,7 @@ test("mobile API client reuses web magic-link and workspace session", async () =
   try {
     assert.equal(AUTH_API.magicLink, "/api/auth/magic-link");
     assert.equal(extractMagicLinkToken("https://ab.example/auth/consume?token=abc"), "abc");
+    assert.equal(extractMagicLinkToken("loveme:///auth/consume?token=abc"), "abc");
     assert.equal(extractMagicLinkToken("https://ab.example/install?token=abc"), "");
     const invalid = await api.requestMagicLink("nope");
     assert.equal(invalid.ok, false);
@@ -221,7 +222,8 @@ test("mobile API client reuses web magic-link and workspace session", async () =
 
     const outbox = await fetch(`http://127.0.0.1:${port}/api/dev/outbox`).then((res) => res.json());
     const url = outbox.items[0].url;
-    assert.match(url, /\/auth\/consume\?token=/);
+    assert.match(url, /loveme:\/\/\/auth\/consume\?token=/);
+    assert.equal(url.includes("https://"), false);
     state = await consumeOpenedLink(state, api, url);
     assert.equal(state.screen, "notice");
     assert.equal(state.session.user.email, "buyer@example.com");
@@ -232,12 +234,12 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.match(cookie, /ab_session=/);
 
     state = await acknowledgeLoginNotice(state, api);
-    assert.equal(state.screen, "workspace");
+    assert.equal(state.screen, "pack-list");
     assert.equal(state.session.notice, null);
     assert.equal(nativeCanOpenPack(state.session), false);
 
     const restored = await restoreSessionAfterSplash(createNativeFlow(), api);
-    assert.equal(restored.screen, "workspace");
+    assert.equal(restored.screen, "pack-list");
     assert.equal(restored.session.user.email, "buyer@example.com");
     assert.equal(nativeCanOpenPack(restored.session), false);
     assert.ok(SESSION_FETCH_MS <= 2000);

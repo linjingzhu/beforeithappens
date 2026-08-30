@@ -87,6 +87,13 @@ Impact: Render login is a send failure until `RESEND_API_KEY` is set on the host
 Recommended future behavior: Keep invite off Resend. Do not put the API key in the repo. Set `RESEND_API_KEY` and optional `MAIL_FROM` on the host only.
 Confidence: high
 
+### 2026-08-30 — Magic-link consume must use the app scheme, not AB_PUBLIC_ORIGIN HTML
+Area: auth / iOS measurement
+Evidence: `consumeUrl` was `${AB_PUBLIC_ORIGIN}/auth/consume`, so Mail opened the Render API page (old partner-email form). `loveme:///auth/consume?token=` plus GET hop HTML opens the installed preview app. onrender.com associated domains stay out.
+Impact: Session lands in the app; preview Q1 draft can resume.
+Recommended future behavior: Keep login mail on the custom scheme. Do not put pair codes in share URLs. Do not add AASA on onrender.com for this slice.
+Confidence: high
+
 ## Recording rule
 
 Add only concise, evidence-backed facts such as:

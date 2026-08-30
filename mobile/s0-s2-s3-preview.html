@@ -19,6 +19,7 @@
       continueFromPreviewQ1,
       finishSplash,
       invitePartner,
+      openMarriageFromList,
       keepPreviewAnswer,
       noticeAcknowledged,
       openPreviewQ1,
@@ -51,12 +52,20 @@
         workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
       });
     }
-    if (start === "workspace") {
+    if (start === "workspace" || start === "pack-list") {
       state = noticeAcknowledged(consumeSucceeded(finishSplash(state), {
         user: { id: "usr_demo", email: "buyer@example.com" },
         notice: "no-local-draft",
         workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
       }), { user: { id: "usr_demo", email: "buyer@example.com" }, notice: null, workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false } });
+    }
+    if (start === "invite") {
+      state = continueFromPreviewQ1(selectPreviewChoice(openPreviewQ1(noticeAcknowledged(consumeSucceeded(finishSplash(state), {
+        user: { id: "usr_demo", email: "buyer@example.com" },
+        notice: "no-local-draft",
+        workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
+      }), { user: { id: "usr_demo", email: "buyer@example.com" }, notice: null, workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false } })), "home-rest"));
+      state = { ...state, pairCodeDisplay: "4K7M 2N8P", inviteUrl: "https://example.test/invite/open" };
     }
 
     const api = createAuthApi({ origin: "" });
@@ -107,7 +116,8 @@
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })
           : await acknowledgeLoginNotice(state, api);
-      } else if (action === "invite-partner") state = invitePartner(state);
+      } else if (action === "open-marriage") state = openMarriageFromList(state);
+      else if (action === "invite-partner") state = invitePartner(state);
       else return;
       paint();
     });

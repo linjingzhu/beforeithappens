@@ -4,7 +4,8 @@ import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
 import { isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
-import { consumeUrl, deliverLoginLink } from "./mail.mjs";
+import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml } from "./mail.mjs";
+import { inviteShareUrl } from "../src/pair-code.js";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -16,6 +17,14 @@ const types = {
 function cookieOptions(request) {
   const proto = String(request.headers["x-forwarded-proto"] || "http").split(",")[0].trim();
   return { secure: proto === "https" };
+}
+
+function sendHtml(response, status, body) {
+  response.writeHead(status, {
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store"
+  });
+  response.end(body);
 }
 
 function recordOutbox(outbox, allowDevOutbox, item) {
@@ -217,8 +226,44 @@ export function createListener({
         return;
       }
 
-      if (request.method === "GET" && (url.pathname === "/auth/consume" || url.pathname === "/invite/accept" || url.pathname === "/install" || url.pathname === "/start")) {
+      if (request.method === "GET" && url.pathname === "/auth/consume") {
+        sendHtml(response, 200, consumeHopHtml(url.searchParams.get("token") || ""));
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/invite/open") {
+        sendHtml(response, 200, inviteHopHtml());
+        return;
+      }
+
+      if (request.method === "GET" && (url.pathname === "/invite/accept" || url.pathname === "/install" || url.pathname === "/start")) {
         await serveStatic(response, "/");
+        return;
+      }
+
+      if (couple && request.method === "GET" && url.pathname === "/api/pair-code") {
+        const result = couple.ensurePairCode(sessionId);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, {
+          ok: true,
+          code: result.code,
+          display: result.display,
+          url: inviteShareUrl(requestOrigin(request))
+        });
+        return;
+      }
+
+      if (couple && request.method === "POST" && url.pathname === "/api/pair-code/connect") {
+        const body = await readJsonBody(request);
+        const result = couple.connectByPairCode(sessionId, body.code);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, { ok: true, session: auth.sessionFor(sessionId) });
         return;
       }
 
@@ -304,6 +349,17 @@ export function createListener({
 
       if (answers && request.method === "GET" && url.pathname === "/api/pack/state") {
         const result = answers.stateFor(sessionId);
+        if (!result.ok) {
+          sendJson(response, packErrorStatus(result.error), result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (answers && request.method === "POST" && url.pathname === "/api/preview-q1") {
+        const body = await readJsonBody(request);
+        const result = answers.savePreviewQ1(sessionId, body);
         if (!result.ok) {
           sendJson(response, packErrorStatus(result.error), result);
           return;

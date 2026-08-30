@@ -333,6 +333,32 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
       return { ok: true, state: projectState(access) };
     },
 
+    savePreviewQ1(sessionId, { questionId, choiceId } = {}) {
+      const session = store.snapshot().sessions.find((item) => item.id === sessionId);
+      if (!session) return { ok: false, error: "unauthenticated" };
+      const user = store.snapshot().users.find((item) => item.id === session.userId);
+      if (!user) return { ok: false, error: "unauthenticated" };
+      const membership = activeMembership(store.snapshot(), user.id);
+      if (!membership) return { ok: false, error: "forbidden" };
+      if (questionId !== "home-01" || !questionIds.includes("home-01")) return { ok: false, error: "invalid-question" };
+      const choice = validChoice(choiceIdsByQuestion, "home-01", choiceId);
+      if (!choice) return { ok: false, error: "invalid" };
+      const workspaceId = membership.workspaceId;
+      const roundNumber = currentRoundNumber(store.snapshot(), workspaceId, "home-01");
+      ensureAnswer(workspaceId, "home-01", user.id, roundNumber);
+      const at = now();
+      store.mutate((state) => {
+        const answer = answerOf(state, workspaceId, "home-01", user.id, roundNumber);
+        if (!answer) return;
+        answer.draftChoice = choice;
+        if (!answer.submittedChoice) {
+          answer.submittedChoice = choice;
+          answer.submittedAt = iso(at);
+        }
+      });
+      return { ok: true, questionId: "home-01", choiceId: choice };
+    },
+
     saveDraft(sessionId, { questionId, draftChoice, privateNote, index } = {}) {
       const access = requirePaired(sessionId);
       if (!access.ok) return access;

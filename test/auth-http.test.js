@@ -97,12 +97,15 @@ test("HTTP magic-link request, consume, notice, and forced logout", async () => 
 
     const outbox = await request(port, "/api/dev/outbox");
     const url = new URL(outbox.json.items[0].url);
+    assert.equal(url.protocol, "loveme:");
     assert.equal(url.pathname, "/auth/consume");
     const token = url.searchParams.get("token");
 
     const prefetch = await request(port, `/auth/consume?token=${token}`);
     assert.equal(prefetch.status, 200);
-    assert.match(prefetch.text, /<div id="app">/);
+    assert.match(prefetch.text, /loveme:\/\/\/auth\/consume/);
+    assert.equal(prefetch.text.includes("<div id=\"app\">"), false);
+    assert.equal(prefetch.text.includes("파트너 초대"), false);
     const before = await request(port, "/api/auth/session");
     assert.equal(before.json.user, null);
 

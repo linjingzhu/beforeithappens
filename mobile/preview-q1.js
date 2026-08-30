@@ -25,7 +25,8 @@ export function emptyPreviewDraft() {
     questionId: PREVIEW_Q1_ID,
     choiceId: "",
     open: false,
-    keepAnswer: false
+    keepAnswer: false,
+    saved: false
   };
 }
 
@@ -72,11 +73,64 @@ export function readPreviewDraft(storage = defaultPreviewStorage()) {
       questionId: parsed.questionId === PREVIEW_Q1_ID ? PREVIEW_Q1_ID : PREVIEW_Q1_ID,
       choiceId: typeof parsed.choiceId === "string" ? parsed.choiceId : "",
       open: Boolean(parsed.open),
-      keepAnswer: Boolean(parsed.keepAnswer)
+      keepAnswer: Boolean(parsed.keepAnswer),
+      saved: Boolean(parsed.saved)
     };
   } catch {
     return emptyPreviewDraft();
   }
+}
+
+export async function hydratePreviewStorage(storage = defaultPreviewStorage()) {
+  if (typeof storage.hydrate === "function") {
+    await storage.hydrate();
+  }
+  return readPreviewDraft(storage);
+}
+
+export function createPersistingPreviewStorage(backend) {
+  const memory = new Map();
+  return {
+    async hydrate() {
+      if (typeof backend?.getItem !== "function") return;
+      const raw = await backend.getItem(PREVIEW_Q1_STORAGE_KEY);
+      if (raw) memory.set(PREVIEW_Q1_STORAGE_KEY, String(raw));
+    },
+    getItem(key) {
+      if (memory.has(key)) return memory.get(key);
+      try {
+        return backend?.getItemSync?.(key) ?? globalThis.localStorage?.getItem(key) ?? null;
+      } catch {
+        return null;
+      }
+    },
+    setItem(key, value) {
+      memory.set(key, String(value));
+      try {
+        backend?.setItem?.(key, String(value));
+      } catch {
+        /* ignore */
+      }
+      try {
+        globalThis.localStorage?.setItem(key, String(value));
+      } catch {
+        /* ignore */
+      }
+    },
+    removeItem(key) {
+      memory.delete(key);
+      try {
+        backend?.removeItem?.(key);
+      } catch {
+        /* ignore */
+      }
+      try {
+        globalThis.localStorage?.removeItem(key);
+      } catch {
+        /* ignore */
+      }
+    }
+  };
 }
 
 export function writePreviewDraft(draft, storage = defaultPreviewStorage()) {
@@ -84,7 +138,8 @@ export function writePreviewDraft(draft, storage = defaultPreviewStorage()) {
     questionId: PREVIEW_Q1_ID,
     choiceId: String(draft?.choiceId || ""),
     open: Boolean(draft?.open),
-    keepAnswer: Boolean(draft?.keepAnswer)
+    keepAnswer: Boolean(draft?.keepAnswer),
+    saved: Boolean(draft?.saved)
   };
   storage.setItem(PREVIEW_Q1_STORAGE_KEY, JSON.stringify(next));
   return next;

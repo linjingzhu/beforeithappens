@@ -1,5 +1,7 @@
-import { S2_ERRORS } from "./s0-s2-s3-copy.js";
+import { PAIR_ERRORS, S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
+import { shareInviteChannel } from "../src/auth.js";
+import { shareContainsPairCode } from "../src/pair-code.js";
 import {
   emptyPreviewDraft,
   isPreviewQ1Choice,
@@ -13,7 +15,23 @@ export function emptyNativeSession() {
   return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
 }
 
-export function createNativeFlow(session = emptyNativeSession(), { draft = emptyPreviewDraft() } = {}) {
+function previewDraftFrom(draft = emptyPreviewDraft()) {
+  return {
+    questionId: PREVIEW_Q1_ID,
+    choiceId: draft.choiceId || "",
+    open: Boolean(draft.open),
+    keepAnswer: Boolean(draft.keepAnswer),
+    saved: Boolean(draft.saved)
+  };
+}
+
+export function isInFlightPreviewQ1(draft = emptyPreviewDraft()) {
+  if (!draft?.choiceId || !isPreviewQ1Choice(draft.choiceId)) return Boolean(draft?.open || draft?.keepAnswer);
+  if (draft.saved && !draft.open && !draft.keepAnswer) return false;
+  return Boolean(draft.open || draft.keepAnswer || draft.choiceId);
+}
+
+export function createNativeFlow(session = emptyNativeSession(), { draft = emptyPreviewDraft(), inviteOpen = false, coverOpen = false } = {}) {
   return {
     screen: "splash",
     splashDone: false,
@@ -24,12 +42,15 @@ export function createNativeFlow(session = emptyNativeSession(), { draft = empty
     noticeDismissed: false,
     session,
     action: "",
-    previewQ1: {
-      questionId: PREVIEW_Q1_ID,
-      choiceId: draft.choiceId || "",
-      open: Boolean(draft.open),
-      keepAnswer: Boolean(draft.keepAnswer)
-    }
+    coverOpen: Boolean(coverOpen),
+    inviteOpen: Boolean(inviteOpen),
+    pairCode: "",
+    pairCodeDisplay: "",
+    inviteUrl: "",
+    partnerCode: "",
+    copied: false,
+    codeCopied: false,
+    previewQ1: previewDraftFrom(draft)
   };
 }
 
@@ -50,13 +71,16 @@ export function resolveNativeScreen(state) {
   const draft = state.previewQ1 || emptyPreviewDraft();
   if (state.session?.user) {
     if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
-    if (draft.choiceId && draft.open && isPreviewQ1Choice(draft.choiceId)) return "preview-q1";
-    if (state.session.notice && !state.noticeDismissed && !draft.choiceId) return "notice";
-    return "workspace";
+    if (state.sentEmail) return "sent";
+    if (state.inviteOpen) return "invite";
+    if (draft.open || (isInFlightPreviewQ1(draft) && !draft.saved)) return "preview-q1";
+    if (state.session.notice && !state.noticeDismissed && !isInFlightPreviewQ1(draft)) return "notice";
+    if (state.coverOpen) return "cover";
+    return "pack-list";
   }
   if (state.sentEmail) return "sent";
   if (draft.keepAnswer) return "signup";
-  if (draft.open || draft.choiceId) return "preview-q1";
+  if (draft.open || (draft.choiceId && !draft.saved)) return "preview-q1";
   return "cover";
 }
 
@@ -104,19 +128,22 @@ export function requestLinkFailed(state, error = "failed") {
 
 export function consumeSucceeded(state, session, storage) {
   const draft = state.previewQ1 || emptyPreviewDraft();
-  const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId));
+  const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId) && !draft.saved);
   return persistDraft(applyScreen({
     ...state,
     busy: false,
     error: "",
     sentEmail: "",
+    coverOpen: false,
+    inviteOpen: false,
     noticeDismissed: hasPreview,
     session: session || emptyNativeSession(),
     previewQ1: {
       questionId: PREVIEW_Q1_ID,
       choiceId: draft.choiceId || "",
       open: hasPreview,
-      keepAnswer: false
+      keepAnswer: false,
+      saved: Boolean(draft.saved)
     }
   }), storage);
 }
@@ -141,7 +168,7 @@ export function noticeAcknowledged(state, session) {
 }
 
 export function invitePartner(state) {
-  if (state.screen !== "workspace") return { ...state, action: "" };
+  if (state.screen !== "workspace" && state.screen !== "pack-list") return { ...state, action: "" };
   return { ...state, action: "invite-partner" };
 }
 
@@ -154,14 +181,21 @@ export function openCover(state, storage) {
   return persistDraft(applyScreen({
     ...state,
     splashDone: true,
+    coverOpen: true,
+    inviteOpen: false,
     previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: false, keepAnswer: false }
   }), storage);
+}
+
+export function openMarriageFromList(state, storage) {
+  return openCover(state, storage);
 }
 
 export function openPreviewQ1(state, storage) {
   return persistDraft(applyScreen({
     ...state,
     splashDone: true,
+    coverOpen: false,
     previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: true }
   }), storage);
 }
@@ -178,7 +212,8 @@ export function selectPreviewChoice(state, choiceId, storage) {
       questionId: PREVIEW_Q1_ID,
       choiceId,
       open: true,
-      keepAnswer: Boolean(state.previewQ1?.keepAnswer)
+      keepAnswer: Boolean(state.previewQ1?.keepAnswer),
+      saved: false
     }
   }), storage);
 }
@@ -188,19 +223,11 @@ export function keepPreviewAnswer(state, storage) {
   if (!isPreviewQ1Choice(choiceId)) {
     return applyScreen({ ...state, splashDone: true, error: S2_ERRORS.invalid });
   }
-  if (state.session?.user) {
-    return persistDraft(applyScreen({
-      ...state,
-      splashDone: true,
-      error: "",
-      previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true }
-    }), storage);
-  }
   return persistDraft(applyScreen({
     ...state,
     splashDone: true,
     error: "",
-    previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true }
+    previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true, saved: false }
   }), storage);
 }
 
@@ -209,7 +236,14 @@ export function continueFromPreviewQ1(state, storage) {
   return persistDraft(applyScreen({
     ...state,
     splashDone: true,
-    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: false, keepAnswer: false }
+    coverOpen: false,
+    inviteOpen: true,
+    previewQ1: {
+      ...(state.previewQ1 || emptyPreviewDraft()),
+      open: false,
+      keepAnswer: false,
+      saved: true
+    }
   }), storage);
 }
 
@@ -257,12 +291,12 @@ export async function submitMagicLink(state, api) {
   }
 }
 
-export async function consumeOpenedLink(state, api, tokenOrUrl) {
+export async function consumeOpenedLink(state, api, tokenOrUrl, storage) {
   const next = { ...state, splashDone: true, busy: true, error: "" };
   try {
     const result = await api.consumeMagicLink(tokenOrUrl);
     if (!result.ok) return consumeFailed(next, result.error);
-    return consumeSucceeded(next, result.session);
+    return consumeSucceeded(next, result.session, storage);
   } catch {
     return consumeFailed(next, "invalid");
   }
@@ -274,10 +308,12 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
     const session = await withTimeout(Promise.resolve().then(() => api.session()), timeoutMs);
     if (!session?.user) return next;
     const draft = next.previewQ1 || emptyPreviewDraft();
-    const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId));
+    const hasPreview = isInFlightPreviewQ1(draft);
     return applyScreen({
       ...next,
       session,
+      inviteOpen: false,
+      coverOpen: false,
       noticeDismissed: hasPreview || !session.notice,
       previewQ1: hasPreview ? { ...draft, open: true } : draft,
       error: ""
@@ -322,4 +358,92 @@ export async function acknowledgeLoginNotice(state, api) {
   } catch {
     return { ...pending, busy: false, error: S2_ERRORS.failed };
   }
+}
+
+export async function savePreviewAndOpenInvite(state, api, storage) {
+  if (!state.session?.user) return keepPreviewAnswer(state, storage);
+  const choiceId = state.previewQ1?.choiceId || "";
+  if (!isPreviewQ1Choice(choiceId)) {
+    return applyScreen({ ...state, splashDone: true, error: S2_ERRORS.invalid });
+  }
+  const pending = { ...state, splashDone: true, busy: true, error: "" };
+  try {
+    const result = await api.savePreviewQ1({ questionId: PREVIEW_Q1_ID, choiceId });
+    if (!result.ok) {
+      return persistDraft(applyScreen({ ...pending, busy: false, error: S2_ERRORS.failed }), storage);
+    }
+    return persistDraft(applyScreen({
+      ...pending,
+      busy: false,
+      coverOpen: false,
+      inviteOpen: true,
+      previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: false, keepAnswer: false, saved: true }
+    }), storage);
+  } catch {
+    return persistDraft(applyScreen({ ...pending, busy: false, error: S2_ERRORS.failed }), storage);
+  }
+}
+
+export async function loadInvitePairCode(state, api) {
+  try {
+    const result = await api.myPairCode();
+    if (!result.ok) {
+      return applyScreen({ ...state, inviteOpen: true, error: PAIR_ERRORS.failed });
+    }
+    return applyScreen({
+      ...state,
+      inviteOpen: true,
+      pairCode: result.code || "",
+      pairCodeDisplay: result.display || "",
+      inviteUrl: result.url || "",
+      error: ""
+    });
+  } catch {
+    return applyScreen({ ...state, inviteOpen: true, error: PAIR_ERRORS.failed });
+  }
+}
+
+export function setPartnerCode(state, code) {
+  return { ...state, partnerCode: String(code || ""), error: "" };
+}
+
+export async function connectPartnerCode(state, api) {
+  const pending = { ...state, inviteOpen: true, busy: true, error: "" };
+  try {
+    const result = await api.connectPairCode(state.partnerCode);
+    if (!result.ok) {
+      return applyScreen({
+        ...pending,
+        busy: false,
+        error: PAIR_ERRORS[result.error] || PAIR_ERRORS.failed
+      });
+    }
+    return applyScreen({
+      ...pending,
+      busy: false,
+      error: "",
+      inviteOpen: false,
+      session: result.session || state.session
+    });
+  } catch {
+    return applyScreen({ ...pending, busy: false, error: PAIR_ERRORS.failed });
+  }
+}
+
+export async function shareMeasurementInvite(state, channel, io = {}) {
+  const url = String(state.inviteUrl || "");
+  if (!url || shareContainsPairCode(url, state.pairCode)) {
+    return { ...state, inviteOpen: true, copied: false };
+  }
+  const result = await shareInviteChannel(url, channel, io);
+  return { ...state, inviteOpen: true, copied: result === "copied", codeCopied: false };
+}
+
+export async function copyMyPairCode(state, io = {}) {
+  const code = String(state.pairCodeDisplay || state.pairCode || "");
+  if (!code) return { ...state, inviteOpen: true, codeCopied: false };
+  const copied = await (io.clipboard?.writeText
+    ? io.clipboard.writeText(code).then(() => true).catch(() => false)
+    : Promise.resolve(false));
+  return { ...state, inviteOpen: true, codeCopied: Boolean(copied), copied: false };
 }

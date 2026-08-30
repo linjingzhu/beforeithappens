@@ -1,8 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Linking, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
-import { EmailBindScreen, NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen, CoverScreen, PreviewQ1Screen } from "./src/screens.js";
+import {
+  CoverScreen,
+  EmailBindScreen,
+  InviteScreen,
+  NoticeScreen,
+  PackListScreen,
+  PreviewQ1Screen,
+  SentScreen,
+  SignupScreen,
+  SplashScreenView,
+  WorkspaceScreen
+} from "./src/screens.js";
 import {
   ackHostNotice,
   createHostApi,
@@ -13,8 +25,23 @@ import {
   splashOpenResult,
   startHostFlow
 } from "./src/session.js";
-import { backToSignup, continueFromPreviewQ1, finishSplash, keepPreviewAnswer, openPreviewQ1, requestLinkStarted, selectPreviewChoice, setEmail } from "./s0-s2-s3-flow.js";
-import { defaultPreviewStorage, previewQ1Question } from "./preview-q1.js";
+import {
+  backToSignup,
+  connectPartnerCode,
+  copyMyPairCode,
+  finishSplash,
+  keepPreviewAnswer,
+  loadInvitePairCode,
+  openMarriageFromList,
+  openPreviewQ1,
+  requestLinkStarted,
+  savePreviewAndOpenInvite,
+  selectPreviewChoice,
+  setEmail,
+  setPartnerCode,
+  shareMeasurementInvite
+} from "./s0-s2-s3-flow.js";
+import { createPersistingPreviewStorage, defaultPreviewStorage, hydratePreviewStorage, previewQ1Question } from "./preview-q1.js";
 import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
@@ -23,35 +50,63 @@ import { PaywallBuyerScreen, PaywallPartnerScreen } from "./paywall/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-const previewStorage = defaultPreviewStorage();
+const previewStorage = createPersistingPreviewStorage(defaultPreviewStorage());
+
+function shareIo() {
+  return {
+    share: async (payload) => Share.share({ message: payload.url, url: payload.url }),
+    clipboard: {
+      writeText: async (text) => {
+        await Share.share({ message: String(text || "") });
+      }
+    }
+  };
+}
 
 export default function App() {
-  const [state, setState] = useState(startHostFlow);
+  const [state, setState] = useState(() => startHostFlow(previewStorage));
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const api = createHostApi();
   const inviteApi = createHostInviteApi(hostCookieAccess());
 
   useEffect(() => {
     let cancelled = false;
     let timer;
+    let sub;
     (async () => {
       await SplashScreen.hideAsync().catch(() => {});
+      await hydratePreviewStorage(previewStorage);
       if (cancelled) return;
-      const opened = startHostFlow();
-      const openWork = finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
+      const opened = startHostFlow(previewStorage);
+      const initialUrl = await Linking.getInitialURL().catch(() => null);
+      const loc = typeof location !== "undefined"
+        ? location
+        : (initialUrl ? { href: initialUrl, search: "", pathname: "" } : null);
+      const openWork = finishHostOpen(opened, api, inviteApi, loc, previewStorage);
       timer = setTimeout(async () => {
         if (cancelled) return;
         try {
           const next = await openWork;
           if (cancelled) return;
-          setState(next.screen ? splashOpenResult(opened, next) : await finishHostSplash(opened, api));
+          let resolved = next.screen ? splashOpenResult(opened, next) : await finishHostSplash(opened, api);
+          if (resolved.screen === "invite" && !resolved.pairCode) {
+            resolved = await loadInvitePairCode(resolved, api);
+          }
+          if (!cancelled) setState(resolved);
         } catch {
           if (!cancelled) setState(finishSplash(opened));
         }
       }, SPLASH_MS);
+      sub = Linking.addEventListener("url", async ({ url }) => {
+        const next = await finishHostOpen(stateRef.current, api, inviteApi, { href: url }, previewStorage);
+        if (!cancelled) setState(next);
+      });
     })();
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      sub?.remove?.();
     };
   }, []);
 
@@ -75,6 +130,9 @@ export default function App() {
       {state.screen === "cover" ? (
         <CoverScreen onPreviewQuestion={() => setState(openPreviewQ1(state, previewStorage))} />
       ) : null}
+      {state.screen === "pack-list" ? (
+        <PackListScreen onOpenMarriage={() => setState(openMarriageFromList(state, previewStorage))} />
+      ) : null}
       {state.screen === "preview-q1" ? (
         <PreviewQ1Screen
           question={previewQ1Question()}
@@ -85,7 +143,7 @@ export default function App() {
             if (!state.previewQ1?.choiceId) return;
             setState(keepPreviewAnswer(state, previewStorage));
           }}
-          onContinue={() => setState(continueFromPreviewQ1(state, previewStorage))}
+          onContinue={async () => setState(await savePreviewAndOpenInviteThenLoad(state, api))}
         />
       ) : null}
       {state.screen === "signup" ? (
@@ -125,6 +183,22 @@ export default function App() {
           onAcknowledgeNotice={async () => setState(await ackHostNotice(state, api))}
         />
       ) : null}
+      {state.screen === "invite" ? (
+        <InviteScreen
+          pairCodeDisplay={state.pairCodeDisplay || state.pairCode}
+          partnerCode={state.partnerCode || ""}
+          copied={state.copied}
+          codeCopied={state.codeCopied}
+          error={state.error}
+          busy={state.busy}
+          onChangePartnerCode={(value) => setState(setPartnerCode(state, value))}
+          onCopyLink={async () => setState(await shareMeasurementInvite(state, "copy", shareIo()))}
+          onShareInstagram={async () => setState(await shareMeasurementInvite(state, "instagram", shareIo()))}
+          onShareKakao={async () => setState(await shareMeasurementInvite(state, "kakao", shareIo()))}
+          onCopyCode={async () => setState(await copyMyPairCode(state, shareIo()))}
+          onConnect={async () => setState(await connectPartnerCode(state, api))}
+        />
+      ) : null}
       {state.screen === "workspace" ? (
         <WorkspaceScreen
           email={state.session?.user?.email || ""}
@@ -152,4 +226,10 @@ export default function App() {
       ) : null}
     </>
   );
+}
+
+async function savePreviewAndOpenInviteThenLoad(state, api) {
+  const next = await savePreviewAndOpenInvite(state, api, previewStorage);
+  if (next.screen !== "invite") return next;
+  return loadInvitePairCode(next, api);
 }

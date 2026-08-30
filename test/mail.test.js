@@ -181,9 +181,10 @@ test("HTTP magic-link calls Resend with to/from/subject/url", async () => {
     assert.equal(calls.length, 1);
     assert.equal(calls[0].url, RESEND_EMAILS_URL);
     assert.equal(calls[0].options.headers.Authorization, "Bearer re_test_key");
-    const url = calls[0].body.html.match(/https?:\/\/[^"<]+/)?.[0];
+    const url = calls[0].body.html.match(/loveme:\/\/\/[^"<]+/)?.[0];
     assert.ok(url);
     const parsed = new URL(url);
+    assert.equal(parsed.protocol, "loveme:");
     assert.equal(parsed.pathname, "/auth/consume");
     assert.ok(parsed.searchParams.get("token"));
     assertLoginMailPayload(calls[0].body, { to: "buyer@example.com", url });
@@ -213,7 +214,7 @@ test("HTTP email-bind calls Resend with the same login copy", async () => {
     assert.equal(bind.status, 200);
     assert.equal(bind.json.ok, true);
     assert.equal(calls.length, 1);
-    const url = calls[0].body.html.match(/https?:\/\/[^"<]+/)?.[0];
+    const url = calls[0].body.html.match(/loveme:\/\/\/[^"<]+/)?.[0];
     assertLoginMailPayload(calls[0].body, { to: "partner@example.com", url });
   } finally {
     await new Promise((resolve) => server.close(resolve));

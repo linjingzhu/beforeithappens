@@ -4,7 +4,10 @@ export const AUTH_API = {
   session: "/api/auth/session",
   ackNotice: "/api/auth/ack-notice",
   oauthStart: "/api/auth/oauth/start",
-  emailBind: "/api/auth/email-bind"
+  emailBind: "/api/auth/email-bind",
+  pairCode: "/api/pair-code",
+  pairConnect: "/api/pair-code/connect",
+  previewQ1: "/api/preview-q1"
 };
 
 export const SESSION_FETCH_MS = 2000;
@@ -36,7 +39,16 @@ export async function withTimeout(promise, ms = SESSION_FETCH_MS) {
 export function extractMagicLinkToken(url) {
   try {
     const parsed = new URL(String(url || ""), "https://ab.local");
-    if (parsed.pathname === "/invite/accept" || parsed.pathname === "/install" || parsed.pathname === "/start") {
+    const path = `${parsed.pathname || ""}`;
+    const hostPath = `${parsed.hostname || ""}${path}`;
+    if (
+      path === "/invite/accept"
+      || path === "/install"
+      || path === "/start"
+      || path === "/invite/open"
+      || hostPath === "invite"
+      || hostPath === "invite/open"
+    ) {
       return "";
     }
     return parsed.searchParams.get("token") || "";
@@ -130,6 +142,44 @@ export function createAuthApi({
         return { ok: true, url: result.payload.url, provider: result.payload.provider };
       } catch {
         return { ok: false, error: "oauth-unconfigured" };
+      }
+    },
+
+    async savePreviewQ1({ questionId, choiceId } = {}) {
+      try {
+        const result = await withTimeout(request(AUTH_API.previewQ1, {
+          method: "POST",
+          body: { questionId, choiceId }
+        }), authTimeoutMs);
+        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        return { ok: true, ...result.payload };
+      } catch {
+        return { ok: false, error: "failed" };
+      }
+    },
+
+    async myPairCode() {
+      try {
+        const result = await withTimeout(request(AUTH_API.pairCode), authTimeoutMs);
+        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        return {
+          ok: true,
+          code: result.payload.code || "",
+          display: result.payload.display || "",
+          url: result.payload.url || ""
+        };
+      } catch {
+        return { ok: false, error: "failed" };
+      }
+    },
+
+    async connectPairCode(code) {
+      try {
+        const result = await withTimeout(request(AUTH_API.pairConnect, { method: "POST", body: { code } }), authTimeoutMs);
+        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        return { ok: true, session: result.payload.session };
+      } catch {
+        return { ok: false, error: "failed" };
       }
     },
 

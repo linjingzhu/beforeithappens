@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash then a workbook cover, offline preview Q1, and a keep-answer login gate (no Kakao/Naver/Google CTAs). S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash then a workbook cover, offline preview Q1, and a keep-answer login gate (no Kakao/Naver/Google CTAs). Magic-link consume uses the `loveme` app scheme. After Q1 save, the pair-code invite screen is shown. Cold logged-in home is the `질문집` pack list. S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
@@ -62,7 +62,8 @@ Targeted tests:
 - `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
 - `server/mail.mjs` — Resend transactional login/email-bind only; invites stay share links
 - `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed. The S2 social pack is not shippable; preview iOS stays on `stable`.
-- `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
+- `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite, in-app pair-code generate/connect
+- `src/pair-code.js` — `loveme` consume URL, pair-code format, locked invite/pack-list copy
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
 - `server/entitlement.mjs` — one 29,000 KRW purchase, partner free, webhook-idempotent grant
 - `src/development.js` — development stage and history dashboard data
