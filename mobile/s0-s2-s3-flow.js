@@ -2,12 +2,6 @@ import { PAIR_ERRORS, S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
 import { shareInviteChannel } from "../src/auth.js";
 import { shareContainsPairCode } from "../src/pair-code.js";
-import {
-  emptyPreviewDraft,
-  isPreviewQ1Choice,
-  PREVIEW_Q1_ID,
-  writePreviewDraft
-} from "./preview-q1.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,23 +9,11 @@ export function emptyNativeSession() {
   return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
 }
 
-function previewDraftFrom(draft = emptyPreviewDraft()) {
-  return {
-    questionId: PREVIEW_Q1_ID,
-    choiceId: draft.choiceId || "",
-    open: Boolean(draft.open),
-    keepAnswer: Boolean(draft.keepAnswer),
-    saved: Boolean(draft.saved)
-  };
-}
-
-export function isInFlightPreviewQ1(draft = emptyPreviewDraft()) {
-  if (!draft?.choiceId || !isPreviewQ1Choice(draft.choiceId)) return Boolean(draft?.open || draft?.keepAnswer);
-  if (draft.saved && !draft.open && !draft.keepAnswer) return false;
-  return Boolean(draft.open || draft.keepAnswer || draft.choiceId);
-}
-
-export function createNativeFlow(session = emptyNativeSession(), { draft = emptyPreviewDraft(), inviteOpen = false, coverOpen = false } = {}) {
+export function createNativeFlow(session = emptyNativeSession(), {
+  inviteOpen = false,
+  packDetailOpen = false,
+  accountOpen = false
+} = {}) {
   return {
     screen: "splash",
     splashDone: false,
@@ -42,15 +24,15 @@ export function createNativeFlow(session = emptyNativeSession(), { draft = empty
     noticeDismissed: false,
     session,
     action: "",
-    coverOpen: Boolean(coverOpen),
+    packDetailOpen: Boolean(packDetailOpen),
+    accountOpen: Boolean(accountOpen),
     inviteOpen: Boolean(inviteOpen),
     pairCode: "",
     pairCodeDisplay: "",
     inviteUrl: "",
     partnerCode: "",
     copied: false,
-    codeCopied: false,
-    previewQ1: previewDraftFrom(draft)
+    codeCopied: false
   };
 }
 
@@ -68,20 +50,17 @@ export function userNeedsEmail(user) {
 
 export function resolveNativeScreen(state) {
   if (!state?.splashDone) return "splash";
-  const draft = state.previewQ1 || emptyPreviewDraft();
   if (state.session?.user) {
     if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
     if (state.sentEmail) return "sent";
     if (state.inviteOpen) return "invite";
-    if (draft.open || (isInFlightPreviewQ1(draft) && !draft.saved)) return "preview-q1";
-    if (state.session.notice && !state.noticeDismissed && !isInFlightPreviewQ1(draft)) return "notice";
-    if (state.coverOpen) return "cover";
+    if (state.accountOpen) return "account";
+    if (state.session.notice && !state.noticeDismissed) return "notice";
+    if (state.packDetailOpen) return "pack-detail";
     return "pack-list";
   }
   if (state.sentEmail) return "sent";
-  if (draft.keepAnswer) return "signup";
-  if (draft.open || (draft.choiceId && !draft.saved)) return "preview-q1";
-  return "cover";
+  return "signup";
 }
 
 export function applyScreen(state) {
@@ -126,27 +105,19 @@ export function requestLinkFailed(state, error = "failed") {
   });
 }
 
-export function consumeSucceeded(state, session, storage) {
-  const draft = state.previewQ1 || emptyPreviewDraft();
+export function consumeSucceeded(state, session) {
   const nextSession = session || emptyNativeSession();
-  const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId) && !draft.saved);
-  return persistDraft(applyScreen({
+  return applyScreen({
     ...state,
     busy: false,
     error: "",
     sentEmail: "",
-    coverOpen: !hasPreview && !nextSession.notice,
+    packDetailOpen: false,
+    accountOpen: false,
     inviteOpen: false,
-    noticeDismissed: hasPreview,
-    session: nextSession,
-    previewQ1: {
-      questionId: PREVIEW_Q1_ID,
-      choiceId: draft.choiceId || "",
-      open: hasPreview,
-      keepAnswer: false,
-      saved: Boolean(draft.saved)
-    }
-  }), storage);
+    noticeDismissed: false,
+    session: nextSession
+  });
 }
 
 export function consumeFailed(state, error = "invalid") {
@@ -173,79 +144,62 @@ export function invitePartner(state) {
   return { ...state, action: "invite-partner" };
 }
 
-function persistDraft(state, storage) {
-  const draft = writePreviewDraft(state.previewQ1 || emptyPreviewDraft(), storage);
-  return { ...state, previewQ1: draft };
-}
-
-export function openCover(state, storage) {
-  return persistDraft(applyScreen({
+export function openMarriageFromList(state) {
+  if (!state.session?.user) return applyScreen(state);
+  return applyScreen({
     ...state,
     splashDone: true,
-    coverOpen: true,
+    packDetailOpen: true,
+    accountOpen: false,
+    inviteOpen: false
+  });
+}
+
+export function openSendLink(state) {
+  if (!state.session?.user) return applyScreen(state);
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    packDetailOpen: false,
+    accountOpen: false,
+    inviteOpen: true
+  });
+}
+
+export function openAccount(state) {
+  if (!state.session?.user) return applyScreen(state);
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    accountOpen: true,
+    packDetailOpen: false,
+    inviteOpen: false
+  });
+}
+
+export function backFromAccount(state) {
+  return applyScreen({ ...state, accountOpen: false });
+}
+
+export function backFromPackDetail(state) {
+  return applyScreen({ ...state, packDetailOpen: false, inviteOpen: false });
+}
+
+export function backFromInvite(state) {
+  return applyScreen({
+    ...state,
     inviteOpen: false,
-    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: false, keepAnswer: false }
-  }), storage);
+    packDetailOpen: Boolean(state.session?.user),
+    accountOpen: false
+  });
 }
 
-export function openMarriageFromList(state, storage) {
-  return openCover(state, storage);
-}
-
-export function openPreviewQ1(state, storage) {
-  return persistDraft(applyScreen({
-    ...state,
+export function loggedOutHome(state = createNativeFlow()) {
+  return applyScreen({
+    ...createNativeFlow(),
     splashDone: true,
-    coverOpen: false,
-    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: true }
-  }), storage);
-}
-
-export function selectPreviewChoice(state, choiceId, storage) {
-  if (!isPreviewQ1Choice(choiceId)) {
-    return applyScreen({ ...state, error: S2_ERRORS.invalid });
-  }
-  return persistDraft(applyScreen({
-    ...state,
-    splashDone: true,
-    error: "",
-    previewQ1: {
-      questionId: PREVIEW_Q1_ID,
-      choiceId,
-      open: true,
-      keepAnswer: Boolean(state.previewQ1?.keepAnswer),
-      saved: false
-    }
-  }), storage);
-}
-
-export function keepPreviewAnswer(state, storage) {
-  const choiceId = state.previewQ1?.choiceId || "";
-  if (!isPreviewQ1Choice(choiceId)) {
-    return applyScreen({ ...state, splashDone: true, error: S2_ERRORS.invalid });
-  }
-  return persistDraft(applyScreen({
-    ...state,
-    splashDone: true,
-    error: "",
-    previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true, saved: false }
-  }), storage);
-}
-
-export function continueFromPreviewQ1(state, storage) {
-  if (!state.session?.user) return keepPreviewAnswer(state, storage);
-  return persistDraft(applyScreen({
-    ...state,
-    splashDone: true,
-    coverOpen: false,
-    inviteOpen: true,
-    previewQ1: {
-      ...(state.previewQ1 || emptyPreviewDraft()),
-      open: false,
-      keepAnswer: false,
-      saved: true
-    }
-  }), storage);
+    error: state.error || ""
+  });
 }
 
 export function s3AllowsPackCta(_state) {
@@ -292,12 +246,12 @@ export async function submitMagicLink(state, api) {
   }
 }
 
-export async function consumeOpenedLink(state, api, tokenOrUrl, storage) {
+export async function consumeOpenedLink(state, api, tokenOrUrl) {
   const next = { ...state, splashDone: true, busy: true, error: "" };
   try {
     const result = await api.consumeMagicLink(tokenOrUrl);
     if (!result.ok) return consumeFailed(next, result.error);
-    return consumeSucceeded(next, result.session, storage);
+    return consumeSucceeded(next, result.session);
   } catch {
     return consumeFailed(next, "invalid");
   }
@@ -308,15 +262,13 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
   try {
     const session = await withTimeout(Promise.resolve().then(() => api.session()), timeoutMs);
     if (!session?.user) return next;
-    const draft = next.previewQ1 || emptyPreviewDraft();
-    const hasPreview = isInFlightPreviewQ1(draft);
     return applyScreen({
       ...next,
       session,
       inviteOpen: false,
-      coverOpen: false,
-      noticeDismissed: hasPreview || !session.notice,
-      previewQ1: hasPreview ? { ...draft, open: true } : draft,
+      packDetailOpen: false,
+      accountOpen: false,
+      noticeDismissed: !session.notice,
       error: ""
     });
   } catch {
@@ -361,28 +313,13 @@ export async function acknowledgeLoginNotice(state, api) {
   }
 }
 
-export async function savePreviewAndOpenInvite(state, api, storage) {
-  if (!state.session?.user) return keepPreviewAnswer(state, storage);
-  const choiceId = state.previewQ1?.choiceId || "";
-  if (!isPreviewQ1Choice(choiceId)) {
-    return applyScreen({ ...state, splashDone: true, error: S2_ERRORS.invalid });
-  }
-  const pending = { ...state, splashDone: true, busy: true, error: "" };
+export async function logoutAccount(state, api) {
   try {
-    const result = await api.savePreviewQ1({ questionId: PREVIEW_Q1_ID, choiceId });
-    if (!result.ok) {
-      return persistDraft(applyScreen({ ...pending, busy: false, error: S2_ERRORS.failed }), storage);
-    }
-    return persistDraft(applyScreen({
-      ...pending,
-      busy: false,
-      coverOpen: false,
-      inviteOpen: true,
-      previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: false, keepAnswer: false, saved: true }
-    }), storage);
+    await api.logout?.();
   } catch {
-    return persistDraft(applyScreen({ ...pending, busy: false, error: S2_ERRORS.failed }), storage);
+    /* fail-open to login */
   }
+  return loggedOutHome(state);
 }
 
 export async function loadInvitePairCode(state, api) {
@@ -424,6 +361,8 @@ export async function connectPartnerCode(state, api) {
       busy: false,
       error: "",
       inviteOpen: false,
+      packDetailOpen: false,
+      accountOpen: false,
       session: result.session || state.session
     });
   } catch {

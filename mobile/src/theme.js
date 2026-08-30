@@ -10,5 +10,6 @@ export const colors = {
   stitch: "#d7c4ae",
   gold: "#c6a15b",
   coverPaper: "#fdfbf7",
-  gateCard: "#ffffff"
+  gateCard: "#ffffff",
+  logout: "#c45c4e"
 };

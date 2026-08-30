@@ -1,10 +1,10 @@
 import { createAuthApi } from "../s0-s2-s3-api.js";
-import { readPreviewDraft } from "../preview-q1.js";
 import {
   acknowledgeLoginNotice,
   consumeOpenedLink,
   createNativeFlow,
   finishSplash,
+  logoutAccount,
   restoreSessionAfterSplash,
   startSocialLogin,
   submitEmailBind,
@@ -34,11 +34,11 @@ export function isLoggedIn(session) {
 }
 
 export function afterSplashScreen(loggedIn = isLoggedIn()) {
-  return loggedIn ? "pack-list" : "cover";
+  return loggedIn ? "pack-list" : "signup";
 }
 
-export function startHostFlow(storage) {
-  return createNativeFlow(undefined, { draft: readPreviewDraft(storage) });
+export function startHostFlow() {
+  return createNativeFlow();
 }
 
 export function splashOpenResult(opened, next) {
@@ -58,8 +58,8 @@ export async function sendHostMagicLink(state, api = createHostApi()) {
   return submitMagicLink(state, api);
 }
 
-export async function consumeHostMagicLink(state, tokenOrUrl, api = createHostApi(), storage) {
-  return consumeOpenedLink(state, api, tokenOrUrl, storage);
+export async function consumeHostMagicLink(state, tokenOrUrl, api = createHostApi()) {
+  return consumeOpenedLink(state, api, tokenOrUrl);
 }
 
 export async function ackHostNotice(state, api = createHostApi()) {
@@ -72,4 +72,8 @@ export async function startHostSocial(state, provider, api = createHostApi()) {
 
 export async function sendHostEmailBind(state, api = createHostApi()) {
   return submitEmailBind(state, api);
+}
+
+export async function logoutHost(state, api = createHostApi()) {
+  return logoutAccount(state, api);
 }

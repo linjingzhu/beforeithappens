@@ -1,4 +1,4 @@
-import { COVER_COPY, PREVIEW_Q1_COPY, S2_KEEP_COPY } from "./s0-s2-s3-copy.js";
+import { PACK_DETAIL_COPY } from "./s0-s2-s3-copy.js";
 
 export const PREVIEW_Q1_STORAGE_KEY = "loveme.preview-q1.v1";
 export const PREVIEW_Q1_ID = "home-01";
@@ -157,23 +157,17 @@ export function previewAllowsOnlyFirstQuestion(questionId) {
   return questionId === PREVIEW_Q1_ID;
 }
 
-export function coverHasInvite(copy = COVER_COPY) {
-  return /초대|invite/i.test(`${copy.title}${copy.line1}${copy.line2}${copy.cta}`);
+export function coverHasInvite(copy = PACK_DETAIL_COPY) {
+  return /초대|invite/i.test(`${copy.title}${copy.line1}${copy.line2}${copy.line3}`);
 }
 
-export function coverHasSignup(copy = COVER_COPY) {
-  return /로그인 링크 보내기|이메일/.test(`${copy.title}${copy.line1}${copy.line2}${copy.cta}`);
+export function coverHasSignup(copy = PACK_DETAIL_COPY) {
+  return /로그인 링크 보내기|이메일/.test(`${copy.title}${copy.subtitle}${copy.line1}${copy.line2}${copy.line3}`);
 }
 
 export function assertLockedCoverCopy() {
-  if (COVER_COPY.title !== "두 사람의 결혼 준비, 한곳에") throw new Error("cover title drifted");
-  if (COVER_COPY.line1 !== "질문은 나만 먼저 답해요.") throw new Error("cover line1 drifted");
-  if (COVER_COPY.line2 !== "비교는 둘이 낸 뒤에만 열려요.") throw new Error("cover line2 drifted");
-  if (COVER_COPY.cta !== "미리 질문 하나 보기") throw new Error("cover CTA drifted");
-  if (S2_KEEP_COPY.title !== "이 답을 남기려면 로그인해 주세요") throw new Error("login-gate title drifted");
-  if (S2_KEEP_COPY.body !== "비밀번호 없이 이메일로 로그인 링크를 보내드려요.") throw new Error("login-gate subtitle drifted");
-  if (PREVIEW_Q1_COPY.keepCta !== "이 답 남기기") throw new Error("keep CTA drifted");
-  if (coverHasInvite()) throw new Error("cover must not invite");
-  if (coverHasSignup()) throw new Error("cover must not sign up");
+  if (PACK_DETAIL_COPY.title !== "결혼") throw new Error("pack-detail title drifted");
+  if (PACK_DETAIL_COPY.cta !== "링크 보내기") throw new Error("pack-detail CTA drifted");
+  if (coverHasSignup()) throw new Error("pack-detail must not sign up");
   return true;
 }

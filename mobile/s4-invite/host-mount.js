@@ -39,9 +39,9 @@ export function createHostInviteApi(cookieAccess = {}) {
   return createInviteApi(cookieAccess);
 }
 
-export async function finishHostOpen(opened, hostApi, inviteApi = createInviteApi(), loc = globalThis.location, storage) {
+export async function finishHostOpen(opened, hostApi, inviteApi = createInviteApi(), loc = globalThis.location) {
   const { magicToken, inviteToken } = readHostOpenParams(loc);
-  if (magicToken) return consumeHostMagicLink(opened, magicToken, hostApi, storage);
+  if (magicToken) return consumeHostMagicLink(opened, magicToken, hostApi);
   const after = await finishHostSplash(opened, hostApi);
   if (!inviteToken) return after;
   const preview = await inviteApi.preview(inviteToken);

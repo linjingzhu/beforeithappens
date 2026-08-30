@@ -1,5 +1,4 @@
-import { COVER_COPY, FORBIDDEN_APP_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, PREVIEW_Q1_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
-import { previewQ1Question } from "./preview-q1.js";
+import { ACCOUNT_COPY, FORBIDDEN_APP_COPY, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -13,6 +12,10 @@ function escapeHtml(value = "") {
 
 function brand() {
   return `<header class="loveme-topbar"><strong>${escapeHtml(S0_COPY.brand)}</strong></header>`;
+}
+
+function backButton(action = "back") {
+  return `<button class="loveme-back" type="button" data-action="${escapeHtml(action)}" aria-label="back">‹</button>`;
 }
 
 export function renderS0SplashScreen() {
@@ -29,8 +32,8 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
     <section class="loveme-gate" data-screen="signup">
       <p class="loveme-gate-brand">${escapeHtml(S0_COPY.brand)}</p>
       <article class="loveme-gate-card">
-        <h1>${escapeHtml(S2_KEEP_COPY.title)}</h1>
-        <p>${escapeHtml(S2_KEEP_COPY.body)}</p>
+        <h1>${escapeHtml(S2_COPY.title)}</h1>
+        <p>${escapeHtml(S2_COPY.body)}</p>
         <form class="loveme-form" data-s2-form>
           <label for="s2-email">${escapeHtml(S2_COPY.emailLabel)}</label>
           <input id="s2-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" placeholder="${escapeHtml(S2_COPY.emailLabel)}" ${busy ? "disabled" : ""}>
@@ -86,12 +89,12 @@ export function renderS2EmailBindScreen({ email = "", error = "", busy = false }
   `;
 }
 
-export function renderCoverScreen() {
+export function renderPackDetailScreen() {
   return `
-    <section class="loveme-screen loveme-cover" data-screen="cover">
-      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
-      <p class="loveme-heart">♡</p>
-      <h1>${escapeHtml(COVER_COPY.title)}</h1>
+    <section class="loveme-screen loveme-cover" data-screen="pack-detail">
+      ${backButton("back-pack-detail")}
+      <h1>${escapeHtml(PACK_DETAIL_COPY.title)}</h1>
+      <p class="loveme-detail-sub">${escapeHtml(PACK_DETAIL_COPY.subtitle)}</p>
       <article class="loveme-notebook" aria-label="notebook">
         <div class="loveme-notebook-shadow"></div>
         <div class="loveme-notebook-face">
@@ -100,27 +103,10 @@ export function renderCoverScreen() {
           <span class="loveme-ribbon"></span>
         </div>
       </article>
-      <p class="loveme-cover-line">${escapeHtml(COVER_COPY.line1)}</p>
-      <p class="loveme-cover-line">${escapeHtml(COVER_COPY.line2)}</p>
-      <button class="loveme-primary loveme-cover-cta" type="button" data-action="preview-q1">${escapeHtml(COVER_COPY.cta)}</button>
-    </section>
-  `;
-}
-
-export function renderPreviewQ1Screen({ choiceId = "", loggedIn = false, question = previewQ1Question() } = {}) {
-  const choices = (question?.choices || []).map((choice) => `
-        <button class="loveme-choice${choiceId === choice.id ? " is-on" : ""}" type="button" data-action="select-q1" data-choice="${escapeHtml(choice.id)}">${escapeHtml(choice.label)}</button>
-  `).join("");
-  const cta = loggedIn ? PREVIEW_Q1_COPY.continueCta : PREVIEW_Q1_COPY.keepCta;
-  const action = loggedIn ? "continue-preview" : "keep-preview";
-  return `
-    ${brand()}
-    <section class="loveme-screen loveme-card" data-screen="preview-q1">
-      <span class="loveme-eyebrow">${escapeHtml(PREVIEW_Q1_COPY.draftBadge)}</span>
-      <h1>${escapeHtml(question?.title || "")}</h1>
-      <p>${escapeHtml(question?.intent || "")}</p>
-      <div class="loveme-choices">${choices}</div>
-      <button class="loveme-primary" type="button" data-action="${action}" ${choiceId ? "" : "disabled"}>${escapeHtml(cta)}</button>
+      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line1)}</p>
+      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line2)}</p>
+      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line3)}</p>
+      <button class="loveme-primary loveme-cover-cta" type="button" data-action="send-link">${escapeHtml(PACK_DETAIL_COPY.cta)}</button>
     </section>
   `;
 }
@@ -132,10 +118,29 @@ export function renderPackListScreen() {
   ).join("");
   return `
     <section class="loveme-screen loveme-pack-list" data-screen="pack-list">
-      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
+      <div class="loveme-pack-top">
+        <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
+        <button class="loveme-account-entry" type="button" data-action="open-account">${escapeHtml(ACCOUNT_COPY.title)}</button>
+      </div>
       <h1>${escapeHtml(PACK_LIST_COPY.title)}</h1>
       <p class="loveme-pack-sub">${escapeHtml(PACK_LIST_COPY.subtitle)}</p>
-      <article class="loveme-pack-card">${rows}</article>
+      <article class="loveme-pack-stack">${rows}</article>
+    </section>
+  `;
+}
+
+export function renderAccountScreen({ email = "" } = {}) {
+  return `
+    <section class="loveme-screen loveme-account" data-screen="account">
+      <div class="loveme-nav">
+        ${backButton("back-account")}
+        <h1>${escapeHtml(ACCOUNT_COPY.title)}</h1>
+      </div>
+      <article class="loveme-account-card">
+        <span>${escapeHtml(ACCOUNT_COPY.email)}</span>
+        <strong>${escapeHtml(email)}</strong>
+      </article>
+      <button class="loveme-logout" type="button" data-action="logout">${escapeHtml(ACCOUNT_COPY.logout)}</button>
     </section>
   `;
 }
@@ -143,22 +148,29 @@ export function renderPackListScreen() {
 export function renderInviteScreen({ pairCodeDisplay = "", partnerCode = "", error = "" } = {}) {
   return `
     <section class="loveme-screen loveme-invite" data-screen="invite">
-      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
-      <h1>${escapeHtml(PAIR_COPY.headline)}</h1>
+      <div class="loveme-nav">
+        ${backButton("back-invite")}
+        <h1>${escapeHtml(PAIR_COPY.headline)}</h1>
+      </div>
       <p class="loveme-invite-sub">${escapeHtml(PAIR_COPY.sub)}</p>
-      <div class="loveme-share-row">
+      <article class="loveme-share-card">
         <button type="button" data-action="share-copy">${escapeHtml(PAIR_COPY.copyLink)}</button>
         <button type="button" data-action="share-instagram">${escapeHtml(PAIR_COPY.instagram)}</button>
         <button type="button" data-action="share-kakao">${escapeHtml(PAIR_COPY.kakao)}</button>
-      </div>
-      <p class="loveme-my-code-label">${escapeHtml(PAIR_COPY.myCode)}</p>
-      <p class="loveme-my-code">${escapeHtml(pairCodeDisplay)}</p>
-      <button class="loveme-code-copy" type="button" data-action="copy-code">${escapeHtml(PAIR_COPY.copyCode)}</button>
-      <article class="loveme-partner-card">
-        <p>${escapeHtml(PAIR_COPY.partnerCard)}</p>
-        <input name="partner-code" placeholder="${escapeHtml(PAIR_COPY.partnerPlaceholder)}" value="${escapeHtml(partnerCode)}">
       </article>
-      <button class="loveme-primary" type="button" data-action="connect-code">${escapeHtml(PAIR_COPY.connect)}</button>
+      <article class="loveme-code-card">
+        <p class="loveme-code-eyebrow">${escapeHtml(PAIR_COPY.appCode)}</p>
+        <div class="loveme-my-code-row">
+          <span>${escapeHtml(PAIR_COPY.myCode)}</span>
+          <strong class="loveme-my-code">${escapeHtml(pairCodeDisplay)}</strong>
+          <button class="loveme-code-copy" type="button" data-action="copy-code">${escapeHtml(PAIR_COPY.copyCode)}</button>
+        </div>
+        <p>${escapeHtml(PAIR_COPY.partnerCard)}</p>
+        <div class="loveme-connect-row">
+          <input name="partner-code" placeholder="${escapeHtml(PAIR_COPY.partnerPlaceholder)}" value="${escapeHtml(partnerCode)}">
+          <button class="loveme-connect" type="button" data-action="connect-code">${escapeHtml(PAIR_COPY.connect)}</button>
+        </div>
+      </article>
       ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
     </section>
   `;
@@ -178,17 +190,12 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
-  if (state.screen === "cover") return renderCoverScreen();
-  if (state.screen === "preview-q1") {
-    return renderPreviewQ1Screen({
-      choiceId: state.previewQ1?.choiceId || "",
-      loggedIn: Boolean(state.session?.user)
-    });
-  }
+  if (state.screen === "pack-detail") return renderPackDetailScreen();
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
   if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });
   if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "", error: state.error, busy: state.busy });
   if (state.screen === "pack-list") return renderPackListScreen();
+  if (state.screen === "account") return renderAccountScreen({ email: state.session?.user?.email || "" });
   if (state.screen === "invite") {
     return renderInviteScreen({
       pairCodeDisplay: state.pairCodeDisplay || "",

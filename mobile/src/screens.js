@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { AUTH_COPY, COVER_COPY, LINE, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, PREVIEW_Q1_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { ACCOUNT_COPY, AUTH_COPY, LINE, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
 function pressableStyle(...parts) {
@@ -22,6 +22,20 @@ function AuthKeyboardShell({ testID, children }) {
         <View style={styles.card}>{children}</View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function BackButton({ onPress, testID = "back" }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel="back"
+      onPress={onPress}
+      style={pressableStyle(styles.backBtn)}
+    >
+      <Text style={styles.backChevron}>‹</Text>
+    </Pressable>
   );
 }
 
@@ -51,73 +65,6 @@ function NotebookGraphic() {
   );
 }
 
-export function CoverScreen({ onPreviewQuestion }) {
-  return (
-    <View style={styles.coverShell} testID="cover" accessibilityLabel="cover">
-      <Text style={styles.coverBrand}>{WORDMARK}</Text>
-      <Text style={styles.coverHeart}>♡</Text>
-      <Text style={styles.coverTitle}>{COVER_COPY.title}</Text>
-      <NotebookGraphic />
-      <Text style={styles.coverBody}>{COVER_COPY.line1}</Text>
-      <Text style={styles.coverBody}>{COVER_COPY.line2}</Text>
-      <Pressable
-        testID="cover-cta"
-        accessibilityRole="button"
-        onPress={onPreviewQuestion}
-        style={pressableStyle(styles.coverCta)}
-      >
-        <Text style={styles.primaryLabel}>{COVER_COPY.cta}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-export function PreviewQ1Screen({
-  question,
-  choiceId = "",
-  loggedIn = false,
-  onSelectChoice,
-  onKeepAnswer,
-  onContinue
-}) {
-  const choices = question?.choices || [];
-  return (
-    <ScrollView
-      testID="preview-q1"
-      accessibilityLabel="preview-q1"
-      style={styles.flexFill}
-      contentContainerStyle={styles.previewScroll}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.card}>
-        <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-        <Text style={styles.badge}>{PREVIEW_Q1_COPY.draftBadge}</Text>
-        <Text style={styles.title}>{question?.title}</Text>
-        <Text style={styles.body}>{question?.intent}</Text>
-        {choices.map((choice) => (
-          <Pressable
-            key={choice.id}
-            testID={`preview-choice-${choice.id}`}
-            accessibilityRole="button"
-            onPress={() => onSelectChoice?.(choice.id)}
-            style={pressableStyle(styles.choice, choiceId === choice.id ? styles.choiceOn : null)}
-          >
-            <Text style={styles.choiceLabel}>{choice.label}</Text>
-          </Pressable>
-        ))}
-        <Pressable
-          testID="preview-keep"
-          accessibilityRole="button"
-          onPress={loggedIn ? onContinue : onKeepAnswer}
-          style={pressableStyle(styles.primary, choiceId ? null : styles.disabled)}
-        >
-          <Text style={styles.primaryLabel}>{loggedIn ? PREVIEW_Q1_COPY.continueCta : PREVIEW_Q1_COPY.keepCta}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
-  );
-}
-
 export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
@@ -130,8 +77,8 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
       <Text style={styles.gateBrand}>{WORDMARK}</Text>
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.gateScroll}>
         <View style={styles.gateCard}>
-          <Text style={styles.gateTitle}>{S2_KEEP_COPY.title}</Text>
-          <Text style={styles.body}>{S2_KEEP_COPY.body}</Text>
+          <Text style={styles.gateTitle}>{S2_COPY.title}</Text>
+          <Text style={styles.body}>{S2_COPY.body}</Text>
           <Text style={styles.label}>이메일</Text>
           <TextInput
             testID="signup-email"
@@ -232,13 +179,18 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
   );
 }
 
-export function PackListScreen({ onOpenMarriage }) {
+export function PackListScreen({ onOpenMarriage, onOpenAccount }) {
   return (
     <View style={styles.packShell} testID="pack-list" accessibilityLabel="pack-list">
-      <Text style={styles.coverBrand}>{WORDMARK}</Text>
+      <View style={styles.packTop}>
+        <Text style={styles.coverBrand}>{WORDMARK}</Text>
+        <Pressable testID="pack-account" accessibilityRole="button" onPress={onOpenAccount} style={pressableStyle(styles.accountEntry)}>
+          <Text style={styles.accountEntryLabel}>{ACCOUNT_COPY.title}</Text>
+        </Pressable>
+      </View>
       <Text style={styles.packTitle}>{PACK_LIST_COPY.title}</Text>
       <Text style={styles.packSub}>{PACK_LIST_COPY.subtitle}</Text>
-      <View style={styles.packCard}>
+      <View style={styles.packStack}>
         {PACK_LIST_ROWS.map((row) => (
           row.open ? (
             <Pressable
@@ -246,21 +198,68 @@ export function PackListScreen({ onOpenMarriage }) {
               testID={`pack-${row.id}`}
               accessibilityRole="button"
               onPress={onOpenMarriage}
-              style={pressableStyle(styles.packRow)}
+              style={pressableStyle(styles.packCardRow)}
             >
               <Text style={styles.packRowLabel}>{row.label}</Text>
               <Text style={styles.packChevron}>›</Text>
             </Pressable>
           ) : (
-            <View key={row.id} testID={`pack-${row.id}`} style={styles.packRow}>
+            <View key={row.id} testID={`pack-${row.id}`} style={styles.packCardRow}>
               <Text style={styles.packRowLabelMuted}>{row.label}</Text>
-              <View style={styles.soonPill}>
-                <Text style={styles.soonLabel}>{PACK_LIST_COPY.soon}</Text>
-              </View>
+              <Text style={styles.soonPlain}>{PACK_LIST_COPY.soon}</Text>
             </View>
           )
         ))}
       </View>
+    </View>
+  );
+}
+
+export function PackDetailScreen({ onBack, onSendLink }) {
+  return (
+    <View style={styles.coverShell} testID="pack-detail" accessibilityLabel="pack-detail">
+      <View style={styles.navRow}>
+        <BackButton onPress={onBack} testID="pack-detail-back" />
+      </View>
+      <Text style={styles.detailTitle}>{PACK_DETAIL_COPY.title}</Text>
+      <Text style={styles.detailSub}>{PACK_DETAIL_COPY.subtitle}</Text>
+      <NotebookGraphic />
+      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line1}</Text>
+      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line2}</Text>
+      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line3}</Text>
+      <Pressable
+        testID="pack-detail-cta"
+        accessibilityRole="button"
+        onPress={onSendLink}
+        style={pressableStyle(styles.coverCta)}
+      >
+        <Text style={styles.primaryLabel}>{PACK_DETAIL_COPY.cta}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function AccountScreen({ email = "", busy = false, onBack, onLogout }) {
+  return (
+    <View style={styles.accountShell} testID="account" accessibilityLabel="account">
+      <View style={styles.navRowCenter}>
+        <BackButton onPress={onBack} testID="account-back" />
+        <Text style={styles.navTitle}>{ACCOUNT_COPY.title}</Text>
+        <View style={styles.backBtn} />
+      </View>
+      <View style={styles.accountCard}>
+        <Text style={styles.accountEmailLabel}>{ACCOUNT_COPY.email}</Text>
+        <Text style={styles.accountEmailValue} testID="account-email">{email}</Text>
+      </View>
+      <Pressable
+        testID="account-logout"
+        accessibilityRole="button"
+        disabled={busy}
+        onPress={onLogout}
+        style={pressableStyle(styles.logoutBtn, busy ? styles.disabled : null)}
+      >
+        <Text style={styles.logoutLabel}>{ACCOUNT_COPY.logout}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -272,6 +271,7 @@ export function InviteScreen({
   codeCopied = false,
   error = "",
   busy = false,
+  onBack,
   onChangePartnerCode,
   onCopyLink,
   onShareInstagram,
@@ -287,49 +287,61 @@ export function InviteScreen({
       accessibilityLabel="invite"
     >
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.inviteScroll}>
-        <Text style={styles.coverBrand}>{WORDMARK}</Text>
-        <Text style={styles.inviteHeadline}>{PAIR_COPY.headline}</Text>
+        <View style={styles.navRowCenter}>
+          <BackButton onPress={onBack} testID="invite-back" />
+          <Text style={styles.navTitle}>{PAIR_COPY.headline}</Text>
+          <View style={styles.backBtn} />
+        </View>
         <Text style={styles.inviteSub}>{PAIR_COPY.sub}</Text>
-        <View style={styles.shareRow}>
-          <Pressable testID="invite-copy-link" accessibilityRole="button" onPress={onCopyLink} style={pressableStyle(styles.shareBtn)}>
-            <Text style={styles.shareBtnLabel}>🔗 {PAIR_COPY.copyLink}</Text>
+        <View style={styles.shareCard}>
+          <Pressable testID="invite-copy-link" accessibilityRole="button" onPress={onCopyLink} style={pressableStyle(styles.shareBtnWide)}>
+            <Text style={styles.shareIcon}>🔗</Text>
+            <Text style={styles.shareBtnWideLabel}>{PAIR_COPY.copyLink}</Text>
           </Pressable>
-          <Pressable testID="invite-instagram" accessibilityRole="button" onPress={onShareInstagram} style={pressableStyle(styles.shareBtn)}>
-            <Text style={styles.shareBtnLabel}>{PAIR_COPY.instagram}</Text>
+          <Pressable testID="invite-instagram" accessibilityRole="button" onPress={onShareInstagram} style={pressableStyle(styles.shareBtnWide)}>
+            <Text style={styles.shareIcon}>◎</Text>
+            <Text style={styles.shareBtnWideLabel}>{PAIR_COPY.instagram}</Text>
           </Pressable>
-          <Pressable testID="invite-kakao" accessibilityRole="button" onPress={onShareKakao} style={pressableStyle(styles.shareBtn)}>
-            <Text style={styles.shareBtnLabel}>{PAIR_COPY.kakao}</Text>
+          <Pressable testID="invite-kakao" accessibilityRole="button" onPress={onShareKakao} style={pressableStyle(styles.shareBtnWide)}>
+            <Text style={styles.shareIcon}>💬</Text>
+            <Text style={styles.shareBtnWideLabel}>{PAIR_COPY.kakao}</Text>
           </Pressable>
         </View>
         {copied ? <Text style={styles.copiedNote}>링크를 복사했어요.</Text> : null}
-        <Text style={styles.myCodeLabel}>{PAIR_COPY.myCode}</Text>
-        <Text style={styles.myCodeValue} testID="invite-my-code">{pairCodeDisplay || "····"}</Text>
-        <Pressable testID="invite-copy-code" accessibilityRole="button" onPress={onCopyCode} style={pressableStyle(styles.codeCopy)}>
-          <Text style={styles.codeCopyLabel}>{codeCopied ? "복사됨" : PAIR_COPY.copyCode}</Text>
-        </Pressable>
-        <View style={styles.partnerCard}>
-          <Text style={styles.partnerCardTitle}>{PAIR_COPY.partnerCard}</Text>
-          <TextInput
-            testID="invite-partner-code"
-            value={partnerCode}
-            onChangeText={onChangePartnerCode}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            editable={!busy}
-            placeholder={PAIR_COPY.partnerPlaceholder}
-            placeholderTextColor={colors.muted}
-            style={styles.input}
-          />
+        <View style={styles.codeCard}>
+          <Text style={styles.codeCardEyebrow}>{PAIR_COPY.appCode}</Text>
+          <View style={styles.myCodeRow}>
+            <Text style={styles.myCodeLabel}>{PAIR_COPY.myCode}</Text>
+            <Text style={styles.myCodeInline} testID="invite-my-code">{pairCodeDisplay || "····"}</Text>
+            <Pressable testID="invite-copy-code" accessibilityRole="button" onPress={onCopyCode} style={pressableStyle(styles.codeCopyBtn)}>
+              <Text style={styles.codeCopyBtnLabel}>{codeCopied ? "복사됨" : PAIR_COPY.copyCode}</Text>
+            </Pressable>
+          </View>
+          <View style={styles.codeDivider} />
+          <Text style={styles.partnerHint}>{PAIR_COPY.partnerCard}</Text>
+          <View style={styles.connectRow}>
+            <TextInput
+              testID="invite-partner-code"
+              value={partnerCode}
+              onChangeText={onChangePartnerCode}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!busy}
+              placeholder={PAIR_COPY.partnerPlaceholder}
+              placeholderTextColor={colors.muted}
+              style={styles.connectInput}
+            />
+            <Pressable
+              testID="invite-connect"
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={onConnect}
+              style={pressableStyle(styles.connectBtn, busy ? styles.disabled : null)}
+            >
+              <Text style={styles.connectBtnLabel}>{PAIR_COPY.connect}</Text>
+            </Pressable>
+          </View>
         </View>
-        <Pressable
-          testID="invite-connect"
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={onConnect}
-          style={pressableStyle(styles.coverCta, busy ? styles.disabled : null)}
-        >
-          <Text style={styles.primaryLabel}>{PAIR_COPY.connect}</Text>
-        </Pressable>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
     </KeyboardAvoidingView>
@@ -485,31 +497,15 @@ const styles = StyleSheet.create({
     paddingBottom: 32
   },
   coverBrand: {
-    color: colors.coral,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
-    fontSize: 28,
-    fontWeight: "500",
-    marginTop: 12
-  },
-  coverHeart: {
-    color: colors.coral,
-    fontSize: 18,
-    marginTop: 8,
-    marginBottom: 18
-  },
-  coverTitle: {
     color: colors.ink,
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
     fontSize: 26,
-    lineHeight: 36,
-    fontWeight: "500",
-    textAlign: "center",
-    marginBottom: 24
+    fontWeight: "500"
   },
   coverBody: {
-    color: colors.ink,
-    fontSize: 16,
-    lineHeight: 26,
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 24,
     textAlign: "center"
   },
   coverCta: {
@@ -524,7 +520,7 @@ const styles = StyleSheet.create({
   notebookWrap: {
     width: 196,
     height: 196,
-    marginBottom: 24,
+    marginVertical: 28,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -584,7 +580,7 @@ const styles = StyleSheet.create({
     bottom: -16,
     width: 10,
     height: 24,
-    backgroundColor: colors.coral,
+    backgroundColor: colors.muted,
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6
   },
@@ -621,40 +617,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 12
   },
-  previewScroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    backgroundColor: colors.coverPaper
-  },
-  badge: {
-    alignSelf: "flex-start",
-    color: colors.coral,
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 10
-  },
-  choice: {
-    minHeight: 48,
-    marginTop: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 12
-  },
-  choiceOn: {
-    borderColor: colors.coral,
-    backgroundColor: colors.soft
-  },
-  choiceLabel: {
-    color: colors.ink,
-    fontSize: 15,
-    lineHeight: 22
-  },
   packShell: {
     flex: 1,
     backgroundColor: colors.coverPaper,
@@ -662,11 +624,25 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 32
   },
+  packTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  accountEntry: {
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 4
+  },
+  accountEntryLabel: {
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: "600"
+  },
   packTitle: {
     color: colors.ink,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
     fontSize: 34,
-    fontWeight: "600",
+    fontWeight: "700",
     marginTop: 28
   },
   packSub: {
@@ -676,19 +652,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 24
   },
-  packCard: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    overflow: "hidden"
+  packStack: {
+    gap: 10
   },
-  packRow: {
+  packCardRow: {
     minHeight: 56,
     paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line
+    backgroundColor: "#fff",
+    borderRadius: 16
   },
   packRowLabel: {
     color: colors.ink,
@@ -703,16 +677,91 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 22
   },
-  soonPill: {
-    backgroundColor: colors.soft,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4
+  soonPlain: {
+    color: colors.muted,
+    fontSize: 14
   },
-  soonLabel: {
-    color: colors.coral,
-    fontSize: 12,
+  navRow: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  navRowCenter: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  navTitle: {
+    color: colors.ink,
+    fontSize: 22,
     fontWeight: "700"
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  backChevron: {
+    color: colors.ink,
+    fontSize: 32,
+    lineHeight: 34,
+    marginTop: -2
+  },
+  detailTitle: {
+    color: colors.ink,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 40,
+    fontWeight: "500",
+    marginTop: 20
+  },
+  detailSub: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 8,
+    textAlign: "center"
+  },
+  accountShell: {
+    flex: 1,
+    backgroundColor: colors.coverPaper,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 32
+  },
+  accountCard: {
+    marginTop: 28,
+    minHeight: 56,
+    paddingHorizontal: 18,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  accountEmailLabel: {
+    color: colors.ink,
+    fontSize: 16,
+    fontWeight: "600"
+  },
+  accountEmailValue: {
+    color: colors.ink,
+    fontSize: 15
+  },
+  logoutBtn: {
+    minHeight: 52,
+    marginTop: "auto",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.logout,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  logoutLabel: {
+    color: colors.logout,
+    fontSize: 16,
+    fontWeight: "600"
   },
   inviteShell: {
     flex: 1,
@@ -722,17 +771,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     paddingHorizontal: 24,
-    paddingTop: 28,
+    paddingTop: 20,
     paddingBottom: 32
-  },
-  inviteHeadline: {
-    color: colors.ink,
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
-    fontSize: 26,
-    lineHeight: 36,
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: 20
   },
   inviteSub: {
     color: colors.muted,
@@ -742,27 +782,32 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 22
   },
-  shareRow: {
-    flexDirection: "row",
-    gap: 8,
-    width: "100%"
+  shareCard: {
+    width: "100%",
+    backgroundColor: colors.cream,
+    borderRadius: 20,
+    padding: 14,
+    gap: 10
   },
-  shareBtn: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 10,
+  shareBtnWide: {
+    minHeight: 52,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: "#fff",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4
+    paddingHorizontal: 16,
+    gap: 10
   },
-  shareBtnLabel: {
-    color: colors.coral,
-    fontSize: 11,
-    fontWeight: "700",
-    textAlign: "center"
+  shareIcon: {
+    fontSize: 16
+  },
+  shareBtnWideLabel: {
+    color: colors.ink,
+    fontSize: 16,
+    fontWeight: "600"
   },
   copiedNote: {
     color: colors.coral,
@@ -770,38 +815,85 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 8
   },
-  myCodeLabel: {
+  codeCard: {
+    width: "100%",
+    backgroundColor: colors.cream,
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 16
+  },
+  codeCardEyebrow: {
     color: colors.muted,
     fontSize: 12,
-    marginTop: 28
+    marginBottom: 12
   },
-  myCodeValue: {
+  myCodeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  myCodeLabel: {
     color: colors.ink,
-    fontSize: 32,
-    fontWeight: "700",
-    letterSpacing: 6,
-    marginTop: 8
+    fontSize: 15
   },
-  codeCopy: {
-    marginTop: 8,
-    marginBottom: 24
+  myCodeInline: {
+    flex: 1,
+    color: colors.ink,
+    fontSize: 17,
+    fontWeight: "600"
   },
-  codeCopyLabel: {
-    color: colors.coral,
-    fontSize: 13,
-    fontWeight: "700"
-  },
-  partnerCard: {
-    width: "100%",
+  codeCopyBtn: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16
+    alignItems: "center",
+    justifyContent: "center"
   },
-  partnerCardTitle: {
+  codeCopyBtnLabel: {
+    color: colors.ink,
+    fontSize: 13,
+    fontWeight: "600"
+  },
+  codeDivider: {
+    height: 1,
+    backgroundColor: colors.line,
+    marginVertical: 14
+  },
+  partnerHint: {
+    color: colors.muted,
+    fontSize: 13,
+    marginBottom: 10
+  },
+  connectRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  connectInput: {
+    flex: 1,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    fontSize: 15,
+    backgroundColor: "#fff",
+    color: colors.ink
+  },
+  connectBtn: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#d8c4b0",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  connectBtnLabel: {
     color: colors.ink,
     fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 10
+    fontWeight: "700"
   }
 });

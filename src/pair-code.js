@@ -3,16 +3,32 @@ export const PAIR_CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 export const PAIR_CODE_LENGTH = 8;
 
 export const PAIR_COPY = Object.freeze({
-  headline: "이 답이 비교되려면 파트너가 필요해요.",
-  sub: "초대를 보내면 상대도 같은 질문을 받아요.",
+  headline: "링크 보내기",
+  sub: "초대를 보내면 상대도 같은 팩을 받아요.",
   copyLink: "링크 복사",
   instagram: "인스타그램",
   kakao: "카카오톡",
+  appCode: "앱에서 코드로 연결",
   myCode: "내 코드",
   copyCode: "복사",
   partnerCard: "상대 코드를 알고 있다면",
   partnerPlaceholder: "상대 코드 입력",
   connect: "연결하기"
+});
+
+export const PACK_DETAIL_COPY = Object.freeze({
+  title: "결혼",
+  subtitle: "두 사람의 결혼 준비, 한곳에.",
+  line1: "질문은 나만 먼저 답해요.",
+  line2: "비교는 둘이 낸 뒤에만 열려요.",
+  line3: "파트너가 연결된 다음 질문이 열려요.",
+  cta: "링크 보내기"
+});
+
+export const ACCOUNT_COPY = Object.freeze({
+  title: "계정",
+  email: "이메일",
+  logout: "로그아웃"
 });
 
 export const PACK_LIST_COPY = Object.freeze({
@@ -78,11 +94,12 @@ export function shareContainsPairCode(url, code) {
 }
 
 export function assertLockedMeasurementCopy() {
-  if (PAIR_COPY.headline !== "이 답이 비교되려면 파트너가 필요해요.") throw new Error("invite headline drifted");
-  if (PAIR_COPY.sub !== "초대를 보내면 상대도 같은 질문을 받아요.") throw new Error("invite sub drifted");
+  if (PAIR_COPY.headline !== "링크 보내기") throw new Error("invite headline drifted");
+  if (PAIR_COPY.sub !== "초대를 보내면 상대도 같은 팩을 받아요.") throw new Error("invite sub drifted");
   if (PAIR_COPY.copyLink !== "링크 복사") throw new Error("invite copy-link drifted");
   if (PAIR_COPY.instagram !== "인스타그램") throw new Error("invite Instagram drifted");
   if (PAIR_COPY.kakao !== "카카오톡") throw new Error("invite KakaoTalk drifted");
+  if (PAIR_COPY.appCode !== "앱에서 코드로 연결") throw new Error("invite app-code drifted");
   if (PAIR_COPY.myCode !== "내 코드") throw new Error("invite my-code drifted");
   if (PAIR_COPY.copyCode !== "복사") throw new Error("invite copy-code drifted");
   if (PAIR_COPY.partnerCard !== "상대 코드를 알고 있다면") throw new Error("invite partner card drifted");
@@ -93,5 +110,14 @@ export function assertLockedMeasurementCopy() {
   if (PACK_LIST_COPY.soon !== "곧 열려요") throw new Error("pack-list soon pill drifted");
   if (PACK_LIST_ROWS[0].label !== "결혼" || !PACK_LIST_ROWS[0].open) throw new Error("marriage row drifted");
   if (PACK_LIST_ROWS.slice(1).some((row) => row.open || row.label === "결혼")) throw new Error("closed pack rows drifted");
+  if (PACK_DETAIL_COPY.title !== "결혼") throw new Error("pack-detail title drifted");
+  if (PACK_DETAIL_COPY.subtitle !== "두 사람의 결혼 준비, 한곳에.") throw new Error("pack-detail subtitle drifted");
+  if (PACK_DETAIL_COPY.line1 !== "질문은 나만 먼저 답해요.") throw new Error("pack-detail line1 drifted");
+  if (PACK_DETAIL_COPY.line2 !== "비교는 둘이 낸 뒤에만 열려요.") throw new Error("pack-detail line2 drifted");
+  if (PACK_DETAIL_COPY.line3 !== "파트너가 연결된 다음 질문이 열려요.") throw new Error("pack-detail line3 drifted");
+  if (PACK_DETAIL_COPY.cta !== "링크 보내기") throw new Error("pack-detail CTA drifted");
+  if (ACCOUNT_COPY.title !== "계정") throw new Error("account title drifted");
+  if (ACCOUNT_COPY.email !== "이메일") throw new Error("account email drifted");
+  if (ACCOUNT_COPY.logout !== "로그아웃") throw new Error("account logout drifted");
   return true;
 }

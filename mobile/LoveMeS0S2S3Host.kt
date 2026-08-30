@@ -10,21 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-object LoveMePreviewDraft {
-    private var payload: String = ""
-
-    fun save(choiceId: String, open: Boolean, keepAnswer: Boolean, saved: Boolean) {
-        payload = "{\"choiceId\":\"$choiceId\",\"open\":$open,\"keepAnswer\":$keepAnswer,\"saved\":$saved}"
-    }
-
-    fun isInFlight(): Boolean =
-        payload.contains("\"open\":true") || payload.contains("\"keepAnswer\":true") ||
-            (payload.contains("home-") && !payload.contains("\"saved\":true"))
-
-    fun wantsLoginGate(): Boolean = payload.contains("\"keepAnswer\":true")
-}
-
-enum class LoveMeNativeScreen { Splash, Cover, PreviewQ1, Signup, Sent, Bind, Notice, PackList, Invite, Workspace }
+enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, PackList, PackDetail, Invite, Account, Workspace }
 
 @Composable
 fun LoveMeS0S2S3Host(
@@ -35,6 +21,7 @@ fun LoveMeS0S2S3Host(
     var email by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
+    var pairCode by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
     when (screen) {
@@ -47,32 +34,35 @@ fun LoveMeS0S2S3Host(
                     val needsEmail = body.contains("\"needsEmail\":true") || email.isEmpty()
                     screen = when {
                         needsEmail -> LoveMeNativeScreen.Bind
-                        LoveMePreviewDraft.isInFlight() -> LoveMeNativeScreen.PreviewQ1
                         body.contains("\"notice\":\"no-local-draft\"") -> LoveMeNativeScreen.Notice
                         else -> LoveMeNativeScreen.PackList
                     }
                 } else {
-                    screen = if (LoveMePreviewDraft.isInFlight()) {
-                        if (LoveMePreviewDraft.wantsLoginGate()) LoveMeNativeScreen.Signup
-                        else LoveMeNativeScreen.PreviewQ1
-                    } else LoveMeNativeScreen.Cover
+                    screen = LoveMeNativeScreen.Signup
                 }
             }
         }
-        LoveMeNativeScreen.Cover -> LoveMeCoverScreen { screen = LoveMeNativeScreen.PreviewQ1 }
-        LoveMeNativeScreen.PreviewQ1 -> LoveMePreviewQ1Screen(
-            loggedIn = email.isNotEmpty(),
-            onKeepAnswer = {
-                LoveMePreviewDraft.save("home-rest", open = true, keepAnswer = true, saved = false)
-                screen = LoveMeNativeScreen.Signup
-            },
-            onContinue = {
-                LoveMePreviewDraft.save("home-rest", open = false, keepAnswer = false, saved = true)
-                screen = LoveMeNativeScreen.Invite
+        LoveMeNativeScreen.PackList -> LoveMePackListScreen(
+            onOpenMarriage = { screen = LoveMeNativeScreen.PackDetail },
+            onOpenAccount = { screen = LoveMeNativeScreen.Account }
+        )
+        LoveMeNativeScreen.PackDetail -> LoveMePackDetailScreen(
+            onBack = { screen = LoveMeNativeScreen.PackList },
+            onSendLink = { screen = LoveMeNativeScreen.Invite }
+        )
+        LoveMeNativeScreen.Account -> LoveMeAccountScreen(
+            email = email,
+            onBack = { screen = LoveMeNativeScreen.PackList },
+            onLogout = {
+                scope.launch {
+                    withContext(Dispatchers.IO) { client.logout() }
+                    email = ""
+                    pairCode = ""
+                    screen = LoveMeNativeScreen.Signup
+                }
             }
         )
-        LoveMeNativeScreen.PackList -> LoveMePackListScreen { screen = LoveMeNativeScreen.Cover }
-        LoveMeNativeScreen.Invite -> LoveMeInviteScreen(pairCodeDisplay = "")
+        LoveMeNativeScreen.Invite -> LoveMeInviteScreen(pairCodeDisplay = pairCode, onBack = { screen = LoveMeNativeScreen.PackDetail })
         LoveMeNativeScreen.Signup -> S2SignupScreen(
             phase = S2SignupPhase.Signup,
             email = email,
@@ -148,11 +138,10 @@ fun openMagicLink(client: LoveMeAuthClient, url: String): Pair<LoveMeNativeScree
     val status = result["status"] as? Int ?: 500
     val body = result["body"] as? String ?: ""
     if (status == 200 && body.contains("\"needsEmail\":true")) return LoveMeNativeScreen.Bind to ""
-    if (status == 200 && LoveMePreviewDraft.isInFlight()) return LoveMeNativeScreen.PreviewQ1 to ""
     if (status == 200 && body.contains("\"notice\":\"") && !body.contains("\"notice\":null")) {
         return LoveMeNativeScreen.Notice to ""
     }
-    if (status == 200) return LoveMeNativeScreen.Cover to ""
+    if (status == 200) return LoveMeNativeScreen.PackList to ""
     val error = when {
         body.contains("expired") -> "로그인 링크가 만료되었어요. 다시 요청해 주세요."
         body.contains("used") -> "이미 사용한 로그인 링크예요. 새 링크를 요청해 주세요."

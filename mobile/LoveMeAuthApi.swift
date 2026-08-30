@@ -10,6 +10,7 @@ enum LoveMeAuthApi {
     static let pairCodePath = "/api/pair-code"
     static let pairConnectPath = "/api/pair-code/connect"
     static let previewQ1Path = "/api/preview-q1"
+    static let logoutPath = "/api/auth/logout"
     static let magicLinkTtlSeconds = 10 * 60
 
     static func extractMagicLinkToken(from url: URL) -> String? {
@@ -77,6 +78,10 @@ struct LoveMeAuthClient {
         let payload = try await post(path: LoveMeAuthApi.previewQ1Path, body: ["questionId": "home-01", "choiceId": choiceId])
         if payload["ok"] as? Bool == true { return }
         throw LoveMeAuthError.failed
+    }
+
+    func logout() async throws {
+        _ = try await post(path: LoveMeAuthApi.logoutPath, body: [:])
     }
 
     func acknowledgeNotice() async throws -> [String: Any] {

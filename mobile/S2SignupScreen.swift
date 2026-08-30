@@ -9,11 +9,12 @@ enum LoveMeS2Copy {
     static let emailLabel = "이메일"
     static let ack = "확인"
     static let otherEmail = "다른 이메일로 요청"
-    static let coverTitle = "두 사람의 결혼 준비, 한곳에"
-    static let coverLine1 = "질문은 나만 먼저 답해요."
-    static let coverLine2 = "비교는 둘이 낸 뒤에만 열려요."
-    static let coverCta = "미리 질문 하나 보기"
-    static let keepTitle = "이 답을 남기려면 로그인해 주세요"
+    static let packDetailTitle = "결혼"
+    static let packDetailSub = "두 사람의 결혼 준비, 한곳에."
+    static let packDetailLine1 = "질문은 나만 먼저 답해요."
+    static let packDetailLine2 = "비교는 둘이 낸 뒤에만 열려요."
+    static let packDetailLine3 = "파트너가 연결된 다음 질문이 열려요."
+    static let packDetailCta = "링크 보내기"
     static let bindTitle = "이메일을 연결해 주세요."
     static let bindCta = "이메일 연결하기"
     static let bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
@@ -53,7 +54,7 @@ struct S2SignupScreen: View {
                 .font(.system(size: 22, weight: .medium, design: .serif))
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
             VStack(alignment: .leading, spacing: 12) {
-                Text(LoveMeS2Copy.keepTitle)
+                Text(LoveMeS2Copy.title)
                     .font(.title2.weight(.bold))
                 Text(LoveMeS2Copy.body)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
@@ -133,72 +134,6 @@ struct S2SignupScreen: View {
         }
         .padding(22)
         .onAppear { emailDraft = email }
-    }
-}
-
-struct LoveMePreviewQ1Screen: View {
-    var loggedIn: Bool = false
-    var onKeepAnswer: () -> Void = {}
-    var onContinue: () -> Void = {}
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("나만 보임")
-                .font(.caption.weight(.heavy))
-                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text("우리에게 집은 어떤 의미에 가장 가까울까요?")
-                .font(.title2.weight(.medium))
-            Button(loggedIn ? "계속하기" : "이 답 남기기", action: loggedIn ? onContinue : onKeepAnswer)
-                .buttonStyle(LoveMePrimaryButtonStyle())
-        }
-        .padding(28)
-    }
-}
-
-struct LoveMeCoverScreen: View {
-    var onPreviewQuestion: () -> Void = {}
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Text("LoveMe")
-                .font(.title.weight(.medium))
-                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text("♡")
-                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text(LoveMeS2Copy.coverTitle)
-                .font(.title2.weight(.medium))
-                .multilineTextAlignment(.center)
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(red: 0.97, green: 0.94, blue: 0.89))
-                .frame(width: 176, height: 176)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [4]))
-                        .foregroundStyle(Color(red: 0.84, green: 0.77, blue: 0.68))
-                        .padding(8)
-                )
-                .overlay(Text("♡").font(.title).foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37)))
-                .overlay(alignment: .trailing) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(red: 0.97, green: 0.94, blue: 0.89))
-                        .frame(width: 30, height: 40)
-                        .overlay(Circle().fill(Color(red: 0.78, green: 0.63, blue: 0.36)).frame(width: 12, height: 12))
-                        .offset(x: 12)
-                }
-                .overlay(alignment: .bottomLeading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(red: 0.93, green: 0.47, blue: 0.37))
-                        .frame(width: 10, height: 24)
-                        .offset(x: 28, y: 16)
-                }
-            Text(LoveMeS2Copy.coverLine1)
-            Text(LoveMeS2Copy.coverLine2)
-            Button(LoveMeS2Copy.coverCta, action: onPreviewQuestion)
-                .buttonStyle(LoveMePrimaryButtonStyle())
-        }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
     }
 }
 

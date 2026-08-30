@@ -214,9 +214,27 @@ body {
 }
 
 .loveme-cover h1 {
-  margin: 0 0 28px;
+  margin: 12px 0 8px;
   color: var(--ink);
-  font: 500 26px/1.35 Georgia, "Times New Roman", serif;
+  font: 500 40px/1.2 Georgia, "Times New Roman", serif;
+}
+
+.loveme-detail-sub {
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.loveme-back {
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .loveme-cover-line {
@@ -359,31 +377,71 @@ body {
 }
 
 .loveme-pack-list,
-.loveme-invite {
-  align-items: center;
-  text-align: center;
+.loveme-invite,
+.loveme-account {
+  align-items: stretch;
+  text-align: left;
   padding: 28px 24px 32px;
 }
 
-.loveme-pack-list h1,
-.loveme-invite h1 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 30px;
-  line-height: 1.35;
-  margin: 20px 0 10px;
+.loveme-pack-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.loveme-account-entry {
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loveme-pack-list h1 {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 28px 0 8px;
+}
+
+.loveme-invite h1,
+.loveme-account h1,
+.loveme-nav h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  text-align: center;
+}
+
+.loveme-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 36px;
+}
+
+.loveme-nav .loveme-back {
+  position: absolute;
+  left: 0;
 }
 
 .loveme-pack-sub,
 .loveme-invite-sub {
   color: var(--muted);
   margin: 0 0 22px;
+  text-align: center;
 }
 
-.loveme-pack-card {
-  width: 100%;
-  background: #fff;
-  border-radius: 20px;
-  overflow: hidden;
+.loveme-pack-list .loveme-pack-sub {
+  text-align: left;
+}
+
+.loveme-pack-stack {
+  display: grid;
+  gap: 10px;
 }
 
 .loveme-pack-row {
@@ -391,7 +449,7 @@ body {
   min-height: 56px;
   padding: 0 18px;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-radius: 16px;
   background: #fff;
   display: flex;
   align-items: center;
@@ -400,56 +458,96 @@ body {
 }
 
 .loveme-soon {
-  background: var(--soft);
-  color: var(--coral);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--muted);
+  font-size: 14px;
 }
 
-.loveme-share-row {
+.loveme-share-card,
+.loveme-code-card {
   width: 100%;
+  background: #f3ebe3;
+  border-radius: 20px;
+  padding: 14px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
-.loveme-share-row button {
-  min-height: 44px;
+.loveme-share-card button,
+.loveme-code-copy,
+.loveme-connect {
+  min-height: 48px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 14px;
   background: #fff;
-  color: var(--coral);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.loveme-my-code-label {
+.loveme-code-eyebrow {
   color: var(--muted);
   font-size: 12px;
-  margin: 28px 0 0;
+  margin: 0;
+}
+
+.loveme-my-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .loveme-my-code {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  margin: 8px 0;
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
 }
 
 .loveme-code-copy {
-  border: 0;
-  background: none;
-  color: var(--coral);
-  font-weight: 700;
+  min-height: 32px;
+  padding: 0 12px;
 }
 
-.loveme-partner-card {
-  width: 100%;
-  text-align: left;
-  background: #fff;
+.loveme-connect-row {
+  display: flex;
+  gap: 8px;
+}
+
+.loveme-connect-row input {
+  flex: 1;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 14px;
+}
+
+.loveme-connect {
+  background: #d8c4b0;
+}
+
+.loveme-account {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.loveme-account-card {
+  margin-top: 28px;
+  min-height: 56px;
+  padding: 0 18px;
   border-radius: 16px;
-  padding: 16px;
-  margin: 20px 0 16px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.loveme-logout {
+  margin-top: auto;
+  min-height: 52px;
+  border: 1px solid #c45c4e;
+  border-radius: 16px;
+  background: transparent;
+  color: #c45c4e;
+  font-size: 16px;
+  font-weight: 600;
 }
