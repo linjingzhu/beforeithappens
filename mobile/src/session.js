@@ -13,12 +13,16 @@ export function apiOrigin() {
   return String(globalThis.process?.env?.EXPO_PUBLIC_API_ORIGIN || "");
 }
 
-export function createHostApi() {
-  return createAuthApi({
+export function hostCookieAccess() {
+  return {
     origin: apiOrigin(),
     getCookie: () => cookie,
     setCookie: (value) => { cookie = value; }
-  });
+  };
+}
+
+export function createHostApi() {
+  return createAuthApi(hostCookieAccess());
 }
 
 export function isLoggedIn(session) {

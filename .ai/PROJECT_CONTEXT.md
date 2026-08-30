@@ -24,6 +24,7 @@ Core:
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
 - LoveMe Expo host in `mobile/` opens S0 splash then S2–S3 magic-link / workspace screens. S1 install landing stays web-only (`src/install.js`).
+- Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
 - File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, and immutable `PublicLock` snapshots. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
@@ -53,8 +54,9 @@ Targeted tests:
 - `src/questions.js` — structured question content
 - `src/app.js` — session-gated product views and historical local question workflow
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
+- `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
-- `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S9 via `src/s9-mount.js`).
+- `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`).
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock
