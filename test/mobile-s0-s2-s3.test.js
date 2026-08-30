@@ -19,7 +19,7 @@ import {
 import { AUTH_API, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
 import { finishHostOpen } from "../mobile/s4-invite/host-mount.js";
 import { SPLASH_MS } from "../mobile/src/copy.js";
-import { finishHostSplash } from "../mobile/src/session.js";
+import { finishHostSplash, splashOpenResult } from "../mobile/src/session.js";
 import {
   acknowledgeLoginNotice,
   backToSignup,
@@ -294,6 +294,11 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   const fromHang = await restoreSessionAfterSplash(createNativeFlow(), hanging, { timeoutMs: 20 });
   assert.equal(fromHang.splashDone, true);
   assert.equal(fromHang.screen, "signup");
+
+  const opened = createNativeFlow();
+  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { splashDone: true, screen: "signup" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { splashDone: true, screen: "workspace" }).screen, "workspace");
 
   const app = await readFile("mobile/App.js", "utf8");
   assert.match(app, /SPLASH_MS/);

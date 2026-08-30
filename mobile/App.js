@@ -10,6 +10,7 @@ import {
   hostCookieAccess,
   sendHostEmailBind,
   sendHostMagicLink,
+  splashOpenResult,
   startHostFlow,
   startHostSocial
 } from "./src/session.js";
@@ -34,12 +35,13 @@ export default function App() {
       await SplashScreen.hideAsync().catch(() => {});
       if (cancelled) return;
       const opened = startHostFlow();
+      const openWork = finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
       timer = setTimeout(async () => {
         if (cancelled) return;
         try {
-          const next = await finishHostOpen(opened, api, inviteApi, typeof location !== "undefined" ? location : null);
+          const next = await openWork;
           if (cancelled) return;
-          setState(next.screen ? next : await finishHostSplash(opened, api));
+          setState(next.screen ? splashOpenResult(opened, next) : await finishHostSplash(opened, api));
         } catch {
           if (!cancelled) setState(finishSplash(opened));
         }

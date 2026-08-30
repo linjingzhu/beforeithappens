@@ -40,9 +40,14 @@ export function startHostFlow() {
   return createNativeFlow();
 }
 
+export function splashOpenResult(opened, next) {
+  if (next?.splashDone && next.screen && next.screen !== "splash") return next;
+  return finishSplash(opened);
+}
+
 export async function finishHostSplash(state, api = createHostApi()) {
   try {
-    return await restoreSessionAfterSplash(state, api);
+    return splashOpenResult(state, await restoreSessionAfterSplash(state, api));
   } catch {
     return finishSplash(state);
   }
