@@ -43,6 +43,8 @@ test("logged-out splash routes to S2 signup, then notice, then S3 workspace", as
   assert.match(screens, /testID="splash"/);
   assert.match(screens, /testID="signup"/);
   assert.match(screens, /testID="workspace"/);
+  assert.match(screens, /keyboardShouldPersistTaps="handled"/);
+  assert.match(screens, /KeyboardAvoidingView/);
   assert.match(screens, /AUTH_COPY\.cta/);
   assert.match(screens, /S3_COPY\.inviteCta/);
   assert.equal(screens.includes("testID=\"install\""), false);

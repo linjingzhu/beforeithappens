@@ -130,6 +130,10 @@ export function s2SocialStartLabels() {
   return [S2_SOCIAL_COPY.kakao, S2_SOCIAL_COPY.naver, S2_SOCIAL_COPY.google];
 }
 
+export function socialStartPending(state) {
+  return { ...state, splashDone: true, busy: true, error: "" };
+}
+
 export function oauthStartFailed(state, error = "oauth-unconfigured") {
   return applyScreen({
     ...state,
@@ -186,7 +190,7 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
 }
 
 export async function startSocialLogin(state, api, provider) {
-  const pending = { ...state, splashDone: true, busy: true, error: "" };
+  const pending = socialStartPending(state);
   try {
     const result = await api.startOAuth(provider);
     if (!result.ok) return oauthStartFailed(pending, result.error);

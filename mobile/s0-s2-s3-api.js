@@ -8,6 +8,7 @@ export const AUTH_API = {
 };
 
 export const SESSION_FETCH_MS = 2000;
+export const AUTH_FETCH_MS = 5000;
 
 export function emptyAuthSession() {
   return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
@@ -57,7 +58,8 @@ export function createAuthApi({
   origin = "",
   getCookie,
   setCookie,
-  sessionTimeoutMs = SESSION_FETCH_MS
+  sessionTimeoutMs = SESSION_FETCH_MS,
+  authTimeoutMs = AUTH_FETCH_MS
 } = {}) {
   if (typeof fetchImpl !== "function") throw new Error("fetchImpl is required");
 
@@ -82,9 +84,13 @@ export function createAuthApi({
 
   return {
     async requestMagicLink(email) {
-      const result = await request(AUTH_API.magicLink, { method: "POST", body: { email } });
-      if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
-      return { ok: true };
+      try {
+        const result = await withTimeout(request(AUTH_API.magicLink, { method: "POST", body: { email } }), authTimeoutMs);
+        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        return { ok: true };
+      } catch {
+        return { ok: false, error: "failed" };
+      }
     },
 
     async consumeMagicLink(tokenOrUrl) {
@@ -110,15 +116,26 @@ export function createAuthApi({
     },
 
     async startOAuth(provider) {
-      const result = await request(AUTH_API.oauthStart, { method: "POST", body: { provider } });
-      if (!result.ok) return { ok: false, error: result.payload.error || "oauth-unconfigured" };
-      return { ok: true, url: result.payload.url, provider: result.payload.provider };
+      try {
+        const result = await withTimeout(request(AUTH_API.oauthStart, { method: "POST", body: { provider } }), authTimeoutMs);
+        if (!result.ok) {
+          if (result.status === 501) return { ok: false, error: "oauth-unconfigured" };
+          return { ok: false, error: result.payload.error || "oauth-unconfigured" };
+        }
+        return { ok: true, url: result.payload.url, provider: result.payload.provider };
+      } catch {
+        return { ok: false, error: "oauth-unconfigured" };
+      }
     },
 
     async requestEmailBind(email) {
-      const result = await request(AUTH_API.emailBind, { method: "POST", body: { email } });
-      if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
-      return { ok: true };
+      try {
+        const result = await withTimeout(request(AUTH_API.emailBind, { method: "POST", body: { email } }), authTimeoutMs);
+        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        return { ok: true };
+      } catch {
+        return { ok: false, error: "failed" };
+      }
     }
   };
 }

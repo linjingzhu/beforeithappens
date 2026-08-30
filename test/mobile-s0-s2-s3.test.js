@@ -16,7 +16,7 @@ import {
   S2_ERRORS,
   S3_COPY
 } from "../mobile/s0-s2-s3-copy.js";
-import { AUTH_API, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
+import { AUTH_API, AUTH_FETCH_MS, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
 import { finishHostOpen } from "../mobile/s4-invite/host-mount.js";
 import { SPLASH_MS } from "../mobile/src/copy.js";
 import { finishHostSplash, splashOpenResult } from "../mobile/src/session.js";
@@ -40,6 +40,8 @@ import {
   s3AllowsPackCta,
   s3HasPayment,
   setEmail,
+  socialStartPending,
+  startSocialLogin,
   submitMagicLink
 } from "../mobile/s0-s2-s3-flow.js";
 import {
@@ -363,4 +365,94 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   ]) {
     assert.equal(screenForbidsPackAndInstall(html), true);
   }
+});
+
+function jsonResponse({ ok = true, status = 200, payload = {} } = {}) {
+  return {
+    ok,
+    status,
+    headers: { getSetCookie: () => [], get: () => null },
+    json: async () => payload
+  };
+}
+
+test("signup taps persist with the keyboard open and errors sit under the CTA", async () => {
+  const screens = await readFile("mobile/src/screens.js", "utf8");
+  const app = await readFile("mobile/App.js", "utf8");
+  assert.match(screens, /keyboardShouldPersistTaps="handled"/);
+  assert.match(screens, /KeyboardAvoidingView/);
+  assert.match(screens, /ScrollView/);
+
+  const signup = screens.slice(screens.indexOf("export function SignupScreen"), screens.indexOf("export function EmailBindScreen"));
+  const bind = screens.slice(screens.indexOf("export function EmailBindScreen"), screens.indexOf("export function SentScreen"));
+  assert.match(signup, /keyboardShouldPersistTaps="handled"/);
+  assert.match(bind, /keyboardShouldPersistTaps="handled"/);
+  const ctaAt = signup.indexOf("AUTH_COPY.cta");
+  const errorAt = signup.indexOf("{error ?");
+  const kakaoAt = signup.indexOf("onStartKakao");
+  assert.ok(ctaAt >= 0 && errorAt > ctaAt && kakaoAt > errorAt);
+
+  const html = renderS2SignupScreen({ error: S2_ERRORS["invalid-email"] });
+  const htmlErrorAt = html.indexOf(S2_ERRORS["invalid-email"]);
+  assert.ok(html.indexOf(S2_COPY.cta) < htmlErrorAt);
+  assert.ok(htmlErrorAt < html.indexOf("oauth-kakao"));
+  assert.match(html, /카카오로 시작/);
+  const unconfigured = renderS2SignupScreen({ error: S2_ERRORS["oauth-unconfigured"] });
+  assert.ok(unconfigured.indexOf(S2_ERRORS["oauth-unconfigured"]) < unconfigured.indexOf("oauth-kakao"));
+  assert.match(unconfigured, /카카오로 시작/);
+  assert.match(unconfigured, /이 로그인은 아직 준비 중이에요/);
+
+  const submit = app.slice(app.indexOf("onSubmitEmail"), app.indexOf("onStartKakao"));
+  assert.match(submit, /requestLinkStarted/);
+  assert.ok(submit.indexOf("setState(started)") < submit.indexOf("await sendHostMagicLink"));
+  assert.ok(app.indexOf("setState(pending)") < app.indexOf("await startHostSocial"));
+  assert.match(app, /socialStartPending/);
+});
+
+test("auth start fetches fail fast: hung magic-link and 501 oauth", async () => {
+  assert.ok(AUTH_FETCH_MS >= 2000 && AUTH_FETCH_MS <= 8000);
+
+  const hanging = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: () => new Promise(() => {}),
+    authTimeoutMs: 20
+  });
+  const hungLink = await hanging.requestMagicLink("buyer@example.com");
+  assert.equal(hungLink.ok, false);
+  assert.equal(hungLink.error, "failed");
+  const hungState = await submitMagicLink(
+    requestLinkStarted(setEmail(finishSplash(createNativeFlow()), "buyer@example.com")),
+    hanging
+  );
+  assert.equal(hungState.busy, false);
+  assert.equal(hungState.error, S2_ERRORS.failed);
+  assert.equal(hungState.error, "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+
+  const from501 = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: async () => jsonResponse({
+      ok: false,
+      status: 501,
+      payload: { error: "oauth-unconfigured" }
+    })
+  });
+  const started = await from501.startOAuth("kakao");
+  assert.equal(started.ok, false);
+  assert.equal(started.error, "oauth-unconfigured");
+
+  const empty501 = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: async () => jsonResponse({ ok: false, status: 501, payload: {} })
+  });
+  assert.equal((await empty501.startOAuth("naver")).error, "oauth-unconfigured");
+
+  const pending = socialStartPending(finishSplash(createNativeFlow()));
+  assert.equal(pending.busy, true);
+  const failed = await startSocialLogin(pending, from501, "kakao");
+  assert.equal(failed.busy, false);
+  assert.equal(failed.error, S2_ERRORS["oauth-unconfigured"]);
+  assert.equal(failed.error, "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요.");
+
+  const hungOauth = await startSocialLogin(finishSplash(createNativeFlow()), hanging, "google");
+  assert.equal(hungOauth.error, S2_ERRORS["oauth-unconfigured"]);
 });
