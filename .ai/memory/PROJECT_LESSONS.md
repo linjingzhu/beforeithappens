@@ -10,7 +10,12 @@ Do not copy this file into unrelated projects.
 
 ## Build / Compile Lessons
 
-- None recorded yet.
+### 2026-08-30 — Metro project root is mobile/, not the repo root
+Area: Expo iOS JS bundle / EAS preview
+Evidence: EAS build `ce372f4a` failed with `Unable to resolve module ../../src/auth.js` from `mobile/s4-invite/flow.js`. File exists at repo-root `src/auth.js`; Metro looked for `mobile/src/auth.js`. `npx expo export:embed --eager --platform ios --dev false` succeeded after `mobile/metro.config.js` watchFolders `../src` (599 modules).
+Impact: Native S4 imports of the web auth module break the iOS bundle even when pods/Xcode succeed. Duplicating `src/auth.js` into `mobile/src/` would drift copy.
+Recommended future behavior: Keep shared web modules at repo-root `src/` and extend Metro `watchFolders` (not a full-app copy). Do not watch the entire repo root — that collides with `mobile/src/`.
+Confidence: high
 
 ## UX / Runtime Lessons
 
