@@ -146,15 +146,16 @@ test("invite screen copy matches the locked mock and omits pair codes from share
   assert.match(formatPairCode(code), / /);
 });
 
-test("consume with Q1 draft never lands on the pack list; cold login does", () => {
+test("consume with Q1 draft never lands on the pack list; cold login does", async () => {
   const question = previewQ1Question();
   const choiceId = question.choices[0].id;
-  let state = keepPreviewAnswer(selectPreviewChoice(openPreviewQ1(finishSplash(createNativeFlow())), choiceId));
-  state = consumeSucceeded(state, {
+  const loggedIn = {
     user: { id: "usr_1", email: "buyer@example.com" },
     notice: "no-local-draft",
     workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
-  });
+  };
+  let state = keepPreviewAnswer(selectPreviewChoice(openPreviewQ1(finishSplash(createNativeFlow())), choiceId));
+  state = consumeSucceeded(state, loggedIn);
   assert.equal(resolveNativeScreen(state), "preview-q1");
   assert.notEqual(state.screen, "pack-list");
   assert.notEqual(state.screen, "notice");
@@ -163,14 +164,38 @@ test("consume with Q1 draft never lands on the pack list; cold login does", () =
   const gate = renderS2SignupScreen();
   assert.equal(gate.includes("이 기기 임시 답은 이어지지 않아요"), false);
 
-  const cold = noticeAcknowledged(consumeSucceeded(finishSplash(createNativeFlow()), {
-    user: { id: "usr_2", email: "buyer@example.com" },
-    notice: "no-local-draft",
+  const consumeNoDraft = consumeSucceeded(finishSplash(createNativeFlow()), loggedIn);
+  assert.equal(consumeNoDraft.screen, "notice");
+  assert.notEqual(consumeNoDraft.screen, "pack-list");
+  const consumeBare = consumeSucceeded(finishSplash(createNativeFlow()), {
+    user: { id: "usr_3", email: "buyer@example.com" },
+    notice: null,
     workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
-  }), { user: { id: "usr_2", email: "buyer@example.com" }, notice: null, workspace: { id: "ws_1", role: "buyer", acceptedPartner: false } });
+  });
+  assert.notEqual(consumeBare.screen, "pack-list");
+
+  const cold = await restoreSessionAfterSplash(
+    createNativeFlow({ user: { id: "usr_2", email: "buyer@example.com" }, notice: null, workspace: { acceptedPartner: false } }),
+    { session: async () => ({ user: { id: "usr_2", email: "buyer@example.com" }, notice: null, workspace: { acceptedPartner: false } }) }
+  );
   assert.equal(cold.screen, "pack-list");
+  assert.equal(renderPackListScreen().includes("프로필"), false);
   const opened = openMarriageFromList(cold);
   assert.equal(opened.screen, "cover");
+
+  const savedDraft = { questionId: "home-01", choiceId, open: false, keepAnswer: false, saved: true };
+  const afterInviteSession = await restoreSessionAfterSplash(
+    createNativeFlow(loggedIn, { draft: savedDraft, inviteOpen: true }),
+    { session: async () => ({ ...loggedIn, notice: null }) }
+  );
+  assert.equal(afterInviteSession.screen, "pack-list");
+
+  const inFlightRestore = await restoreSessionAfterSplash(
+    createNativeFlow(loggedIn, { draft: { questionId: "home-01", choiceId, open: true, keepAnswer: true, saved: false } }),
+    { session: async () => loggedIn }
+  );
+  assert.equal(inFlightRestore.screen, "preview-q1");
+  assert.notEqual(inFlightRestore.screen, "pack-list");
 });
 
 test("HTTP pair-code generate, connect, share URL, and preview Q1 save", async () => {
@@ -251,4 +276,17 @@ test("Expo screens keep pack-list and invite and do not add profile or prices", 
     { session: async () => ({ user: { id: "u", email: "a@b.com" }, notice: null, workspace: { acceptedPartner: false } }) }
   );
   assert.equal(restored.screen, "pack-list");
+  const swiftHost = await readFile("mobile/LoveMeS0S2S3Host.swift", "utf8");
+  const kotlinHost = await readFile("mobile/LoveMeS0S2S3Host.kt", "utf8");
+  const packScreens = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
+  const consumeSwift = swiftHost.slice(swiftHost.indexOf("func openMagicLink"), swiftHost.indexOf("private func requestBind"));
+  const consumeKotlin = kotlinHost.slice(kotlinHost.indexOf("fun openMagicLink"));
+  assert.match(packScreens, /질문집/);
+  assert.match(packScreens, /wantsLoginGate/);
+  assert.match(swiftHost, /wantsLoginGate \? \.signup/);
+  assert.equal(consumeSwift.includes("packList"), false);
+  assert.equal(consumeKotlin.includes("PackList"), false);
+  assert.equal(`${packScreens}\n${screens}`.includes("프로필"), false);
+  assert.equal(`${packScreens}\n${screens}`.includes("29,000"), false);
+  assert.equal(`${packScreens}\n${screens}`.includes("선물"), false);
 });

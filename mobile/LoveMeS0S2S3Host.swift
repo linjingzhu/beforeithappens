@@ -90,7 +90,7 @@ struct LoveMeS0S2S3Host: View {
                     screen = .packList
                 }
             } else if LoveMePreviewDraft.isInFlight {
-                screen = UserDefaults.standard.string(forKey: LoveMePreviewDraft.key)?.contains("keepAnswer") == true ? .signup : .previewQ1
+                screen = LoveMePreviewDraft.wantsLoginGate ? .signup : .previewQ1
             } else {
                 screen = .cover
             }
@@ -122,7 +122,13 @@ struct LoveMeS0S2S3Host: View {
                 if let user = session["user"] as? [String: Any] {
                     email = user["email"] as? String ?? email
                 }
-                screen = LoveMePreviewDraft.isInFlight ? .previewQ1 : .notice
+                if LoveMePreviewDraft.isInFlight {
+                    screen = .previewQ1
+                } else if (session["notice"] as? String)?.isEmpty == false {
+                    screen = .notice
+                } else {
+                    screen = .cover
+                }
             } catch LoveMeAuthError.expired {
                 error = "로그인 링크가 만료되었어요. 다시 요청해 주세요."
                 screen = .signup

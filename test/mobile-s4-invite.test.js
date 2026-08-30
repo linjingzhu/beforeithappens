@@ -293,10 +293,12 @@ test("stable host mounts S4 on invite-partner and same-session invite open", asy
   let state = finishSplash(createNativeFlow());
   state = consumeSucceeded(state, {
     user: { id: "usr_1", email: "buyer@example.com" },
-    notice: null,
+    notice: "no-local-draft",
     workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
   });
-  state = noticeAcknowledged(state, state.session);
+  assert.notEqual(state.screen, "pack-list");
+  state = noticeAcknowledged(state, { ...state.session, notice: null });
+  assert.equal(state.screen, "pack-list");
   state = openS4FromWorkspace(state);
   assert.equal(state.screen, APP_S4_SCREEN);
   assert.equal(state.action, "invite-partner");

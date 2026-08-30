@@ -94,6 +94,13 @@ Impact: Session lands in the app; preview Q1 draft can resume.
 Recommended future behavior: Keep login mail on the custom scheme. Do not put pair codes in share URLs. Do not add AASA on onrender.com for this slice.
 Confidence: high
 
+### 2026-08-30 — 질문집 pack-list is cold home, never consume landing or profile
+Area: iOS measurement routing
+Evidence: Designer/CPO lock: consume resumes in-progress Q1 then invite after save; the next cold logged-in open (no in-flight Q1/invite) is `질문집`. Profile sheet is a later wave.
+Impact: Treating pack-list as the consume destination drops the Q1 draft. Treating it as a profile sheet pulls prices/gifts/100-q into this slice.
+Recommended future behavior: Keep consume off `pack-list`. Persist invite as session-only. Do not add a profile sheet, prices, 100-q content, or gift codes here.
+Confidence: high
+
 ## Recording rule
 
 Add only concise, evidence-backed facts such as:

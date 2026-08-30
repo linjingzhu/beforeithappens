@@ -109,12 +109,23 @@ enum LoveMePreviewDraft {
     static let key = "loveme.preview-q1.v1"
 
     static func loadChoiceId() -> String {
-        UserDefaults.standard.string(forKey: key) ?? ""
+        let raw = UserDefaults.standard.string(forKey: key) ?? ""
+        if let data = raw.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let choiceId = obj["choiceId"] as? String {
+            return choiceId
+        }
+        return raw.hasPrefix("home-") ? raw : ""
     }
 
     static func save(choiceId: String, open: Bool, keepAnswer: Bool, saved: Bool) {
         let payload = "{\"choiceId\":\"\(choiceId)\",\"open\":\(open),\"keepAnswer\":\(keepAnswer),\"saved\":\(saved)}"
         UserDefaults.standard.set(payload, forKey: key)
+    }
+
+    static var wantsLoginGate: Bool {
+        let raw = UserDefaults.standard.string(forKey: key) ?? ""
+        return raw.contains("\"keepAnswer\":true")
     }
 
     static var isInFlight: Bool {

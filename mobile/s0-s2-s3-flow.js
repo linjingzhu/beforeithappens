@@ -128,16 +128,17 @@ export function requestLinkFailed(state, error = "failed") {
 
 export function consumeSucceeded(state, session, storage) {
   const draft = state.previewQ1 || emptyPreviewDraft();
+  const nextSession = session || emptyNativeSession();
   const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId) && !draft.saved);
   return persistDraft(applyScreen({
     ...state,
     busy: false,
     error: "",
     sentEmail: "",
-    coverOpen: false,
+    coverOpen: !hasPreview && !nextSession.notice,
     inviteOpen: false,
     noticeDismissed: hasPreview,
-    session: session || emptyNativeSession(),
+    session: nextSession,
     previewQ1: {
       questionId: PREVIEW_Q1_ID,
       choiceId: draft.choiceId || "",
