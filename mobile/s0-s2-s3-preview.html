@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LoveMe S0 · S2 · S3</title>
+  <link rel="stylesheet" href="./s0-s2-s3-preview.css">
+</head>
+<body>
+  <div id="app" class="preview-frame"></div>
+  <script type="module">
+    import { renderNativeScreen } from "./s0-s2-s3-screens.js";
+    import {
+      acknowledgeLoginNotice,
+      backToSignup,
+      consumeOpenedLink,
+      consumeSucceeded,
+      createNativeFlow,
+      finishSplash,
+      invitePartner,
+      noticeAcknowledged,
+      restoreSessionAfterSplash,
+      setEmail,
+      submitMagicLink
+    } from "./s0-s2-s3-flow.js";
+    import { createAuthApi } from "./s0-s2-s3-api.js";
+
+    const params = new URLSearchParams(location.search);
+    const start = params.get("screen") || "";
+    const demo = params.get("demo") === "1" || params.get("demo") === "true" || Boolean(start);
+    let state = createNativeFlow();
+    if (start === "signup") state = finishSplash(state);
+    if (start === "sent") state = { ...finishSplash(state), sentEmail: "buyer@example.com", email: "buyer@example.com", screen: "sent" };
+    if (start === "notice") {
+      state = consumeSucceeded(finishSplash(state), {
+        user: { id: "usr_demo", email: "buyer@example.com" },
+        notice: "no-local-draft",
+        workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
+      });
+    }
+    if (start === "workspace") {
+      state = noticeAcknowledged(consumeSucceeded(finishSplash(state), {
+        user: { id: "usr_demo", email: "buyer@example.com" },
+        notice: "no-local-draft",
+        workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
+      }), { user: { id: "usr_demo", email: "buyer@example.com" }, notice: null, workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false } });
+    }
+
+    const api = createAuthApi({ origin: "" });
+    const root = document.getElementById("app");
+
+    function syncUrl() {
+      const next = new URL(location.href);
+      next.searchParams.set("screen", state.screen);
+      history.replaceState({ screen: state.screen }, "", `${next.pathname}${next.search}`);
+    }
+
+    function paint() {
+      root.innerHTML = renderNativeScreen(state);
+      if (state.action === "invite-partner") {
+        root.insertAdjacentHTML("beforeend", `<p class="invite-toast" role="status">S4에서 파트너를 초대해요.</p>`);
+      }
+      syncUrl();
+    }
+
+    root.addEventListener("submit", async (event) => {
+      if (!event.target.matches("[data-s2-form]")) return;
+      event.preventDefault();
+      const email = new FormData(event.target).get("email");
+      state = setEmail(state, email);
+      state = demo
+        ? { ...state, sentEmail: state.email, screen: "sent", error: "", busy: false }
+        : await submitMagicLink(state, api);
+      paint();
+    });
+
+    root.addEventListener("click", async (event) => {
+      const action = event.target.closest("[data-action]")?.dataset.action;
+      if (!action) return;
+      if (action === "back-to-signup") state = backToSignup(state);
+      else if (action === "ack-notice") {
+        state = demo
+          ? noticeAcknowledged(state, { ...state.session, notice: null })
+          : await acknowledgeLoginNotice(state, api);
+      } else if (action === "invite-partner") state = invitePartner(state);
+      else return;
+      paint();
+    });
+
+    if (!start && location.search.includes("token=")) {
+      consumeOpenedLink(finishSplash(state), api, location.href).then((next) => {
+        state = next;
+        paint();
+      });
+    } else if (!start) {
+      paint();
+      window.setTimeout(async () => {
+        if (state.screen === "splash") {
+          state = await restoreSessionAfterSplash(state, api);
+          paint();
+        }
+      }, 1200);
+    } else {
+      paint();
+    }
+  </script>
+</body>
+</html>

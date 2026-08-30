@@ -25,6 +25,13 @@ Impact: Email-typo resend expired the old token but buyer home could still show 
 Recommended future behavior: Break invite recency ties by last-sent time, then by insertion order.
 Confidence: high
 
+### 2026-08-29 — Native cookie jar must ignore empty Set-Cookie
+Area: mobile auth client
+Evidence: `createAuthApi` treated an empty `getSetCookie()` array as a new cookie and cleared `ab_session` after `ack-notice`.
+Impact: Session restore after splash returned a signed-out signup screen.
+Recommended future behavior: Persist cookies only when a response actually includes `Set-Cookie`.
+Confidence: high
+
 ## Strategy Observations
 
 ### 2026-08-23 — Magic-link delivery must fail closed
