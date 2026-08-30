@@ -200,9 +200,9 @@ body {
 
 .loveme-cover-brand {
   margin: 0;
-  color: var(--coral);
+  color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 500;
 }
 
