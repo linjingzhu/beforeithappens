@@ -73,13 +73,18 @@ struct PackRootView: View {
     @ObservedObject var model: PackViewModel
 
     var body: some View {
-        switch model.screen {
-        case .ready, .locked, .signedOut:
-            PackReadyView(model: model)
-        case .question:
-            PackQuestionView(model: model)
-        case .reveal:
-            PackRevealView(model: model)
+        ZStack {
+            switch model.screen {
+            case .ready, .locked, .signedOut:
+                PackReadyView(model: model)
+            case .question:
+                PackQuestionView(model: model)
+            case .reveal:
+                PackRevealView(model: model)
+            }
+            if model.showsRemainingGate {
+                RemainingPackGateHost(model: model)
+            }
         }
     }
 }

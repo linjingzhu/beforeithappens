@@ -120,11 +120,12 @@ Private notes are excluded from partner APIs, administrator tools, PDFs, and sha
 
 - The invited partner is free.
 - The pack opens only after the partner accepts the invite.
-- Payment and the 100-question lifecycle line are out of this slice.
+- After the third sample public lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. The invited partner pays nothing.
+- Payment card-form, subscriptions, and the 100-question lifecycle line are out of this slice.
 
 ## Commercial contract
 
-One 29,000 KRW purchase later grants one immutable pack version to one two-person couple workspace. The invited partner pays nothing. Payment entitlement is granted only after a verified, idempotent server webhook. This foundation slice does not collect payment and does not open the pack from payment state.
+One 29,000 KRW purchase grants one immutable pack version to one two-person couple workspace. The invited partner pays nothing. Payment entitlement is granted only after a verified, idempotent server webhook. Sample questions 1–3 stay open after partner accept. The remaining pack stays locked until buyer entitlement exists.
 
 ## Explicit non-goals
 

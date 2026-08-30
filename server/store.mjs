@@ -15,7 +15,10 @@ export function emptyState() {
     privateNotes: [],
     agreements: [],
     publicLocks: [],
-    progress: []
+    progress: [],
+    purchases: [],
+    entitlements: [],
+    webhookEvents: []
   };
 }
 

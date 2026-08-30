@@ -1,6 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { hasAcceptedPartner } from "./auth.mjs";
+import { isEntitled } from "./entitlement.mjs";
 import { comparisonFor, createInitialState } from "../src/state.js";
+
+export const SAMPLE_LOCK_COUNT = 3;
 
 function createId(prefix, bytes = 16) {
   return `${prefix}_${randomBytes(bytes).toString("hex")}`;
@@ -53,8 +56,35 @@ function lockFor(state, workspaceId, questionId, roundNumber) {
   return state.publicLocks.find((row) => row.workspaceId === workspaceId && row.questionId === questionId && row.roundNumber === roundNumber) || null;
 }
 
-export function createAnswers({ store, now = Date.now, questionIds = [], choiceIdsByQuestion = {}, pack = {} } = {}) {
+export function createAnswers({ store, now = Date.now, questionIds = [], choiceIdsByQuestion = {}, pack = {}, entitlement } = {}) {
   if (!store) throw new Error("store is required");
+  const sampleQuestionIds = questionIds.slice(0, SAMPLE_LOCK_COUNT);
+
+  function workspaceEntitled(workspaceId) {
+    if (entitlement?.isEntitled) return entitlement.isEntitled(workspaceId);
+    return isEntitled(store.snapshot(), workspaceId);
+  }
+
+  function lockedSampleCount(state, workspaceId) {
+    const locked = new Set(
+      state.publicLocks
+        .filter((row) => row.workspaceId === workspaceId && sampleQuestionIds.includes(row.questionId))
+        .map((row) => row.questionId)
+    );
+    return locked.size;
+  }
+
+  function remainingQuestionLocked(workspaceId, questionId) {
+    if (!questionId || sampleQuestionIds.includes(questionId)) return false;
+    return !workspaceEntitled(workspaceId);
+  }
+
+  function requireRemainingAccess(access, questionId) {
+    if (remainingQuestionLocked(access.workspaceId, questionId)) {
+      return { ok: false, error: "paywall" };
+    }
+    return { ok: true };
+  }
 
   function requirePaired(sessionId) {
     const session = store.snapshot().sessions.find((item) => item.id === sessionId);
@@ -214,7 +244,8 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
     const snapshot = store.snapshot();
     const projected = createInitialState(questionIds, pack);
     const progress = snapshot.progress.find((row) => row.workspaceId === access.workspaceId && row.userId === access.user.id);
-    projected.index = Number.isInteger(progress?.index) && progress.index >= 0 && progress.index < questionIds.length ? progress.index : 0;
+    const maxOpen = workspaceEntitled(access.workspaceId) ? questionIds.length - 1 : Math.max(0, sampleQuestionIds.length - 1);
+    projected.index = Number.isInteger(progress?.index) && progress.index >= 0 && progress.index <= maxOpen ? progress.index : 0;
     projected.activeRole = access.role;
     for (const questionId of questionIds) {
       const roundNumber = currentRoundNumber(snapshot, access.workspaceId, questionId);
@@ -269,11 +300,25 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
         };
       }
     }
+    const entitled = workspaceEntitled(access.workspaceId);
+    const sampleLockCount = lockedSampleCount(snapshot, access.workspaceId);
+    projected.entitlement = {
+      entitled,
+      role: access.membership.role === "partner" ? "partner" : "buyer",
+      canPurchase: access.membership.role !== "partner" && !entitled,
+      amount: 29000,
+      currency: "KRW"
+    };
+    projected.sampleLockCount = sampleLockCount;
+    projected.paywallRequired = sampleLockCount >= SAMPLE_LOCK_COUNT && !entitled;
+    projected.remainingLocked = !entitled;
+    if (projected.paywallRequired) projected.index = SAMPLE_LOCK_COUNT - 1;
     return projected;
   }
 
   function saveProgress(workspaceId, userId, index) {
-    if (!Number.isInteger(index) || index < 0 || index >= questionIds.length) return;
+    const maxOpen = workspaceEntitled(workspaceId) ? questionIds.length - 1 : Math.max(0, sampleQuestionIds.length - 1);
+    if (!Number.isInteger(index) || index < 0 || index > maxOpen) return;
     store.mutate((state) => {
       const row = state.progress.find((item) => item.workspaceId === workspaceId && item.userId === userId);
       if (row) row.index = index;
@@ -292,6 +337,8 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
       const access = requirePaired(sessionId);
       if (!access.ok) return access;
       if (!questionIds.includes(questionId)) return { ok: false, error: "invalid-question" };
+      const remaining = requireRemainingAccess(access, questionId);
+      if (!remaining.ok) return remaining;
       let snapshot = store.snapshot();
       let roundNumber = currentRoundNumber(snapshot, access.workspaceId, questionId);
       const lock = latestLock(snapshot, access.workspaceId, questionId);
@@ -334,6 +381,8 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
       const access = requirePaired(sessionId);
       if (!access.ok) return access;
       if (!questionIds.includes(questionId)) return { ok: false, error: "invalid-question" };
+      const remaining = requireRemainingAccess(access, questionId);
+      if (!remaining.ok) return remaining;
       const snapshot = store.snapshot();
       const roundNumber = currentRoundNumber(snapshot, access.workspaceId, questionId);
       if (lockFor(snapshot, access.workspaceId, questionId, roundNumber)) {
@@ -363,6 +412,8 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
       const access = requirePaired(sessionId);
       if (!access.ok) return access;
       if (!questionIds.includes(questionId)) return { ok: false, error: "invalid-question" };
+      const remaining = requireRemainingAccess(access, questionId);
+      if (!remaining.ok) return remaining;
       const snapshot = store.snapshot();
       const lock = latestLock(snapshot, access.workspaceId, questionId);
       if (!lock) return { ok: false, error: "not-revealed" };

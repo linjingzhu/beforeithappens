@@ -27,7 +27,7 @@ UI:
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
-- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, and immutable `PublicLock` snapshots. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
+- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, immutable `PublicLock` snapshots, `Purchase`, `Entitlement`, and webhook event IDs. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. After the third sample public lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
 
 Tests:
 - Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
@@ -56,10 +56,12 @@ Targeted tests:
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
-- `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`).
+- `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`).
+- `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
 - `server/auth.mjs` — User session, 10-minute magic links, forced logout
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
-- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock
+- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
+- `server/entitlement.mjs` — one 29,000 KRW purchase, partner free, webhook-idempotent grant
 - `src/development.js` — development stage and history dashboard data
 - `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
 - `src/styles.css` — responsive product UI

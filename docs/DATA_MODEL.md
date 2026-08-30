@@ -12,7 +12,7 @@
 | `PackVersion` | Immutable published content snapshot |
 | `Section` / `Question` / `Choice` | Ordered question content |
 | `ComparisonRule` | Explicit choice-pair interpretation matrix |
-| `Purchase` / `Entitlement` | Payment record and pack access (not opened in the foundation slice) |
+| `Purchase` / `Entitlement` | One 29,000 KRW paid order and pack access for the remaining questions after the sample locks |
 | `AnswerRound` | One reveal lifecycle for one question |
 | `Answer` | One member's draft or submitted selection |
 | `PrivateNote` | Author-only note stored separately from shared content |
@@ -52,8 +52,8 @@ The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace
 - `(workspaceId, questionId, roundNumber, userId)` is unique on `AnswerRound` / `Answer`.
 - A `PublicLock` is an immutable snapshot. Re-answer creates a new private `AnswerRound` and never mutates or reopens the same lock.
 - Published pack versions and their children are immutable.
-- The invited partner is free. The pack opens only after the partner accepts the invite. Payment and the 100-question lifecycle line are out of this slice.
-- Payment entities do not grant pack access in this slice. A workspace with no accepted partner is a ghost workspace and must not unlock the pack.
+- The invited partner is free. Sample questions open only after the partner accepts the invite. Remaining questions require a buyer entitlement. The 100-question lifecycle line is out of this slice.
+- A workspace with no accepted partner is a ghost workspace and must not unlock the pack or accept payment.
 - Payment order IDs and webhook event IDs are unique.
 - Private notes have a separate authorization path and never join report queries.
 - Database timestamps use UTC; presentation uses the user's locale.
