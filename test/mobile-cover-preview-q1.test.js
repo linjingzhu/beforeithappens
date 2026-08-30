@@ -29,7 +29,7 @@ test("cover copy and login-gate copy are designer-locked", () => {
   assert.equal(COVER_COPY.title, "두 사람의 결혼 준비, 한곳에");
   assert.equal(COVER_COPY.line1, "질문은 나만 먼저 답해요.");
   assert.equal(COVER_COPY.line2, "비교는 둘이 낸 뒤에만 열려요.");
-  assert.equal(COVER_COPY.cta, "미리 한 질문 보기");
+  assert.equal(COVER_COPY.cta, "미리 질문 하나 보기");
   assert.equal(S2_KEEP_COPY.title, "이 답을 남기려면 로그인해 주세요");
   assert.equal(S2_KEEP_COPY.body, S2_COPY.body);
   assert.equal(coverHasInvite(), false);
@@ -44,7 +44,9 @@ test("splash opens the workbook cover, not signup", () => {
   assert.match(cover, /두 사람의 결혼 준비, 한곳에/);
   assert.match(cover, /질문은 나만 먼저 답해요\./);
   assert.match(cover, /비교는 둘이 낸 뒤에만 열려요\./);
-  assert.match(cover, /미리 한 질문 보기/);
+  assert.match(cover, /미리 질문 하나 보기/);
+  assert.match(cover, /loveme-cover-brand/);
+  assert.match(cover, /loveme-cover-line/);
   assert.match(cover, /notebook/);
   assert.equal(cover.includes("파트너 초대"), false);
   assert.equal(cover.includes("로그인 링크 보내기"), false);
@@ -92,7 +94,7 @@ test("keeping Q1 opens the login gate, not the cover", () => {
   assert.equal(gate.includes("카카오로 시작"), false);
   assert.equal(gate.includes("네이버로 시작"), false);
   assert.equal(gate.includes("Google로 시작"), false);
-  assert.equal(gate.includes("미리 한 질문 보기"), false);
+  assert.equal(gate.includes("미리 질문 하나 보기"), false);
   assert.equal(gate.includes("질문은 나만 먼저 답해요"), false);
 });
 
@@ -134,6 +136,7 @@ test("Q1 draft persists across leave and returns after consume", () => {
 
 test("Expo cover and login gate do not add home, profile, gifts, or social", async () => {
   const screens = await readFile("mobile/src/screens.js", "utf8");
+  const css = await readFile("mobile/s0-s2-s3-preview.css", "utf8");
   const cover = screens.slice(screens.indexOf("export function CoverScreen"), screens.indexOf("export function PreviewQ1Screen"));
   const signup = screens.slice(screens.indexOf("export function SignupScreen"), screens.indexOf("export function EmailBindScreen"));
   assert.match(cover, /COVER_COPY\.line1/);
@@ -145,4 +148,7 @@ test("Expo cover and login gate do not add home, profile, gifts, or social", asy
   assert.equal(signup.includes("signup-kakao"), false);
   assert.equal(screens.includes("프로필"), false);
   assert.equal(screens.includes("선물"), false);
+  assert.match(css, /\.loveme-cover-brand/);
+  assert.match(css, /\.loveme-cover-line/);
+  assert.equal(css.includes(".loveme-cover > p"), false);
 });

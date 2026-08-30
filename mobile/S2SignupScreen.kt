@@ -43,7 +43,7 @@ object LoveMeS2Copy {
     const val coverTitle = "두 사람의 결혼 준비, 한곳에"
     const val coverLine1 = "질문은 나만 먼저 답해요."
     const val coverLine2 = "비교는 둘이 낸 뒤에만 열려요."
-    const val coverCta = "미리 한 질문 보기"
+    const val coverCta = "미리 질문 하나 보기"
     const val keepTitle = "이 답을 남기려면 로그인해 주세요"
     const val bindTitle = "이메일을 연결해 주세요."
     const val bindCta = "이메일 연결하기"

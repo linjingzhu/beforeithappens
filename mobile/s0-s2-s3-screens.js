@@ -100,8 +100,8 @@ export function renderCoverScreen() {
           <span class="loveme-ribbon"></span>
         </div>
       </article>
-      <p>${escapeHtml(COVER_COPY.line1)}</p>
-      <p>${escapeHtml(COVER_COPY.line2)}</p>
+      <p class="loveme-cover-line">${escapeHtml(COVER_COPY.line1)}</p>
+      <p class="loveme-cover-line">${escapeHtml(COVER_COPY.line2)}</p>
       <button class="loveme-primary loveme-cover-cta" type="button" data-action="preview-q1">${escapeHtml(COVER_COPY.cta)}</button>
     </section>
   `;

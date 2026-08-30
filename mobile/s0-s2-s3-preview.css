@@ -201,13 +201,16 @@ body {
 .loveme-cover-brand {
   margin: 0;
   color: var(--coral);
-  font: 500 28px Georgia, "Times New Roman", serif;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  font-weight: 500;
 }
 
 .loveme-heart {
   margin: 8px 0 18px;
   color: var(--coral);
   font-size: 18px;
+  line-height: 1;
 }
 
 .loveme-cover h1 {
@@ -216,7 +219,7 @@ body {
   font: 500 26px/1.35 Georgia, "Times New Roman", serif;
 }
 
-.loveme-cover > p {
+.loveme-cover-line {
   margin: 0;
   color: var(--ink);
   font-size: 16px;
