@@ -30,6 +30,7 @@ Signed-out `/`. Primary action: request a login link.
 | Social start | 카카오로 시작 / 네이버로 시작 / Google로 시작 |
 | Missing email title | 이메일을 연결해 주세요. |
 | Missing email CTA | 이메일 연결하기 |
+| Provider not configured | 이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요. |
 | Immediately after login | 이 기기 임시 답은 이어지지 않아요. |
 | Next to logout only | 로그아웃 후 이 기기를 넘겨주세요. |
 

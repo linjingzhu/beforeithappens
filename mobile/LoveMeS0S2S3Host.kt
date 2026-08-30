@@ -38,7 +38,7 @@ fun LoveMeS0S2S3Host(
             if (status == 200 && !url.isNullOrEmpty()) {
                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
             } else {
-                error = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+                error = LoveMeS2Copy.oauthUnconfigured
             }
             busy = false
         }

@@ -2,7 +2,9 @@
 
 ## Result
 
-S2 keeps the exact magic-link copy and adds Kakao/Naver/Google start buttons on web, Expo, iOS, and Android. Missing-email accounts must bind email before invite accept. S4 KakaoTalk share stays `카카오톡`.
+NOT SHIPPABLE. Do not merge. Preview iOS build stays on `stable` without this PR.
+
+S2 keeps the exact magic-link copy and adds Kakao/Naver/Google start buttons on web, Expo, iOS, and Android. Missing-email accounts must bind email before invite accept. S4 KakaoTalk share stays `카카오톡`. Provider callbacks stay stubbed.
 
 ## Verified
 

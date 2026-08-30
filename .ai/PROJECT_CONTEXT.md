@@ -59,7 +59,7 @@ Targeted tests:
 - `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`).
 - `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
 - `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
-- `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed until secrets are wired (`AB_DEV_OAUTH=1` for local complete).
+- `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed. The S2 social pack is not shippable; preview iOS stays on `stable`.
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
 - `server/entitlement.mjs` — one 29,000 KRW purchase, partner free, webhook-idempotent grant

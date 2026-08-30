@@ -17,19 +17,20 @@ export const AUTH_ERRORS = {
   "invalid-provider": "지원하지 않는 로그인이에요."
 };
 
-export const SOCIAL_COPY = {
+export const SOCIAL_COPY = Object.freeze({
   kakao: "카카오로 시작",
   naver: "네이버로 시작",
   google: "Google로 시작",
-  divider: "또는"
-};
+  divider: "또는",
+  oauthUnconfigured: "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+});
 
-export const EMAIL_BIND_COPY = {
+export const EMAIL_BIND_COPY = Object.freeze({
   title: "이메일을 연결해 주세요.",
   cta: "이메일 연결하기",
   body: "초대를 수락하려면 이메일을 연결해야 해요.",
   emailLabel: "이메일"
-};
+});
 
 export const SOCIAL_PROVIDERS = ["kakao", "naver", "google"];
 

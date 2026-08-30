@@ -51,6 +51,8 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(ux, /네이버로 시작/);
   assert.match(ux, /Google로 시작/);
   assert.match(ux, /이메일을 연결해 주세요/);
+  assert.match(ux, /이 로그인은 아직 준비 중이에요\. 이메일 링크로 시작해 주세요/);
+  assert.match(spec, /이 로그인은 아직 준비 중이에요\. 이메일 링크로 시작해 주세요/);
   assert.match(spec, /native join screen or universal links/);
   assert.match(spec, /앱에서 보면 초대와 알림이 더 쉬워요/);
   assert.match(spec, /앱을 설치하면 시작할 수 있어요/);

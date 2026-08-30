@@ -1,14 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, resolveInviteAcceptError, userNeedsEmail } from "../src/auth.js";
+import { readFile } from "node:fs/promises";
+import { AUTH_COPY, AUTH_ERRORS, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, resolveInviteAcceptError, userNeedsEmail } from "../src/auth.js";
 import { renderInviteAccept, renderOnboarding } from "../src/auth-ui.js";
 import { createAuth } from "../server/auth.mjs";
 import { isOAuthConfigured, oauthAuthorizeUrl, oauthEnvFlags } from "../server/oauth.mjs";
 import { createMemoryStore } from "../server/store.mjs";
 import { createCouple } from "../server/workspace.mjs";
-import { consumeSucceeded, createNativeFlow, finishSplash, resolveNativeScreen } from "../mobile/s0-s2-s3-flow.js";
+import { consumeSucceeded, createNativeFlow, finishSplash, oauthStartFailed, resolveNativeScreen } from "../mobile/s0-s2-s3-flow.js";
 import { renderNativeScreen } from "../mobile/s0-s2-s3-screens.js";
-import { S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY } from "../mobile/s0-s2-s3-copy.js";
+import { assertLockedS2SocialCopy, S2_COPY, S2_EMAIL_BIND_COPY, S2_ERRORS, S2_SOCIAL_COPY } from "../mobile/s0-s2-s3-copy.js";
 import { S4_COPY } from "../mobile/s4-invite/copy.js";
 
 function system() {
@@ -22,13 +23,21 @@ function system() {
   return { auth, couple, store };
 }
 
-test("S2 social copy is start, not S4 KakaoTalk share, and keeps magic-link copy", () => {
+test("S2 social copy is locked and is not S4 KakaoTalk share", async () => {
+  assert.equal(assertLockedS2SocialCopy(), true);
   assert.equal(SOCIAL_COPY.kakao, "카카오로 시작");
-  assert.equal(SOCIAL_COPY.naver, "네이버로 시작");
-  assert.equal(SOCIAL_COPY.google, "Google로 시작");
-  assert.equal(S2_SOCIAL_COPY.kakao, SOCIAL_COPY.kakao);
+  assert.equal(SOCIAL_COPY.oauthUnconfigured, "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요.");
+  assert.equal(AUTH_ERRORS["oauth-unconfigured"], SOCIAL_COPY.oauthUnconfigured);
+  assert.equal(S2_ERRORS["oauth-unconfigured"], S2_SOCIAL_COPY.oauthUnconfigured);
+  assert.equal(EMAIL_BIND_COPY.title, "이메일을 연결해 주세요.");
+  assert.equal(EMAIL_BIND_COPY.cta, "이메일 연결하기");
+  assert.equal(S2_EMAIL_BIND_COPY.title, EMAIL_BIND_COPY.title);
+  assert.equal(S2_EMAIL_BIND_COPY.cta, EMAIL_BIND_COPY.cta);
+  assert.equal(S2_COPY.title, AUTH_COPY.title);
+  assert.equal(S2_COPY.body, AUTH_COPY.body);
+  assert.equal(S2_COPY.cta, AUTH_COPY.cta);
+  assert.equal(S2_COPY.sent, AUTH_COPY.sent);
   assert.equal(S4_COPY.kakao, "카카오톡");
-  assert.equal(S4_COPY.kakao, INVITE_COPY.kakao);
   assert.notEqual(SOCIAL_COPY.kakao, INVITE_COPY.kakao);
   const onboarding = renderOnboarding();
   assert.match(onboarding, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
@@ -36,6 +45,19 @@ test("S2 social copy is start, not S4 KakaoTalk share, and keeps magic-link copy
   assert.match(onboarding, /카카오로 시작/);
   assert.equal(onboarding.includes("카카오톡"), false);
   assert.equal(onboarding.includes("카카오 로그인"), false);
+  const stub = oauthStartFailed(finishSplash(createNativeFlow()));
+  assert.equal(stub.error, S2_SOCIAL_COPY.oauthUnconfigured);
+  const native = [
+    await readFile("mobile/S2SignupScreen.swift", "utf8"),
+    await readFile("mobile/S2SignupScreen.kt", "utf8"),
+    await readFile("mobile/LoveMeS0S2S3Host.swift", "utf8"),
+    await readFile("mobile/LoveMeS0S2S3Host.kt", "utf8")
+  ].join("\n");
+  assert.match(native, /이메일을 연결해 주세요\./);
+  assert.match(native, /이메일 연결하기/);
+  assert.match(native, /이 로그인은 아직 준비 중이에요\. 이메일 링크로 시작해 주세요\./);
+  assert.match(native, /카카오로 시작/);
+  assert.equal(native.includes("카카오톡"), false);
 });
 
 test("OAuth without client ids stays stubbed behind env flags", () => {

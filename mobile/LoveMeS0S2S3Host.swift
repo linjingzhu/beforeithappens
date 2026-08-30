@@ -113,7 +113,7 @@ struct LoveMeS0S2S3Host: View {
                     await MainActor.run { UIApplication.shared.open(url) }
                 }
             } catch {
-                self.error = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+                self.error = LoveMeS2Copy.oauthUnconfigured
             }
             busy = false
         }

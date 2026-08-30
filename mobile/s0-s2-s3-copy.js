@@ -17,19 +17,37 @@ export const S2_COPY = {
   otherEmail: "다른 이메일로 요청"
 };
 
-export const S2_SOCIAL_COPY = {
+export const S2_SOCIAL_COPY = Object.freeze({
   kakao: "카카오로 시작",
   naver: "네이버로 시작",
   google: "Google로 시작",
-  divider: "또는"
-};
+  divider: "또는",
+  oauthUnconfigured: "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+});
 
-export const S2_EMAIL_BIND_COPY = {
+export const S2_EMAIL_BIND_COPY = Object.freeze({
   title: "이메일을 연결해 주세요.",
   cta: "이메일 연결하기",
   body: "초대를 수락하려면 이메일을 연결해야 해요.",
   emailLabel: "이메일"
-};
+});
+
+/** Exact S2 social + bind copy. Do not paraphrase. Kakao login is not S4 카카오톡. */
+export function assertLockedS2SocialCopy() {
+  if (S2_SOCIAL_COPY.kakao !== "카카오로 시작") throw new Error("S2 Kakao start copy drifted");
+  if (S2_SOCIAL_COPY.naver !== "네이버로 시작") throw new Error("S2 Naver start copy drifted");
+  if (S2_SOCIAL_COPY.google !== "Google로 시작") throw new Error("S2 Google start copy drifted");
+  if (S2_SOCIAL_COPY.oauthUnconfigured !== S2_ERRORS["oauth-unconfigured"]) {
+    throw new Error("S2 unconfigured-provider copy drifted");
+  }
+  if (S2_EMAIL_BIND_COPY.title !== "이메일을 연결해 주세요.") throw new Error("S2 email-bind title drifted");
+  if (S2_EMAIL_BIND_COPY.cta !== "이메일 연결하기") throw new Error("S2 email-bind CTA drifted");
+  if (S2_COPY.body !== "비밀번호 없이 이메일로 로그인 링크를 보내드려요.") throw new Error("S2 magic-link body drifted");
+  if (S2_COPY.cta !== "로그인 링크 보내기") throw new Error("S2 magic-link CTA drifted");
+  if (S2_COPY.sent !== "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.") throw new Error("S2 magic-link sent copy drifted");
+  if (S2_SOCIAL_COPY.kakao === "카카오톡") throw new Error("S2 Kakao start collided with S4 KakaoTalk share");
+  return true;
+}
 
 export const S3_COPY = {
   created: "워크스페이스가 만들어졌어요.",

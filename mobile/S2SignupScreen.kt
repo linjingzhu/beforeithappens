@@ -37,6 +37,7 @@ object LoveMeS2Copy {
     const val bindTitle = "이메일을 연결해 주세요."
     const val bindCta = "이메일 연결하기"
     const val bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
+    const val oauthUnconfigured = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
 }
 
 enum class S2SignupPhase { Signup, Sent, Notice, Bind }
