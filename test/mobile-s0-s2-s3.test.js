@@ -382,10 +382,14 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   assert.match(screens, /keyboardShouldPersistTaps="handled"/);
   assert.match(screens, /KeyboardAvoidingView/);
   assert.match(screens, /ScrollView/);
+  assert.match(screens, /\(\{ pressed \}\)/);
+  assert.match(screens, /styles\.pressed/);
 
   const signup = screens.slice(screens.indexOf("export function SignupScreen"), screens.indexOf("export function EmailBindScreen"));
   const bind = screens.slice(screens.indexOf("export function EmailBindScreen"), screens.indexOf("export function SentScreen"));
   assert.match(screens, /function AuthKeyboardShell/);
+  assert.match(signup, /pressableStyle\(styles\.primary/);
+  assert.match(signup, /pressableStyle\(styles\.secondary/);
   assert.match(signup, /<AuthKeyboardShell testID="signup">/);
   assert.match(bind, /<AuthKeyboardShell testID="bind">/);
   const ctaAt = signup.indexOf("AUTH_COPY.cta");
@@ -408,6 +412,40 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   assert.ok(submit.indexOf("setState(started)") < submit.indexOf("await sendHostMagicLink"));
   assert.ok(app.indexOf("setState(pending)") < app.indexOf("await startHostSocial"));
   assert.match(app, /socialStartPending/);
+});
+
+test("502 magic-link failed copy sits under the CTA, not below social buttons", async () => {
+  const from502 = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: async () => jsonResponse({
+      ok: false,
+      status: 502,
+      payload: { ok: false, error: "failed" }
+    })
+  });
+  const result = await from502.requestMagicLink("buyer@example.com");
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "failed");
+
+  const empty502 = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: async () => jsonResponse({ ok: false, status: 502, payload: {} })
+  });
+  assert.equal((await empty502.requestMagicLink("buyer@example.com")).error, "failed");
+
+  const state = await submitMagicLink(
+    requestLinkStarted(setEmail(finishSplash(createNativeFlow()), "buyer@example.com")),
+    from502
+  );
+  assert.equal(state.busy, false);
+  assert.equal(state.error, S2_ERRORS.failed);
+  assert.equal(state.error, "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+
+  const html = renderS2SignupScreen({ error: state.error });
+  const failedAt = html.indexOf(S2_ERRORS.failed);
+  assert.ok(html.indexOf(S2_COPY.cta) < failedAt);
+  assert.ok(failedAt < html.indexOf("oauth-kakao"));
+  assert.match(html, /카카오로 시작/);
 });
 
 test("auth start fetches fail fast: hung magic-link and 501 oauth", async () => {

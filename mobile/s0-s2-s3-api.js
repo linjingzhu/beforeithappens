@@ -86,7 +86,10 @@ export function createAuthApi({
     async requestMagicLink(email) {
       try {
         const result = await withTimeout(request(AUTH_API.magicLink, { method: "POST", body: { email } }), authTimeoutMs);
-        if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+        if (!result.ok) {
+          if (result.status === 502) return { ok: false, error: "failed" };
+          return { ok: false, error: result.payload.error || "failed" };
+        }
         return { ok: true };
       } catch {
         return { ok: false, error: "failed" };

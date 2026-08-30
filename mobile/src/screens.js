@@ -3,6 +3,13 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { AUTH_COPY, LINE, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
+function pressableStyle(...parts) {
+  return ({ pressed }) => {
+    const disabled = parts.includes(styles.disabled);
+    return [...parts, pressed && !disabled ? styles.pressed : null];
+  };
+}
+
 function AuthKeyboardShell({ testID, children }) {
   return (
     <KeyboardAvoidingView
@@ -50,19 +57,19 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
         accessibilityRole="button"
         disabled={busy}
         onPress={() => onSubmitEmail?.(draft)}
-        style={[styles.primary, busy ? styles.disabled : null]}
+        style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
       >
         <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Text style={styles.divider}>{S2_SOCIAL_COPY.divider}</Text>
-      <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={[styles.secondary, busy ? styles.disabled : null]}>
+      <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
         <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.kakao}</Text>
       </Pressable>
-      <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={[styles.secondary, busy ? styles.disabled : null]}>
+      <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
         <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.naver}</Text>
       </Pressable>
-      <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={[styles.secondary, busy ? styles.disabled : null]}>
+      <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
         <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.google}</Text>
       </Pressable>
     </AuthKeyboardShell>
@@ -92,7 +99,7 @@ export function EmailBindScreen({ email = "", error = "", busy = false, onSubmit
         accessibilityRole="button"
         disabled={busy}
         onPress={() => onSubmitEmail?.(draft)}
-        style={[styles.primary, busy ? styles.disabled : null]}
+        style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
       >
         <Text style={styles.primaryLabel}>{S2_EMAIL_BIND_COPY.cta}</Text>
       </Pressable>
@@ -284,5 +291,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4
+  },
+  pressed: {
+    opacity: 0.72
   }
 });
