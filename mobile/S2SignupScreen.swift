@@ -137,7 +137,9 @@ struct S2SignupScreen: View {
 }
 
 struct LoveMePreviewQ1Screen: View {
+    var loggedIn: Bool = false
     var onKeepAnswer: () -> Void = {}
+    var onContinue: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -146,7 +148,7 @@ struct LoveMePreviewQ1Screen: View {
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
             Text("우리에게 집은 어떤 의미에 가장 가까울까요?")
                 .font(.title2.weight(.medium))
-            Button("이 답 남기기", action: onKeepAnswer)
+            Button(loggedIn ? "계속하기" : "이 답 남기기", action: loggedIn ? onContinue : onKeepAnswer)
                 .buttonStyle(LoveMePrimaryButtonStyle())
         }
         .padding(28)

@@ -1,3 +1,5 @@
+export { PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, PAIR_ERRORS } from "../src/pair-code.js";
+
 export const MAGIC_LINK_TTL_MS = 10 * 60 * 1000;
 
 export const S0_COPY = {

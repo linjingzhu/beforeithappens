@@ -1,3 +1,5 @@
+import { consumeAppUrl, inviteAppUrl } from "../src/pair-code.js";
+
 export const LOGIN_MAIL = {
   subject: "로그인 링크",
   text: "비밀번호 없이 로그인하려면 이 링크를 열어 주세요. 링크는 10분 동안만 유효해요."
@@ -6,8 +8,21 @@ export const LOGIN_MAIL = {
 export const DEFAULT_MAIL_FROM = "LoveMe <onboarding@resend.dev>";
 export const RESEND_EMAILS_URL = "https://api.resend.com/emails";
 
-export function consumeUrl(origin, token) {
-  return `${origin}/auth/consume?token=${encodeURIComponent(token)}`;
+export function consumeUrl(_origin, token) {
+  return consumeAppUrl(token);
+}
+
+export function appHopHtml(appUrl) {
+  const href = escapeHtml(appUrl);
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${href}"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><script>location.replace(${JSON.stringify(String(appUrl || ""))})</script></body></html>`;
+}
+
+export function consumeHopHtml(token) {
+  return appHopHtml(consumeAppUrl(token));
+}
+
+export function inviteHopHtml() {
+  return appHopHtml(inviteAppUrl());
 }
 
 function escapeHtml(value) {

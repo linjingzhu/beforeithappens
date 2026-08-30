@@ -357,3 +357,99 @@ body {
   border-color: var(--coral);
   background: var(--soft);
 }
+
+.loveme-pack-list,
+.loveme-invite {
+  align-items: center;
+  text-align: center;
+  padding: 28px 24px 32px;
+}
+
+.loveme-pack-list h1,
+.loveme-invite h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 30px;
+  line-height: 1.35;
+  margin: 20px 0 10px;
+}
+
+.loveme-pack-sub,
+.loveme-invite-sub {
+  color: var(--muted);
+  margin: 0 0 22px;
+}
+
+.loveme-pack-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.loveme-pack-row {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 17px;
+}
+
+.loveme-soon {
+  background: var(--soft);
+  color: var(--coral);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loveme-share-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.loveme-share-row button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--coral);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.loveme-my-code-label {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 28px 0 0;
+}
+
+.loveme-my-code {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  margin: 8px 0;
+}
+
+.loveme-code-copy {
+  border: 0;
+  background: none;
+  color: var(--coral);
+  font-weight: 700;
+}
+
+.loveme-partner-card {
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 20px 0 16px;
+}

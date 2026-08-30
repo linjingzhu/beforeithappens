@@ -35,6 +35,7 @@ The current slice persists `User`, OAuth identities, magic-link tokens, sessions
 
 - A user may have at most one active `CoupleWorkspace`.
 - A workspace may have at most two `CoupleMember` rows: buyer and invited partner.
+- A workspace may hold an in-app pair code. Connecting by pair code attaches the typed user to that couple workspace. Share links are `/invite/open` only and must not include the pair code.
 - Pack access requires two accepted members. A workspace with no accepted partner is a ghost workspace and must not unlock the pack.
 - `Invitation` is email-bound: the accepting user's email must equal the invite email.
 - Invite tokens are single-use and expire after 7 days.

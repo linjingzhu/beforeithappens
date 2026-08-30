@@ -11,6 +11,9 @@ object LoveMeAuthApi {
     const val ackNoticePath = "/api/auth/ack-notice"
     const val oauthStartPath = "/api/auth/oauth/start"
     const val emailBindPath = "/api/auth/email-bind"
+    const val pairCodePath = "/api/pair-code"
+    const val pairConnectPath = "/api/pair-code/connect"
+    const val previewQ1Path = "/api/preview-q1"
     const val magicLinkTtlMs = 10 * 60 * 1000
 
     fun extractMagicLinkToken(url: String): String? {
@@ -50,6 +53,18 @@ class LoveMeAuthClient(
 
     fun requestEmailBind(email: String): Map<String, Any?> {
         return post(LoveMeAuthApi.emailBindPath, """{"email":${jsonString(email)}}""")
+    }
+
+    fun myPairCode(): Map<String, Any?> {
+        return get(LoveMeAuthApi.pairCodePath)
+    }
+
+    fun connectPairCode(code: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.pairConnectPath, """{"code":${jsonString(code)}}""")
+    }
+
+    fun savePreviewQ1(choiceId: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.previewQ1Path, """{"questionId":"home-01","choiceId":${jsonString(choiceId)}}""")
     }
 
     private fun jsonString(value: String): String {

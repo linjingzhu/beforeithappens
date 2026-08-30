@@ -34,11 +34,11 @@ export function isLoggedIn(session) {
 }
 
 export function afterSplashScreen(loggedIn = isLoggedIn()) {
-  return loggedIn ? "session" : "cover";
+  return loggedIn ? "pack-list" : "cover";
 }
 
-export function startHostFlow() {
-  return createNativeFlow(undefined, { draft: readPreviewDraft() });
+export function startHostFlow(storage) {
+  return createNativeFlow(undefined, { draft: readPreviewDraft(storage) });
 }
 
 export function splashOpenResult(opened, next) {
@@ -58,8 +58,8 @@ export async function sendHostMagicLink(state, api = createHostApi()) {
   return submitMagicLink(state, api);
 }
 
-export async function consumeHostMagicLink(state, tokenOrUrl, api = createHostApi()) {
-  return consumeOpenedLink(state, api, tokenOrUrl);
+export async function consumeHostMagicLink(state, tokenOrUrl, api = createHostApi(), storage) {
+  return consumeOpenedLink(state, api, tokenOrUrl, storage);
 }
 
 export async function ackHostNotice(state, api = createHostApi()) {

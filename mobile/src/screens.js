@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { AUTH_COPY, COVER_COPY, LINE, PREVIEW_Q1_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { AUTH_COPY, COVER_COPY, LINE, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, PREVIEW_Q1_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
 function pressableStyle(...parts) {
@@ -229,6 +229,110 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
     </View>
+  );
+}
+
+export function PackListScreen({ onOpenMarriage }) {
+  return (
+    <View style={styles.packShell} testID="pack-list" accessibilityLabel="pack-list">
+      <Text style={styles.coverBrand}>{WORDMARK}</Text>
+      <Text style={styles.packTitle}>{PACK_LIST_COPY.title}</Text>
+      <Text style={styles.packSub}>{PACK_LIST_COPY.subtitle}</Text>
+      <View style={styles.packCard}>
+        {PACK_LIST_ROWS.map((row) => (
+          row.open ? (
+            <Pressable
+              key={row.id}
+              testID={`pack-${row.id}`}
+              accessibilityRole="button"
+              onPress={onOpenMarriage}
+              style={pressableStyle(styles.packRow)}
+            >
+              <Text style={styles.packRowLabel}>{row.label}</Text>
+              <Text style={styles.packChevron}>›</Text>
+            </Pressable>
+          ) : (
+            <View key={row.id} testID={`pack-${row.id}`} style={styles.packRow}>
+              <Text style={styles.packRowLabelMuted}>{row.label}</Text>
+              <View style={styles.soonPill}>
+                <Text style={styles.soonLabel}>{PACK_LIST_COPY.soon}</Text>
+              </View>
+            </View>
+          )
+        ))}
+      </View>
+    </View>
+  );
+}
+
+export function InviteScreen({
+  pairCodeDisplay = "",
+  partnerCode = "",
+  copied = false,
+  codeCopied = false,
+  error = "",
+  busy = false,
+  onChangePartnerCode,
+  onCopyLink,
+  onShareInstagram,
+  onShareKakao,
+  onCopyCode,
+  onConnect
+}) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.inviteShell}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      testID="invite"
+      accessibilityLabel="invite"
+    >
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.inviteScroll}>
+        <Text style={styles.coverBrand}>{WORDMARK}</Text>
+        <Text style={styles.inviteHeadline}>{PAIR_COPY.headline}</Text>
+        <Text style={styles.inviteSub}>{PAIR_COPY.sub}</Text>
+        <View style={styles.shareRow}>
+          <Pressable testID="invite-copy-link" accessibilityRole="button" onPress={onCopyLink} style={pressableStyle(styles.shareBtn)}>
+            <Text style={styles.shareBtnLabel}>🔗 {PAIR_COPY.copyLink}</Text>
+          </Pressable>
+          <Pressable testID="invite-instagram" accessibilityRole="button" onPress={onShareInstagram} style={pressableStyle(styles.shareBtn)}>
+            <Text style={styles.shareBtnLabel}>{PAIR_COPY.instagram}</Text>
+          </Pressable>
+          <Pressable testID="invite-kakao" accessibilityRole="button" onPress={onShareKakao} style={pressableStyle(styles.shareBtn)}>
+            <Text style={styles.shareBtnLabel}>{PAIR_COPY.kakao}</Text>
+          </Pressable>
+        </View>
+        {copied ? <Text style={styles.copiedNote}>링크를 복사했어요.</Text> : null}
+        <Text style={styles.myCodeLabel}>{PAIR_COPY.myCode}</Text>
+        <Text style={styles.myCodeValue} testID="invite-my-code">{pairCodeDisplay || "····"}</Text>
+        <Pressable testID="invite-copy-code" accessibilityRole="button" onPress={onCopyCode} style={pressableStyle(styles.codeCopy)}>
+          <Text style={styles.codeCopyLabel}>{codeCopied ? "복사됨" : PAIR_COPY.copyCode}</Text>
+        </Pressable>
+        <View style={styles.partnerCard}>
+          <Text style={styles.partnerCardTitle}>{PAIR_COPY.partnerCard}</Text>
+          <TextInput
+            testID="invite-partner-code"
+            value={partnerCode}
+            onChangeText={onChangePartnerCode}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            editable={!busy}
+            placeholder={PAIR_COPY.partnerPlaceholder}
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+          />
+        </View>
+        <Pressable
+          testID="invite-connect"
+          accessibilityRole="button"
+          disabled={busy}
+          onPress={onConnect}
+          style={pressableStyle(styles.coverCta, busy ? styles.disabled : null)}
+        >
+          <Text style={styles.primaryLabel}>{PAIR_COPY.connect}</Text>
+        </Pressable>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -550,5 +654,154 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontSize: 15,
     lineHeight: 22
+  },
+  packShell: {
+    flex: 1,
+    backgroundColor: colors.coverPaper,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 32
+  },
+  packTitle: {
+    color: colors.ink,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 34,
+    fontWeight: "600",
+    marginTop: 28
+  },
+  packSub: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 8,
+    marginBottom: 24
+  },
+  packCard: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    overflow: "hidden"
+  },
+  packRow: {
+    minHeight: 56,
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line
+  },
+  packRowLabel: {
+    color: colors.ink,
+    fontSize: 17,
+    fontWeight: "600"
+  },
+  packRowLabelMuted: {
+    color: colors.ink,
+    fontSize: 17
+  },
+  packChevron: {
+    color: colors.muted,
+    fontSize: 22
+  },
+  soonPill: {
+    backgroundColor: colors.soft,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4
+  },
+  soonLabel: {
+    color: colors.coral,
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  inviteShell: {
+    flex: 1,
+    backgroundColor: colors.coverPaper
+  },
+  inviteScroll: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 32
+  },
+  inviteHeadline: {
+    color: colors.ink,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 26,
+    lineHeight: 36,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 20
+  },
+  inviteSub: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 22,
+    textAlign: "center",
+    marginTop: 10,
+    marginBottom: 22
+  },
+  shareRow: {
+    flexDirection: "row",
+    gap: 8,
+    width: "100%"
+  },
+  shareBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4
+  },
+  shareBtnLabel: {
+    color: colors.coral,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "center"
+  },
+  copiedNote: {
+    color: colors.coral,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8
+  },
+  myCodeLabel: {
+    color: colors.muted,
+    fontSize: 12,
+    marginTop: 28
+  },
+  myCodeValue: {
+    color: colors.ink,
+    fontSize: 32,
+    fontWeight: "700",
+    letterSpacing: 6,
+    marginTop: 8
+  },
+  codeCopy: {
+    marginTop: 8,
+    marginBottom: 24
+  },
+  codeCopyLabel: {
+    color: colors.coral,
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  partnerCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16
+  },
+  partnerCardTitle: {
+    color: colors.ink,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 10
   }
 });

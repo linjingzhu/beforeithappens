@@ -1,4 +1,5 @@
 import { invitePartner } from "../s0-s2-s3-flow.js";
+import { extractMagicLinkToken } from "../s0-s2-s3-api.js";
 import { consumeHostMagicLink, finishHostSplash } from "../src/session.js";
 import { INVITE_ERRORS } from "../../src/auth.js";
 import { createInviteApi } from "./api.js";
@@ -7,6 +8,11 @@ import { APP_S4_SCREEN, resolveNativeInviteScreen, shareS4Invite } from "./flow.
 export function readHostOpenParams(loc = globalThis.location) {
   if (!loc) return { magicToken: "", inviteToken: "" };
   try {
+    const href = String(loc.href || "");
+    if (href.includes("://")) {
+      const magicToken = extractMagicLinkToken(href);
+      if (magicToken) return { magicToken, inviteToken: "" };
+    }
     const params = new URLSearchParams(loc.search || "");
     const path = String(loc.pathname || "");
     if (path === "/invite/accept" || params.get("invite")) {
@@ -33,9 +39,9 @@ export function createHostInviteApi(cookieAccess = {}) {
   return createInviteApi(cookieAccess);
 }
 
-export async function finishHostOpen(opened, hostApi, inviteApi = createInviteApi(), loc = globalThis.location) {
+export async function finishHostOpen(opened, hostApi, inviteApi = createInviteApi(), loc = globalThis.location, storage) {
   const { magicToken, inviteToken } = readHostOpenParams(loc);
-  if (magicToken) return consumeHostMagicLink(opened, magicToken, hostApi);
+  if (magicToken) return consumeHostMagicLink(opened, magicToken, hostApi, storage);
   const after = await finishHostSplash(opened, hostApi);
   if (!inviteToken) return after;
   const preview = await inviteApi.preview(inviteToken);

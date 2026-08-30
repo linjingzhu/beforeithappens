@@ -1,4 +1,4 @@
-import { COVER_COPY, FORBIDDEN_APP_COPY, PREVIEW_Q1_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { COVER_COPY, FORBIDDEN_APP_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, PREVIEW_Q1_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 import { previewQ1Question } from "./preview-q1.js";
 
 function escapeHtml(value = "") {
@@ -125,6 +125,45 @@ export function renderPreviewQ1Screen({ choiceId = "", loggedIn = false, questio
   `;
 }
 
+export function renderPackListScreen() {
+  const rows = PACK_LIST_ROWS.map((row) => row.open
+    ? `<button class="loveme-pack-row is-open" type="button" data-action="open-marriage">${escapeHtml(row.label)}<span>›</span></button>`
+    : `<div class="loveme-pack-row"><span>${escapeHtml(row.label)}</span><span class="loveme-soon">${escapeHtml(PACK_LIST_COPY.soon)}</span></div>`
+  ).join("");
+  return `
+    <section class="loveme-screen loveme-pack-list" data-screen="pack-list">
+      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
+      <h1>${escapeHtml(PACK_LIST_COPY.title)}</h1>
+      <p class="loveme-pack-sub">${escapeHtml(PACK_LIST_COPY.subtitle)}</p>
+      <article class="loveme-pack-card">${rows}</article>
+    </section>
+  `;
+}
+
+export function renderInviteScreen({ pairCodeDisplay = "", partnerCode = "", error = "" } = {}) {
+  return `
+    <section class="loveme-screen loveme-invite" data-screen="invite">
+      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
+      <h1>${escapeHtml(PAIR_COPY.headline)}</h1>
+      <p class="loveme-invite-sub">${escapeHtml(PAIR_COPY.sub)}</p>
+      <div class="loveme-share-row">
+        <button type="button" data-action="share-copy">${escapeHtml(PAIR_COPY.copyLink)}</button>
+        <button type="button" data-action="share-instagram">${escapeHtml(PAIR_COPY.instagram)}</button>
+        <button type="button" data-action="share-kakao">${escapeHtml(PAIR_COPY.kakao)}</button>
+      </div>
+      <p class="loveme-my-code-label">${escapeHtml(PAIR_COPY.myCode)}</p>
+      <p class="loveme-my-code">${escapeHtml(pairCodeDisplay)}</p>
+      <button class="loveme-code-copy" type="button" data-action="copy-code">${escapeHtml(PAIR_COPY.copyCode)}</button>
+      <article class="loveme-partner-card">
+        <p>${escapeHtml(PAIR_COPY.partnerCard)}</p>
+        <input name="partner-code" placeholder="${escapeHtml(PAIR_COPY.partnerPlaceholder)}" value="${escapeHtml(partnerCode)}">
+      </article>
+      <button class="loveme-primary" type="button" data-action="connect-code">${escapeHtml(PAIR_COPY.connect)}</button>
+      ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
+    </section>
+  `;
+}
+
 export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
   return `
     ${brand()}
@@ -149,6 +188,14 @@ export function renderNativeScreen(state) {
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
   if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });
   if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "", error: state.error, busy: state.busy });
+  if (state.screen === "pack-list") return renderPackListScreen();
+  if (state.screen === "invite") {
+    return renderInviteScreen({
+      pairCodeDisplay: state.pairCodeDisplay || "",
+      partnerCode: state.partnerCode || "",
+      error: state.error
+    });
+  }
   if (state.screen === "workspace") return renderS3WorkspaceCreatedScreen({ email: state.session?.user?.email || "" });
   return renderS2SignupScreen({ email: state.email, error: state.error, busy: state.busy });
 }

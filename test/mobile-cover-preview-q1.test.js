@@ -129,9 +129,12 @@ test("Q1 draft persists across leave and returns after consume", () => {
   assert.notEqual(state.screen, "notice");
   assert.notEqual(state.screen, "cover");
 
+  assert.notEqual(state.screen, "pack-list");
+
   state = continueFromPreviewQ1(state, storage);
-  assert.equal(state.screen, "workspace");
+  assert.equal(state.screen, "invite");
   assert.equal(state.previewQ1.choiceId, choiceId);
+  assert.equal(state.previewQ1.saved, true);
 });
 
 test("Expo cover and login gate do not add home, profile, gifts, or social", async () => {

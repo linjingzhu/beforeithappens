@@ -218,17 +218,17 @@ fun LoveMeCoverScreen(onPreviewQuestion: () -> Unit = {}) {
 }
 
 @Composable
-fun LoveMePreviewQ1Screen(onKeepAnswer: () -> Unit = {}) {
+fun LoveMePreviewQ1Screen(loggedIn: Boolean = false, onKeepAnswer: () -> Unit = {}, onContinue: () -> Unit = {}) {
     Column(modifier = Modifier.padding(28.dp)) {
         Text("나만 보임", color = Color(0xFFEE775F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Text("우리에게 집은 어떤 의미에 가장 가까울까요?", fontSize = 22.sp, modifier = Modifier.padding(top = 12.dp))
         Button(
-            onClick = onKeepAnswer,
+            onClick = if (loggedIn) onContinue else onKeepAnswer,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEE775F)),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp)
                 .padding(top = 16.dp)
-        ) { Text("이 답 남기기") }
+        ) { Text(if (loggedIn) "계속하기" else "이 답 남기기") }
     }
 }
