@@ -7,6 +7,8 @@
 - Cold logged-in home (no in-flight Q1 / invite) is the `질문집` list. Profile sheet stays out.
 
 ## Verification
-- `npm test`: 155 passed (plus routing lock additions)
+- `npm test`: 155 passed
 - `npm run lint`: 30 source files
+- GitHub Actions on `efa32f0`: Application tests & production build success; Repository & project context success
+- HTML preview screenshots: pack-list `질문집`, invite after Q1 save, cover from `결혼`, keep-answer login gate
 - Not merged
