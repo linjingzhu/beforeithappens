@@ -10,6 +10,13 @@ Do not copy this file into unrelated projects.
 
 ## Build / Compile Lessons
 
+### 2026-08-30 — Empty API origin makes native session fetch hang the splash
+Area: Expo iOS splash / mobile auth client
+Evidence: Preview EAS had no `EXPO_PUBLIC_API_ORIGIN`. `api.session()` called `fetch("" + "/api/auth/session")`; native fetch never settled, so `App.js` never `setState` after the 1.2s hold.
+Impact: JS splash stayed forever even though S0 copy is only 1200ms.
+Recommended future behavior: Treat empty origin, rejected fetch, or a ≤2s session timeout as logged-out and `finishSplash` to signup. Do not invent a production origin in-repo.
+Confidence: high
+
 ### 2026-08-30 — Metro project root is mobile/, not the repo root
 Area: Expo iOS JS bundle / EAS preview
 Evidence: EAS build `ce372f4a` failed with `Unable to resolve module ../../src/auth.js` from `mobile/s4-invite/flow.js`. File exists at repo-root `src/auth.js`; Metro looked for `mobile/src/auth.js`. `npx expo export:embed --eager --platform ios --dev false` succeeded after `mobile/metro.config.js` watchFolders `../src` (599 modules).

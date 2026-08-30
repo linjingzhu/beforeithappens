@@ -3,6 +3,7 @@ import {
   acknowledgeLoginNotice,
   consumeOpenedLink,
   createNativeFlow,
+  finishSplash,
   restoreSessionAfterSplash,
   startSocialLogin,
   submitEmailBind,
@@ -39,8 +40,17 @@ export function startHostFlow() {
   return createNativeFlow();
 }
 
+export function splashOpenResult(opened, next) {
+  if (next?.splashDone && next.screen && next.screen !== "splash") return next;
+  return finishSplash(opened);
+}
+
 export async function finishHostSplash(state, api = createHostApi()) {
-  return restoreSessionAfterSplash(state, api);
+  try {
+    return splashOpenResult(state, await restoreSessionAfterSplash(state, api));
+  } catch {
+    return finishSplash(state);
+  }
 }
 
 export async function sendHostMagicLink(state, api = createHostApi()) {

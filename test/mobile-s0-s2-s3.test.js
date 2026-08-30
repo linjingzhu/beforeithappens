@@ -16,7 +16,10 @@ import {
   S2_ERRORS,
   S3_COPY
 } from "../mobile/s0-s2-s3-copy.js";
-import { AUTH_API, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
+import { AUTH_API, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
+import { finishHostOpen } from "../mobile/s4-invite/host-mount.js";
+import { SPLASH_MS } from "../mobile/src/copy.js";
+import { finishHostSplash, splashOpenResult } from "../mobile/src/session.js";
 import {
   acknowledgeLoginNotice,
   backToSignup,
@@ -232,6 +235,7 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.equal(restored.screen, "workspace");
     assert.equal(restored.session.user.email, "buyer@example.com");
     assert.equal(nativeCanOpenPack(restored.session), false);
+    assert.ok(SESSION_FETCH_MS <= 2000);
 
     const noticeHtml = renderS2LoginNoticeScreen({ email: "buyer@example.com", error: S2_ERRORS.failed });
     assert.match(noticeHtml, /로그인 링크를 보내지 못했어요/);
@@ -243,6 +247,66 @@ test("mobile API client reuses web magic-link and workspace session", async () =
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
+});
+
+test("empty origin or rejected fetch still leaves splash after 1.2s", async () => {
+  assert.equal(SPLASH_MS, 1200);
+  assert.equal(S0_COPY.holdMs, 1200);
+  assert.ok(SESSION_FETCH_MS > 0 && SESSION_FETCH_MS <= 2000);
+
+  const mustNotFetch = async () => {
+    throw new Error("session fetch must not run when origin is empty");
+  };
+  const emptyOrigin = createAuthApi({ origin: "", fetchImpl: mustNotFetch });
+  const fromEmpty = await restoreSessionAfterSplash(createNativeFlow(), emptyOrigin);
+  assert.equal(fromEmpty.splashDone, true);
+  assert.equal(fromEmpty.screen, "signup");
+  assert.equal(fromEmpty.session?.user ?? null, null);
+
+  const hostEmpty = await finishHostSplash(createNativeFlow(), emptyOrigin);
+  assert.equal(hostEmpty.splashDone, true);
+  assert.equal(hostEmpty.screen, "signup");
+
+  const openedEmpty = await finishHostOpen(
+    createNativeFlow(),
+    emptyOrigin,
+    { preview: async () => ({ payload: {} }) },
+    { pathname: "/", search: "" }
+  );
+  assert.equal(openedEmpty.splashDone, true);
+  assert.equal(openedEmpty.screen, "signup");
+
+  const rejected = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: async () => {
+      throw new Error("rejected");
+    }
+  });
+  const fromReject = await restoreSessionAfterSplash(createNativeFlow(), rejected);
+  assert.equal(fromReject.splashDone, true);
+  assert.equal(fromReject.screen, "signup");
+
+  const hanging = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: () => new Promise(() => {}),
+    sessionTimeoutMs: 20
+  });
+  const fromHang = await restoreSessionAfterSplash(createNativeFlow(), hanging, { timeoutMs: 20 });
+  assert.equal(fromHang.splashDone, true);
+  assert.equal(fromHang.screen, "signup");
+
+  const opened = createNativeFlow();
+  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { splashDone: true, screen: "signup" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { splashDone: true, screen: "workspace" }).screen, "workspace");
+
+  const app = await readFile("mobile/App.js", "utf8");
+  assert.match(app, /SPLASH_MS/);
+  assert.match(app, /finishHostOpen/);
+  assert.match(app, /finishHostSplash/);
+  assert.match(app, /finishSplash\(opened\)/);
+  assert.equal(app.includes("tap-to-continue"), false);
+  assert.equal(app.includes("계속하려면 탭"), false);
 });
 
 test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack CTA", async () => {
