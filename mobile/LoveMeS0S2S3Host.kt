@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, Workspace }
+enum class LoveMeNativeScreen { Splash, Cover, PreviewQ1, Signup, Sent, Bind, Notice, Workspace }
 
 @Composable
 fun LoveMeS0S2S3Host(
@@ -37,10 +37,12 @@ fun LoveMeS0S2S3Host(
                         else -> LoveMeNativeScreen.Workspace
                     }
                 } else {
-                    screen = LoveMeNativeScreen.Signup
+                    screen = LoveMeNativeScreen.Cover
                 }
             }
         }
+        LoveMeNativeScreen.Cover -> LoveMeCoverScreen { screen = LoveMeNativeScreen.PreviewQ1 }
+        LoveMeNativeScreen.PreviewQ1 -> LoveMePreviewQ1Screen { screen = LoveMeNativeScreen.Signup }
         LoveMeNativeScreen.Signup -> S2SignupScreen(
             phase = S2SignupPhase.Signup,
             email = email,

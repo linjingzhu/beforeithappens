@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash then S2 magic-link signup (no Kakao/Naver/Google CTAs) and S3 workspace. S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash then a workbook cover, offline preview Q1, and a keep-answer login gate (no Kakao/Naver/Google CTAs). S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:

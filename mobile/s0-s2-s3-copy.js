@@ -32,6 +32,24 @@ export const S2_EMAIL_BIND_COPY = Object.freeze({
   emailLabel: "이메일"
 });
 
+export const COVER_COPY = Object.freeze({
+  title: "두 사람의 결혼 준비, 한곳에",
+  line1: "질문은 나만 먼저 답해요.",
+  line2: "비교는 둘이 낸 뒤에만 열려요.",
+  cta: "미리 한 질문 보기"
+});
+
+export const PREVIEW_Q1_COPY = Object.freeze({
+  keepCta: "이 답 남기기",
+  continueCta: "계속하기",
+  draftBadge: "나만 보임"
+});
+
+export const S2_KEEP_COPY = Object.freeze({
+  title: "이 답을 남기려면 로그인해 주세요",
+  body: "비밀번호 없이 이메일로 로그인 링크를 보내드려요."
+});
+
 /** Exact S2 social + bind copy. Do not paraphrase. Kakao login is not S4 카카오톡. */
 export function assertLockedS2SocialCopy() {
   if (S2_SOCIAL_COPY.kakao !== "카카오로 시작") throw new Error("S2 Kakao start copy drifted");
@@ -46,6 +64,13 @@ export function assertLockedS2SocialCopy() {
   if (S2_COPY.cta !== "로그인 링크 보내기") throw new Error("S2 magic-link CTA drifted");
   if (S2_COPY.sent !== "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.") throw new Error("S2 magic-link sent copy drifted");
   if (S2_SOCIAL_COPY.kakao === "카카오톡") throw new Error("S2 Kakao start collided with S4 KakaoTalk share");
+  if (COVER_COPY.title !== "두 사람의 결혼 준비, 한곳에") throw new Error("cover title drifted");
+  if (COVER_COPY.line1 !== "질문은 나만 먼저 답해요.") throw new Error("cover line1 drifted");
+  if (COVER_COPY.line2 !== "비교는 둘이 낸 뒤에만 열려요.") throw new Error("cover line2 drifted");
+  if (COVER_COPY.cta !== "미리 한 질문 보기") throw new Error("cover CTA drifted");
+  if (S2_KEEP_COPY.title !== "이 답을 남기려면 로그인해 주세요") throw new Error("login-gate title drifted");
+  if (S2_KEEP_COPY.body !== S2_COPY.body) throw new Error("login-gate subtitle drifted");
+  if (PREVIEW_Q1_COPY.keepCta !== "이 답 남기기") throw new Error("preview keep CTA drifted");
   return true;
 }
 

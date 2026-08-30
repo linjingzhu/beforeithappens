@@ -1,5 +1,11 @@
 import { S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
+import {
+  emptyPreviewDraft,
+  isPreviewQ1Choice,
+  PREVIEW_Q1_ID,
+  writePreviewDraft
+} from "./preview-q1.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -7,7 +13,7 @@ export function emptyNativeSession() {
   return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
 }
 
-export function createNativeFlow(session = emptyNativeSession()) {
+export function createNativeFlow(session = emptyNativeSession(), { draft = emptyPreviewDraft() } = {}) {
   return {
     screen: "splash",
     splashDone: false,
@@ -17,7 +23,13 @@ export function createNativeFlow(session = emptyNativeSession()) {
     busy: false,
     noticeDismissed: false,
     session,
-    action: ""
+    action: "",
+    previewQ1: {
+      questionId: PREVIEW_Q1_ID,
+      choiceId: draft.choiceId || "",
+      open: Boolean(draft.open),
+      keepAnswer: Boolean(draft.keepAnswer)
+    }
   };
 }
 
@@ -35,10 +47,17 @@ export function userNeedsEmail(user) {
 
 export function resolveNativeScreen(state) {
   if (!state?.splashDone) return "splash";
-  if (!state.session?.user) return state.sentEmail ? "sent" : "signup";
-  if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
-  if (state.session.notice && !state.noticeDismissed) return "notice";
-  return "workspace";
+  const draft = state.previewQ1 || emptyPreviewDraft();
+  if (state.session?.user) {
+    if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
+    if (draft.choiceId && draft.open && isPreviewQ1Choice(draft.choiceId)) return "preview-q1";
+    if (state.session.notice && !state.noticeDismissed && !draft.choiceId) return "notice";
+    return "workspace";
+  }
+  if (state.sentEmail) return "sent";
+  if (draft.keepAnswer) return "signup";
+  if (draft.open || draft.choiceId) return "preview-q1";
+  return "cover";
 }
 
 export function applyScreen(state) {
@@ -83,15 +102,23 @@ export function requestLinkFailed(state, error = "failed") {
   });
 }
 
-export function consumeSucceeded(state, session) {
-  return applyScreen({
+export function consumeSucceeded(state, session, storage) {
+  const draft = state.previewQ1 || emptyPreviewDraft();
+  const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId));
+  return persistDraft(applyScreen({
     ...state,
     busy: false,
     error: "",
     sentEmail: "",
-    noticeDismissed: false,
-    session: session || emptyNativeSession()
-  });
+    noticeDismissed: hasPreview,
+    session: session || emptyNativeSession(),
+    previewQ1: {
+      questionId: PREVIEW_Q1_ID,
+      choiceId: draft.choiceId || "",
+      open: hasPreview,
+      keepAnswer: false
+    }
+  }), storage);
 }
 
 export function consumeFailed(state, error = "invalid") {
@@ -116,6 +143,74 @@ export function noticeAcknowledged(state, session) {
 export function invitePartner(state) {
   if (state.screen !== "workspace") return { ...state, action: "" };
   return { ...state, action: "invite-partner" };
+}
+
+function persistDraft(state, storage) {
+  const draft = writePreviewDraft(state.previewQ1 || emptyPreviewDraft(), storage);
+  return { ...state, previewQ1: draft };
+}
+
+export function openCover(state, storage) {
+  return persistDraft(applyScreen({
+    ...state,
+    splashDone: true,
+    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: false, keepAnswer: false }
+  }), storage);
+}
+
+export function openPreviewQ1(state, storage) {
+  return persistDraft(applyScreen({
+    ...state,
+    splashDone: true,
+    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: true }
+  }), storage);
+}
+
+export function selectPreviewChoice(state, choiceId, storage) {
+  if (!isPreviewQ1Choice(choiceId)) {
+    return applyScreen({ ...state, error: S2_ERRORS.invalid });
+  }
+  return persistDraft(applyScreen({
+    ...state,
+    splashDone: true,
+    error: "",
+    previewQ1: {
+      questionId: PREVIEW_Q1_ID,
+      choiceId,
+      open: true,
+      keepAnswer: Boolean(state.previewQ1?.keepAnswer)
+    }
+  }), storage);
+}
+
+export function keepPreviewAnswer(state, storage) {
+  const choiceId = state.previewQ1?.choiceId || "";
+  if (!isPreviewQ1Choice(choiceId)) {
+    return applyScreen({ ...state, splashDone: true, error: S2_ERRORS.invalid });
+  }
+  if (state.session?.user) {
+    return persistDraft(applyScreen({
+      ...state,
+      splashDone: true,
+      error: "",
+      previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true }
+    }), storage);
+  }
+  return persistDraft(applyScreen({
+    ...state,
+    splashDone: true,
+    error: "",
+    previewQ1: { questionId: PREVIEW_Q1_ID, choiceId, open: true, keepAnswer: true }
+  }), storage);
+}
+
+export function continueFromPreviewQ1(state, storage) {
+  if (!state.session?.user) return keepPreviewAnswer(state, storage);
+  return persistDraft(applyScreen({
+    ...state,
+    splashDone: true,
+    previewQ1: { ...(state.previewQ1 || emptyPreviewDraft()), open: false, keepAnswer: false }
+  }), storage);
 }
 
 export function s3AllowsPackCta(_state) {
@@ -178,10 +273,13 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
   try {
     const session = await withTimeout(Promise.resolve().then(() => api.session()), timeoutMs);
     if (!session?.user) return next;
+    const draft = next.previewQ1 || emptyPreviewDraft();
+    const hasPreview = Boolean(draft.choiceId && isPreviewQ1Choice(draft.choiceId));
     return applyScreen({
       ...next,
       session,
-      noticeDismissed: !session.notice,
+      noticeDismissed: hasPreview || !session.notice,
+      previewQ1: hasPreview ? { ...draft, open: true } : draft,
       error: ""
     });
   } catch {

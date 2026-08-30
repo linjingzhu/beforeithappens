@@ -1,4 +1,5 @@
-import { FORBIDDEN_APP_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { COVER_COPY, FORBIDDEN_APP_COPY, PREVIEW_Q1_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { previewQ1Question } from "./preview-q1.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -25,17 +26,18 @@ export function renderS0SplashScreen() {
 
 export function renderS2SignupScreen({ email = "", error = "", busy = false } = {}) {
   return `
-    ${brand()}
-    <section class="loveme-screen loveme-card" data-screen="signup">
-      <span class="loveme-eyebrow">AB · EMAIL SIGN IN</span>
-      <h1>${escapeHtml(S2_COPY.title)}</h1>
-      <p>${escapeHtml(S2_COPY.body)}</p>
-      <form class="loveme-form" data-s2-form>
-        <label for="s2-email">${escapeHtml(S2_COPY.emailLabel)}</label>
-        <input id="s2-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
-        <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.cta)}</button>
-        ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
-      </form>
+    <section class="loveme-gate" data-screen="signup">
+      <p class="loveme-gate-brand">${escapeHtml(S0_COPY.brand)}</p>
+      <article class="loveme-gate-card">
+        <h1>${escapeHtml(S2_KEEP_COPY.title)}</h1>
+        <p>${escapeHtml(S2_KEEP_COPY.body)}</p>
+        <form class="loveme-form" data-s2-form>
+          <label for="s2-email">${escapeHtml(S2_COPY.emailLabel)}</label>
+          <input id="s2-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" placeholder="${escapeHtml(S2_COPY.emailLabel)}" ${busy ? "disabled" : ""}>
+          <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.cta)}</button>
+          ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
+        </form>
+      </article>
     </section>
   `;
 }
@@ -84,6 +86,45 @@ export function renderS2EmailBindScreen({ email = "", error = "", busy = false }
   `;
 }
 
+export function renderCoverScreen() {
+  return `
+    <section class="loveme-screen loveme-cover" data-screen="cover">
+      <p class="loveme-cover-brand">${escapeHtml(S0_COPY.brand)}</p>
+      <p class="loveme-heart">♡</p>
+      <h1>${escapeHtml(COVER_COPY.title)}</h1>
+      <article class="loveme-notebook" aria-label="notebook">
+        <div class="loveme-notebook-shadow"></div>
+        <div class="loveme-notebook-face">
+          <div class="loveme-stitch"><span class="loveme-notebook-heart">♡</span></div>
+          <span class="loveme-strap"><span class="loveme-snap"></span></span>
+          <span class="loveme-ribbon"></span>
+        </div>
+      </article>
+      <p>${escapeHtml(COVER_COPY.line1)}</p>
+      <p>${escapeHtml(COVER_COPY.line2)}</p>
+      <button class="loveme-primary loveme-cover-cta" type="button" data-action="preview-q1">${escapeHtml(COVER_COPY.cta)}</button>
+    </section>
+  `;
+}
+
+export function renderPreviewQ1Screen({ choiceId = "", loggedIn = false, question = previewQ1Question() } = {}) {
+  const choices = (question?.choices || []).map((choice) => `
+        <button class="loveme-choice${choiceId === choice.id ? " is-on" : ""}" type="button" data-action="select-q1" data-choice="${escapeHtml(choice.id)}">${escapeHtml(choice.label)}</button>
+  `).join("");
+  const cta = loggedIn ? PREVIEW_Q1_COPY.continueCta : PREVIEW_Q1_COPY.keepCta;
+  const action = loggedIn ? "continue-preview" : "keep-preview";
+  return `
+    ${brand()}
+    <section class="loveme-screen loveme-card" data-screen="preview-q1">
+      <span class="loveme-eyebrow">${escapeHtml(PREVIEW_Q1_COPY.draftBadge)}</span>
+      <h1>${escapeHtml(question?.title || "")}</h1>
+      <p>${escapeHtml(question?.intent || "")}</p>
+      <div class="loveme-choices">${choices}</div>
+      <button class="loveme-primary" type="button" data-action="${action}" ${choiceId ? "" : "disabled"}>${escapeHtml(cta)}</button>
+    </section>
+  `;
+}
+
 export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
   return `
     ${brand()}
@@ -98,6 +139,13 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
+  if (state.screen === "cover") return renderCoverScreen();
+  if (state.screen === "preview-q1") {
+    return renderPreviewQ1Screen({
+      choiceId: state.previewQ1?.choiceId || "",
+      loggedIn: Boolean(state.session?.user)
+    });
+  }
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
   if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });
   if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "", error: state.error, busy: state.busy });

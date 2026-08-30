@@ -2,6 +2,8 @@ import SwiftUI
 
 enum LoveMeNativeScreen {
     case splash
+    case cover
+    case previewQ1
     case signup
     case sent
     case bind
@@ -23,6 +25,10 @@ struct LoveMeS0S2S3Host: View {
             switch screen {
             case .splash:
                 S0SplashScreen(onFinished: restoreSession)
+            case .cover:
+                LoveMeCoverScreen(onPreviewQuestion: { screen = .previewQ1 })
+            case .previewQ1:
+                LoveMePreviewQ1Screen(onKeepAnswer: { screen = .signup })
             case .signup:
                 S2SignupScreen(
                     phase: .signup,
@@ -55,7 +61,7 @@ struct LoveMeS0S2S3Host: View {
                     screen = (session?["notice"] as? String)?.isEmpty == false ? .notice : .workspace
                 }
             } else {
-                screen = .signup
+                screen = .cover
             }
         }
     }

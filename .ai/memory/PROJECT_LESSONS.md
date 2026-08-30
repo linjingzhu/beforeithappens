@@ -14,7 +14,7 @@ Do not copy this file into unrelated projects.
 Area: Expo iOS splash / mobile auth client
 Evidence: Preview EAS had no `EXPO_PUBLIC_API_ORIGIN`. `api.session()` called `fetch("" + "/api/auth/session")`; native fetch never settled, so `App.js` never `setState` after the 1.2s hold.
 Impact: JS splash stayed forever even though S0 copy is only 1200ms.
-Recommended future behavior: Treat empty origin, rejected fetch, or a ≤2s session timeout as logged-out and `finishSplash` to signup. Do not invent a production origin in-repo.
+Recommended future behavior: Treat empty origin, rejected fetch, or a ≤2s session timeout as logged-out and `finishSplash` to the workbook cover. Do not invent a production origin in-repo.
 Confidence: high
 
 ### 2026-08-30 — Metro project root is mobile/, not the repo root
