@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { AUTH_COPY, LINE, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { AUTH_COPY, COVER_COPY, LINE, PREVIEW_Q1_COPY, S2_EMAIL_BIND_COPY, S2_KEEP_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
 function pressableStyle(...parts) {
@@ -34,45 +34,130 @@ export function SplashScreenView() {
   );
 }
 
-export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail, onStartKakao, onStartNaver, onStartGoogle }) {
+function NotebookGraphic() {
+  return (
+    <View style={styles.notebookWrap} accessibilityLabel="notebook">
+      <View style={styles.notebookShadow} />
+      <View style={styles.notebook}>
+        <View style={styles.stitch}>
+          <Text style={styles.notebookHeart}>♡</Text>
+        </View>
+        <View style={styles.strap}>
+          <View style={styles.snap} />
+        </View>
+        <View style={styles.ribbon} />
+      </View>
+    </View>
+  );
+}
+
+export function CoverScreen({ onPreviewQuestion }) {
+  return (
+    <View style={styles.coverShell} testID="cover" accessibilityLabel="cover">
+      <Text style={styles.coverBrand}>{WORDMARK}</Text>
+      <Text style={styles.coverHeart}>♡</Text>
+      <Text style={styles.coverTitle}>{COVER_COPY.title}</Text>
+      <NotebookGraphic />
+      <Text style={styles.coverBody}>{COVER_COPY.line1}</Text>
+      <Text style={styles.coverBody}>{COVER_COPY.line2}</Text>
+      <Pressable
+        testID="cover-cta"
+        accessibilityRole="button"
+        onPress={onPreviewQuestion}
+        style={pressableStyle(styles.coverCta)}
+      >
+        <Text style={styles.primaryLabel}>{COVER_COPY.cta}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function PreviewQ1Screen({
+  question,
+  choiceId = "",
+  loggedIn = false,
+  onSelectChoice,
+  onKeepAnswer,
+  onContinue
+}) {
+  const choices = question?.choices || [];
+  return (
+    <ScrollView
+      testID="preview-q1"
+      accessibilityLabel="preview-q1"
+      style={styles.flexFill}
+      contentContainerStyle={styles.previewScroll}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={styles.card}>
+        <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
+        <Text style={styles.badge}>{PREVIEW_Q1_COPY.draftBadge}</Text>
+        <Text style={styles.title}>{question?.title}</Text>
+        <Text style={styles.body}>{question?.intent}</Text>
+        {choices.map((choice) => (
+          <Pressable
+            key={choice.id}
+            testID={`preview-choice-${choice.id}`}
+            accessibilityRole="button"
+            onPress={() => onSelectChoice?.(choice.id)}
+            style={pressableStyle(styles.choice, choiceId === choice.id ? styles.choiceOn : null)}
+          >
+            <Text style={styles.choiceLabel}>{choice.label}</Text>
+          </Pressable>
+        ))}
+        <Pressable
+          testID="preview-keep"
+          accessibilityRole="button"
+          onPress={loggedIn ? onContinue : onKeepAnswer}
+          style={pressableStyle(styles.primary, choiceId ? null : styles.disabled)}
+        >
+          <Text style={styles.primaryLabel}>{loggedIn ? PREVIEW_Q1_COPY.continueCta : PREVIEW_Q1_COPY.keepCta}</Text>
+        </Pressable>
+      </View>
+    </ScrollView>
+  );
+}
+
+export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
-    <AuthKeyboardShell testID="signup">
-      <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-      <Text style={styles.title}>{AUTH_COPY.title}</Text>
-      <Text style={styles.body}>{AUTH_COPY.body}</Text>
-      <Text style={styles.label}>이메일</Text>
-      <TextInput
-        testID="signup-email"
-        value={draft}
-        onChangeText={setDraft}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="email-address"
-        editable={!busy}
-        style={styles.input}
-      />
-      <Pressable
-        testID="signup-cta"
-        accessibilityRole="button"
-        disabled={busy}
-        onPress={() => onSubmitEmail?.(draft)}
-        style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
-      >
-        <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
-      </Pressable>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      <Text style={styles.divider}>{S2_SOCIAL_COPY.divider}</Text>
-      <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.kakao}</Text>
-      </Pressable>
-      <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.naver}</Text>
-      </Pressable>
-      <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
-        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.google}</Text>
-      </Pressable>
-    </AuthKeyboardShell>
+    <KeyboardAvoidingView
+      style={styles.coverShell}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      testID="signup"
+      accessibilityLabel="signup"
+    >
+      <Text style={styles.gateBrand}>{WORDMARK}</Text>
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.gateScroll}>
+        <View style={styles.gateCard}>
+          <Text style={styles.gateTitle}>{S2_KEEP_COPY.title}</Text>
+          <Text style={styles.body}>{S2_KEEP_COPY.body}</Text>
+          <Text style={styles.label}>이메일</Text>
+          <TextInput
+            testID="signup-email"
+            value={draft}
+            onChangeText={setDraft}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            editable={!busy}
+            placeholder="이메일"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+          />
+          <Pressable
+            testID="signup-cta"
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => onSubmitEmail?.(draft)}
+            style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
+          >
+            <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
+          </Pressable>
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -270,14 +355,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700"
   },
-  divider: {
-    color: colors.muted,
-    fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
-    marginTop: 20,
-    marginBottom: 4
-  },
   email: {
     color: colors.ink,
     fontSize: 14,
@@ -294,5 +371,184 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.72
+  },
+  coverShell: {
+    flex: 1,
+    backgroundColor: colors.coverPaper,
+    alignItems: "center",
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 32
+  },
+  coverBrand: {
+    color: colors.coral,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 28,
+    fontWeight: "500",
+    marginTop: 12
+  },
+  coverHeart: {
+    color: colors.coral,
+    fontSize: 18,
+    marginTop: 8,
+    marginBottom: 18
+  },
+  coverTitle: {
+    color: colors.ink,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 26,
+    lineHeight: 36,
+    fontWeight: "500",
+    textAlign: "center",
+    marginBottom: 24
+  },
+  coverBody: {
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 26,
+    textAlign: "center"
+  },
+  coverCta: {
+    minHeight: 52,
+    alignSelf: "stretch",
+    marginTop: "auto",
+    borderRadius: 16,
+    backgroundColor: colors.coral,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  notebookWrap: {
+    width: 196,
+    height: 196,
+    marginBottom: 24,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  notebookShadow: {
+    position: "absolute",
+    width: 176,
+    height: 176,
+    borderRadius: 12,
+    backgroundColor: "#e8d8c4",
+    top: 16,
+    left: 18
+  },
+  notebook: {
+    width: 176,
+    height: 176,
+    backgroundColor: colors.cream,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.stitch
+  },
+  stitch: {
+    flex: 1,
+    margin: 8,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: colors.stitch,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  notebookHeart: {
+    color: colors.coral,
+    fontSize: 32
+  },
+  strap: {
+    position: "absolute",
+    right: -12,
+    top: 68,
+    width: 30,
+    height: 40,
+    backgroundColor: colors.cream,
+    borderWidth: 1,
+    borderColor: colors.stitch,
+    borderRadius: 4,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  snap: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.gold
+  },
+  ribbon: {
+    position: "absolute",
+    left: 28,
+    bottom: -16,
+    width: 10,
+    height: 24,
+    backgroundColor: colors.coral,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6
+  },
+  gateBrand: {
+    alignSelf: "flex-start",
+    color: colors.coral,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 22,
+    fontWeight: "500",
+    marginBottom: 12
+  },
+  gateScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    width: "100%"
+  },
+  gateCard: {
+    width: "100%",
+    maxWidth: 420,
+    backgroundColor: colors.gateCard,
+    borderRadius: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    shadowColor: "#2b2521",
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3
+  },
+  gateTitle: {
+    color: colors.ink,
+    fontSize: 22,
+    lineHeight: 32,
+    fontWeight: "700",
+    marginBottom: 12
+  },
+  previewScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    backgroundColor: colors.coverPaper
+  },
+  badge: {
+    alignSelf: "flex-start",
+    color: colors.coral,
+    fontSize: 11,
+    fontWeight: "800",
+    marginBottom: 10
+  },
+  choice: {
+    minHeight: 48,
+    marginTop: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  choiceOn: {
+    borderColor: colors.coral,
+    backgroundColor: colors.soft
+  },
+  choiceLabel: {
+    color: colors.ink,
+    fontSize: 15,
+    lineHeight: 22
   }
 });

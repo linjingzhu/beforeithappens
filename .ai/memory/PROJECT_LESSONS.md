@@ -14,7 +14,7 @@ Do not copy this file into unrelated projects.
 Area: Expo iOS splash / mobile auth client
 Evidence: Preview EAS had no `EXPO_PUBLIC_API_ORIGIN`. `api.session()` called `fetch("" + "/api/auth/session")`; native fetch never settled, so `App.js` never `setState` after the 1.2s hold.
 Impact: JS splash stayed forever even though S0 copy is only 1200ms.
-Recommended future behavior: Treat empty origin, rejected fetch, or a ≤2s session timeout as logged-out and `finishSplash` to signup. Do not invent a production origin in-repo.
+Recommended future behavior: Treat empty origin, rejected fetch, or a ≤2s session timeout as logged-out and `finishSplash` to the workbook cover. Do not invent a production origin in-repo.
 Confidence: high
 
 ### 2026-08-30 — Metro project root is mobile/, not the repo root
@@ -30,14 +30,21 @@ Confidence: high
 Area: Expo signup / bind
 Evidence: SignupScreen had a TextInput then Pressable CTAs with no KeyboardAvoidingView/ScrollView. On iOS the first tap dismisses the keyboard and does not fire onPress. App.js also `setState(await sendHostMagicLink(...))`, so a hung Render fetch left the CTA looking dead.
 Impact: Preview-build signup appeared broken even when the handler was wired.
-Recommended future behavior: Wrap email forms in KeyboardAvoidingView + ScrollView `keyboardShouldPersistTaps="handled"`. `setState` busy/pending before await. Timeout magic-link and oauth start (a few seconds); map 501 to `oauth-unconfigured`. Pressables need a `{ pressed }` style (opacity), not a static array. Live 502 `{error:failed}` from Resend-restricted inboxes must show `S2_ERRORS.failed` under the CTA, not below social buttons. Do not change `MAIL_FROM` to paper over that.
+Recommended future behavior: Wrap email forms in KeyboardAvoidingView + ScrollView `keyboardShouldPersistTaps="handled"`. `setState` busy/pending before await. Magic-link timeout must survive Render free cold start (~20–30s); oauth start stays fail-fast and maps 501 to `oauth-unconfigured`. Pressables need a `{ pressed }` style (opacity), not a static array. Live 502 `{error:failed}` from Resend-restricted inboxes must show `S2_ERRORS.failed` under the CTA. Do not change `MAIL_FROM` to paper over that.
 Confidence: high
 
 ### 2026-08-30 — S2 Kakao start is not S4 KakaoTalk share
 Area: auth / invite share
-Evidence: S2 social login uses `카카오로 시작`; S4 share stays `카카오톡`. Tests that banned any `Kakao` substring in the host broke the start buttons.
+Evidence: Web S2 social copy is `카카오로 시작`; S4 share stays `카카오톡`. Tests that banned any `Kakao` substring in the host broke the start buttons. iOS measurement signup now omits those social CTAs.
 Impact: A host-wide Kakao ban treats login and share as the same product surface.
-Recommended future behavior: Forbid Kakao SDK / `카카오 로그인` / `카카오톡` on S2, not the English word Kakao or `카카오로 시작`.
+Recommended future behavior: Forbid Kakao SDK / `카카오 로그인` / `카카오톡` on S2, not the English word Kakao. Do not re-add Kakao/Naver/Google buttons to iOS measurement signup until real social login ships.
+Confidence: high
+
+### 2026-08-30 — 5s magic-link timeout maps Render cold-start 200 to failed
+Area: Expo auth client
+Evidence: Live `POST /api/auth/magic-link` returned 200 in ~14s on Render free cold start. `AUTH_FETCH_MS` was 5000, so `requestMagicLink` timed out and returned `{error:failed}` / `S2_ERRORS.failed`.
+Impact: Measurement signup looked broken even when Resend sent the mail.
+Recommended future behavior: Keep `AUTH_FETCH_MS` in the 20–30s band for magic-link (and email-bind). Keep `OAUTH_FETCH_MS` fail-fast. Do not change `MAIL_FROM` or Resend to paper over host timeout.
 Confidence: high
 
 ## Domain Risk Lessons

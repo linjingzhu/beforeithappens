@@ -1,8 +1,9 @@
 import SwiftUI
-import UIKit
 
 enum LoveMeNativeScreen {
     case splash
+    case cover
+    case previewQ1
     case signup
     case sent
     case bind
@@ -24,16 +25,17 @@ struct LoveMeS0S2S3Host: View {
             switch screen {
             case .splash:
                 S0SplashScreen(onFinished: restoreSession)
+            case .cover:
+                LoveMeCoverScreen(onPreviewQuestion: { screen = .previewQ1 })
+            case .previewQ1:
+                LoveMePreviewQ1Screen(onKeepAnswer: { screen = .signup })
             case .signup:
                 S2SignupScreen(
                     phase: .signup,
                     email: email,
                     error: error,
                     busy: busy,
-                    onSubmitEmail: requestLink,
-                    onStartKakao: { startOAuth("kakao") },
-                    onStartNaver: { startOAuth("naver") },
-                    onStartGoogle: { startOAuth("google") }
+                    onSubmitEmail: requestLink
                 )
             case .sent:
                 S2SignupScreen(phase: .sent, email: email, error: error, onUseOtherEmail: { screen = .signup; error = "" })
@@ -59,7 +61,7 @@ struct LoveMeS0S2S3Host: View {
                     screen = (session?["notice"] as? String)?.isEmpty == false ? .notice : .workspace
                 }
             } else {
-                screen = .signup
+                screen = .cover
             }
         }
     }
@@ -100,22 +102,6 @@ struct LoveMeS0S2S3Host: View {
                 self.error = "로그인 링크가 유효하지 않아요."
                 screen = .signup
             }
-        }
-    }
-
-    private func startOAuth(_ provider: String) {
-        busy = true
-        error = ""
-        Task {
-            do {
-                let payload = try await client.startOAuth(provider: provider)
-                if let urlString = payload["url"] as? String, let url = URL(string: urlString) {
-                    await MainActor.run { UIApplication.shared.open(url) }
-                }
-            } catch {
-                self.error = LoveMeS2Copy.oauthUnconfigured
-            }
-            busy = false
         }
     }
 

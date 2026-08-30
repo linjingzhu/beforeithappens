@@ -9,10 +9,11 @@ enum LoveMeS2Copy {
     static let emailLabel = "이메일"
     static let ack = "확인"
     static let otherEmail = "다른 이메일로 요청"
-    static let kakaoStart = "카카오로 시작"
-    static let naverStart = "네이버로 시작"
-    static let googleStart = "Google로 시작"
-    static let divider = "또는"
+    static let coverTitle = "두 사람의 결혼 준비, 한곳에"
+    static let coverLine1 = "질문은 나만 먼저 답해요."
+    static let coverLine2 = "비교는 둘이 낸 뒤에만 열려요."
+    static let coverCta = "미리 한 질문 보기"
+    static let keepTitle = "이 답을 남기려면 로그인해 주세요"
     static let bindTitle = "이메일을 연결해 주세요."
     static let bindCta = "이메일 연결하기"
     static let bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
@@ -34,21 +35,26 @@ struct S2SignupScreen: View {
     var onSubmitEmail: (String) -> Void = { _ in }
     var onUseOtherEmail: () -> Void = {}
     var onAcknowledgeNotice: () -> Void = {}
-    var onStartKakao: () -> Void = {}
-    var onStartNaver: () -> Void = {}
-    var onStartGoogle: () -> Void = {}
     var onBindEmail: (String) -> Void = { _ in }
 
     @State private var emailDraft = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("AB · EMAIL SIGN IN")
-                .font(.caption.weight(.heavy))
+        if phase == .signup {
+            loginGate
+        } else {
+            legacyCard
+        }
+    }
+
+    private var loginGate: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("LoveMe")
+                .font(.system(size: 22, weight: .medium, design: .serif))
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text(phase == .bind ? LoveMeS2Copy.bindTitle : LoveMeS2Copy.title)
-                .font(.largeTitle.weight(.medium))
-            if phase == .signup {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(LoveMeS2Copy.keepTitle)
+                    .font(.title2.weight(.bold))
                 Text(LoveMeS2Copy.body)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
                 Text(LoveMeS2Copy.emailLabel)
@@ -65,20 +71,31 @@ struct S2SignupScreen: View {
                 Button(LoveMeS2Copy.cta) { onSubmitEmail(emailDraft) }
                     .buttonStyle(LoveMePrimaryButtonStyle())
                     .disabled(busy)
-                Text(LoveMeS2Copy.divider)
-                    .font(.footnote.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 8)
-                Button(LoveMeS2Copy.kakaoStart, action: onStartKakao)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .disabled(busy)
-                Button(LoveMeS2Copy.naverStart, action: onStartNaver)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .disabled(busy)
-                Button(LoveMeS2Copy.googleStart, action: onStartGoogle)
-                    .frame(maxWidth: .infinity, minHeight: 48)
-                    .disabled(busy)
-            } else if phase == .bind {
+                if !error.isEmpty {
+                    Text(error)
+                        .foregroundStyle(Color(red: 0.71, green: 0.28, blue: 0.22))
+                        .font(.footnote.weight(.bold))
+                }
+            }
+            .padding(24)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            Spacer()
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .onAppear { emailDraft = email }
+    }
+
+    private var legacyCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("AB · EMAIL SIGN IN")
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+            Text(phase == .bind ? LoveMeS2Copy.bindTitle : LoveMeS2Copy.title)
+                .font(.title2.weight(.bold))
+            if phase == .bind {
                 Text(LoveMeS2Copy.bindBody)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
                 Text(LoveMeS2Copy.emailLabel)
@@ -116,6 +133,70 @@ struct S2SignupScreen: View {
         }
         .padding(22)
         .onAppear { emailDraft = email }
+    }
+}
+
+struct LoveMePreviewQ1Screen: View {
+    var onKeepAnswer: () -> Void = {}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("나만 보임")
+                .font(.caption.weight(.heavy))
+                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+            Text("우리에게 집은 어떤 의미에 가장 가까울까요?")
+                .font(.title2.weight(.medium))
+            Button("이 답 남기기", action: onKeepAnswer)
+                .buttonStyle(LoveMePrimaryButtonStyle())
+        }
+        .padding(28)
+    }
+}
+
+struct LoveMeCoverScreen: View {
+    var onPreviewQuestion: () -> Void = {}
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text("LoveMe")
+                .font(.title.weight(.medium))
+                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+            Text("♡")
+                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+            Text(LoveMeS2Copy.coverTitle)
+                .font(.title2.weight(.medium))
+                .multilineTextAlignment(.center)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(red: 0.97, green: 0.94, blue: 0.89))
+                .frame(width: 176, height: 176)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [4]))
+                        .foregroundStyle(Color(red: 0.84, green: 0.77, blue: 0.68))
+                        .padding(8)
+                )
+                .overlay(Text("♡").font(.title).foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37)))
+                .overlay(alignment: .trailing) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(red: 0.97, green: 0.94, blue: 0.89))
+                        .frame(width: 30, height: 40)
+                        .overlay(Circle().fill(Color(red: 0.78, green: 0.63, blue: 0.36)).frame(width: 12, height: 12))
+                        .offset(x: 12)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(red: 0.93, green: 0.47, blue: 0.37))
+                        .frame(width: 10, height: 24)
+                        .offset(x: 28, y: 16)
+                }
+            Text(LoveMeS2Copy.coverLine1)
+            Text(LoveMeS2Copy.coverLine2)
+            Button(LoveMeS2Copy.coverCta, action: onPreviewQuestion)
+                .buttonStyle(LoveMePrimaryButtonStyle())
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
     }
 }
 

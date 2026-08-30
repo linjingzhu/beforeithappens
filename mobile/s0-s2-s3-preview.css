@@ -13,7 +13,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 82% 3%, #f8dfd5 0, transparent 28rem), var(--paper);
+  background: #fdfbf7;
   color: var(--ink);
   font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
@@ -24,6 +24,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  background: #fdfbf7;
 }
 
 .loveme-topbar {
@@ -185,4 +186,171 @@ body {
   background: var(--soft);
   font-size: 13px;
   font-weight: 700;
+}
+
+.loveme-cover {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: #fdfbf7;
+  padding: 36px 28px 32px;
+}
+
+.loveme-cover-brand {
+  margin: 0;
+  color: var(--coral);
+  font: 500 28px Georgia, "Times New Roman", serif;
+}
+
+.loveme-heart {
+  margin: 8px 0 18px;
+  color: var(--coral);
+  font-size: 18px;
+}
+
+.loveme-cover h1 {
+  margin: 0 0 28px;
+  color: var(--ink);
+  font: 500 26px/1.35 Georgia, "Times New Roman", serif;
+}
+
+.loveme-cover > p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.loveme-notebook {
+  position: relative;
+  width: 196px;
+  height: 196px;
+  margin: 0 0 28px;
+}
+
+.loveme-notebook-shadow {
+  position: absolute;
+  inset: 18px 12px 8px 20px;
+  background: #e8d8c4;
+  border-radius: 12px;
+}
+
+.loveme-notebook-face {
+  position: relative;
+  width: 176px;
+  height: 176px;
+  margin: 0 auto;
+  background: #f7f0e4;
+  border: 1px solid #d7c4ae;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(43, 37, 33, 0.12);
+}
+
+.loveme-stitch {
+  display: grid;
+  place-items: center;
+  height: calc(100% - 16px);
+  margin: 8px;
+  border: 2px dashed #d7c4ae;
+  border-radius: 8px;
+}
+
+.loveme-notebook-heart {
+  color: var(--coral);
+  font-size: 32px;
+}
+
+.loveme-strap {
+  position: absolute;
+  right: -12px;
+  top: 68px;
+  width: 30px;
+  height: 40px;
+  border: 1px solid #d7c4ae;
+  border-radius: 4px;
+  background: #f7f0e4;
+  display: grid;
+  place-items: center;
+}
+
+.loveme-snap {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c6a15b;
+}
+
+.loveme-ribbon {
+  position: absolute;
+  left: 28px;
+  bottom: -16px;
+  width: 10px;
+  height: 24px;
+  background: var(--coral);
+  border-radius: 0 0 6px 6px;
+}
+
+.loveme-cover-cta {
+  width: 100%;
+  min-height: 52px;
+  margin-top: auto;
+  border-radius: 16px;
+}
+
+.loveme-gate {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fdfbf7;
+  padding: 28px 20px 40px;
+}
+
+.loveme-gate-brand {
+  margin: 0 0 28px;
+  color: var(--coral);
+  font: 500 22px Georgia, "Times New Roman", serif;
+}
+
+.loveme-gate-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px 24px 32px;
+  box-shadow: 0 10px 32px rgba(43, 37, 33, 0.06);
+}
+
+.loveme-gate-card h1 {
+  margin: 0;
+  color: var(--ink);
+  font: 700 22px/1.4 Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+.loveme-gate-card > p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.loveme-choices {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.loveme-choice {
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  text-align: left;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.loveme-choice.is-on {
+  border-color: var(--coral);
+  background: var(--soft);
 }

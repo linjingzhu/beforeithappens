@@ -5,5 +5,10 @@ export const colors = {
   card: "#fffdfa",
   line: "#e7ddd5",
   coral: "#ee775f",
-  soft: "#fce8e1"
+  soft: "#fce8e1",
+  cream: "#f7f0e4",
+  stitch: "#d7c4ae",
+  gold: "#c6a15b",
+  coverPaper: "#fdfbf7",
+  gateCard: "#ffffff"
 };

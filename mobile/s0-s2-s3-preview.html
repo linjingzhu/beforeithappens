@@ -9,7 +9,6 @@
 <body>
   <div id="app" class="preview-frame"></div>
   <script type="module">
-    import { S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
     import { renderNativeScreen } from "./s0-s2-s3-screens.js";
     import {
       acknowledgeLoginNotice,
@@ -17,10 +16,14 @@
       consumeOpenedLink,
       consumeSucceeded,
       createNativeFlow,
+      continueFromPreviewQ1,
       finishSplash,
       invitePartner,
+      keepPreviewAnswer,
       noticeAcknowledged,
+      openPreviewQ1,
       restoreSessionAfterSplash,
+      selectPreviewChoice,
       setEmail,
       submitMagicLink
     } from "./s0-s2-s3-flow.js";
@@ -30,7 +33,9 @@
     const start = params.get("screen") || "";
     const demo = params.get("demo") === "1" || params.get("demo") === "true" || Boolean(start);
     let state = createNativeFlow();
-    if (start === "signup") state = finishSplash(state);
+    if (start === "cover") state = finishSplash(state);
+    if (start === "preview-q1") state = openPreviewQ1(finishSplash(state));
+    if (start === "signup") state = keepPreviewAnswer(selectPreviewChoice(openPreviewQ1(finishSplash(state)), "home-rest"));
     if (start === "sent") state = { ...finishSplash(state), sentEmail: "buyer@example.com", email: "buyer@example.com", screen: "sent" };
     if (start === "notice") {
       state = consumeSucceeded(finishSplash(state), {
@@ -94,9 +99,10 @@
       const action = event.target.closest("[data-action]")?.dataset.action;
       if (!action) return;
       if (action === "back-to-signup") state = backToSignup(state);
-      else if (action === "oauth-kakao" || action === "oauth-naver" || action === "oauth-google") {
-        state = { ...state, error: S2_SOCIAL_COPY.oauthUnconfigured };
-      }
+      else if (action === "preview-q1") state = openPreviewQ1(state);
+      else if (action === "select-q1") state = selectPreviewChoice(state, event.target.dataset.choice);
+      else if (action === "keep-preview") state = keepPreviewAnswer(state);
+      else if (action === "continue-preview") state = continueFromPreviewQ1(state);
       else if (action === "ack-notice") {
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })

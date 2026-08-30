@@ -29,11 +29,11 @@ test("native S0 copy is LoveMe, 한곳에, 1.2s and S2 strings stay locked", asy
   assert.match(copySource, /이 기기 임시 답은 이어지지 않아요/);
 });
 
-test("logged-out splash routes to S2 signup, then notice, then S3 workspace", async () => {
+test("logged-out splash routes to cover, then notice, then S3 workspace", async () => {
   const app = await readFile("mobile/App.js", "utf8");
   const session = await readFile("mobile/src/session.js", "utf8");
   const screens = await readFile("mobile/src/screens.js", "utf8");
-  assert.match(session, /return loggedIn \? "session" : "signup"/);
+  assert.match(session, /return loggedIn \? "session" : "cover"/);
   assert.match(app, /finishHostSplash/);
   assert.match(app, /SPLASH_MS/);
   assert.match(app, /SignupScreen/);

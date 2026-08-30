@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
-import { EmailBindScreen, NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen } from "./src/screens.js";
+import { EmailBindScreen, NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen, CoverScreen, PreviewQ1Screen } from "./src/screens.js";
 import {
   ackHostNotice,
   createHostApi,
@@ -11,10 +11,10 @@ import {
   sendHostEmailBind,
   sendHostMagicLink,
   splashOpenResult,
-  startHostFlow,
-  startHostSocial
+  startHostFlow
 } from "./src/session.js";
-import { backToSignup, finishSplash, requestLinkStarted, setEmail, socialStartPending } from "./s0-s2-s3-flow.js";
+import { backToSignup, continueFromPreviewQ1, finishSplash, keepPreviewAnswer, openPreviewQ1, requestLinkStarted, selectPreviewChoice, setEmail } from "./s0-s2-s3-flow.js";
+import { defaultPreviewStorage, previewQ1Question } from "./preview-q1.js";
 import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
@@ -22,6 +22,8 @@ import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.
 import { PaywallBuyerScreen, PaywallPartnerScreen } from "./paywall/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+const previewStorage = defaultPreviewStorage();
 
 export default function App() {
   const [state, setState] = useState(startHostFlow);
@@ -53,14 +55,6 @@ export default function App() {
     };
   }, []);
 
-  const startSocial = async (provider) => {
-    const pending = socialStartPending(state);
-    setState(pending);
-    const next = await startHostSocial(pending, provider, api);
-    if (next.oauthUrl && typeof location !== "undefined") location.assign(next.oauthUrl);
-    setState(next);
-  };
-
   const paywallPreview = typeof location !== "undefined"
     ? new URLSearchParams(location.search || "").get("paywall")
     : "";
@@ -78,6 +72,22 @@ export default function App() {
     <>
       <StatusBar style="dark" backgroundColor={colors.paper} />
       {state.screen === "splash" ? <SplashScreenView /> : null}
+      {state.screen === "cover" ? (
+        <CoverScreen onPreviewQuestion={() => setState(openPreviewQ1(state, previewStorage))} />
+      ) : null}
+      {state.screen === "preview-q1" ? (
+        <PreviewQ1Screen
+          question={previewQ1Question()}
+          choiceId={state.previewQ1?.choiceId || ""}
+          loggedIn={Boolean(state.session?.user)}
+          onSelectChoice={(choiceId) => setState(selectPreviewChoice(state, choiceId, previewStorage))}
+          onKeepAnswer={() => {
+            if (!state.previewQ1?.choiceId) return;
+            setState(keepPreviewAnswer(state, previewStorage));
+          }}
+          onContinue={() => setState(continueFromPreviewQ1(state, previewStorage))}
+        />
+      ) : null}
       {state.screen === "signup" ? (
         <SignupScreen
           email={state.email}
@@ -89,9 +99,6 @@ export default function App() {
             if (!started.busy) return;
             setState(await sendHostMagicLink(started, api));
           }}
-          onStartKakao={() => startSocial("kakao")}
-          onStartNaver={() => startSocial("naver")}
-          onStartGoogle={() => startSocial("google")}
         />
       ) : null}
       {state.screen === "bind" ? (

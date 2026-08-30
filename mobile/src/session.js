@@ -1,4 +1,5 @@
 import { createAuthApi } from "../s0-s2-s3-api.js";
+import { readPreviewDraft } from "../preview-q1.js";
 import {
   acknowledgeLoginNotice,
   consumeOpenedLink,
@@ -33,11 +34,11 @@ export function isLoggedIn(session) {
 }
 
 export function afterSplashScreen(loggedIn = isLoggedIn()) {
-  return loggedIn ? "session" : "signup";
+  return loggedIn ? "session" : "cover";
 }
 
 export function startHostFlow() {
-  return createNativeFlow();
+  return createNativeFlow(undefined, { draft: readPreviewDraft() });
 }
 
 export function splashOpenResult(opened, next) {

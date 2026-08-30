@@ -16,7 +16,7 @@ import {
   S2_ERRORS,
   S3_COPY
 } from "../mobile/s0-s2-s3-copy.js";
-import { AUTH_API, AUTH_FETCH_MS, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
+import { AUTH_API, AUTH_FETCH_MS, OAUTH_FETCH_MS, SESSION_FETCH_MS, createAuthApi, extractMagicLinkToken } from "../mobile/s0-s2-s3-api.js";
 import { finishHostOpen } from "../mobile/s4-invite/host-mount.js";
 import { SPLASH_MS } from "../mobile/src/copy.js";
 import { finishHostSplash, splashOpenResult } from "../mobile/src/session.js";
@@ -46,6 +46,7 @@ import {
 } from "../mobile/s0-s2-s3-flow.js";
 import {
   renderNativeScreen,
+  renderCoverScreen,
   renderS0SplashScreen,
   renderS2LoginNoticeScreen,
   renderS2SentScreen,
@@ -137,21 +138,22 @@ test("S0 splash is brand-only and S3 is workspace-created with invite CTA", () =
   assert.equal(workspace.includes("data-action=\"open-pack\""), false);
 });
 
-test("native flow is splash → signup → sent → notice → workspace, never pack", () => {
+test("native flow is splash → cover, never pack", () => {
   let state = createNativeFlow();
   assert.equal(resolveNativeScreen(state), "splash");
   assert.equal(s0ShowsInstallLanding(), false);
   state = finishSplash(state);
-  assert.equal(state.screen, "signup");
+  assert.equal(state.screen, "cover");
   const signup = renderS2SignupScreen({ email: "" });
+  assert.match(signup, /이 답을 남기려면 로그인해 주세요/);
   assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(signup, /로그인 링크 보내기/);
-  assert.match(signup, /카카오로 시작/);
-  assert.match(signup, /네이버로 시작/);
-  assert.match(signup, /Google로 시작/);
+  assert.equal(signup.includes("카카오로 시작"), false);
+  assert.equal(signup.includes("네이버로 시작"), false);
+  assert.equal(signup.includes("Google로 시작"), false);
   assert.equal(signup.includes("type=\"password\""), false);
   assert.equal(s2HasKakaoLogin(), false);
-  assert.deepEqual(s2SocialStartLabels(), ["카카오로 시작", "네이버로 시작", "Google로 시작"]);
+  assert.deepEqual(s2SocialStartLabels(), []);
   assert.equal(signup.includes("카카오톡"), false);
   const bind = renderS2EmailBindScreen();
   assert.match(bind, /이메일을 연결해 주세요/);
@@ -245,7 +247,11 @@ test("mobile API client reuses web magic-link and workspace session", async () =
 
     const failed = requestLinkFailed(finishSplash(createNativeFlow()), "expired");
     assert.match(failed.error, /만료/);
-    const back = backToSignup({ ...finishSplash(createNativeFlow()), sentEmail: "buyer@example.com" });
+    const back = backToSignup({
+      ...finishSplash(createNativeFlow()),
+      sentEmail: "buyer@example.com",
+      previewQ1: { questionId: "home-01", choiceId: "home-rest", open: true, keepAnswer: true }
+    });
     assert.equal(back.screen, "signup");
   } finally {
     await new Promise((resolve) => server.close(resolve));
@@ -263,12 +269,12 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   const emptyOrigin = createAuthApi({ origin: "", fetchImpl: mustNotFetch });
   const fromEmpty = await restoreSessionAfterSplash(createNativeFlow(), emptyOrigin);
   assert.equal(fromEmpty.splashDone, true);
-  assert.equal(fromEmpty.screen, "signup");
+  assert.equal(fromEmpty.screen, "cover");
   assert.equal(fromEmpty.session?.user ?? null, null);
 
   const hostEmpty = await finishHostSplash(createNativeFlow(), emptyOrigin);
   assert.equal(hostEmpty.splashDone, true);
-  assert.equal(hostEmpty.screen, "signup");
+  assert.equal(hostEmpty.screen, "cover");
 
   const openedEmpty = await finishHostOpen(
     createNativeFlow(),
@@ -277,7 +283,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
     { pathname: "/", search: "" }
   );
   assert.equal(openedEmpty.splashDone, true);
-  assert.equal(openedEmpty.screen, "signup");
+  assert.equal(openedEmpty.screen, "cover");
 
   const rejected = createAuthApi({
     origin: "https://example.test",
@@ -287,7 +293,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromReject = await restoreSessionAfterSplash(createNativeFlow(), rejected);
   assert.equal(fromReject.splashDone, true);
-  assert.equal(fromReject.screen, "signup");
+  assert.equal(fromReject.screen, "cover");
 
   const hanging = createAuthApi({
     origin: "https://example.test",
@@ -296,10 +302,10 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromHang = await restoreSessionAfterSplash(createNativeFlow(), hanging, { timeoutMs: 20 });
   assert.equal(fromHang.splashDone, true);
-  assert.equal(fromHang.screen, "signup");
+  assert.equal(fromHang.screen, "cover");
 
   const opened = createNativeFlow();
-  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "cover");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "signup" }).screen, "signup");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "workspace" }).screen, "workspace");
 
@@ -341,6 +347,11 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.match(s2, /로그인 링크 보내기/);
   assert.match(s2, /메일을 확인해 주세요\. 링크는 10분 동안만 유효해요/);
   assert.match(s2, /이 기기 임시 답은 이어지지 않아요/);
+  assert.match(s2, /질문은 나만 먼저 답해요\./);
+  assert.match(s2, /이 답을 남기려면 로그인해 주세요/);
+  assert.equal(s2.includes("카카오로 시작"), false);
+  assert.equal(s2.includes("네이버로 시작"), false);
+  assert.equal(s2.includes("Google로 시작"), false);
   const s3 = texts[4] + texts[5];
   assert.match(s3, /워크스페이스가 만들어졌어요/);
   assert.match(s3, /파트너 초대하기/);
@@ -357,6 +368,7 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.equal(s0ShowsInstallLanding(), false);
   for (const html of [
     renderS0SplashScreen(),
+    renderCoverScreen(),
     renderS2SignupScreen(),
     renderS2SentScreen(),
     renderS2EmailBindScreen(),
@@ -389,32 +401,36 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   const bind = screens.slice(screens.indexOf("export function EmailBindScreen"), screens.indexOf("export function SentScreen"));
   assert.match(screens, /function AuthKeyboardShell/);
   assert.match(signup, /pressableStyle\(styles\.primary/);
-  assert.match(signup, /pressableStyle\(styles\.secondary/);
-  assert.match(signup, /<AuthKeyboardShell testID="signup">/);
+  assert.equal(signup.includes("pressableStyle(styles.secondary"), false);
+  assert.match(signup, /testID="signup"/);
+  assert.match(signup, /S2_KEEP_COPY.title/);
+  assert.match(signup, /S2_KEEP_COPY.body/);
   assert.match(bind, /<AuthKeyboardShell testID="bind">/);
   const ctaAt = signup.indexOf("AUTH_COPY.cta");
   const errorAt = signup.indexOf("{error ?");
-  const kakaoAt = signup.indexOf("testID=\"signup-kakao\"");
-  assert.ok(ctaAt >= 0 && errorAt > ctaAt && kakaoAt > errorAt);
+  assert.ok(ctaAt >= 0 && errorAt > ctaAt);
+  assert.equal(signup.includes("testID=\"signup-kakao\""), false);
+  assert.equal(signup.includes("onStartKakao"), false);
+  assert.equal(signup.includes("카카오로 시작"), false);
 
   const html = renderS2SignupScreen({ error: S2_ERRORS["invalid-email"] });
   const htmlErrorAt = html.indexOf(S2_ERRORS["invalid-email"]);
   assert.ok(html.indexOf(S2_COPY.cta) < htmlErrorAt);
-  assert.ok(htmlErrorAt < html.indexOf("oauth-kakao"));
-  assert.match(html, /카카오로 시작/);
+  assert.equal(html.includes("oauth-kakao"), false);
+  assert.equal(html.includes("카카오로 시작"), false);
   const unconfigured = renderS2SignupScreen({ error: S2_ERRORS["oauth-unconfigured"] });
-  assert.ok(unconfigured.indexOf(S2_ERRORS["oauth-unconfigured"]) < unconfigured.indexOf("oauth-kakao"));
-  assert.match(unconfigured, /카카오로 시작/);
+  assert.equal(unconfigured.includes("oauth-kakao"), false);
+  assert.equal(unconfigured.includes("카카오로 시작"), false);
   assert.match(unconfigured, /이 로그인은 아직 준비 중이에요/);
 
-  const submit = app.slice(app.indexOf("onSubmitEmail"), app.indexOf("onStartKakao"));
+  const submit = app.slice(app.indexOf("onSubmitEmail"), app.indexOf("state.screen === \"bind\""));
   assert.match(submit, /requestLinkStarted/);
   assert.ok(submit.indexOf("setState(started)") < submit.indexOf("await sendHostMagicLink"));
-  assert.ok(app.indexOf("setState(pending)") < app.indexOf("await startHostSocial"));
-  assert.match(app, /socialStartPending/);
+  assert.equal(app.includes("startHostSocial"), false);
+  assert.equal(app.includes("onStartKakao"), false);
 });
 
-test("502 magic-link failed copy sits under the CTA, not below social buttons", async () => {
+test("502 magic-link failed copy sits under the CTA", async () => {
   const from502 = createAuthApi({
     origin: "https://example.test",
     fetchImpl: async () => jsonResponse({
@@ -444,17 +460,40 @@ test("502 magic-link failed copy sits under the CTA, not below social buttons", 
   const html = renderS2SignupScreen({ error: state.error });
   const failedAt = html.indexOf(S2_ERRORS.failed);
   assert.ok(html.indexOf(S2_COPY.cta) < failedAt);
-  assert.ok(failedAt < html.indexOf("oauth-kakao"));
-  assert.match(html, /카카오로 시작/);
+  assert.equal(html.includes("oauth-kakao"), false);
+  assert.equal(html.includes("카카오로 시작"), false);
 });
 
-test("auth start fetches fail fast: hung magic-link and 501 oauth", async () => {
-  assert.ok(AUTH_FETCH_MS >= 2000 && AUTH_FETCH_MS <= 8000);
+test("magic-link waits out a cold start; oauth stays fail-fast", async () => {
+  assert.ok(AUTH_FETCH_MS >= 20000 && AUTH_FETCH_MS <= 30000);
+  assert.ok(OAUTH_FETCH_MS >= 2000 && OAUTH_FETCH_MS <= 8000);
+  assert.ok(OAUTH_FETCH_MS < AUTH_FETCH_MS);
+
+  const delayedOk = createAuthApi({
+    origin: "https://example.test",
+    fetchImpl: () => new Promise((resolve) => {
+      setTimeout(() => resolve(jsonResponse({ ok: true, status: 200, payload: { ok: true } })), 40);
+    }),
+    authTimeoutMs: 80,
+    oauthTimeoutMs: 10
+  });
+  const slowSend = await delayedOk.requestMagicLink("buyer@example.com");
+  assert.equal(slowSend.ok, true);
+  const oauthTooSlow = await delayedOk.startOAuth("kakao");
+  assert.equal(oauthTooSlow.ok, false);
+  assert.equal(oauthTooSlow.error, "oauth-unconfigured");
+  const slowState = await submitMagicLink(
+    requestLinkStarted(setEmail(finishSplash(createNativeFlow()), "buyer@example.com")),
+    delayedOk
+  );
+  assert.equal(slowState.screen, "sent");
+  assert.equal(slowState.error, "");
 
   const hanging = createAuthApi({
     origin: "https://example.test",
     fetchImpl: () => new Promise(() => {}),
-    authTimeoutMs: 20
+    authTimeoutMs: 20,
+    oauthTimeoutMs: 20
   });
   const hungLink = await hanging.requestMagicLink("buyer@example.com");
   assert.equal(hungLink.ok, false);
