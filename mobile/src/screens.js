@@ -1,7 +1,29 @@
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { AUTH_COPY, LINE, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
+
+function pressableStyle(...parts) {
+  return ({ pressed }) => {
+    const disabled = parts.includes(styles.disabled);
+    return [...parts, pressed && !disabled ? styles.pressed : null];
+  };
+}
+
+function AuthKeyboardShell({ testID, children }) {
+  return (
+    <KeyboardAvoidingView
+      style={styles.shell}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      testID={testID}
+      accessibilityLabel={testID}
+    >
+      <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>{children}</View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
 
 export function SplashScreenView() {
   return (
@@ -15,78 +37,74 @@ export function SplashScreenView() {
 export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail, onStartKakao, onStartNaver, onStartGoogle }) {
   const [draft, setDraft] = useState(email);
   return (
-    <View style={styles.shell} testID="signup" accessibilityLabel="signup">
-      <View style={styles.card}>
-        <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-        <Text style={styles.title}>{AUTH_COPY.title}</Text>
-        <Text style={styles.body}>{AUTH_COPY.body}</Text>
-        <Text style={styles.label}>이메일</Text>
-        <TextInput
-          testID="signup-email"
-          value={draft}
-          onChangeText={setDraft}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          editable={!busy}
-          style={styles.input}
-        />
-        <Pressable
-          testID="signup-cta"
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={() => onSubmitEmail?.(draft)}
-          style={[styles.primary, busy ? styles.disabled : null]}
-        >
-          <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
-        </Pressable>
-        <Text style={styles.divider}>{S2_SOCIAL_COPY.divider}</Text>
-        <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={[styles.secondary, busy ? styles.disabled : null]}>
-          <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.kakao}</Text>
-        </Pressable>
-        <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={[styles.secondary, busy ? styles.disabled : null]}>
-          <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.naver}</Text>
-        </Pressable>
-        <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={[styles.secondary, busy ? styles.disabled : null]}>
-          <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.google}</Text>
-        </Pressable>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-    </View>
+    <AuthKeyboardShell testID="signup">
+      <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
+      <Text style={styles.title}>{AUTH_COPY.title}</Text>
+      <Text style={styles.body}>{AUTH_COPY.body}</Text>
+      <Text style={styles.label}>이메일</Text>
+      <TextInput
+        testID="signup-email"
+        value={draft}
+        onChangeText={setDraft}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+        editable={!busy}
+        style={styles.input}
+      />
+      <Pressable
+        testID="signup-cta"
+        accessibilityRole="button"
+        disabled={busy}
+        onPress={() => onSubmitEmail?.(draft)}
+        style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
+      >
+        <Text style={styles.primaryLabel}>{AUTH_COPY.cta}</Text>
+      </Pressable>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Text style={styles.divider}>{S2_SOCIAL_COPY.divider}</Text>
+      <Pressable testID="signup-kakao" accessibilityRole="button" disabled={busy} onPress={onStartKakao} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
+        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.kakao}</Text>
+      </Pressable>
+      <Pressable testID="signup-naver" accessibilityRole="button" disabled={busy} onPress={onStartNaver} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
+        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.naver}</Text>
+      </Pressable>
+      <Pressable testID="signup-google" accessibilityRole="button" disabled={busy} onPress={onStartGoogle} style={pressableStyle(styles.secondary, busy ? styles.disabled : null)}>
+        <Text style={styles.secondaryLabel}>{S2_SOCIAL_COPY.google}</Text>
+      </Pressable>
+    </AuthKeyboardShell>
   );
 }
 
 export function EmailBindScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
-    <View style={styles.shell} testID="bind" accessibilityLabel="bind">
-      <View style={styles.card}>
-        <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-        <Text style={styles.title}>{S2_EMAIL_BIND_COPY.title}</Text>
-        <Text style={styles.body}>{S2_EMAIL_BIND_COPY.body}</Text>
-        <Text style={styles.label}>{S2_EMAIL_BIND_COPY.emailLabel}</Text>
-        <TextInput
-          testID="bind-email"
-          value={draft}
-          onChangeText={setDraft}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          editable={!busy}
-          style={styles.input}
-        />
-        <Pressable
-          testID="bind-cta"
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={() => onSubmitEmail?.(draft)}
-          style={[styles.primary, busy ? styles.disabled : null]}
-        >
-          <Text style={styles.primaryLabel}>{S2_EMAIL_BIND_COPY.cta}</Text>
-        </Pressable>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-      </View>
-    </View>
+    <AuthKeyboardShell testID="bind">
+      <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
+      <Text style={styles.title}>{S2_EMAIL_BIND_COPY.title}</Text>
+      <Text style={styles.body}>{S2_EMAIL_BIND_COPY.body}</Text>
+      <Text style={styles.label}>{S2_EMAIL_BIND_COPY.emailLabel}</Text>
+      <TextInput
+        testID="bind-email"
+        value={draft}
+        onChangeText={setDraft}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="email-address"
+        editable={!busy}
+        style={styles.input}
+      />
+      <Pressable
+        testID="bind-cta"
+        accessibilityRole="button"
+        disabled={busy}
+        onPress={() => onSubmitEmail?.(draft)}
+        style={pressableStyle(styles.primary, busy ? styles.disabled : null)}
+      >
+        <Text style={styles.primaryLabel}>{S2_EMAIL_BIND_COPY.cta}</Text>
+      </Pressable>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+    </AuthKeyboardShell>
   );
 }
 
@@ -151,6 +169,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24
+  },
+  flexFill: {
+    flex: 1,
+    width: "100%"
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 24,
+    width: "100%"
   },
   wordmark: {
     color: colors.ink,
@@ -263,5 +291,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.4
+  },
+  pressed: {
+    opacity: 0.72
   }
 });

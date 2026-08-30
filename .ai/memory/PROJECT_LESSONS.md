@@ -26,7 +26,12 @@ Confidence: high
 
 ## UX / Runtime Lessons
 
-- None recorded yet.
+### 2026-08-30 — iOS first tap on S2 CTA only dismisses the keyboard
+Area: Expo signup / bind
+Evidence: SignupScreen had a TextInput then Pressable CTAs with no KeyboardAvoidingView/ScrollView. On iOS the first tap dismisses the keyboard and does not fire onPress. App.js also `setState(await sendHostMagicLink(...))`, so a hung Render fetch left the CTA looking dead.
+Impact: Preview-build signup appeared broken even when the handler was wired.
+Recommended future behavior: Wrap email forms in KeyboardAvoidingView + ScrollView `keyboardShouldPersistTaps="handled"`. `setState` busy/pending before await. Timeout magic-link and oauth start (a few seconds); map 501 to `oauth-unconfigured`. Pressables need a `{ pressed }` style (opacity), not a static array. Live 502 `{error:failed}` from Resend-restricted inboxes must show `S2_ERRORS.failed` under the CTA, not below social buttons. Do not change `MAIL_FROM` to paper over that.
+Confidence: high
 
 ### 2026-08-30 — S2 Kakao start is not S4 KakaoTalk share
 Area: auth / invite share

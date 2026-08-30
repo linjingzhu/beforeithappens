@@ -34,6 +34,7 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
         <label for="s2-email">${escapeHtml(S2_COPY.emailLabel)}</label>
         <input id="s2-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
         <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.cta)}</button>
+        ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
       </form>
       <p class="loveme-social-divider">${escapeHtml(S2_SOCIAL_COPY.divider)}</p>
       <div class="loveme-social" role="group">
@@ -41,7 +42,6 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
         <button class="loveme-secondary" type="button" data-action="oauth-naver" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.naver)}</button>
         <button class="loveme-secondary" type="button" data-action="oauth-google" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.google)}</button>
       </div>
-      ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
     </section>
   `;
 }
