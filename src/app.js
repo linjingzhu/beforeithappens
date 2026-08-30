@@ -1,5 +1,5 @@
-import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel } from "./auth.js";
-import { renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
+import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "./auth.js";
+import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
 import { INSTALL_PATH, START_PATH, isInAppBrowser, openInSystemBrowser, readInstallSkip, resolveInstallView, writeInstallSkip } from "./install.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
@@ -363,7 +363,11 @@ function renderAccountView() {
   if (session.user) {
     const inviteFlow = Boolean(inviteToken) && !inviteAccepted && !session.workspace?.acceptedPartner;
     const view = resolveSignedInView(session, noticeDismissed, inviteFlow, inviteFlow && isInvitePriorityError(inviteError));
-    if (view === "notice") {
+    if (view === "bind") {
+      document.querySelector("#app").innerHTML = authScreen === "sent"
+        ? renderSent({ email: emailDraft })
+        : renderEmailBind({ email: emailDraft, error: authError, busy: authBusy });
+    } else if (view === "notice") {
       document.querySelector("#app").innerHTML = renderLoginNotice({ email: session.user.email });
     } else if (view === "invite") {
       document.querySelector("#app").innerHTML = renderInviteAccept({
@@ -400,9 +404,13 @@ function renderAccountView() {
   }
   bindAccountNavigation();
   document.querySelector("[data-auth-form]")?.addEventListener("submit", submitMagicLink);
+  document.querySelector("[data-bind-form]")?.addEventListener("submit", submitEmailBind);
   document.querySelector("[data-invite-form]")?.addEventListener("submit", submitInvite);
+  document.querySelector('[data-action="oauth-kakao"]')?.addEventListener("click", () => startOAuth("kakao"));
+  document.querySelector('[data-action="oauth-naver"]')?.addEventListener("click", () => startOAuth("naver"));
+  document.querySelector('[data-action="oauth-google"]')?.addEventListener("click", () => startOAuth("google"));
   document.querySelector('[data-action="back-to-onboarding"]')?.addEventListener("click", () => {
-    authScreen = "onboarding";
+    authScreen = userNeedsEmail(session.user) ? "bind" : "onboarding";
     authError = "";
     currentView = "product";
     render();
@@ -447,6 +455,64 @@ async function refreshSession() {
     session = response.ok ? await response.json() : emptySession();
   } catch {
     session = emptySession();
+  }
+}
+
+async function startOAuth(provider) {
+  authBusy = true;
+  authError = "";
+  render();
+  try {
+    const response = await fetch("/api/auth/oauth/start", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ provider })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.url) {
+      authError = AUTH_ERRORS[payload.error] || AUTH_ERRORS["oauth-unconfigured"];
+      authScreen = session.user ? (userNeedsEmail(session.user) ? "bind" : authScreen) : "onboarding";
+      return;
+    }
+    window.location.assign(payload.url);
+  } catch {
+    authError = AUTH_ERRORS["oauth-unconfigured"];
+    authScreen = "onboarding";
+  } finally {
+    authBusy = false;
+    render();
+  }
+}
+
+async function submitEmailBind(event) {
+  event.preventDefault();
+  const input = document.querySelector("#bind-email");
+  emailDraft = input?.value.trim() || "";
+  authBusy = true;
+  authError = "";
+  render();
+  try {
+    const response = await fetch("/api/auth/email-bind", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: emailDraft })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      authError = AUTH_ERRORS[payload.error] || AUTH_ERRORS["invalid-email"];
+      authScreen = "bind";
+    } else {
+      authScreen = "sent";
+      authError = "";
+    }
+  } catch {
+    authError = AUTH_ERRORS.failed;
+    authScreen = "bind";
+  } finally {
+    authBusy = false;
+    render();
   }
 }
 
@@ -660,7 +726,7 @@ async function boot() {
     if (locationInfo.authError || locationInfo.isConsumePath || locationInfo.isInvitePath) history.replaceState({}, "", "/");
   }
   if (inviteToken) await loadInvitePreview(inviteToken);
-  if (locationInfo.isInvitePath && session.user && invitePreview?.ok && session.user.email !== invitePreview.email) {
+  if (locationInfo.isInvitePath && session.user && !userNeedsEmail(session.user) && invitePreview?.ok && session.user.email !== invitePreview.email) {
     openedWhileSignedIn = true;
     try { sessionStorage.setItem(INVITE_CONFLICT_KEY, "other-session"); } catch { /* ignore */ }
   } else {

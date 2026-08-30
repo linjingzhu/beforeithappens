@@ -12,6 +12,7 @@ const files = [
   "src/styles.css",
   "src/accessibility.css",
   "server/auth.mjs",
+  "server/oauth.mjs",
   "server/app.mjs",
   "server/store.mjs",
   "server/http.mjs",

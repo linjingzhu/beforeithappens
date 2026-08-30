@@ -10,12 +10,13 @@ These gates are current product law. Later slices may implement them, but must n
 
 - One email identity and one active session per user.
 - One active `CoupleWorkspace` per user. Two members maximum: the buyer and one invited partner.
-- No Kakao. Onboarding is magic-link email only. There is no password.
+- Onboarding is magic-link email plus Kakao/Naver/Google start. There is no password. Kakao login copy is `카카오로 시작`, not S4 KakaoTalk share.
 - Payment is out of the current foundation slice. The marriage pack does not open until the invited partner accepts. Buyer home after login is invite-waiting only. A workspace without an accepted partner (a ghost workspace) must not unlock the pack.
 - Invite is single-use and expires after 7 days. Reissue immediately expires the previous token. Editing the invited email and resending immediately expires the previous token. Accept creates a `CoupleMember` and consumes that invite. Accept email must equal the invite email. A link-only visitor with the wrong login, or no login, cannot accept. Opening the invite while another account is logged in cannot accept; the web path is force logout, then magic-link accept for the invited email. There is no role switch.
-- Buyer invite-waiting share copy is `링크를 보내 파트너를 초대하세요.` with buttons `링크 복사` / `인스타그램` / `카카오톡` and copy success `링크를 복사했어요.` Those buttons share the existing invite link through copy or the system share intent. Do not add Kakao login.
+- Buyer invite-waiting share copy is `링크를 보내 파트너를 초대하세요.` with buttons `링크 복사` / `인스타그램` / `카카오톡` and copy success `링크를 복사했어요.` Those buttons share the existing invite link through copy or the system share intent. Do not replace KakaoTalk share with Kakao login.
 - Email typo recovery copy is `초대 메일이 맞는지 다시 확인해 주세요.` with CTA `이메일 수정하고 다시 보내기`, using the same email field as the first send.
 - Same-session accept copy is `이 기기에 다른 계정으로 로그인되어 있어요.` with CTA `로그아웃하고 넘기기`. Expired and mismatch copies stay `초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.` and `이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요.`
+- Kakao/Naver, and Google without email, must connect an email before invite accept. Title `이메일을 연결해 주세요.` CTA `이메일 연결하기`. Google with email proceeds immediately. Server session/user email is the source of truth for invite matching. If a provider has no OAuth keys, show `이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요.` This social pack is not shippable until provider callbacks are wired.
 - This slice is web-only. Logged-in web may recommend the app with `앱에서 보면 초대와 알림이 더 쉬워요.`, CTA `앱 설치하기` to the web install landing (`/install`, not the store), and skip `웹에서 계속`. The landing title is `앱을 설치하면 시작할 수 있어요.` with App Store / Google Play placeholder store homepages (do not invent a fake app listing) and secondary `지금은 웹에서 시작할래요.` Install is recommended, not a hard gate. The web path is never blocked on install.
 - Instagram `시작하기` opens the web install landing and never deep-links to the store. In Instagram/Kakao in-app browsers show `바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요.` with CTA `브라우저에서 열기`.
 - Do not add a native join screen or universal links. Do not implement native app signup screens. Do not change locked invite expiry, mismatch, or partner-not-installed copies.
@@ -39,7 +40,7 @@ These gates are current product law. Later slices may implement them, but must n
 
 Authentication is a real `User` session, not another local role:
 
-1. Request a magic-link email. The link is valid for 10 minutes.
+1. Request a magic-link email, or start with Kakao/Naver/Google. The magic link is valid for 10 minutes. If Kakao/Naver (or Google without email) has no email, connect email before invite accept.
 2. See the sent confirmation copy.
 3. Consume a valid link and receive one server session.
 4. See the post-login notice that local temporary answers do not continue.
@@ -130,7 +131,7 @@ One 29,000 KRW purchase grants one immutable pack version to one two-person coup
 ## Explicit non-goals
 
 - AI counseling or clinical relationship diagnosis
-- Kakao login or automated Kakao messages
+- automated Kakao messages
 - password accounts
 - one-device two-role product login
 - local-simulator draft migration

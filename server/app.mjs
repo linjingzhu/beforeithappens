@@ -2,6 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
+import { isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
 
 const types = {
@@ -35,7 +36,17 @@ function entitlementErrorStatus(error) {
   return 400;
 }
 
-export function createListener({ auth, couple, answers, entitlement, root, allowDevOutbox = false, outbox = [] } = {}) {
+export function createListener({
+  auth,
+  couple,
+  answers,
+  entitlement,
+  root,
+  allowDevOutbox = false,
+  allowDevOAuth = false,
+  oauthEnv = process.env,
+  outbox = []
+} = {}) {
   if (!auth) throw new Error("auth is required");
   if (!root) throw new Error("root is required");
 
@@ -76,6 +87,93 @@ export function createListener({ auth, couple, answers, entitlement, root, allow
           expiresAt: result.expiresAt
         });
         sendJson(response, 200, { ok: true });
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/auth/oauth/start") {
+        const body = await readJsonBody(request);
+        const provider = normalizeProvider(body.provider);
+        if (!provider) {
+          sendJson(response, 400, { ok: false, error: "invalid-provider" });
+          return;
+        }
+        if (!isOAuthConfigured(provider, oauthEnv)) {
+          sendJson(response, 501, { ok: false, error: "oauth-unconfigured" });
+          return;
+        }
+        const startUrl = oauthAuthorizeUrl(provider, { origin: requestOrigin(request), env: oauthEnv });
+        sendJson(response, 200, { ok: true, provider, url: startUrl, stubbed: false });
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname.startsWith("/api/auth/oauth/") && url.pathname.endsWith("/callback")) {
+        const provider = normalizeProvider(url.pathname.split("/")[4]);
+        if (!provider) {
+          sendJson(response, 400, { ok: false, error: "invalid-provider" });
+          return;
+        }
+        if (allowDevOAuth && (url.searchParams.get("dev") === "1" || url.searchParams.get("stub") === "1")) {
+          const result = auth.completeOAuth({
+            provider,
+            providerUserId: url.searchParams.get("sub") || `dev-${provider}`,
+            email: url.searchParams.get("email") || ""
+          });
+          if (!result.ok) {
+            sendJson(response, 400, result);
+            return;
+          }
+          sendJson(response, 200, { ok: true, session: auth.sessionFor(result.sessionId) }, {
+            "set-cookie": sessionCookieHeader(SESSION_COOKIE, result.sessionId, cookieOptions(request))
+          });
+          return;
+        }
+        const wantsJson = String(request.headers.accept || "").includes("application/json");
+        if (wantsJson) {
+          sendJson(response, 501, { ok: false, error: "oauth-unconfigured", stubbed: true, provider });
+          return;
+        }
+        response.writeHead(302, { location: `/?authError=oauth-unconfigured` });
+        response.end();
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/auth/email-bind") {
+        const body = await readJsonBody(request);
+        const result = auth.requestEmailBind(sessionId, body.email);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, { ok: false, error: result.error });
+          return;
+        }
+        const origin = requestOrigin(request);
+        recordOutbox(outbox, allowDevOutbox, {
+          type: "email-bind",
+          email: result.email,
+          url: `${origin}/auth/consume?token=${encodeURIComponent(result.token)}`,
+          createdAt: new Date().toISOString(),
+          expiresAt: result.expiresAt
+        });
+        sendJson(response, 200, { ok: true });
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/dev/oauth/complete") {
+        if (!allowDevOAuth) {
+          sendJson(response, 404, { error: "not-found" });
+          return;
+        }
+        const body = await readJsonBody(request);
+        const result = auth.completeOAuth({
+          provider: body.provider,
+          providerUserId: body.providerUserId,
+          email: body.email
+        });
+        if (!result.ok) {
+          sendJson(response, 400, result);
+          return;
+        }
+        sendJson(response, 200, { ok: true, session: auth.sessionFor(result.sessionId) }, {
+          "set-cookie": sessionCookieHeader(SESSION_COOKIE, result.sessionId, cookieOptions(request))
+        });
         return;
       }
 

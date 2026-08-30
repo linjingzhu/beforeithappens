@@ -9,6 +9,7 @@
 <body>
   <div id="app" class="preview-frame"></div>
   <script type="module">
+    import { S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
     import { renderNativeScreen } from "./s0-s2-s3-screens.js";
     import {
       acknowledgeLoginNotice,
@@ -34,6 +35,13 @@
     if (start === "notice") {
       state = consumeSucceeded(finishSplash(state), {
         user: { id: "usr_demo", email: "buyer@example.com" },
+        notice: "no-local-draft",
+        workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
+      });
+    }
+    if (start === "bind") {
+      state = consumeSucceeded(finishSplash(state), {
+        user: { id: "usr_demo", email: "", needsEmail: true },
         notice: "no-local-draft",
         workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
       });
@@ -64,6 +72,14 @@
     }
 
     root.addEventListener("submit", async (event) => {
+      if (event.target.matches("[data-bind-form]")) {
+        event.preventDefault();
+        const email = new FormData(event.target).get("email");
+        state = setEmail(state, email);
+        state = { ...state, sentEmail: state.email, screen: "sent", error: "", busy: false };
+        paint();
+        return;
+      }
       if (!event.target.matches("[data-s2-form]")) return;
       event.preventDefault();
       const email = new FormData(event.target).get("email");
@@ -78,6 +94,9 @@
       const action = event.target.closest("[data-action]")?.dataset.action;
       if (!action) return;
       if (action === "back-to-signup") state = backToSignup(state);
+      else if (action === "oauth-kakao" || action === "oauth-naver" || action === "oauth-google") {
+        state = { ...state, error: S2_SOCIAL_COPY.oauthUnconfigured };
+      }
       else if (action === "ack-notice") {
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })

@@ -1,4 +1,4 @@
-import { S2_ERRORS } from "./s0-s2-s3-copy.js";
+import { S2_ERRORS, S2_SOCIAL_COPY } from "./s0-s2-s3-copy.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,9 +28,14 @@ export function canOpenPack(session) {
   return Boolean(session?.user && session.workspace?.acceptedPartner === true);
 }
 
+export function userNeedsEmail(user) {
+  return Boolean(user) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(user.email || "").trim());
+}
+
 export function resolveNativeScreen(state) {
   if (!state?.splashDone) return "splash";
   if (!state.session?.user) return state.sentEmail ? "sent" : "signup";
+  if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
   if (state.session.notice && !state.noticeDismissed) return "notice";
   return "workspace";
 }
@@ -120,6 +125,18 @@ export function s2HasKakaoLogin() {
   return false;
 }
 
+export function s2SocialStartLabels() {
+  return [S2_SOCIAL_COPY.kakao, S2_SOCIAL_COPY.naver, S2_SOCIAL_COPY.google];
+}
+
+export function oauthStartFailed(state, error = "oauth-unconfigured") {
+  return applyScreen({
+    ...state,
+    busy: false,
+    error: S2_ERRORS[error] || S2_ERRORS["oauth-unconfigured"]
+  });
+}
+
 export function s3HasPayment() {
   return false;
 }
@@ -164,6 +181,32 @@ export async function restoreSessionAfterSplash(state, api) {
     });
   } catch {
     return next;
+  }
+}
+
+export async function startSocialLogin(state, api, provider) {
+  const pending = { ...state, splashDone: true, busy: true, error: "" };
+  try {
+    const result = await api.startOAuth(provider);
+    if (!result.ok) return oauthStartFailed(pending, result.error);
+    return { ...pending, busy: false, action: "oauth-redirect", oauthUrl: result.url };
+  } catch {
+    return oauthStartFailed(pending, "oauth-unconfigured");
+  }
+}
+
+export async function submitEmailBind(state, api) {
+  const email = String(state.email || "").trim();
+  if (!isValidEmail(email)) {
+    return applyScreen({ ...state, busy: false, error: S2_ERRORS["invalid-email"] });
+  }
+  const started = { ...state, email, busy: true, error: "" };
+  try {
+    const result = await api.requestEmailBind(started.email);
+    if (!result.ok) return requestLinkFailed(started, result.error);
+    return requestLinkSucceeded(started);
+  } catch {
+    return requestLinkFailed(started, "failed");
   }
 }
 

@@ -9,12 +9,21 @@ enum LoveMeS2Copy {
     static let emailLabel = "이메일"
     static let ack = "확인"
     static let otherEmail = "다른 이메일로 요청"
+    static let kakaoStart = "카카오로 시작"
+    static let naverStart = "네이버로 시작"
+    static let googleStart = "Google로 시작"
+    static let divider = "또는"
+    static let bindTitle = "이메일을 연결해 주세요."
+    static let bindCta = "이메일 연결하기"
+    static let bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
+    static let oauthUnconfigured = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
 }
 
 enum S2SignupPhase {
     case signup
     case sent
     case notice
+    case bind
 }
 
 struct S2SignupScreen: View {
@@ -25,6 +34,10 @@ struct S2SignupScreen: View {
     var onSubmitEmail: (String) -> Void = { _ in }
     var onUseOtherEmail: () -> Void = {}
     var onAcknowledgeNotice: () -> Void = {}
+    var onStartKakao: () -> Void = {}
+    var onStartNaver: () -> Void = {}
+    var onStartGoogle: () -> Void = {}
+    var onBindEmail: (String) -> Void = { _ in }
 
     @State private var emailDraft = ""
 
@@ -33,7 +46,7 @@ struct S2SignupScreen: View {
             Text("AB · EMAIL SIGN IN")
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text(LoveMeS2Copy.title)
+            Text(phase == .bind ? LoveMeS2Copy.bindTitle : LoveMeS2Copy.title)
                 .font(.largeTitle.weight(.medium))
             if phase == .signup {
                 Text(LoveMeS2Copy.body)
@@ -50,6 +63,36 @@ struct S2SignupScreen: View {
                     .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.91, green: 0.87, blue: 0.84)))
                     .disabled(busy)
                 Button(LoveMeS2Copy.cta) { onSubmitEmail(emailDraft) }
+                    .buttonStyle(LoveMePrimaryButtonStyle())
+                    .disabled(busy)
+                Text(LoveMeS2Copy.divider)
+                    .font(.footnote.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 8)
+                Button(LoveMeS2Copy.kakaoStart, action: onStartKakao)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .disabled(busy)
+                Button(LoveMeS2Copy.naverStart, action: onStartNaver)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .disabled(busy)
+                Button(LoveMeS2Copy.googleStart, action: onStartGoogle)
+                    .frame(maxWidth: .infinity, minHeight: 48)
+                    .disabled(busy)
+            } else if phase == .bind {
+                Text(LoveMeS2Copy.bindBody)
+                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                Text(LoveMeS2Copy.emailLabel)
+                    .font(.caption.weight(.bold))
+                TextField(LoveMeS2Copy.emailLabel, text: $emailDraft)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 48)
+                    .background(Color.white)
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.91, green: 0.87, blue: 0.84)))
+                    .disabled(busy)
+                Button(LoveMeS2Copy.bindCta) { onBindEmail(emailDraft) }
                     .buttonStyle(LoveMePrimaryButtonStyle())
                     .disabled(busy)
             } else if phase == .sent {

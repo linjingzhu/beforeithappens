@@ -1,4 +1,4 @@
-export { MAGIC_LINK_TTL_MS, S2_COPY, S2_ERRORS, S3_COPY } from "../s0-s2-s3-copy.js";
+export { MAGIC_LINK_TTL_MS, S2_COPY, S2_EMAIL_BIND_COPY, S2_ERRORS, S2_SOCIAL_COPY, S3_COPY } from "../s0-s2-s3-copy.js";
 
 export const WORDMARK = "LoveMe";
 export const LINE = "두 사람의 결혼 준비, 한곳에";

@@ -96,6 +96,17 @@ test("same-session accept cannot succeed for another logged-in account", () => {
   assert.equal(couple.acceptInvite(partner.sessionId, invite.token).ok, true);
 });
 
+test("OAuth session without email cannot accept until email is connected", () => {
+  const { auth, couple, login } = system();
+  const buyer = login("buyer@example.com");
+  const invite = couple.issueInvite(buyer.sessionId, "partner@example.com");
+  const kakao = auth.completeOAuth({ provider: "kakao", providerUserId: "k-1" });
+  assert.equal(couple.acceptInvite(kakao.sessionId, invite.token).error, "needs-email");
+  const bind = auth.requestEmailBind(kakao.sessionId, "partner@example.com");
+  const connected = auth.consumeMagicLink(bind.token);
+  assert.equal(couple.acceptInvite(connected.sessionId, invite.token).ok, true);
+});
+
 test("link-only and mismatched email cannot accept", () => {
   const { couple, login } = system();
   const buyer = login("buyer@example.com");

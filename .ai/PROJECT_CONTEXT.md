@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash then S2–S3 magic-link / workspace screens. S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash then S2–S3 magic-link + social start / workspace screens. S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
@@ -53,12 +53,13 @@ Targeted tests:
 
 - `src/questions.js` — structured question content
 - `src/app.js` — session-gated product views and historical local question workflow
-- `src/auth.js` / `src/auth-ui.js` — magic-link copy, pack gate, invite-waiting share, email-typo resend, same-session accept block
+- `src/auth.js` / `src/auth-ui.js` — magic-link copy, Kakao/Naver/Google start, email-bind gate, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
 - `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → S2 magic-link → S3 workspace created. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`).
 - `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
-- `server/auth.mjs` — User session, 10-minute magic links, forced logout
+- `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
+- `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed. The S2 social pack is not shippable; preview iOS stays on `stable`.
 - `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite
 - `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
 - `server/entitlement.mjs` — one 29,000 KRW purchase, partner free, webhook-idempotent grant

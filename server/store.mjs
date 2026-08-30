@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 export function emptyState() {
   return {
     users: [],
+    identities: [],
     magicLinks: [],
     sessions: [],
     workspaces: [],

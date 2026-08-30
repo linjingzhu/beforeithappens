@@ -30,9 +30,17 @@ object LoveMeS2Copy {
     const val emailLabel = "이메일"
     const val ack = "확인"
     const val otherEmail = "다른 이메일로 요청"
+    const val kakaoStart = "카카오로 시작"
+    const val naverStart = "네이버로 시작"
+    const val googleStart = "Google로 시작"
+    const val divider = "또는"
+    const val bindTitle = "이메일을 연결해 주세요."
+    const val bindCta = "이메일 연결하기"
+    const val bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
+    const val oauthUnconfigured = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
 }
 
-enum class S2SignupPhase { Signup, Sent, Notice }
+enum class S2SignupPhase { Signup, Sent, Notice, Bind }
 
 @Composable
 fun S2SignupScreen(
@@ -42,12 +50,21 @@ fun S2SignupScreen(
     busy: Boolean = false,
     onSubmitEmail: (String) -> Unit = {},
     onUseOtherEmail: () -> Unit = {},
-    onAcknowledgeNotice: () -> Unit = {}
+    onAcknowledgeNotice: () -> Unit = {},
+    onStartKakao: () -> Unit = {},
+    onStartNaver: () -> Unit = {},
+    onStartGoogle: () -> Unit = {},
+    onBindEmail: (String) -> Unit = {}
 ) {
     var emailDraft by remember { mutableStateOf(email) }
     Column(modifier = Modifier.padding(22.dp)) {
         Text("AB · EMAIL SIGN IN", color = Color(0xFFEE775F), fontSize = 11.sp)
-        Text(LoveMeS2Copy.title, fontSize = 34.sp, color = Color(0xFF2B2521), modifier = Modifier.padding(top = 8.dp))
+        Text(
+            if (phase == S2SignupPhase.Bind) LoveMeS2Copy.bindTitle else LoveMeS2Copy.title,
+            fontSize = 34.sp,
+            color = Color(0xFF2B2521),
+            modifier = Modifier.padding(top = 8.dp)
+        )
         when (phase) {
             S2SignupPhase.Signup -> {
                 Text(LoveMeS2Copy.body, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))
@@ -71,6 +88,53 @@ fun S2SignupScreen(
                         .heightIn(min = 48.dp)
                         .padding(top = 8.dp)
                 ) { Text(LoveMeS2Copy.cta) }
+                Text(LoveMeS2Copy.divider, modifier = Modifier.padding(top = 16.dp, bottom = 8.dp))
+                OutlinedButton(
+                    onClick = onStartKakao,
+                    enabled = !busy,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                ) { Text(LoveMeS2Copy.kakaoStart) }
+                OutlinedButton(
+                    onClick = onStartNaver,
+                    enabled = !busy,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .padding(top = 8.dp)
+                ) { Text(LoveMeS2Copy.naverStart) }
+                OutlinedButton(
+                    onClick = onStartGoogle,
+                    enabled = !busy,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .padding(top = 8.dp)
+                ) { Text(LoveMeS2Copy.googleStart) }
+            }
+            S2SignupPhase.Bind -> {
+                Text(LoveMeS2Copy.bindBody, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))
+                Text(LoveMeS2Copy.emailLabel)
+                OutlinedTextField(
+                    value = emailDraft,
+                    onValueChange = { emailDraft = it },
+                    enabled = !busy,
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                )
+                Button(
+                    onClick = { onBindEmail(emailDraft) },
+                    enabled = !busy,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEE775F)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .padding(top = 8.dp)
+                ) { Text(LoveMeS2Copy.bindCta) }
             }
             S2SignupPhase.Sent -> {
                 Text(LoveMeS2Copy.sent, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp))

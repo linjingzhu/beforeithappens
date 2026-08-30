@@ -12,8 +12,27 @@ export const AUTH_ERRORS = {
   used: "이미 사용한 로그인 링크예요. 새 링크를 요청해 주세요.",
   invalid: "로그인 링크가 유효하지 않아요.",
   "invalid-email": "이메일 주소를 다시 확인해 주세요.",
-  failed: "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
+  failed: "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요.",
+  "oauth-unconfigured": "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요.",
+  "invalid-provider": "지원하지 않는 로그인이에요."
 };
+
+export const SOCIAL_COPY = Object.freeze({
+  kakao: "카카오로 시작",
+  naver: "네이버로 시작",
+  google: "Google로 시작",
+  divider: "또는",
+  oauthUnconfigured: "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+});
+
+export const EMAIL_BIND_COPY = Object.freeze({
+  title: "이메일을 연결해 주세요.",
+  cta: "이메일 연결하기",
+  body: "초대를 수락하려면 이메일을 연결해야 해요.",
+  emailLabel: "이메일"
+});
+
+export const SOCIAL_PROVIDERS = ["kakao", "naver", "google"];
 
 export const INVITE_COPY = {
   title: "파트너 초대",
@@ -100,7 +119,12 @@ export function resolveSignedOutView(screen) {
   return screen === "sent" ? "sent" : "onboarding";
 }
 
+export function userNeedsEmail(user) {
+  return Boolean(user) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(user.email || "").trim());
+}
+
 export function resolveSignedInView(session, noticeDismissed = false, inviteFlow = false, invitePriority = false) {
+  if (userNeedsEmail(session?.user)) return "bind";
   if (inviteFlow && invitePriority) return "invite";
   if (session?.notice && !noticeDismissed) return "notice";
   if (inviteFlow) return "invite";
@@ -137,6 +161,7 @@ export function resolveInviteAcceptError({ preview = null, session = null, opene
   if (!preview) return session?.user ? "" : "unauthenticated";
   if (!preview.ok) return preview.error || "invalid";
   if (!session?.user) return "unauthenticated";
+  if (userNeedsEmail(session.user)) return "needs-email";
   return classifyInviteConflict({
     sessionEmail: session.user.email,
     inviteEmail: preview.email,
@@ -145,7 +170,7 @@ export function resolveInviteAcceptError({ preview = null, session = null, opene
 }
 
 export function isInvitePriorityError(error) {
-  return error === INVITE_OTHER_SESSION || error === "mismatch" || error === "expired" || error === "used" || error === "invalid";
+  return error === INVITE_OTHER_SESSION || error === "mismatch" || error === "needs-email" || error === "expired" || error === "used" || error === "invalid";
 }
 
 export async function copyText(value, clipboard = globalThis.navigator?.clipboard) {
