@@ -1,4 +1,4 @@
-import { FORBIDDEN_APP_COPY, S0_COPY, S2_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { FORBIDDEN_APP_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S2_SOCIAL_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -35,6 +35,12 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
         <input id="s2-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
         <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.cta)}</button>
       </form>
+      <p class="loveme-social-divider">${escapeHtml(S2_SOCIAL_COPY.divider)}</p>
+      <div class="loveme-social" role="group">
+        <button class="loveme-secondary" type="button" data-action="oauth-kakao" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.kakao)}</button>
+        <button class="loveme-secondary" type="button" data-action="oauth-naver" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.naver)}</button>
+        <button class="loveme-secondary" type="button" data-action="oauth-google" ${busy ? "disabled" : ""}>${escapeHtml(S2_SOCIAL_COPY.google)}</button>
+      </div>
       ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
     </section>
   `;
@@ -67,6 +73,23 @@ export function renderS2LoginNoticeScreen({ email = "", error = "", busy = false
   `;
 }
 
+export function renderS2EmailBindScreen({ email = "", error = "", busy = false } = {}) {
+  return `
+    ${brand()}
+    <section class="loveme-screen loveme-card" data-screen="bind">
+      <span class="loveme-eyebrow">AB · EMAIL BIND</span>
+      <h1>${escapeHtml(S2_EMAIL_BIND_COPY.title)}</h1>
+      <p>${escapeHtml(S2_EMAIL_BIND_COPY.body)}</p>
+      <form class="loveme-form" data-bind-form>
+        <label for="s2-bind-email">${escapeHtml(S2_EMAIL_BIND_COPY.emailLabel)}</label>
+        <input id="s2-bind-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
+        <button class="loveme-primary" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(S2_EMAIL_BIND_COPY.cta)}</button>
+      </form>
+      ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
+    </section>
+  `;
+}
+
 export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
   return `
     ${brand()}
@@ -82,6 +105,7 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
+  if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });
   if (state.screen === "notice") return renderS2LoginNoticeScreen({ email: state.session?.user?.email || "", error: state.error, busy: state.busy });
   if (state.screen === "workspace") return renderS3WorkspaceCreatedScreen({ email: state.session?.user?.email || "" });
   return renderS2SignupScreen({ email: state.email, error: state.error, busy: state.busy });

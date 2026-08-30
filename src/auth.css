@@ -71,6 +71,23 @@
   font-weight: 700;
 }
 
+.auth-social-divider {
+  margin: 22px 0 12px !important;
+  color: var(--muted) !important;
+  font-size: 13px !important;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-social {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-social-button {
+  margin-top: 0;
+}
+
 .auth-email-hint {
   margin-top: -12px !important;
   color: var(--ink) !important;

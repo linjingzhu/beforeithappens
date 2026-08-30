@@ -16,6 +16,13 @@ Do not copy this file into unrelated projects.
 
 - None recorded yet.
 
+### 2026-08-30 — S2 Kakao start is not S4 KakaoTalk share
+Area: auth / invite share
+Evidence: S2 social login uses `카카오로 시작`; S4 share stays `카카오톡`. Tests that banned any `Kakao` substring in the host broke the start buttons.
+Impact: A host-wide Kakao ban treats login and share as the same product surface.
+Recommended future behavior: Forbid Kakao SDK / `카카오 로그인` / `카카오톡` on S2, not the English word Kakao or `카카오로 시작`.
+Confidence: high
+
 ## Domain Risk Lessons
 
 ### 2026-08-23 — Invite latest-row ties

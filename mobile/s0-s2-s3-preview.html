@@ -38,6 +38,13 @@
         workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
       });
     }
+    if (start === "bind") {
+      state = consumeSucceeded(finishSplash(state), {
+        user: { id: "usr_demo", email: "", needsEmail: true },
+        notice: "no-local-draft",
+        workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
+      });
+    }
     if (start === "workspace") {
       state = noticeAcknowledged(consumeSucceeded(finishSplash(state), {
         user: { id: "usr_demo", email: "buyer@example.com" },
@@ -64,6 +71,14 @@
     }
 
     root.addEventListener("submit", async (event) => {
+      if (event.target.matches("[data-bind-form]")) {
+        event.preventDefault();
+        const email = new FormData(event.target).get("email");
+        state = setEmail(state, email);
+        state = { ...state, sentEmail: state.email, screen: "sent", error: "", busy: false };
+        paint();
+        return;
+      }
       if (!event.target.matches("[data-s2-form]")) return;
       event.preventDefault();
       const email = new FormData(event.target).get("email");
@@ -78,6 +93,9 @@
       const action = event.target.closest("[data-action]")?.dataset.action;
       if (!action) return;
       if (action === "back-to-signup") state = backToSignup(state);
+      else if (action === "oauth-kakao" || action === "oauth-naver" || action === "oauth-google") {
+        state = { ...state, error: "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요." };
+      }
       else if (action === "ack-notice") {
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })

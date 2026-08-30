@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 enum LoveMeNativeScreen {
     case splash
     case signup
     case sent
+    case bind
     case notice
     case workspace
 }
@@ -23,9 +25,20 @@ struct LoveMeS0S2S3Host: View {
             case .splash:
                 S0SplashScreen(onFinished: restoreSession)
             case .signup:
-                S2SignupScreen(phase: .signup, email: email, error: error, busy: busy, onSubmitEmail: requestLink)
+                S2SignupScreen(
+                    phase: .signup,
+                    email: email,
+                    error: error,
+                    busy: busy,
+                    onSubmitEmail: requestLink,
+                    onStartKakao: { startOAuth("kakao") },
+                    onStartNaver: { startOAuth("naver") },
+                    onStartGoogle: { startOAuth("google") }
+                )
             case .sent:
                 S2SignupScreen(phase: .sent, email: email, error: error, onUseOtherEmail: { screen = .signup; error = "" })
+            case .bind:
+                S2SignupScreen(phase: .bind, email: email, error: error, busy: busy, onBindEmail: requestBind)
             case .notice:
                 S2SignupScreen(phase: .notice, email: email, error: error, busy: busy, onAcknowledgeNotice: ackNotice)
             case .workspace:
@@ -37,9 +50,14 @@ struct LoveMeS0S2S3Host: View {
     private func restoreSession() {
         Task {
             let session = try? await client.currentSession()
-            if let user = session?["user"] as? [String: Any], let value = user["email"] as? String {
-                email = value
-                screen = (session?["notice"] as? String)?.isEmpty == false ? .notice : .workspace
+            if let user = session?["user"] as? [String: Any] {
+                email = user["email"] as? String ?? ""
+                let needsEmail = user["needsEmail"] as? Bool == true || email.isEmpty
+                if needsEmail {
+                    screen = .bind
+                } else {
+                    screen = (session?["notice"] as? String)?.isEmpty == false ? .notice : .workspace
+                }
             } else {
                 screen = .signup
             }
@@ -82,6 +100,39 @@ struct LoveMeS0S2S3Host: View {
                 self.error = "로그인 링크가 유효하지 않아요."
                 screen = .signup
             }
+        }
+    }
+
+    private func startOAuth(_ provider: String) {
+        busy = true
+        error = ""
+        Task {
+            do {
+                let payload = try await client.startOAuth(provider: provider)
+                if let urlString = payload["url"] as? String, let url = URL(string: urlString) {
+                    await MainActor.run { UIApplication.shared.open(url) }
+                }
+            } catch {
+                self.error = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+            }
+            busy = false
+        }
+    }
+
+    private func requestBind(_ value: String) {
+        busy = true
+        error = ""
+        email = value
+        Task {
+            do {
+                try await client.requestEmailBind(email: value)
+                screen = .sent
+            } catch LoveMeAuthError.invalidEmail {
+                error = "이메일 주소를 다시 확인해 주세요."
+            } catch {
+                self.error = "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
+            }
+            busy = false
         }
     }
 

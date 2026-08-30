@@ -5,6 +5,8 @@ enum LoveMeAuthApi {
     static let consumePath = "/api/auth/consume"
     static let sessionPath = "/api/auth/session"
     static let ackNoticePath = "/api/auth/ack-notice"
+    static let oauthStartPath = "/api/auth/oauth/start"
+    static let emailBindPath = "/api/auth/email-bind"
     static let magicLinkTtlSeconds = 10 * 60
 
     static func extractMagicLinkToken(from url: URL) -> String? {
@@ -48,6 +50,18 @@ struct LoveMeAuthClient {
         try await get(path: LoveMeAuthApi.sessionPath)
     }
 
+    func startOAuth(provider: String) async throws -> [String: Any] {
+        let payload = try await post(path: LoveMeAuthApi.oauthStartPath, body: ["provider": provider])
+        if payload["ok"] as? Bool == true { return payload }
+        throw mapError(payload["error"] as? String)
+    }
+
+    func requestEmailBind(email: String) async throws {
+        let payload = try await post(path: LoveMeAuthApi.emailBindPath, body: ["email": email])
+        if payload["ok"] as? Bool == true { return }
+        throw mapError(payload["error"] as? String)
+    }
+
     func acknowledgeNotice() async throws -> [String: Any] {
         let payload = try await post(path: LoveMeAuthApi.ackNoticePath, body: [:])
         if payload["error"] as? String == "unauthenticated" {
@@ -63,6 +77,7 @@ struct LoveMeAuthClient {
         case "used": return .used
         case "unauthenticated": return .unauthenticated
         case "invalid": return .invalid
+        case "oauth-unconfigured": return .failed
         default: return .failed
         }
     }

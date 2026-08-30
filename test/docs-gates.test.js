@@ -14,7 +14,7 @@ test("locked product gates are written into the three product docs", async () =>
     assert.match(text, /이 기기 임시 답은 이어지지 않아요/);
     assert.match(text, /로그아웃 후 이 기기를 넘겨주세요/);
   }
-  assert.match(spec, /No Kakao/);
+  assert.match(spec, /카카오로 시작/);
   assert.match(spec, /ghost workspace/i);
   assert.match(spec, /local-simulator drafts are not migrated/i);
   assert.match(spec, /The invited partner is free/);
@@ -44,7 +44,13 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(spec, /링크를 보내 파트너를 초대하세요/);
   assert.match(spec, /초대 메일이 맞는지 다시 확인해 주세요/);
   assert.match(spec, /이 기기에 다른 계정으로 로그인되어 있어요/);
-  assert.match(spec, /Do not add Kakao login/);
+  assert.match(spec, /Do not replace KakaoTalk share/);
+  assert.match(spec, /이메일을 연결해 주세요/);
+  assert.match(spec, /이메일 연결하기/);
+  assert.match(ux, /카카오로 시작/);
+  assert.match(ux, /네이버로 시작/);
+  assert.match(ux, /Google로 시작/);
+  assert.match(ux, /이메일을 연결해 주세요/);
   assert.match(spec, /native join screen or universal links/);
   assert.match(spec, /앱에서 보면 초대와 알림이 더 쉬워요/);
   assert.match(spec, /앱을 설치하면 시작할 수 있어요/);

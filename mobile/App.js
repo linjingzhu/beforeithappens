@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
-import { NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen } from "./src/screens.js";
+import { EmailBindScreen, NoticeScreen, SentScreen, SignupScreen, SplashScreenView, WorkspaceScreen } from "./src/screens.js";
 import {
   ackHostNotice,
   createHostApi,
   finishHostSplash,
   hostCookieAccess,
+  sendHostEmailBind,
   sendHostMagicLink,
-  startHostFlow
+  startHostFlow,
+  startHostSocial
 } from "./src/session.js";
 import { backToSignup, setEmail } from "./s0-s2-s3-flow.js";
 import { colors } from "./src/theme.js";
@@ -67,6 +69,29 @@ export default function App() {
           error={state.error}
           busy={state.busy}
           onSubmitEmail={async (email) => setState(await sendHostMagicLink(setEmail(state, email), api))}
+          onStartKakao={async () => {
+            const next = await startHostSocial(state, "kakao", api);
+            if (next.oauthUrl && typeof location !== "undefined") location.assign(next.oauthUrl);
+            setState(next);
+          }}
+          onStartNaver={async () => {
+            const next = await startHostSocial(state, "naver", api);
+            if (next.oauthUrl && typeof location !== "undefined") location.assign(next.oauthUrl);
+            setState(next);
+          }}
+          onStartGoogle={async () => {
+            const next = await startHostSocial(state, "google", api);
+            if (next.oauthUrl && typeof location !== "undefined") location.assign(next.oauthUrl);
+            setState(next);
+          }}
+        />
+      ) : null}
+      {state.screen === "bind" ? (
+        <EmailBindScreen
+          email={state.email}
+          error={state.error}
+          busy={state.busy}
+          onSubmitEmail={async (email) => setState(await sendHostEmailBind(setEmail(state, email), api))}
         />
       ) : null}
       {state.screen === "sent" ? (

@@ -9,6 +9,8 @@ object LoveMeAuthApi {
     const val consumePath = "/api/auth/consume"
     const val sessionPath = "/api/auth/session"
     const val ackNoticePath = "/api/auth/ack-notice"
+    const val oauthStartPath = "/api/auth/oauth/start"
+    const val emailBindPath = "/api/auth/email-bind"
     const val magicLinkTtlMs = 10 * 60 * 1000
 
     fun extractMagicLinkToken(url: String): String? {
@@ -40,6 +42,14 @@ class LoveMeAuthClient(
 
     fun acknowledgeNotice(): Map<String, Any?> {
         return post(LoveMeAuthApi.ackNoticePath, "{}")
+    }
+
+    fun startOAuth(provider: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.oauthStartPath, """{"provider":${jsonString(provider)}}""")
+    }
+
+    fun requestEmailBind(email: String): Map<String, Any?> {
+        return post(LoveMeAuthApi.emailBindPath, """{"email":${jsonString(email)}}""")
     }
 
     private fun jsonString(value: String): String {

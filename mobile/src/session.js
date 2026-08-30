@@ -4,6 +4,8 @@ import {
   consumeOpenedLink,
   createNativeFlow,
   restoreSessionAfterSplash,
+  startSocialLogin,
+  submitEmailBind,
   submitMagicLink
 } from "../s0-s2-s3-flow.js";
 
@@ -51,4 +53,12 @@ export async function consumeHostMagicLink(state, tokenOrUrl, api = createHostAp
 
 export async function ackHostNotice(state, api = createHostApi()) {
   return acknowledgeLoginNotice(state, api);
+}
+
+export async function startHostSocial(state, provider, api = createHostApi()) {
+  return startSocialLogin(state, api, provider);
+}
+
+export async function sendHostEmailBind(state, api = createHostApi()) {
+  return submitEmailBind(state, api);
 }

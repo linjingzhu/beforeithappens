@@ -33,6 +33,7 @@ import {
   restoreSessionAfterSplash,
   s0ShowsInstallLanding,
   s2HasKakaoLogin,
+  s2SocialStartLabels,
   s3AllowsPackCta,
   s3HasPayment,
   setEmail,
@@ -43,6 +44,7 @@ import {
   renderS0SplashScreen,
   renderS2LoginNoticeScreen,
   renderS2SentScreen,
+  renderS2EmailBindScreen,
   renderS2SignupScreen,
   renderS3WorkspaceCreatedScreen,
   screenForbidsPackAndInstall
@@ -138,8 +140,16 @@ test("native flow is splash → signup → sent → notice → workspace, never 
   const signup = renderS2SignupScreen({ email: "" });
   assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(signup, /로그인 링크 보내기/);
+  assert.match(signup, /카카오로 시작/);
+  assert.match(signup, /네이버로 시작/);
+  assert.match(signup, /Google로 시작/);
   assert.equal(signup.includes("type=\"password\""), false);
   assert.equal(s2HasKakaoLogin(), false);
+  assert.deepEqual(s2SocialStartLabels(), ["카카오로 시작", "네이버로 시작", "Google로 시작"]);
+  assert.equal(signup.includes("카카오톡"), false);
+  const bind = renderS2EmailBindScreen();
+  assert.match(bind, /이메일을 연결해 주세요/);
+  assert.match(bind, /이메일 연결하기/);
 
   state = setEmail(state, "nope");
   state = requestLinkStarted(state);
@@ -272,6 +282,8 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.match(api, /\/api\/auth\/consume/);
   assert.match(api, /\/api\/auth\/session/);
   assert.match(api, /\/api\/auth\/ack-notice/);
+  assert.match(api, /\/api\/auth\/oauth\/start/);
+  assert.match(api, /\/api\/auth\/email-bind/);
   const hosts = texts[8] + texts[9];
   assert.match(hosts, /currentSession/);
   assert.match(hosts, /acknowledgeNotice/);
@@ -280,6 +292,7 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
     renderS0SplashScreen(),
     renderS2SignupScreen(),
     renderS2SentScreen(),
+    renderS2EmailBindScreen(),
     renderS2LoginNoticeScreen(),
     renderS3WorkspaceCreatedScreen()
   ]) {

@@ -1,6 +1,9 @@
 package com.beforeithappens.loveme
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -10,7 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class LoveMeNativeScreen { Splash, Signup, Sent, Notice, Workspace }
+enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, Workspace }
 
 @Composable
 fun LoveMeS0S2S3Host(
@@ -22,6 +25,24 @@ fun LoveMeS0S2S3Host(
     var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    fun startOAuth(provider: String) {
+        busy = true
+        error = ""
+        scope.launch {
+            val result = withContext(Dispatchers.IO) { client.startOAuth(provider) }
+            val status = result["status"] as? Int ?: 500
+            val body = result["body"] as? String ?: ""
+            val url = Regex("\"url\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1)
+            if (status == 200 && !url.isNullOrEmpty()) {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            } else {
+                error = "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요."
+            }
+            busy = false
+        }
+    }
 
     when (screen) {
         LoveMeNativeScreen.Splash -> S0SplashScreen {
@@ -30,7 +51,12 @@ fun LoveMeS0S2S3Host(
                 val body = session["body"] as? String ?: ""
                 if (body.contains("\"email\"")) {
                     email = Regex("\"email\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1) ?: ""
-                    screen = if (body.contains("\"notice\":\"no-local-draft\"")) LoveMeNativeScreen.Notice else LoveMeNativeScreen.Workspace
+                    val needsEmail = body.contains("\"needsEmail\":true") || email.isEmpty()
+                    screen = when {
+                        needsEmail -> LoveMeNativeScreen.Bind
+                        body.contains("\"notice\":\"no-local-draft\"") -> LoveMeNativeScreen.Notice
+                        else -> LoveMeNativeScreen.Workspace
+                    }
                 } else {
                     screen = LoveMeNativeScreen.Signup
                 }
@@ -54,12 +80,35 @@ fun LoveMeS0S2S3Host(
                     else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
                     busy = false
                 }
-            }
+            },
+            onStartKakao = { startOAuth("kakao") },
+            onStartNaver = { startOAuth("naver") },
+            onStartGoogle = { startOAuth("google") }
         )
         LoveMeNativeScreen.Sent -> S2SignupScreen(
             phase = S2SignupPhase.Sent,
             email = email,
             onUseOtherEmail = { screen = LoveMeNativeScreen.Signup; error = "" }
+        )
+        LoveMeNativeScreen.Bind -> S2SignupScreen(
+            phase = S2SignupPhase.Bind,
+            email = email,
+            error = error,
+            busy = busy,
+            onBindEmail = { value ->
+                email = value
+                busy = true
+                error = ""
+                scope.launch {
+                    val result = withContext(Dispatchers.IO) { client.requestEmailBind(value) }
+                    val status = result["status"] as? Int ?: 500
+                    if (status == 200) screen = LoveMeNativeScreen.Sent
+                    else error = if ((result["body"] as? String)?.contains("invalid-email") == true)
+                        "이메일 주소를 다시 확인해 주세요."
+                    else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
+                    busy = false
+                }
+            }
         )
         LoveMeNativeScreen.Notice -> S2SignupScreen(
             phase = S2SignupPhase.Notice,
@@ -90,6 +139,7 @@ fun openMagicLink(client: LoveMeAuthClient, url: String): Pair<LoveMeNativeScree
     val result = client.consumeMagicLink(token)
     val status = result["status"] as? Int ?: 500
     val body = result["body"] as? String ?: ""
+    if (status == 200 && body.contains("\"needsEmail\":true")) return LoveMeNativeScreen.Bind to ""
     if (status == 200 && body.contains("\"notice\"")) return LoveMeNativeScreen.Notice to ""
     val error = when {
         body.contains("expired") -> "로그인 링크가 만료되었어요. 다시 요청해 주세요."

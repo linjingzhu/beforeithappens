@@ -2,7 +2,7 @@
 
 ## Experience rules
 
-- The product entry is magic-link email onboarding. There is no password, Kakao button, or role switcher on the signed-out path.
+- The product entry is magic-link email onboarding plus Kakao/Naver/Google start. There is no password or role switcher. Kakao login copy is `카카오로 시작`. S4 share stays `카카오톡`.
 - Explain expected time and the reveal rule before answering starts. The pack opens only after the partner accepts the invite. The invited partner is free. After the third sample lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. The 100-question lifecycle line is out of this slice.
 - Use one question per screen with explicit save state and resume behavior.
 - Let one person continue while waiting for the partner, after the pack is unlocked.
@@ -27,6 +27,9 @@ Signed-out `/`. Primary action: request a login link.
 | Body | 비밀번호 없이 이메일로 로그인 링크를 보내드려요. |
 | CTA | 로그인 링크 보내기 |
 | After send | 메일을 확인해 주세요. 링크는 10분 동안만 유효해요. |
+| Social start | 카카오로 시작 / 네이버로 시작 / Google로 시작 |
+| Missing email title | 이메일을 연결해 주세요. |
+| Missing email CTA | 이메일 연결하기 |
 | Immediately after login | 이 기기 임시 답은 이어지지 않아요. |
 | Next to logout only | 로그아웃 후 이 기기를 넘겨주세요. |
 
@@ -68,11 +71,11 @@ Recommended web install (not a gate):
 | In-app browser | 바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요. |
 | In-app CTA | 브라우저에서 열기 |
 
-Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not add Kakao login. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join screens and universal links stay out of this slice. `시작하기` opens the web install landing and never the store. Install is recommended and skippable; the web path is never blocked on install.
+Instagram and KakaoTalk buttons share the existing invite link through copy or the system share intent. Do not replace KakaoTalk share with Kakao login. Kakao/Naver, and Google without email, must connect email before invite accept. Editing the partner email and resending immediately expires the previous token. Opening an invite while another account is logged in cannot accept; the CTA force-logs out and continues the web magic-link accept for the invited email. Native join screens and universal links stay out of this slice. `시작하기` opens the web install landing and never the store. Install is recommended and skippable; the web path is never blocked on install.
 
 ### Expected visible result
 
-1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes.
+1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes. S2 also shows `카카오로 시작` / `네이버로 시작` / `Google로 시작` without replacing the magic-link form.
 2. A valid link establishes one server session and shows the post-login notice before anything else.
 3. Buyer home is invite-waiting. It has no pack CTA and does not open the marriage pack.
 4. After the first send, buyer home shows share copy, copy/Instagram/KakaoTalk actions for the existing invite link, the device rule, and the email-typo field with `이메일 수정하고 다시 보내기`.
@@ -83,7 +86,7 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 
 ### Important states
 
-- initial onboarding, sending, sent, invalid email, send failed;
+- initial onboarding, sending, sent, social start, missing-email bind, invalid email, send failed;
 - expired or invalid magic link;
 - post-login notice;
 - invite waiting, share/copy, email typo resend, expired invite, invalid invite;

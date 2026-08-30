@@ -21,12 +21,12 @@
 | `ReportSnapshot` | Reproducible report for a fixed pack version |
 | `AuditEvent` | Security- and support-relevant action history |
 
-The current slice persists `User`, magic-link tokens, sessions, `CoupleWorkspace`, `CoupleMember`, `Invitation`, `AnswerRound`, `Answer`, `PrivateNote`, `Agreement`, and `PublicLock`. Creating a buyer workspace must not unlock the pack without an accepted partner. A later change after lock opens a new private `AnswerRound` and never mutates the existing lock.
+The current slice persists `User`, OAuth identities, magic-link tokens, sessions, `CoupleWorkspace`, `CoupleMember`, `Invitation`, `AnswerRound`, `Answer`, `PrivateNote`, `Agreement`, and `PublicLock`. Creating a buyer workspace must not unlock the pack without an accepted partner. A later change after lock opens a new private `AnswerRound` and never mutates the existing lock.
 
 ## Identity and session
 
-- `User.email` is unique after trim and lowercase normalization.
-- One email is one user. There is no password and no Kakao identity.
+- `User.email` is unique after trim and lowercase normalization when present.
+- One email is one user. There is no password. Kakao/Naver/Google identities may exist without email until the user connects one. Server session/user email is the source of truth for invite matching. Invite accept is forbidden until email is connected.
 - One active session per user. A new login or forced logout immediately invalidates the previous session.
 - Magic-link tokens last 10 minutes, are single-use, and are stored as hashes. Requesting a new link immediately expires unused prior tokens for that email.
 - Local-simulator drafts are not copied onto `User`, `Answer`, or `PrivateNote`.

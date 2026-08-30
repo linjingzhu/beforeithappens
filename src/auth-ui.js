@@ -1,4 +1,4 @@
-import { AUTH_COPY, INVITE_COPY, formatRemaining, formatSentAt } from "./auth.js";
+import { AUTH_COPY, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, formatRemaining, formatSentAt } from "./auth.js";
 import { INSTALL_COPY, INSTALL_PATH, STORE_URLS, instagramStartHref } from "./install.js";
 import { escapeHtml } from "./html.js";
 
@@ -83,6 +83,7 @@ export function renderOnboarding({ email = "", error = "", busy = false } = {}) 
           <input id="auth-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
           <button class="primary auth-submit" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(AUTH_COPY.cta)}</button>
         </form>
+        ${renderSocialStart({ busy })}
         ${error ? `<p class="auth-error" role="alert">${escapeHtml(error)}</p>` : ""}
       </section>
     </main>
@@ -172,7 +173,41 @@ export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite 
   `;
 }
 
+export function renderSocialStart({ busy = false } = {}) {
+  return `
+        <p class="auth-social-divider">${escapeHtml(SOCIAL_COPY.divider)}</p>
+        <div class="auth-social" role="group" aria-label="${escapeHtml(SOCIAL_COPY.divider)}">
+          <button class="secondary auth-submit auth-social-button" type="button" data-action="oauth-kakao" ${busy ? "disabled" : ""}>${escapeHtml(SOCIAL_COPY.kakao)}</button>
+          <button class="secondary auth-submit auth-social-button" type="button" data-action="oauth-naver" ${busy ? "disabled" : ""}>${escapeHtml(SOCIAL_COPY.naver)}</button>
+          <button class="secondary auth-submit auth-social-button" type="button" data-action="oauth-google" ${busy ? "disabled" : ""}>${escapeHtml(SOCIAL_COPY.google)}</button>
+        </div>
+  `;
+}
+
+export function renderEmailBind({ email = "", error = "", busy = false } = {}) {
+  return `
+    ${brand(logoutCluster())}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · EMAIL BIND</span>
+        <h1>${escapeHtml(EMAIL_BIND_COPY.title)}</h1>
+        <p>${escapeHtml(EMAIL_BIND_COPY.body)}</p>
+        <form class="auth-form" data-bind-form>
+          <label for="bind-email">${escapeHtml(EMAIL_BIND_COPY.emailLabel)}</label>
+          <input id="bind-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
+          <button class="primary auth-submit" type="submit" ${busy ? "disabled" : ""}>${escapeHtml(EMAIL_BIND_COPY.cta)}</button>
+        </form>
+        ${error ? `<p class="auth-error" role="alert">${escapeHtml(error)}</p>` : ""}
+      </section>
+    </main>
+    ${footer()}
+  `;
+}
+
 export function renderInviteAccept({ email = "", error = "", preview = null, accepted = false, busy = false } = {}) {
+  if (error === "needs-email") {
+    return renderEmailBind({ email, error: "", busy });
+  }
   const body = error === "expired"
     ? INVITE_COPY.expired
     : error === "other-session"
@@ -186,7 +221,7 @@ export function renderInviteAccept({ email = "", error = "", preview = null, acc
             : preview?.ok
               ? INVITE_COPY.rule
               : AUTH_COPY.body;
-  const canAccept = preview?.ok && email && error !== "other-session" && error !== "mismatch";
+  const canAccept = preview?.ok && email && error !== "other-session" && error !== "mismatch" && error !== "needs-email";
   const action = accepted
     ? `<button class="primary auth-submit" type="button" data-action="open-pack">${escapeHtml(INVITE_COPY.startPack)}</button>`
     : error === "other-session"

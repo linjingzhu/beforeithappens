@@ -17,6 +17,20 @@ export const S2_COPY = {
   otherEmail: "다른 이메일로 요청"
 };
 
+export const S2_SOCIAL_COPY = {
+  kakao: "카카오로 시작",
+  naver: "네이버로 시작",
+  google: "Google로 시작",
+  divider: "또는"
+};
+
+export const S2_EMAIL_BIND_COPY = {
+  title: "이메일을 연결해 주세요.",
+  cta: "이메일 연결하기",
+  body: "초대를 수락하려면 이메일을 연결해야 해요.",
+  emailLabel: "이메일"
+};
+
 export const S3_COPY = {
   created: "워크스페이스가 만들어졌어요.",
   inviteCta: "파트너 초대하기"
@@ -27,7 +41,9 @@ export const S2_ERRORS = {
   used: "이미 사용한 로그인 링크예요. 새 링크를 요청해 주세요.",
   invalid: "로그인 링크가 유효하지 않아요.",
   "invalid-email": "이메일 주소를 다시 확인해 주세요.",
-  failed: "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
+  failed: "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요.",
+  "oauth-unconfigured": "이 로그인은 아직 준비 중이에요. 이메일 링크로 시작해 주세요.",
+  "invalid-provider": "지원하지 않는 로그인이에요."
 };
 
 export const FORBIDDEN_APP_COPY = {

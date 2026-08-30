@@ -14,10 +14,10 @@ S9 logout chrome (`로그아웃 후 이 기기를 넘겨주세요.`) is owned by
 ## Screens in this slice
 
 1. **S0 splash** — no buttons, 1.2 seconds. Wordmark `LoveMe`. Copy `두 사람의 결혼 준비, 한곳에`.
-2. **S2 signup** — magic-link email form using the existing web APIs.
+2. **S2 signup** — magic-link email form plus Kakao/Naver/Google start. Missing-email social accounts must connect email before invite accept.
 3. **S3 workspace** — `워크스페이스가 만들어졌어요.` with `파트너 초대하기` after the login notice. No pack CTA.
 
-No Kakao, payment, universal links, or pack CTA.
+S4 share stays `카카오톡`. No payment, universal links, or pack CTA.
 
 ## Run
 

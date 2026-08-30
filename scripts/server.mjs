@@ -26,5 +26,6 @@ const auth = createAuth({
   describeWorkspace: (userId) => couple.viewForUser(userId)
 });
 const allowDevOutbox = process.env.AB_DEV_OUTBOX === "1" && process.env.NODE_ENV !== "production";
-const server = createServer(createListener({ auth, couple, answers, entitlement, root, allowDevOutbox }));
+const allowDevOAuth = process.env.AB_DEV_OAUTH === "1" && process.env.NODE_ENV !== "production";
+const server = createServer(createListener({ auth, couple, answers, entitlement, root, allowDevOutbox, allowDevOAuth }));
 server.listen(4173, "0.0.0.0", () => console.log("AB running at http://localhost:4173"));

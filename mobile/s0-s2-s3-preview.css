@@ -153,6 +153,19 @@ body {
   cursor: not-allowed;
 }
 
+.loveme-social-divider {
+  margin: 20px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.loveme-social {
+  display: grid;
+  gap: 8px;
+}
+
 .loveme-error {
   margin: 16px 0 0;
   color: #b64838;

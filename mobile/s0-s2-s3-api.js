@@ -2,7 +2,9 @@ export const AUTH_API = {
   magicLink: "/api/auth/magic-link",
   consume: "/api/auth/consume",
   session: "/api/auth/session",
-  ackNotice: "/api/auth/ack-notice"
+  ackNotice: "/api/auth/ack-notice",
+  oauthStart: "/api/auth/oauth/start",
+  emailBind: "/api/auth/email-bind"
 };
 
 export function extractMagicLinkToken(url) {
@@ -79,6 +81,18 @@ export function createAuthApi({
       const result = await request(AUTH_API.ackNotice, { method: "POST" });
       if (!result.ok) return { ok: false, error: result.payload.error || "unauthenticated" };
       return { ok: true, session: result.payload };
+    },
+
+    async startOAuth(provider) {
+      const result = await request(AUTH_API.oauthStart, { method: "POST", body: { provider } });
+      if (!result.ok) return { ok: false, error: result.payload.error || "oauth-unconfigured" };
+      return { ok: true, url: result.payload.url, provider: result.payload.provider };
+    },
+
+    async requestEmailBind(email) {
+      const result = await request(AUTH_API.emailBind, { method: "POST", body: { email } });
+      if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
+      return { ok: true };
     }
   };
 }

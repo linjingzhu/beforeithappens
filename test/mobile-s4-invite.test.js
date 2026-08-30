@@ -278,7 +278,8 @@ test("stable host mounts S4 on invite-partner and same-session invite open", asy
   assert.match(app, /openS4FromWorkspace/);
   assert.match(app, /WorkspaceScreen/);
   assert.equal(app.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
-  assert.equal(app.includes("Kakao"), false);
+  assert.equal(app.includes("Kakao.Auth"), false);
+  assert.equal(app.includes("카카오톡"), false);
   assert.deepEqual(readHostOpenParams({ pathname: "/invite/accept", search: "?token=inv-1" }), {
     magicToken: "",
     inviteToken: "inv-1"

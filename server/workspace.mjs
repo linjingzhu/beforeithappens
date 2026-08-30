@@ -153,6 +153,7 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
       if (!access.ok) return access;
       const email = normalizeEmail(rawEmail);
       if (!isValidEmail(email)) return { ok: false, error: "invalid-email" };
+      if (!isValidEmail(access.user.email)) return { ok: false, error: "needs-email" };
       if (email === access.user.email) return { ok: false, error: "self" };
       if (hasAcceptedPartner(store.snapshot(), access.user.id)) return { ok: false, error: "already-paired" };
       if (acceptedCount(store.snapshot(), access.membership.workspaceId) >= 2) return { ok: false, error: "full" };
@@ -200,6 +201,7 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
       if (!user) return { ok: false, error: "unauthenticated" };
       const preview = this.previewInvite(rawToken);
       if (!preview.ok) return preview;
+      if (!isValidEmail(user.email)) return { ok: false, error: "needs-email" };
       if (user.email !== preview.email) return { ok: false, error: "mismatch" };
       const tokenHash = hashToken(String(rawToken));
       const invite = store.snapshot().invitations.find((item) => equalHash(item.tokenHash, tokenHash));
