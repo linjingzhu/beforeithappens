@@ -68,6 +68,13 @@ Impact: In any forgotten-env deployment those paths are a full account-takeover 
 Recommended future behavior: Keep login secrets opt-in (`AB_DEV_OUTBOX=1`) and treat real mail transport as a launch prerequisite.
 Confidence: high
 
+### 2026-08-30 — Production login mail fails closed without RESEND_API_KEY
+Area: auth / mail
+Evidence: `POST /api/auth/magic-link` used to return `{ok:true}` with outbox off in `NODE_ENV=production`. After Resend wiring, a missing key without `allowDevOutbox` returns `{ok:false, error:"failed"}`.
+Impact: Render login is a send failure until `RESEND_API_KEY` is set on the host. That is intended; do not restore fake success.
+Recommended future behavior: Keep invite off Resend. Do not put the API key in the repo. Set `RESEND_API_KEY` and optional `MAIL_FROM` on the host only.
+Confidence: high
+
 ## Recording rule
 
 Add only concise, evidence-backed facts such as:
