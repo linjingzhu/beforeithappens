@@ -4,6 +4,7 @@ import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
 import { isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
+import { consumeUrl, deliverLoginLink } from "./mail.mjs";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -45,6 +46,8 @@ export function createListener({
   allowDevOutbox = false,
   allowDevOAuth = false,
   oauthEnv = process.env,
+  mailEnv = process.env,
+  mailFetch = globalThis.fetch,
   outbox = []
 } = {}) {
   if (!auth) throw new Error("auth is required");
@@ -79,10 +82,22 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
+        const linkUrl = consumeUrl(origin, result.token);
+        const delivered = await deliverLoginLink({
+          to: result.email,
+          url: linkUrl,
+          allowDevOutbox,
+          fetchImpl: mailFetch,
+          env: mailEnv
+        });
+        if (!delivered.ok) {
+          sendJson(response, 502, { ok: false, error: "failed" });
+          return;
+        }
         recordOutbox(outbox, allowDevOutbox, {
           type: "magic-link",
           email: result.email,
-          url: `${origin}/auth/consume?token=${encodeURIComponent(result.token)}`,
+          url: linkUrl,
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });
@@ -145,10 +160,22 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
+        const linkUrl = consumeUrl(origin, result.token);
+        const delivered = await deliverLoginLink({
+          to: result.email,
+          url: linkUrl,
+          allowDevOutbox,
+          fetchImpl: mailFetch,
+          env: mailEnv
+        });
+        if (!delivered.ok) {
+          sendJson(response, 502, { ok: false, error: "failed" });
+          return;
+        }
         recordOutbox(outbox, allowDevOutbox, {
           type: "email-bind",
           email: result.email,
-          url: `${origin}/auth/consume?token=${encodeURIComponent(result.token)}`,
+          url: linkUrl,
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });

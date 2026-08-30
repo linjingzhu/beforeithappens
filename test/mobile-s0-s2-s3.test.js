@@ -85,6 +85,7 @@ function startServer() {
     couple,
     root: process.cwd(),
     allowDevOutbox: true,
+    mailEnv: {},
     outbox
   }));
   return new Promise((resolve) => {

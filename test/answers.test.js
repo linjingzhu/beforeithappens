@@ -169,7 +169,7 @@ test("HTTP pack routes persist drafts, submissions, and agree/hold for a logged-
     onLogin: (userId) => couple.ensureWorkspace(userId),
     describeWorkspace: (userId) => couple.viewForUser(userId)
   });
-  const server = createServer(createListener({ auth, couple, answers, root: process.cwd(), allowDevOutbox: true, outbox }));
+  const server = createServer(createListener({ auth, couple, answers, root: process.cwd(), allowDevOutbox: true, mailEnv: {}, outbox }));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   try {
     const { port } = server.address();

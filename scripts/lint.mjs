@@ -16,6 +16,7 @@ const files = [
   "server/app.mjs",
   "server/store.mjs",
   "server/http.mjs",
+  "server/mail.mjs",
   "server/workspace.mjs",
   "server/answers.mjs",
   "server/entitlement.mjs",

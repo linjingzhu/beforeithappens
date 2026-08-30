@@ -55,6 +55,7 @@ async function listen(system) {
     entitlement: system.entitlement,
     root: process.cwd(),
     allowDevOutbox: true,
+    mailEnv: {},
     outbox
   }));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));

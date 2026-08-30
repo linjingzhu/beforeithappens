@@ -52,6 +52,7 @@ test("pack client stays locked until partner accept, then persists draft/submit/
     answers,
     root: process.cwd(),
     allowDevOutbox: true,
+    mailEnv: {},
     outbox
   }));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -372,6 +373,7 @@ test("Android PackHttp wire format saves a real PATCH draft", async () => {
     answers,
     root: process.cwd(),
     allowDevOutbox: true,
+    mailEnv: {},
     outbox
   });
   const server = createServer((request, response) => {
