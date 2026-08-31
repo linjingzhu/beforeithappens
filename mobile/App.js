@@ -33,6 +33,8 @@ import {
   splashOpenResult,
   startHostFlow
 } from "./src/session.js";
+import { PackMount } from "./pack/screens.js";
+import marriagePackCatalog from "./pack/contract/marriage-pack.json";
 import {
   backFromAccount,
   backFromCertificate,
@@ -40,6 +42,7 @@ import {
   backFromInvite,
   backFromPackDetail,
   cancelLogin,
+  backToPackList,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
@@ -168,6 +171,14 @@ export default function App() {
           onOpenMarriage={() => setState(openMarriageFromList(state))}
           onOpenComingSoon={(packId) => setState(openComingSoonFromList(state, packId))}
           onOpenAccount={() => setState(openAccount(state))}
+        />
+      ) : null}
+      {state.screen === "pack" ? (
+        <PackMount
+          session={state.session}
+          cookieAccess={hostCookieAccess()}
+          catalog={marriagePackCatalog}
+          onExit={() => setState(backToPackList(state))}
         />
       ) : null}
       {state.screen === "pack-intro" ? (

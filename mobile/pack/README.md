@@ -26,6 +26,10 @@ Agreement actions: `propose` / `approve` from `합의`, `deferred` from `다음�
 ## Files
 
 - `contract/` shared gate, copy, catalog, client, projection
+- `host-mount.js` binds the contract to the Expo host: pack calls ride on the host login
+  cookie, and the catalog is injected by the host so no bundler-only import lands here
+- `screens.js` the React Native screens and `PackMount`, which the host renders for
+  `screen === "pack"`. It talks to `/api/pack/*` and simulates no one
 - `ios/LoveMePack/` SwiftUI screens and view model
 - `android/src/main/java/app/loveme/pack/` Compose screens and view model
 - `test/` Node tests against the existing web APIs

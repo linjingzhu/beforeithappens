@@ -187,8 +187,8 @@ test("unlock spends 10 hearts then shows certificate with counts, heart stamp, �
     state = setSampleReason(state, "이유는 이거예요");
     state = submitSampleAnswer(state, () => 0);
   }
-  state = openTogetherFromSample(state);
-  assert.equal(state.screen, "unlock");
+  state = openTogetherFromSample(state, { LOVEME_VIRTUAL: "1" });
+  assert.equal(state.screen, "unlock", "the hearts demo needs virtual mode switched on");
   state = tapUnlock(state);
   assert.equal(state.shopOpen, true);
   state = purchaseShopHearts(state);

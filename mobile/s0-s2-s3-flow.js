@@ -70,6 +70,7 @@ export function createNativeFlow(session = emptyNativeSession(), {
     sampleReason: "",
     samplePartner: null,
     packIntroOpen: Boolean(packIntroOpen),
+    packOpen: false,
     seenPackIntros: Array.isArray(seenPackIntros) ? [...seenPackIntros] : [],
     hearts: Number.isFinite(hearts) ? hearts : startingHearts(),
     entitled: Boolean(entitled)
@@ -111,6 +112,7 @@ export function resolveNativeScreen(state) {
     if (state.certificateOpen) return "certificate";
     if (state.unlockOpen && isPartnerRole(state.session)) return "partner-wait";
     if (state.unlockOpen) return "unlock";
+    if (state.packOpen) return "pack";
     if (state.packIntroOpen) return "pack-intro";
     if (state.sampleResultOpen) return "sample-result";
     if (state.sampleOpen) return "sample-q";
@@ -159,6 +161,7 @@ function clearJourney(state, extras = {}) {
     shopOpen: false,
     certificateOpen: false,
     packIntroOpen: false,
+    packOpen: false,
     ...extras
   };
 }
@@ -309,6 +312,20 @@ export function invitePartner(state) {
 }
 
 /** First entry into a pack opens its narration; starting from there runs the sample. */
+/** The server is the only source of truth for a real partner. Nothing here invents one. */
+export function hasAcceptedPartner(state) {
+  return state?.session?.workspace?.acceptedPartner === true;
+}
+
+export function openRealPack(state, packId = "marriage") {
+  return applyScreen(clearJourney(state, {
+    splashDone: true,
+    samplePackId: packId,
+    packOpen: true,
+    error: ""
+  }));
+}
+
 export function openPackSample(state, packId = "marriage", rng = Math.random) {
   if (packIntroLines(packId).length && !introSeen(state?.seenPackIntros, packId)) {
     return applyScreen(clearJourney(state, {
@@ -324,7 +341,9 @@ export function openPackSample(state, packId = "marriage", rng = Math.random) {
 export function startPackFromIntro(state, rng = Math.random) {
   const packId = state?.samplePackId || "marriage";
   const seen = markIntroSeen(state?.seenPackIntros, packId);
-  return runPackSample({ ...state, seenPackIntros: seen }, packId, rng);
+  const next = { ...state, seenPackIntros: seen };
+  if (packId === "marriage" && hasAcceptedPartner(next)) return openRealPack(next, packId);
+  return runPackSample(next, packId, rng);
 }
 
 function runPackSample(state, packId = "marriage", rng = Math.random) {
@@ -407,24 +426,37 @@ export function submitSampleAnswer(state, rng = Math.random) {
   });
 }
 
-export function openTogetherFromSample(state) {
-  const connected = {
-    ...state.session,
-    workspace: {
-      ...(state.session?.workspace || {}),
-      acceptedPartner: true,
-      role: state.session?.workspace?.role || "buyer",
-      partnerEmail: state.session?.workspace?.partnerEmail || "partner@email.com"
-    }
-  };
+/** The demo connection, reachable only when virtual mode is explicitly switched on. */
+function virtualTogether(state) {
   return applyScreen(clearJourney(state, {
     splashDone: true,
     unlockOpen: true,
     samplePackId: state.samplePackId || "marriage",
     sampleQuestions: state.sampleQuestions || [],
     sampleAnswers: state.sampleAnswers || [],
-    session: connected
+    session: {
+      ...state.session,
+      workspace: {
+        ...(state.session?.workspace || {}),
+        acceptedPartner: true,
+        role: state.session?.workspace?.role || "buyer",
+        partnerEmail: state.session?.workspace?.partnerEmail || "partner@email.com"
+      }
+    }
   }));
+}
+
+/**
+ * After the sample, 함께 풀어보기 goes to the real thing: the server-backed pack when a
+ * partner has actually accepted, and the real invite surface when one has not. A partner is
+ * only ever invented under an explicit virtual build.
+ */
+export function openTogetherFromSample(state, env = globalThis.process?.env || {}) {
+  if (hasAcceptedPartner(state)) {
+    return openRealPack(state, state.samplePackId || "marriage");
+  }
+  if (isVirtualDebug(env)) return virtualTogether(state);
+  return openSendLink(state);
 }
 
 export function tapUnlock(state) {

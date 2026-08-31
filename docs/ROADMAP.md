@@ -17,8 +17,11 @@ Working today, with tests:
   (`server/answers.mjs`).
 - Entitlement bookkeeping for one 29,000 KRW purchase with webhook idempotency
   (`server/entitlement.mjs`).
-- Expo LoveMe host: splash, login, `질문집` home, invite, hearts, a solo sample engine and a
-  certificate (`mobile/src/`) — a demonstration, not the product loop; see the gap table.
+- Expo LoveMe host: splash, login, `질문집` home, invite, a solo sample engine, and — once the
+  server confirms a partner — the real two-person pack (`mobile/pack/`), driven end to end
+  against a live server: ghost workspace locked, private drafts, reveal only after both
+  submit, agreement and hold. Virtual mail, a simulated partner and virtual hearts are now
+  opt-in (`EXPO_PUBLIC_LOVEME_VIRTUAL=1`) and never on in a store build.
 - 164 tests under `test/`, run by `.github/workflows/test-build.yml`.
 
 Not present yet, in the order it starts to hurt:
@@ -33,7 +36,6 @@ Not present yet, in the order it starts to hurt:
 | Only marriage has content | `src/questions.js` holds 12 four-choice questions; `src/marriage-sample.js:24` lists every other pack as empty |
 | No notification is ever sent | `mobile/src/notifications.js` requests the iOS permission and nothing publishes |
 | Reports and audit are documented only | `ReportSnapshot` / `AuditEvent` appear in `docs/DATA_MODEL.md` with zero occurrences in code |
-| The shipping app simulates the partner | `openTogetherFromSample` (`mobile/s0-s2-s3-flow.js:382`) hardcodes `acceptedPartner: true` and `partnerEmail: "partner@email.com"`; `submitSampleAnswer` invents the partner's answer via `pickPartnerChoice`. `/api/pack/*` is called only from `mobile/pack/contract/pack-client.js`, which no Xcode or Gradle target compiles. The real two-person loop runs on web only |
 | The spec locks screens that exist nowhere | `PackDetailScreen` (`mobile/src/screens.js:185`) and `TasteResultScreen` (`:277`) are stubs `resolveNativeScreen` never routes to; the 임시 체험 path was deliberately discarded (`src/marriage-sample.js:113`) without updating `docs/PRODUCT_SPEC.md`, so two locked gates now contradict each other |
 | The paid boundary is misdocumented | `SAMPLE_LOCK_COUNT = 3` (`server/answers.mjs:6`) means 29,000 KRW unlocks 9 of 12 questions, but `marriagePack.freeQuestionCount` is `12` (`src/questions.js:2`) and is dead at runtime — referenced only by `test/questions.test.js:30` |
 | Social login is a stub | `server/oauth.mjs` builds authorize URLs; token exchange is not implemented |
@@ -103,9 +105,9 @@ duplicate keys are rejected by the database, not only by application code.
 
 **Goal** The product's one irreplaceable moment works outside the test runner.
 
-The invite → both answer → reveal → agree path is covered by tests and runs on web only. The
-Expo app cannot run it at all: it fakes the partner rather than calling `/api/pack/*` (see the gap
-table), so "prove it on two devices" means first giving the app the real loop.
+The invite → both answer → reveal → agree path now runs on web and in the Expo app, and the
+app's own controller has been driven end to end against a live server. What is still unproven
+is two real phones against a deployed origin, which needs M1 and M5.
 
 **Work** Buyer and partner on separate devices: invite, accept, answer all 12, reveal, agree and
 hold, re-answer to open a new round, confirm the earlier lock is untouched. Fix what breaks; do

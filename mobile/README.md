@@ -19,6 +19,18 @@ S9 logout chrome (`로그아웃 후 이 기기를 넘겨주세요.`) is owned by
 
 S4 share stays `카카오톡`. No payment, universal links, or pack CTA.
 
+## Talking to a real server
+
+The app is real by default: it calls the API for login, pairing and the pack.
+
+- `EXPO_PUBLIC_API_ORIGIN` — the server origin. Without it the app has nowhere to call.
+- `EXPO_PUBLIC_LOVEME_VIRTUAL=1` — opt in to the demo instead: virtual mail, a simulated
+  partner and virtual hearts. Off unless set, and never on in a store build.
+
+With a partner the server has confirmed, `질문집` → `결혼` opens the real pack
+(`mobile/pack/`): private drafts and notes, submit, reveal only after both submit, then
+합의 / 다음에 미룸. Without one it opens the labelled sample instead.
+
 ## Run
 
 From `mobile/`:
