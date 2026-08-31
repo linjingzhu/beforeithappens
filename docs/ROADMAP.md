@@ -44,16 +44,33 @@ Not present yet, in the order it starts to hurt:
 
 ```text
 M0 green CI                (done)
-  └─ M1 deployable service
+  └─ M1 deployable service   (groundwork done; host not chosen)
        └─ M2 durable storage
-            └─ M3 two-device loop proof
+            └─ M3 two-device loop proof   (app loop built and driven against a live server)
                  └─ M4 real payment        ← revenue unblocked
 M5 iOS distribution        (parallel from M0; gated on an Apple account, not on code)
 M6 content beyond marriage (after M4)
 M7 partner notifications   (needs M5 + M2)
 M8 reports and audit
-M9 social login            (deferred)
+M9 social login            (built; waiting on provider credentials)
+M10 account deletion       (in progress; one product decision open)
 ```
+
+## Status
+
+| # | Milestone | Status | What it waits on |
+|---|---|---|---|
+| M0 | Green CI | Done | — |
+| M1 | A service that runs somewhere | Groundwork done: `AB_STORE_PATH`, `GET /healthz`, and an opt-in https login link (`AB_WEB_CONSUME_FALLBACK=1`) so a phone without the app can still log in | Choosing a host, and setting `RESEND_API_KEY` / `AB_PUBLIC_ORIGIN` |
+| M2 | Durable storage | Not started | M1 |
+| M3 | Prove the loop on two devices | The app runs the real loop and its controller was driven end to end against a live server; two real phones still unproven | M1 and M5 |
+| M4 | Payment that actually charges | Not started | A decision: StoreKit IAP on iOS, or keep the paid unlock off iOS |
+| M5 | iOS distribution | Blocked outside the repo | Apple Developer enrolment and `eas login` |
+| M6 | Content beyond marriage | Not started; five packs still hold zero questions | Authoring, after M4 |
+| M7 | Tell the partner it is their turn | Not started; nothing is ever sent | M2 and M5 |
+| M8 | Reports and audit | Not started | — |
+| M9 | Social login | Token exchange, profile read and a signed callback state are built and wired, verified over HTTP against a stubbed provider | Client ids and secrets per provider; see `docs/SOCIAL_LOGIN.md` |
+| M10 | Account deletion | In progress | A decision: does a partner keep their record when the other leaves? |
 
 ---
 
