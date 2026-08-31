@@ -28,7 +28,7 @@ Not present yet, in the order it starts to hurt:
 
 | Gap | Evidence |
 |---|---|
-| Nothing deploys | no Dockerfile / host config / deploy workflow; `scripts/server.mjs` only binds `PORT \|\| 4173` |
+| The deployed host is undocumented here | the API runs at the origin `mobile/eas.json` points the preview build at, and `.ai/memory/PROJECT_LESSONS.md` records its live behaviour, but nothing in this document said so |
 | Storage is one JSON file | `server/store.mjs` re-serializes whole state per mutation, no locking, single process |
 | Payment is not real | `POST /api/purchase` mints the order server-side (`server/app.mjs:414`); the mobile purchase is virtual hearts |
 | Webhook is unauthenticated | `grantFromPaidOrder` (`server/entitlement.mjs`) checks event id, order id and amount, but no signature or shared secret |
@@ -61,7 +61,7 @@ M10 account deletion       (in progress; one product decision open)
 | # | Milestone | Status | What it waits on |
 |---|---|---|---|
 | M0 | Green CI | Done | — |
-| M1 | A service that runs somewhere | Groundwork done: `AB_STORE_PATH`, `GET /healthz`, and an opt-in https login link (`AB_WEB_CONSUME_FALLBACK=1`) so a phone without the app can still log in | Choosing a host, and setting `RESEND_API_KEY` / `AB_PUBLIC_ORIGIN` |
+| M1 | A service that runs somewhere | **A host already exists** — the preview build points at the origin in `mobile/eas.json`, and `.ai/memory/PROJECT_LESSONS.md` records live cold starts and live Resend failures against it. This session added `AB_STORE_PATH`, `GET /healthz`, and an opt-in https login link (`AB_WEB_CONSUME_FALLBACK=1`) | Host env: `RESEND_API_KEY`, a verified `MAIL_FROM` domain, `AB_PUBLIC_ORIGIN`, and `AB_DEV_OUTBOX` unset |
 | M2 | Durable storage | Not started | M1 |
 | M3 | Prove the loop on two devices | The app runs the real loop and its controller was driven end to end against a live server; two real phones still unproven | M1 and M5 |
 | M4 | Payment that actually charges | Not started | A decision: StoreKit IAP on iOS, or keep the paid unlock off iOS |
