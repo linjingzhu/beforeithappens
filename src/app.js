@@ -2,7 +2,8 @@ import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS
 import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
 import { INSTALL_PATH, START_PATH, isInAppBrowser, openInSystemBrowser, readInstallSkip, resolveInstallView, writeInstallSkip } from "./install.js";
 import { marriagePack, questions } from "./questions.js";
-import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { PACK_LOCK_COPY } from "./pair-code.js";
 import { escapeHtml } from "./html.js";
 import { developmentHistory, developmentStages, developmentSummary } from "./development.js";
 
@@ -63,7 +64,7 @@ function applyPackState(next) {
 }
 
 function remainingQuestionOpen(index) {
-  return index < 3 || state.entitlement?.entitled === true;
+  return !isChapterLocked(index, state.entitlement?.entitled === true);
 }
 
 function viewerRole() {
@@ -305,8 +306,10 @@ function render() {
         <aside class="chapter-nav"><span>CONVERSATION</span>${questions.map((item, index) => {
           const itemState = state.questions[item.id];
           const status = isRevealed(itemState) ? "revealed" : isSubmitted(itemState.roles[state.activeRole]) ? "submitted" : "";
-          return `<button class="chapter ${index === state.index ? "active" : ""} ${status}" data-index="${index}"><i>${String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전"}</small></button>`;
-        }).join("")}</aside>
+          const locked = !remainingQuestionOpen(index);
+          const label = locked ? PACK_LOCK_COPY.status : status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전";
+          return `<button class="chapter ${index === state.index ? "active" : ""} ${status} ${locked ? "locked" : ""}" data-index="${index}" ${locked ? "disabled aria-disabled=\"true\"" : ""}><i>${locked ? "🔒" : String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${label}</small></button>`;
+        }).join("")}${state.remainingLocked ? `<p class="chapter-lock-note">${PACK_LOCK_COPY.notice}</p>` : ""}</aside>
         <article class="question-card">
           <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${questionState.lock ? "공개 잠금" : isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
           <h2>${escapeHtml(question.title)}</h2>

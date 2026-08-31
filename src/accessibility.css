@@ -126,6 +126,9 @@ button:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px sol
 .chapter { grid-template-columns: 28px 1fr; }
 .chapter small { grid-column: 2; margin-top: 3px; font-size: 8px; color: var(--muted); }
 .chapter.revealed small { color: var(--green); font-weight: 700; }
+.chapter.locked { opacity: .6; cursor: not-allowed; }
+.chapter.locked small { color: var(--muted); font-weight: 700; }
+.chapter-lock-note { margin: 14px 10px 0; color: var(--muted); font-size: 9px; line-height: 1.7; }
 .question-meta { flex-wrap: wrap; }
 .privacy-badge { margin-left: auto; padding: 5px 8px; border-radius: 12px; background: #edf2ee; color: #587563; font-size: 8px; font-style: normal; font-weight: 800; }
 fieldset:disabled .choice { cursor: not-allowed; opacity: .72; }

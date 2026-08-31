@@ -43,6 +43,12 @@ export const ACCOUNT_COPY = Object.freeze({
   logout: "로그아웃"
 });
 
+/** Entitlement lock on the remaining questions. Payment itself stays out of this slice. */
+export const PACK_LOCK_COPY = Object.freeze({
+  status: "잠김",
+  notice: "샘플 3개 다음 질문은 아직 열리지 않았어요."
+});
+
 export const PACK_LIST_COPY = Object.freeze({
   title: "질문집",
   subtitle: "",

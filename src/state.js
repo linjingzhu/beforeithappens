@@ -103,3 +103,12 @@ export function buildSharedResults(state, questionIds, choiceIdsByQuestion = {},
     items
   };
 }
+
+/** Mirrors SAMPLE_LOCK_COUNT in server/answers.mjs: the first three questions are the free sample. */
+export const SAMPLE_QUESTION_COUNT = 3;
+
+export function isChapterLocked(index, entitled, sampleCount = SAMPLE_QUESTION_COUNT) {
+  const position = Number(index);
+  if (!Number.isInteger(position) || position < 0) return false;
+  return entitled !== true && position >= sampleCount;
+}
