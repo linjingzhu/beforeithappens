@@ -21,6 +21,8 @@ export {
   S3_COPY
 } from "../s0-s2-s3-copy.js";
 
+export { WITHDRAW_COPY, WITHDRAW_ERRORS } from "../../src/pair-code.js";
+
 export const WORDMARK = "LoveMe";
 export const LINE = "두 사람의 결혼 준비, 한곳에";
 export const SPLASH_MS = 1200;

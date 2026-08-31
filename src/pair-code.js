@@ -43,6 +43,24 @@ export const ACCOUNT_COPY = Object.freeze({
   logout: "로그아웃"
 });
 
+/** 탈퇴. Two steps everywhere: the account row only opens the confirm view; only the confirm view deletes. */
+export const WITHDRAW_COPY = Object.freeze({
+  entry: "탈퇴하기",
+  title: "탈퇴할까요?",
+  body: "탈퇴하면 계정과 내가 쓴 비공개 메모, 내가 남긴 답변이 지워져요. 되돌릴 수 없어요.",
+  partnerLine: "상대의 기록은 상대에게 그대로 남아요.",
+  confirm: "탈퇴하기",
+  cancel: "돌아가기",
+  done: "탈퇴했어요. 함께해 주어 고마웠어요.",
+  failed: "탈퇴하지 못했어요. 잠시 후 다시 시도해 주세요."
+});
+
+export const WITHDRAW_ERRORS = Object.freeze({
+  unauthenticated: "로그인이 필요해요.",
+  unconfirmed: "확인을 한 번 더 눌러 주세요.",
+  failed: WITHDRAW_COPY.failed
+});
+
 /** Entitlement lock on the remaining questions. Payment itself stays out of this slice. */
 export const PACK_LOCK_COPY = Object.freeze({
   status: "잠김",
@@ -184,5 +202,8 @@ export function assertLockedMeasurementCopy() {
   if (ACCOUNT_COPY.login !== "로그인") throw new Error("account login drifted");
   if (ACCOUNT_COPY.invite !== "연인을 초대하세요") throw new Error("account invite drifted");
   if (ACCOUNT_COPY.logout !== "로그아웃") throw new Error("account logout drifted");
+  if (WITHDRAW_COPY.entry !== "탈퇴하기") throw new Error("withdraw entry drifted");
+  if (WITHDRAW_COPY.cancel !== "돌아가기") throw new Error("withdraw cancel drifted");
+  if (!WITHDRAW_COPY.body.includes("되돌릴 수 없어요")) throw new Error("withdraw irreversibility line drifted");
   return true;
 }

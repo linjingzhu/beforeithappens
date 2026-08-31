@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { ACCOUNT_COPY, AUTH_COPY, comingSoonPackLabel, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { ACCOUNT_COPY, AUTH_COPY, comingSoonPackLabel, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WITHDRAW_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 import { GradientButtonWrap, ScreenGradient } from "./gradient.js";
 import { debugLine } from "./virtual.js";
@@ -349,8 +349,10 @@ export function AccountScreen({
   onBack,
   onLogout,
   onLogin,
-  onInvite
+  onInvite,
+  onWithdraw
 }) {
+  const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
   if (guest) {
     return (
       <SafeScreen style={styles.centered} testID="account">
@@ -378,6 +380,31 @@ export function AccountScreen({
       <Pressable testID="account-logout" disabled={busy} onPress={onLogout} style={pressableStyle(styles.logoutBtn, busy ? styles.disabled : null)}>
         <Text style={styles.logoutLabel}>{ACCOUNT_COPY.logout}</Text>
       </Pressable>
+      {confirmingWithdraw ? (
+        <View style={styles.withdrawConfirm} testID="account-withdraw-confirm">
+          <Text style={styles.withdrawTitle}>{WITHDRAW_COPY.title}</Text>
+          <Text style={styles.withdrawBody}>{WITHDRAW_COPY.body}</Text>
+          <Text style={styles.withdrawBody}>{WITHDRAW_COPY.partnerLine}</Text>
+          <Pressable
+            testID="account-withdraw-yes"
+            disabled={busy}
+            onPress={() => {
+              setConfirmingWithdraw(false);
+              onWithdraw?.();
+            }}
+            style={pressableStyle(styles.logoutBtn, busy ? styles.disabled : null)}
+          >
+            <Text style={styles.logoutLabel}>{WITHDRAW_COPY.confirm}</Text>
+          </Pressable>
+          <Pressable testID="account-withdraw-cancel" onPress={() => setConfirmingWithdraw(false)} style={pressableStyle(styles.textLink)}>
+            <Text style={styles.textLinkLabel}>{WITHDRAW_COPY.cancel}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable testID="account-withdraw" disabled={busy} onPress={() => setConfirmingWithdraw(true)} style={pressableStyle(styles.textLink)}>
+          <Text style={styles.withdrawEntryLabel}>{WITHDRAW_COPY.entry}</Text>
+        </Pressable>
+      )}
       <DebugLine />
     </SafeScreen>
   );
@@ -581,6 +608,10 @@ const styles = StyleSheet.create({
   accountEmailValue: { color: colors.charcoal, fontSize: 16, marginTop: 28, textAlign: "center", fontFamily: fonts.body },
   logoutBtn: { minHeight: 48, marginTop: "auto", alignItems: "center", justifyContent: "center" },
   logoutLabel: { color: colors.charcoal, fontSize: 16, textDecorationLine: "underline", fontFamily: fonts.body },
+  withdrawEntryLabel: { color: colors.charcoal, fontSize: 14, textDecorationLine: "underline", fontFamily: fonts.body, opacity: 0.7 },
+  withdrawConfirm: { marginTop: 20, paddingHorizontal: 24, alignItems: "center", gap: 10 },
+  withdrawTitle: { color: colors.charcoal, fontSize: 17, textAlign: "center", fontFamily: fonts.body },
+  withdrawBody: { color: colors.charcoal, fontSize: 14, lineHeight: 21, textAlign: "center", fontFamily: fonts.body },
   need: { color: colors.muted, fontSize: 13, marginTop: 10, fontFamily: fonts.body },
   shop: { alignSelf: "stretch", marginTop: 24, backgroundColor: colors.card, borderRadius: 20, padding: 20, alignItems: "center" },
   shopTitle: { color: colors.charcoal, fontSize: 28, fontWeight: "700", marginVertical: 12, fontFamily: fonts.titleStrong },

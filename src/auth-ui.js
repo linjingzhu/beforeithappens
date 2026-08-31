@@ -1,5 +1,6 @@
 import { AUTH_COPY, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, formatRemaining, formatSentAt } from "./auth.js";
 import { INSTALL_COPY, INSTALL_PATH, STORE_URLS, instagramStartHref } from "./install.js";
+import { WITHDRAW_COPY } from "./pair-code.js";
 import { escapeHtml } from "./html.js";
 
 function brand(extraActions = "") {
@@ -11,7 +12,41 @@ function footer(extra = "") {
 }
 
 function logoutCluster() {
-  return `<div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small></div>`;
+  return `<div class="logout-cluster"><button class="results-link" type="button" data-action="logout">로그아웃</button><small>${escapeHtml(AUTH_COPY.logoutHandoff)}</small><button class="results-link withdraw-link" type="button" data-action="withdraw">${escapeHtml(WITHDRAW_COPY.entry)}</button></div>`;
+}
+
+/** Step two of 탈퇴. Reached only from the account screen; nothing is deleted before 확인. */
+export function renderWithdrawConfirm({ email = "", error = "", busy = false } = {}) {
+  return `
+    ${brand()}
+    <main class="auth-shell">
+      <section class="auth-card withdraw-card" data-withdraw-confirm>
+        <span class="eyebrow">AB · ACCOUNT</span>
+        <h1>${escapeHtml(WITHDRAW_COPY.title)}</h1>
+        <p>${escapeHtml(WITHDRAW_COPY.body)}</p>
+        <p>${escapeHtml(WITHDRAW_COPY.partnerLine)}</p>
+        ${email ? `<p class="auth-email-hint">${escapeHtml(email)}</p>` : ""}
+        <button class="primary auth-submit" type="button" data-action="withdraw-confirm" ${busy ? "disabled" : ""}>${escapeHtml(WITHDRAW_COPY.confirm)}</button>
+        <button class="secondary auth-submit" type="button" data-action="withdraw-cancel" ${busy ? "disabled" : ""}>${escapeHtml(WITHDRAW_COPY.cancel)}</button>
+        ${error ? `<p class="auth-error" role="alert">${escapeHtml(error)}</p>` : ""}
+      </section>
+    </main>
+    ${footer()}
+  `;
+}
+
+export function renderWithdrawDone() {
+  return `
+    ${brand()}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <span class="eyebrow">AB · ACCOUNT</span>
+        <p role="status">${escapeHtml(WITHDRAW_COPY.done)}</p>
+        <button class="primary auth-submit" type="button" data-action="back-to-onboarding">${escapeHtml(AUTH_COPY.cta)}</button>
+      </section>
+    </main>
+    ${footer()}
+  `;
 }
 
 function inAppHintBlock(inAppBrowser) {
