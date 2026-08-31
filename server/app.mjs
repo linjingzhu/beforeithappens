@@ -40,6 +40,10 @@ function packErrorStatus(error) {
   return 400;
 }
 
+function accountErrorStatus(error) {
+  return error === "unauthenticated" ? 401 : 400;
+}
+
 function entitlementErrorStatus(error) {
   if (error === "unauthenticated") return 401;
   if (error === "forbidden" || error === "locked") return 403;
@@ -51,6 +55,7 @@ export function createListener({
   couple,
   answers,
   entitlement,
+  account,
   root,
   allowDevOutbox = false,
   allowDevOAuth = false,
@@ -386,6 +391,19 @@ export function createListener({
         sendJson(response, 200, { ok: true }, {
           "set-cookie": sessionCookieHeader(SESSION_COOKIE, "", { ...cookieOptions(request), clear: true })
         });
+        return;
+      }
+
+      if (account && request.method === "POST" && url.pathname === "/api/account/delete") {
+        const body = await readJsonBody(request);
+        const result = account.deleteAccount(sessionId, { confirm: body.confirm === true });
+        const clearCookie = sessionCookieHeader(SESSION_COOKIE, "", { ...cookieOptions(request), clear: true });
+        if (!result.ok) {
+          const headers = result.error === "unauthenticated" ? { "set-cookie": clearCookie } : {};
+          sendJson(response, accountErrorStatus(result.error), result, headers);
+          return;
+        }
+        sendJson(response, 200, { ok: true }, { "set-cookie": clearCookie });
         return;
       }
 
