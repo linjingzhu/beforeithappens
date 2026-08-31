@@ -32,6 +32,7 @@
       openTasteResult,
       restoreSessionAfterSplash,
       setEmail,
+      requestLinkStarted,
       submitMagicLink
     } from "./s0-s2-s3-flow.js";
     import { createAuthApi } from "./s0-s2-s3-api.js";
@@ -105,7 +106,9 @@
       if (!event.target.matches("[data-s2-form]")) return;
       event.preventDefault();
       const email = new FormData(event.target).get("email");
-      state = setEmail(state, email);
+      state = requestLinkStarted(setEmail(state, email));
+      paint();
+      if (!state.busy) return;
       state = demo
         ? { ...state, sentEmail: state.email, screen: "sent", error: "", busy: false }
         : await submitMagicLink(state, api);

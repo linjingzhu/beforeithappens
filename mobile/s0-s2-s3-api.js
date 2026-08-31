@@ -12,7 +12,7 @@ export const AUTH_API = {
 };
 
 export const SESSION_FETCH_MS = 2000;
-export const AUTH_FETCH_MS = 25000;
+export const AUTH_FETCH_MS = 55000;
 export const OAUTH_FETCH_MS = 5000;
 
 export function emptyAuthSession() {

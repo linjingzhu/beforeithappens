@@ -44,7 +44,14 @@ Confidence: high
 Area: Expo auth client
 Evidence: Live `POST /api/auth/magic-link` returned 200 in ~14s on Render free cold start. `AUTH_FETCH_MS` was 5000, so `requestMagicLink` timed out and returned `{error:failed}` / `S2_ERRORS.failed`.
 Impact: Measurement signup looked broken even when Resend sent the mail.
-Recommended future behavior: Keep `AUTH_FETCH_MS` in the 20–30s band for magic-link (and email-bind). Keep `OAUTH_FETCH_MS` fail-fast. Do not change `MAIL_FROM` or Resend to paper over host timeout.
+Recommended future behavior: Keep `AUTH_FETCH_MS` in the 45–60s band for magic-link (and email-bind) so a 20–40s free-plan wake is not a false failure. Keep `OAUTH_FETCH_MS` fail-fast. Do not change `MAIL_FROM` or Resend to paper over host timeout. Do not show `S2_ERRORS.failed` while `busy` is true.
+Confidence: high
+
+### 2026-08-31 — 25s magic-link wait still maps a 20–40s wake to failed
+Area: Expo / native auth client
+Evidence: CPO lock: first request after idle can be ~14s+ and a 20–40s Render free wake still outlasted `AUTH_FETCH_MS` 25000. Timeout was painted as `로그인 링크를 보내지 못했어요.` while the send was still in flight.
+Impact: Login send looked broken on cold start even when the later 200 would have succeeded.
+Recommended future behavior: Raise magic-link wait to 45–60s (`AUTH_FETCH_MS` 55000, Swift `authTimeout` 55s, Kotlin `AUTH_FETCH_MS` 55000). Keep busy/sending with no red failed banner until a non-OK body or that timeout. Session and OAuth stays fail-fast. Login must not render pack-detail title `두 사람의 결혼 준비, 한곳에`.
 Confidence: high
 
 ## Domain Risk Lessons

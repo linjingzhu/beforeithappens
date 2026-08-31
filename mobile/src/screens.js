@@ -67,7 +67,6 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
       <Text style={styles.gateBrand}>{WORDMARK}</Text>
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.gateScroll}>
         <View style={styles.gateCard}>
-          <Text style={styles.gateTitle}>{S2_COPY.title}</Text>
           <Text style={styles.body}>{S2_COPY.body}</Text>
           <Text style={styles.label}>이메일</Text>
           <TextInput
@@ -136,7 +135,6 @@ export function SentScreen({ email = "", onUseOtherEmail }) {
     <SafeScreen style={styles.shell} testID="sent">
       <View style={styles.card}>
         <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-        <Text style={styles.title}>{AUTH_COPY.title}</Text>
         <Text style={styles.body}>{AUTH_COPY.sent}</Text>
         {email ? <Text style={styles.email}>{email}</Text> : null}
         <Pressable testID="sent-other-email" accessibilityRole="button" onPress={onUseOtherEmail} style={styles.secondary}>
@@ -152,7 +150,6 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
     <SafeScreen style={styles.shell} testID="notice">
       <View style={styles.card}>
         <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
-        <Text style={styles.title}>{AUTH_COPY.title}</Text>
         <Text style={styles.body}>{AUTH_COPY.afterLogin}</Text>
         {email ? <Text style={styles.email}>{email}</Text> : null}
         <Pressable

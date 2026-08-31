@@ -1,3 +1,5 @@
+import { PACK_DETAIL_COPY } from "../src/pair-code.js";
+
 export {
   ACCOUNT_COPY,
   COMING_SOON_SAMPLE_QUESTION,
@@ -62,7 +64,7 @@ export function assertLockedS2SocialCopy() {
   if (S2_COPY.cta !== "로그인 링크 보내기") throw new Error("S2 magic-link CTA drifted");
   if (S2_COPY.sent !== "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.") throw new Error("S2 magic-link sent copy drifted");
   if (S2_SOCIAL_COPY.kakao === "카카오톡") throw new Error("S2 Kakao start collided with S4 KakaoTalk share");
-  if (S2_COPY.title !== "두 사람의 결혼 준비, 한곳에") throw new Error("login title drifted");
+  if (PACK_DETAIL_COPY.subtitle !== "두 사람의 결혼 준비, 한곳에.") throw new Error("pack-detail subtitle drifted");
   return true;
 }
 
