@@ -2,6 +2,7 @@ import { ACCOUNT_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, FORBIDDEN_AP
 import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../src/hearts.js";
 import { CERTIFICATE_COPY, comingSoonExistingQuestion, countSampleLabels, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, SAMPLE_SIZE, sampleCounterLabel, TOGETHER_CTA } from "../src/marriage-sample.js";
 import { debugLine } from "./src/virtual.js";
+import { PACK_INTRO_COPY, PACK_INTRO_MOTION, packIntroLines, packIntroTitle } from "../src/pack-intro.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -142,6 +143,20 @@ export function renderSampleResultScreen({
       <article class="loveme-taste-answer"><span>나</span><p>${escapeHtml(myChoice.label || "")}</p></article>
       <article class="loveme-taste-answer"><span>상대</span><p>${escapeHtml(partnerChoice.label || "")}</p></article>
       <button class="loveme-primary" type="button" data-action="together">${escapeHtml(TOGETHER_CTA)}</button>
+      ${debug()}
+    </section>
+  `;
+}
+
+export function renderPackIntroScreen({ packId = "marriage" } = {}) {
+  const lines = packIntroLines(packId);
+  return `
+    <section class="loveme-screen loveme-pack-intro" data-screen="pack-intro" data-pack="${escapeHtml(packId)}">
+      <h1>${escapeHtml(packIntroTitle(packId))}</h1>
+      <div class="loveme-intro-lines">
+        ${lines.map((line, index) => `<p class="loveme-intro-line" style="animation-delay:${index * PACK_INTRO_MOTION.lineDelayMs}ms;animation-duration:${PACK_INTRO_MOTION.durationMs}ms">${escapeHtml(line)}</p>`).join("")}
+      </div>
+      <button class="loveme-primary" type="button" data-action="start-pack">${escapeHtml(PACK_INTRO_COPY.start)}</button>
       ${debug()}
     </section>
   `;
@@ -325,6 +340,7 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
+  if (state.screen === "pack-intro") return renderPackIntroScreen({ packId: state.samplePackId });
   if (state.screen === "coming-soon") return renderComingSoonScreen({ packId: state.comingSoonId });
   if (state.screen === "taste-result") return renderComingSoonScreen({ packId: state.comingSoonId });
   if (state.screen === "sample-q") {

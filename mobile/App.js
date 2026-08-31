@@ -11,6 +11,7 @@ import {
   EmailBindScreen,
   InviteScreen,
   NoticeScreen,
+  PackIntroScreen,
   PackListScreen,
   PartnerWaitScreen,
   SampleQuestionScreen,
@@ -50,6 +51,7 @@ import {
   openAccount,
   openComingSoonFromList,
   openMarriageFromList,
+  startPackFromIntro,
   openSendLink,
   openTogetherFromSample,
   purchaseShopHearts,
@@ -166,6 +168,13 @@ export default function App() {
           onOpenMarriage={() => setState(openMarriageFromList(state))}
           onOpenComingSoon={(packId) => setState(openComingSoonFromList(state, packId))}
           onOpenAccount={() => setState(openAccount(state))}
+        />
+      ) : null}
+      {state.screen === "pack-intro" ? (
+        <PackIntroScreen
+          key={state.samplePackId}
+          packId={state.samplePackId}
+          onStart={() => setState(startPackFromIntro(state))}
         />
       ) : null}
       {state.screen === "coming-soon" ? (

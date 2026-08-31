@@ -32,6 +32,7 @@ import {
   loggedOutHome,
   openComingSoonFromList,
   openMarriageFromList,
+  startPackFromIntro,
   openTogetherFromSample,
   purchaseShopHearts,
   setEmail,
@@ -121,7 +122,9 @@ test("marriage sample is 3 existing questions; coming-soon packs invent no 임�
   assert.equal(PACK_LIST_ROWS.filter((row) => !row.open).length, 5);
   const home = finishSplash(createNativeFlow(loggedIn));
   assert.equal(home.screen, "pack-list");
-  const marriage = openMarriageFromList(home, () => 0);
+  const marriageIntro = openMarriageFromList(home, () => 0);
+  assert.equal(marriageIntro.screen, "pack-intro");
+  const marriage = startPackFromIntro(marriageIntro, () => 0);
   assert.equal(marriage.screen, "sample-q");
   assert.equal(marriage.sampleQuestions.length, 3);
   const q1 = renderNativeScreen(marriage);
@@ -129,7 +132,9 @@ test("marriage sample is 3 existing questions; coming-soon packs invent no 임�
   assert.match(q1, /왜 그 선택인지 한 줄로 적어주세요/);
   assert.match(q1, />다음</);
   assert.equal(q1.includes("3/12"), false);
-  const emptySoon = openComingSoonFromList(home, "pregnancy");
+  const soonIntro = openComingSoonFromList(home, "pregnancy");
+  assert.equal(soonIntro.screen, "pack-intro");
+  const emptySoon = startPackFromIntro(soonIntro, () => 0);
   assert.equal(emptySoon.screen, "sample-result");
   assert.equal(emptySoon.sampleQuestions.length, 0);
   const html = renderNativeScreen(emptySoon);
@@ -140,7 +145,7 @@ test("marriage sample is 3 existing questions; coming-soon packs invent no 임�
 
 test("three sample answers stay on sample result, not the certificate", () => {
   const home = finishSplash(createNativeFlow(loggedIn));
-  let state = openMarriageFromList(home, () => 0);
+  let state = startPackFromIntro(openMarriageFromList(home, () => 0), () => 0);
   assert.equal(state.screen, "sample-q");
   while (state.screen === "sample-q") {
     const question = state.sampleQuestions[state.sampleIndex];
@@ -175,7 +180,7 @@ test("unlock spends 10 hearts then shows certificate with counts, heart stamp, �
   ], [four]), { aligned: 1, close: 1, discuss: 1 });
 
   const home = finishSplash(createNativeFlow(loggedIn));
-  let state = openMarriageFromList(home, () => 0);
+  let state = startPackFromIntro(openMarriageFromList(home, () => 0), () => 0);
   while (state.screen === "sample-q") {
     const question = state.sampleQuestions[state.sampleIndex];
     state = setSampleChoice(state, question.choices[0].id);

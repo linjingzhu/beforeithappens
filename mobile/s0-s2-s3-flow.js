@@ -4,6 +4,7 @@ import { shareInviteChannel } from "../src/auth.js";
 import { shareContainsPairCode } from "../src/pair-code.js";
 import { canUnlockRest, grantShopHearts, HEARTS, spendUnlockHearts, startingHearts } from "../src/hearts.js";
 import { comingSoonExistingQuestion, pickPackSample, pickPartnerChoice, sampleAnswerComplete } from "../src/marriage-sample.js";
+import { introSeen, markIntroSeen, packIntroLines } from "../src/pack-intro.js";
 import { fakeSession, isVirtualDebug } from "./src/virtual.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,6 +29,8 @@ export function createNativeFlow(session = emptyNativeSession(), {
   shopOpen = false,
   certificateOpen = false,
   samplePackId = "",
+  packIntroOpen = false,
+  seenPackIntros = [],
   hearts = startingHearts(),
   entitled = false
 } = {}) {
@@ -66,6 +69,8 @@ export function createNativeFlow(session = emptyNativeSession(), {
     sampleChoice: "",
     sampleReason: "",
     samplePartner: null,
+    packIntroOpen: Boolean(packIntroOpen),
+    seenPackIntros: Array.isArray(seenPackIntros) ? [...seenPackIntros] : [],
     hearts: Number.isFinite(hearts) ? hearts : startingHearts(),
     entitled: Boolean(entitled)
   };
@@ -106,6 +111,7 @@ export function resolveNativeScreen(state) {
     if (state.certificateOpen) return "certificate";
     if (state.unlockOpen && isPartnerRole(state.session)) return "partner-wait";
     if (state.unlockOpen) return "unlock";
+    if (state.packIntroOpen) return "pack-intro";
     if (state.sampleResultOpen) return "sample-result";
     if (state.sampleOpen) return "sample-q";
     if (state.packDetailOpen) return "sample-q";
@@ -113,6 +119,7 @@ export function resolveNativeScreen(state) {
   }
   if (state.sentEmail) return "sent";
   if (state.signupOpen) return "signup";
+  if (state.packIntroOpen) return "pack-intro";
   if (state.certificateOpen) return "certificate";
   if (state.unlockOpen && isPartnerRole(state.session)) return "partner-wait";
   if (state.unlockOpen) return "unlock";
@@ -151,6 +158,7 @@ function clearJourney(state, extras = {}) {
     unlockOpen: false,
     shopOpen: false,
     certificateOpen: false,
+    packIntroOpen: false,
     ...extras
   };
 }
@@ -300,7 +308,26 @@ export function invitePartner(state) {
   return { ...state, action: "invite-partner" };
 }
 
+/** First entry into a pack opens its narration; starting from there runs the sample. */
 export function openPackSample(state, packId = "marriage", rng = Math.random) {
+  if (packIntroLines(packId).length && !introSeen(state?.seenPackIntros, packId)) {
+    return applyScreen(clearJourney(state, {
+      splashDone: true,
+      samplePackId: packId,
+      packIntroOpen: true,
+      error: ""
+    }));
+  }
+  return runPackSample(state, packId, rng);
+}
+
+export function startPackFromIntro(state, rng = Math.random) {
+  const packId = state?.samplePackId || "marriage";
+  const seen = markIntroSeen(state?.seenPackIntros, packId);
+  return runPackSample({ ...state, seenPackIntros: seen }, packId, rng);
+}
+
+function runPackSample(state, packId = "marriage", rng = Math.random) {
   const sampleQuestions = pickPackSample(packId, undefined, rng);
   if (!sampleQuestions.length) {
     return applyScreen(clearJourney(state, {

@@ -17,6 +17,7 @@ import {
   openAccount,
   openComingSoonFromList,
   openMarriageFromList,
+  startPackFromIntro,
   openSendLink,
   requireLogin,
   requireLoginForPay,
@@ -71,6 +72,8 @@ test("logged-in marriage opens the 3-question sample, not read-only pack detail"
   let state = finishSplash(createNativeFlow(loggedIn));
   assert.equal(state.screen, "pack-list");
   state = openMarriageFromList(state, () => 0);
+  assert.equal(state.screen, "pack-intro");
+  state = startPackFromIntro(state, () => 0);
   assert.equal(state.screen, "sample-q");
   assert.equal(state.sampleQuestions.length, 3);
   state = backFromPackDetail(state);
@@ -176,6 +179,8 @@ test("coming-soon packs use the sample engine and do not invent 임신/출산/�
   assert.equal(state.screen, "pack-list");
   assert.equal(openComingSoonFromList(state, "marriage").screen, "pack-list");
   state = openComingSoonFromList(state, "pregnancy");
+  assert.equal(state.screen, "pack-intro");
+  state = startPackFromIntro(state, () => 0);
   assert.equal(state.screen, "sample-result");
   assert.equal(state.sampleQuestions.length, 0);
   state = backFromComingSoon(state);

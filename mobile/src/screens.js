@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ACCOUNT_COPY, AUTH_COPY, comingSoonPackLabel, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 import { GradientButtonWrap, ScreenGradient } from "./gradient.js";
@@ -8,6 +8,7 @@ import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../../src/
 import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, TOGETHER_CTA } from "../../src/marriage-sample.js";
 import { requestLoveMeNotificationPermission } from "./notifications.js";
 import { fonts } from "./fonts.js";
+import { PACK_INTRO_COPY, PACK_INTRO_MOTION, packIntroLines, packIntroTitle } from "../../src/pack-intro.js";
 
 function pressableStyle(...parts) {
   return ({ pressed }) => {
@@ -177,6 +178,67 @@ export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount
       <Pressable testID="pack-account" accessibilityRole="button" onPress={onOpenAccount} style={pressableStyle(styles.accountFooter)}>
         <Text style={styles.accountEntryLabel}>{ACCOUNT_COPY.title}</Text>
       </Pressable>
+      <DebugLine />
+    </SafeScreen>
+  );
+}
+
+/**
+ * The narration a pack opens with: what it means for the two of them, and what the
+ * questions ahead are about. Lines rise in one after another; Reduce Motion shows them at rest.
+ */
+export function PackIntroScreen({ packId = "marriage", onStart }) {
+  const lines = useMemo(() => packIntroLines(packId), [packId]);
+  const steps = useRef(lines.map(() => new Animated.Value(0))).current;
+  const [stillMotion, setStillMotion] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.resolve(AccessibilityInfo.isReduceMotionEnabled?.())
+      .then((reduced) => { if (alive) setStillMotion(Boolean(reduced)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (stillMotion) {
+      steps.forEach((step) => step.setValue(1));
+      return undefined;
+    }
+    const reveal = Animated.stagger(
+      PACK_INTRO_MOTION.lineDelayMs,
+      steps.map((step) => Animated.timing(step, {
+        toValue: 1,
+        duration: PACK_INTRO_MOTION.durationMs,
+        useNativeDriver: true
+      }))
+    );
+    reveal.start();
+    return () => reveal.stop();
+  }, [stillMotion, steps]);
+
+  return (
+    <SafeScreen style={styles.centered} testID="pack-intro">
+      <Text style={styles.introTitle}>{packIntroTitle(packId)}</Text>
+      <View style={styles.introLines}>
+        {lines.map((line, index) => (
+          <Animated.Text
+            key={line}
+            style={[styles.introLine, {
+              opacity: steps[index],
+              transform: [{
+                translateY: steps[index].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [PACK_INTRO_MOTION.riseFrom, 0]
+                })
+              }]
+            }]}
+          >
+            {line}
+          </Animated.Text>
+        ))}
+      </View>
+      <PrimaryButton testID="pack-intro-start" label={PACK_INTRO_COPY.start} onPress={onStart} />
       <DebugLine />
     </SafeScreen>
   );
@@ -506,6 +568,9 @@ const styles = StyleSheet.create({
   labelChip: { color: colors.charcoal, backgroundColor: colors.card, overflow: "hidden", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontSize: 13, fontWeight: "700", fontFamily: fonts.bodyStrong },
   answerCard: { alignSelf: "stretch", backgroundColor: colors.card, borderRadius: 16, padding: 14, marginBottom: 10 },
   who: { color: colors.charcoal, fontSize: 12, fontWeight: "700", marginBottom: 6, fontFamily: fonts.bodyStrong },
+  introTitle: { color: colors.charcoal, fontSize: 30, marginBottom: 28, fontFamily: fonts.titleStrong },
+  introLines: { alignSelf: "stretch", paddingHorizontal: 12, marginBottom: 36 },
+  introLine: { color: colors.charcoal, fontSize: 17, lineHeight: 30, textAlign: "center", marginTop: 10, fontFamily: fonts.body },
   soonBadge: { color: colors.muted, fontSize: 13, marginBottom: 8, fontFamily: fonts.body },
   soonTitle: { color: colors.charcoal, fontSize: 32, fontWeight: "700", marginBottom: 16, fontFamily: fonts.titleStrong },
   textLink: { minHeight: 40, alignItems: "center", justifyContent: "center", marginTop: 8 },

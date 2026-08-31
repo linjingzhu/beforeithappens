@@ -1045,3 +1045,11 @@ body {
   width: 100%;
 }
 
+.loveme-pack-intro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.loveme-pack-intro h1 { margin: 0 0 28px; font-size: 30px; }
+.loveme-intro-lines { align-self: stretch; padding: 0 12px; margin-bottom: 36px; }
+.loveme-intro-line { margin: 10px 0 0; font-size: 17px; line-height: 30px; opacity: 0; transform: translateY(10px); animation-name: loveme-intro-rise; animation-fill-mode: forwards; animation-timing-function: cubic-bezier(.22, .61, .36, 1); }
+@keyframes loveme-intro-rise { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .loveme-intro-line { animation: none; opacity: 1; transform: none; }
+}
