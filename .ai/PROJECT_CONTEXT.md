@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- Designer font lock: titles and question stems MaruBuri; body, choices, buttons, `곧 열려요` Pretendard. Sample Q header `결혼 1/3`.
+- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open). **This PR (LoveMe NEXT home):** splash → magic-link login (iOS system notification permission; virtual send + `[debug]`) → `질문집` home with heart balance from 0. Unsold packs show `곧 열려요` and use the marriage 3-question sample engine on existing questions only. Shop SKU `29,000원에 하트 12`; `열기` costs 10 hearts then certificate (pack name, `두 사람이 이 질문집을 마쳤어요`, 같음/가까움/이야기해요 counts, heart stamp, `홈으로`, `[debug] 수료`). Sample result after 3 questions is not the certificate. Partner has no hearts/shop. Live preview `d3be894e` stays splash→home without this login. Login keep-gates (`링크 보내기`, in-app pair connect, `계정`) remain. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`). Designer font lock: titles and question stems MaruBuri; body, choices, buttons, `곧 열려요` Pretendard. Sample Q header `결혼 1/3`.
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:

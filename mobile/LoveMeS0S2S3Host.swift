@@ -45,6 +45,9 @@ struct LoveMeS0S2S3Host: View {
     @State private var samplePartner = ""
     @State private var sampleIndex = 0
     @State private var samplePackLabel = "결혼"
+    @State private var sameCount = 0
+    @State private var closeCount = 0
+    @State private var talkCount = 0
 
     var body: some View {
         Group {
@@ -58,11 +61,17 @@ struct LoveMeS0S2S3Host: View {
                     onOpenMarriage: {
                         samplePackLabel = "결혼"
                         sampleIndex = 0
+                        sameCount = 0
+                        closeCount = 0
+                        talkCount = 0
                         startSample()
                     },
                     onOpenComingSoon: { id in
                         samplePackLabel = LoveMeInvitePackCopy.rows.first(where: { $0.id == id })?.label ?? "결혼"
                         sampleIndex = 0
+                        sameCount = 0
+                        closeCount = 0
+                        talkCount = 0
                         if id == "marriage" {
                             startSample()
                         } else {
@@ -99,7 +108,13 @@ struct LoveMeS0S2S3Host: View {
                     shopOpen = false
                 }, onLater: { shopOpen = false })
             case .certificate:
-                LoveMeCertificateScreen(packLabel: samplePackLabel, onBackToList: { screen = .packList })
+                LoveMeCertificateScreen(
+                    packLabel: samplePackLabel,
+                    sameCount: sameCount,
+                    closeCount: closeCount,
+                    talkCount: talkCount,
+                    onHome: { screen = .packList }
+                )
             case .partnerWait:
                 LoveMePartnerWaitScreen()
             case .account:
@@ -164,11 +179,29 @@ struct LoveMeS0S2S3Host: View {
         screen = .sampleQ
     }
 
+    private func classifyPair(myId: String, partnerId: String) -> String {
+        guard let my = sampleChoices.firstIndex(where: { $0.id == myId }),
+              let partner = sampleChoices.firstIndex(where: { $0.id == partnerId }) else { return "discuss" }
+        if my == partner { return "aligned" }
+        if abs(my - partner) == 1 { return "close" }
+        return "discuss"
+    }
+
+    private func recordPair(myId: String, partnerId: String) {
+        switch classifyPair(myId: myId, partnerId: partnerId) {
+        case "aligned": sameCount += 1
+        case "close": closeCount += 1
+        default: talkCount += 1
+        }
+    }
+
     private func submitSample() {
         guard !sampleChoice.isEmpty, !sampleReason.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        let partnerId = sampleChoices.first(where: { $0.id != sampleChoice })?.id ?? sampleChoice
+        recordPair(myId: sampleChoice, partnerId: partnerId)
         if sampleIndex >= 2 {
             sampleMine = sampleChoices.first(where: { $0.id == sampleChoice })?.label ?? ""
-            samplePartner = sampleChoices.first(where: { $0.id != sampleChoice })?.label ?? ""
+            samplePartner = sampleChoices.first(where: { $0.id == partnerId })?.label ?? ""
             screen = .sampleResult
             return
         }

@@ -1001,8 +1001,47 @@ body {
 
 .loveme-pack-list h1,
 .loveme-unlock h1,
+.loveme-certificate h1,
 .loveme-coming-soon h1 {
   font-family: var(--font-title);
   color: var(--charcoal);
+}
+
+.loveme-certificate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.loveme-certificate-stamp {
+  font-size: 64px;
+  line-height: 1;
+  margin: 36px 0 12px;
+  color: var(--charcoal);
+}
+
+.loveme-certificate-counts {
+  list-style: none;
+  margin: 16px 0 24px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.loveme-certificate-counts li {
+  background: var(--card);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loveme-certificate .loveme-primary {
+  margin-top: auto;
+  width: 100%;
 }
 

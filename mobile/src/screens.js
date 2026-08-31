@@ -26,8 +26,8 @@ function SafeScreen({ style, children, testID }) {
   );
 }
 
-function DebugLine() {
-  const line = debugLine();
+function DebugLine({ extra = "" }) {
+  const line = debugLine(undefined, extra);
   if (!line) return null;
   return <Text style={styles.debug} testID="debug-line">{line}</Text>;
 }
@@ -353,17 +353,25 @@ export function PartnerWaitScreen() {
   );
 }
 
-export function CertificateScreen({ packLabel = "결혼", onBackToList }) {
+export function CertificateScreen({
+  packLabel = "결혼",
+  counts = { aligned: 0, close: 0, discuss: 0 },
+  onHome
+}) {
   return (
-    <SafeScreen style={styles.centered} testID="certificate">
-      <Text style={styles.title}>{CERTIFICATE_COPY.title}</Text>
-      <Text style={styles.body}>{packLabel}</Text>
-      <Text style={styles.example}>{CERTIFICATE_COPY.body}</Text>
-      <Text style={styles.example}>{SAMPLE_RESULT_EXAMPLE}</Text>
-      <Pressable testID="certificate-list" onPress={onBackToList} style={pressableStyle(styles.textLink)}>
-        <Text style={styles.textLinkLabel}>{CERTIFICATE_COPY.cta}</Text>
-      </Pressable>
-      <DebugLine />
+    <SafeScreen style={styles.certificateShell} testID="certificate">
+      <Text style={styles.certificateStamp} accessible={false}>{CERTIFICATE_COPY.stamp}</Text>
+      <Text style={styles.title}>{packLabel}</Text>
+      <Text style={styles.body}>{CERTIFICATE_COPY.body}</Text>
+      <View style={styles.labelsRow}>
+        <Text style={styles.labelChip}>{`${SAMPLE_LABELS.aligned} ${Number(counts.aligned) || 0}`}</Text>
+        <Text style={styles.labelChip}>{`${SAMPLE_LABELS.close} ${Number(counts.close) || 0}`}</Text>
+        <Text style={styles.labelChip}>{`${SAMPLE_LABELS.discuss} ${Number(counts.discuss) || 0}`}</Text>
+      </View>
+      <View style={styles.certificateCta}>
+        <PrimaryButton testID="certificate-home" label={CERTIFICATE_COPY.cta} onPress={onHome} />
+      </View>
+      <DebugLine extra={CERTIFICATE_COPY.debugExtra} />
     </SafeScreen>
   );
 }
@@ -511,6 +519,9 @@ const styles = StyleSheet.create({
   need: { color: colors.muted, fontSize: 13, marginTop: 10, fontFamily: fonts.body },
   shop: { alignSelf: "stretch", marginTop: 24, backgroundColor: colors.card, borderRadius: 20, padding: 20, alignItems: "center" },
   shopTitle: { color: colors.charcoal, fontSize: 28, fontWeight: "700", marginVertical: 12, fontFamily: fonts.titleStrong },
+  certificateShell: { flex: 1, alignItems: "center", paddingHorizontal: 24, paddingBottom: 24 },
+  certificateStamp: { fontSize: 64, lineHeight: 72, marginTop: 48, marginBottom: 12, color: colors.charcoal },
+  certificateCta: { marginTop: "auto", alignSelf: "stretch", width: "100%" },
   inviteShell: { flex: 1 },
   inviteScroll: { paddingHorizontal: 24, paddingBottom: 32 }
 });

@@ -14,8 +14,11 @@ import {
 } from "../src/hearts.js";
 import {
   CERTIFICATE_COPY,
+  classifySamplePair,
+  countSampleLabels,
   existingQuestionsForPack,
   pickPackSample,
+  SAMPLE_LABELS,
   SAMPLE_SIZE,
   sampleCounterLabel,
   TOGETHER_CTA
@@ -86,7 +89,7 @@ test("hearts SKU is 29000→12, unlock costs 10, old paywall CTA is shop-only", 
   assert.equal(grantShopHearts(0), 12);
   assert.equal(spendUnlockHearts(12).balance, 2);
   assert.equal(HEART_COPY.unlockCta, "열기");
-  assert.equal(HEART_COPY.shopCta, "29,000원에 | ♡ 12");
+  assert.equal(HEART_COPY.shopCta, "29,000원에 하트 12");
   assert.equal(HEART_COPY.partnerWait, "상대가 열면 이어집니다.");
   for (const banned of HEART_FORBIDDEN) {
     assert.equal(HEART_COPY.unlockCta.includes(banned), false);
@@ -95,8 +98,10 @@ test("hearts SKU is 29000→12, unlock costs 10, old paywall CTA is shop-only", 
   assert.match(needy, /열기/);
   assert.match(needy, /하트 10이 필요해요/);
   assert.equal(needy.includes("29,000원에 나머지 열기"), false);
+  assert.equal(needy.includes("29,000"), false);
   const shop = renderUnlockScreen({ hearts: 0, shopOpen: true });
-  assert.match(shop, /29,000원에 \| ♡ 12/);
+  assert.match(shop, /29,000원에 하트 12/);
+  assert.equal(shop.includes("29,000원에 나머지 열기"), false);
   const rich = renderUnlockScreen({ hearts: 12, shopOpen: false });
   assert.match(rich, /열기/);
   assert.equal(rich.includes("29,000"), false);
@@ -133,8 +138,51 @@ test("marriage sample is 3 existing questions; coming-soon packs invent no 임�
   assert.match(html, /예시입니다/);
 });
 
-test("unlock spends 10 hearts then shows certificate without scores or faces", () => {
-  let state = openTogetherFromSample(openComingSoonFromList(finishSplash(createNativeFlow(loggedIn)), "dating"));
+test("three sample answers stay on sample result, not the certificate", () => {
+  const home = finishSplash(createNativeFlow(loggedIn));
+  let state = openMarriageFromList(home, () => 0);
+  assert.equal(state.screen, "sample-q");
+  while (state.screen === "sample-q") {
+    const question = state.sampleQuestions[state.sampleIndex];
+    state = setSampleChoice(state, question.choices[0].id);
+    state = setSampleReason(state, "이유는 이거예요");
+    state = submitSampleAnswer(state, () => 0);
+  }
+  assert.equal(state.screen, "sample-result");
+  const html = renderNativeScreen(state);
+  assert.match(html, /예시입니다/);
+  assert.match(html, /같음/);
+  assert.match(html, /가까움/);
+  assert.match(html, /이야기해요/);
+  assert.match(html, /함께 풀어보기/);
+  assert.equal(html.includes("두 사람이 이 질문집을 마쳤어요"), false);
+  assert.equal(html.includes("[debug] 수료"), false);
+  assert.equal(html.includes("이수증"), false);
+});
+
+test("unlock spends 10 hearts then shows certificate with counts, heart stamp, 홈으로", () => {
+  const four = {
+    id: "demo",
+    choices: [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }]
+  };
+  assert.equal(classifySamplePair(four, "a", "a"), "aligned");
+  assert.equal(classifySamplePair(four, "a", "b"), "close");
+  assert.equal(classifySamplePair(four, "a", "d"), "discuss");
+  assert.deepEqual(countSampleLabels([
+    { questionId: "demo", choiceId: "a", partnerChoiceId: "a" },
+    { questionId: "demo", choiceId: "a", partnerChoiceId: "b" },
+    { questionId: "demo", choiceId: "a", partnerChoiceId: "d" }
+  ], [four]), { aligned: 1, close: 1, discuss: 1 });
+
+  const home = finishSplash(createNativeFlow(loggedIn));
+  let state = openMarriageFromList(home, () => 0);
+  while (state.screen === "sample-q") {
+    const question = state.sampleQuestions[state.sampleIndex];
+    state = setSampleChoice(state, question.choices[0].id);
+    state = setSampleReason(state, "이유는 이거예요");
+    state = submitSampleAnswer(state, () => 0);
+  }
+  state = openTogetherFromSample(state);
   assert.equal(state.screen, "unlock");
   state = tapUnlock(state);
   assert.equal(state.shopOpen, true);
@@ -143,21 +191,52 @@ test("unlock spends 10 hearts then shows certificate without scores or faces", (
   state = tapUnlock(state);
   assert.equal(state.screen, "certificate");
   assert.equal(state.hearts, 2);
-  assert.equal(CERTIFICATE_COPY.title, "이수증");
+  assert.equal(CERTIFICATE_COPY.body, "두 사람이 이 질문집을 마쳤어요");
+  assert.equal(CERTIFICATE_COPY.cta, "홈으로");
+  assert.equal(CERTIFICATE_COPY.debugExtra, "수료");
   const html = renderNativeScreen(state);
-  assert.match(html, /이수증/);
+  assert.match(html, /결혼/);
+  assert.match(html, /두 사람이 이 질문집을 마쳤어요/);
+  assert.match(html, /같음 0/);
+  assert.match(html, /가까움 3/);
+  assert.match(html, /이야기해요 0/);
+  assert.match(html, />홈으로</);
+  assert.match(html, /\[debug\] 수료/);
+  assert.match(html, /loveme-certificate-stamp/);
+  assert.equal(html.includes("이수증"), false);
+  assert.equal(html.includes("목록으로"), false);
   assert.equal(html.includes("점수"), false);
   assert.equal(html.includes("얼굴"), false);
   assert.equal(html.includes("graph"), false);
+  assert.equal(html.includes("예시입니다"), false);
   assert.equal(backFromCertificate(state).screen, "pack-list");
   assert.equal(TOGETHER_CTA, "함께 풀어보기");
+  assert.equal(SAMPLE_LABELS.aligned, "같음");
+});
+
+test("native certificate copy is pack counts heart stamp 홈으로 and debug 수료", async () => {
+  const swift = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
+  const kotlin = await readFile("mobile/LoveMeInvitePackScreens.kt", "utf8");
+  const expo = await readFile("mobile/src/screens.js", "utf8");
+  for (const text of [swift, kotlin, expo]) {
+    assert.match(text, /두 사람이 이 질문집을 마쳤어요/);
+    assert.match(text, /홈으로/);
+    assert.equal(text.includes("이수증"), false);
+    assert.equal(text.includes("점수"), false);
+  }
+  assert.match(swift, /LoveMeDebugLine\(extra: LoveMeInvitePackCopy.debugDone\)/);
+  assert.match(kotlin, /debugDone/);
+  assert.match(expo, /certificate-home/);
+  assert.match(expo, /CERTIFICATE_COPY\.stamp/);
 });
 
 test("virtual debug is on; store builds hide [debug]; AUTH_FETCH_MS stays 55s", async () => {
   assert.equal(isVirtualDebug({ LOVEME_VIRTUAL: "1" }), true);
   assert.equal(debugLine(), "[debug]");
+  assert.equal(debugLine(undefined, "수료"), "[debug] 수료");
   assert.equal(isStoreBuild({ EAS_BUILD_PROFILE: "production" }), true);
   assert.equal(debugLine({ EXPO_PUBLIC_STORE_BUILD: "1" }), "");
+  assert.equal(debugLine({ EXPO_PUBLIC_STORE_BUILD: "1" }, "수료"), "");
   assert.ok(AUTH_FETCH_MS >= 45000 && AUTH_FETCH_MS <= 60000);
   const apiSwift = await readFile("mobile/LoveMeAuthApi.swift", "utf8");
   const apiKt = await readFile("mobile/LoveMeAuthApi.kt", "utf8");

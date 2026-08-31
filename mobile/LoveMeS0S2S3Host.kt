@@ -39,6 +39,9 @@ fun LoveMeS0S2S3Host(
     var sampleMine by remember { mutableStateOf("") }
     var samplePartner by remember { mutableStateOf("") }
     var samplePackLabel by remember { mutableStateOf("결혼") }
+    var sameCount by remember { mutableStateOf(0) }
+    var closeCount by remember { mutableStateOf(0) }
+    var talkCount by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
     fun resumePending(gate: String = pendingGate) {
@@ -76,16 +79,28 @@ fun LoveMeS0S2S3Host(
         screen = LoveMeNativeScreen.SampleQ
     }
 
+    fun recordPair(myIndex: Int, partnerIndex: Int) {
+        when {
+            myIndex < 0 || partnerIndex < 0 -> talkCount += 1
+            myIndex == partnerIndex -> sameCount += 1
+            kotlin.math.abs(myIndex - partnerIndex) == 1 -> closeCount += 1
+            else -> talkCount += 1
+        }
+    }
+
     fun submitSample() {
         if (sampleChoice.isEmpty() || sampleReason.trim().isEmpty()) return
-        sampleIndex += 1
-        if (sampleIndex >= 3) {
+        val myIndex = sampleChoice.toIntOrNull() ?: -1
+        val partnerIndex = if (myIndex == 0) 1 else 0
+        recordPair(myIndex, partnerIndex)
+        if (sampleIndex >= 2) {
             val choices = LoveMeInvitePackCopy.sampleChoices
-            sampleMine = choices.getOrNull(sampleChoice.toIntOrNull() ?: 0) ?: choices.first()
-            samplePartner = choices.first { it != sampleMine }
+            sampleMine = choices.getOrNull(myIndex) ?: choices.first()
+            samplePartner = choices.getOrNull(partnerIndex) ?: choices.first()
             screen = LoveMeNativeScreen.SampleResult
             return
         }
+        sampleIndex += 1
         startSample()
     }
 
@@ -126,6 +141,9 @@ fun LoveMeS0S2S3Host(
             onOpenMarriage = {
                 sampleIndex = 0
                 samplePackLabel = "결혼"
+                sameCount = 0
+                closeCount = 0
+                talkCount = 0
                 startSample()
             },
             onOpenComingSoon = { id ->
@@ -136,6 +154,9 @@ fun LoveMeS0S2S3Host(
                     "parenting" -> "육아"
                     else -> "가정 경영"
                 }
+                sameCount = 0
+                closeCount = 0
+                talkCount = 0
                 sampleMine = ""
                 samplePartner = ""
                 screen = LoveMeNativeScreen.SampleResult
@@ -179,7 +200,10 @@ fun LoveMeS0S2S3Host(
         )
         LoveMeNativeScreen.Certificate -> LoveMeCertificateScreen(
             packLabel = samplePackLabel,
-            onBackToList = { screen = LoveMeNativeScreen.PackList }
+            sameCount = sameCount,
+            closeCount = closeCount,
+            talkCount = talkCount,
+            onHome = { screen = LoveMeNativeScreen.PackList }
         )
         LoveMeNativeScreen.PartnerWait -> LoveMePartnerWaitScreen()
         LoveMeNativeScreen.Account -> LoveMeAccountScreen(

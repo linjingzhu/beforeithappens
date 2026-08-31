@@ -351,10 +351,12 @@ export function submitSampleAnswer(state, rng = Math.random) {
   if (!question || !sampleAnswerComplete(state.sampleChoice, state.sampleReason)) {
     return applyScreen({ ...state, sampleOpen: true, error: "choice-and-reason-required" });
   }
+  const partner = pickPartnerChoice(question, state.sampleChoice, rng);
   const answers = [...state.sampleAnswers, {
     questionId: question.id,
     choiceId: state.sampleChoice,
-    reason: String(state.sampleReason).trim()
+    reason: String(state.sampleReason).trim(),
+    partnerChoiceId: partner?.id || ""
   }];
   if (answers.length < state.sampleQuestions.length) {
     return applyScreen({
@@ -364,11 +366,10 @@ export function submitSampleAnswer(state, rng = Math.random) {
       sampleAnswers: answers,
       sampleChoice: "",
       sampleReason: "",
+      samplePartner: partner,
       error: ""
     });
   }
-  const last = question;
-  const partner = pickPartnerChoice(last, state.sampleChoice, rng);
   return applyScreen({
     ...state,
     sampleOpen: false,
@@ -393,6 +394,8 @@ export function openTogetherFromSample(state) {
     splashDone: true,
     unlockOpen: true,
     samplePackId: state.samplePackId || "marriage",
+    sampleQuestions: state.sampleQuestions || [],
+    sampleAnswers: state.sampleAnswers || [],
     session: connected
   }));
 }
@@ -411,7 +414,9 @@ export function tapUnlock(state) {
     unlockOpen: false,
     shopOpen: false,
     certificateOpen: true,
-    samplePackId: state.samplePackId || "marriage"
+    samplePackId: state.samplePackId || "marriage",
+    sampleQuestions: state.sampleQuestions || [],
+    sampleAnswers: state.sampleAnswers || []
   }));
 }
 

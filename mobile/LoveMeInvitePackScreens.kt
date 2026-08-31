@@ -53,9 +53,13 @@ object LoveMeInvitePackCopy {
     const val unlockCta = "열기"
     const val needHearts = "♡ 하트 10이 필요해요."
     const val shopTitle = "상점"
-    const val shopCta = "29,000원에 | ♡ 12"
+    const val shopCta = "29,000원에 하트 12"
     const val later = "나중에"
     const val partnerWait = "상대가 열면 이어집니다."
+    const val certificateBody = "두 사람이 이 질문집을 마쳤어요"
+    const val homeCta = "홈으로"
+    const val debugDone = "수료"
+    const val stampHeart = "♡"
     const val debug = "[debug]"
     const val inviteHeadline = "링크 보내기"
     const val inviteSub = "초대를 보내면 상대도 같은 팩을 받아요."
@@ -427,18 +431,41 @@ fun LoveMePartnerWaitScreen() {
 @Composable
 fun LoveMeCertificateScreen(
     packLabel: String = "결혼",
-    onBackToList: () -> Unit = {}
+    sameCount: Int = 0,
+    closeCount: Int = 0,
+    talkCount: Int = 0,
+    onHome: () -> Unit = {}
 ) {
+    val titleFont = rememberMaruBuri()
+    val bodyFont = rememberPretendard()
     Column(
         modifier = Modifier.loveMeSafeChrome().padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("이수증", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3A3338))
-        Text(packLabel, color = Color(0xFF3A3338), modifier = Modifier.padding(top = 12.dp))
-        Text("두 사람 답을 비교한 예시입니다.", color = Color(0xFF3A3338), modifier = Modifier.padding(top = 8.dp))
-        Text(LoveMeInvitePackCopy.example, color = Color(0xFF7A7278), modifier = Modifier.padding(top = 8.dp))
         Spacer(modifier = Modifier.weight(1f))
-        TextButton(onClick = onBackToList) { Text(LoveMeInvitePackCopy.backToList, color = Color(0xFF3A3338)) }
-        Text(LoveMeInvitePackCopy.debug, color = Color(0xFF7A7278))
+        Text(LoveMeInvitePackCopy.stampHeart, fontSize = 64.sp, color = Charcoal)
+        Text(packLabel, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, color = Charcoal, fontFamily = titleFont, modifier = Modifier.padding(top = 12.dp))
+        Text(
+            LoveMeInvitePackCopy.certificateBody,
+            color = Charcoal,
+            fontFamily = bodyFont,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Row(
+            modifier = Modifier.padding(top = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("${LoveMeInvitePackCopy.tasteAligned} $sameCount", color = Charcoal, fontFamily = bodyFont, fontWeight = FontWeight.SemiBold)
+            Text("${LoveMeInvitePackCopy.tasteClose} $closeCount", color = Charcoal, fontFamily = bodyFont, fontWeight = FontWeight.SemiBold)
+            Text("${LoveMeInvitePackCopy.tasteDiscuss} $talkCount", color = Charcoal, fontFamily = bodyFont, fontWeight = FontWeight.SemiBold)
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Button(
+            onClick = onHome,
+            colors = ButtonDefaults.buttonColors(containerColor = SkyBlue, contentColor = Color.White),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+        ) { Text(LoveMeInvitePackCopy.homeCta, fontFamily = bodyFont) }
+        Text("${LoveMeInvitePackCopy.debug} ${LoveMeInvitePackCopy.debugDone}", color = Muted, modifier = Modifier.padding(top = 12.dp))
     }
 }

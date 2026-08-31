@@ -6,7 +6,7 @@ enum PaywallCopy {
     static let buyerCta = "열기"
     static let needHearts = "♡ 하트 10이 필요해요."
     static let shopTitle = "상점"
-    static let shopCta = "29,000원에 | ♡ 12"
+    static let shopCta = "29,000원에 하트 12"
     static let later = "나중에"
     static let partnerTitle = "상대가 열면 이어집니다."
     static let partnerBody = ""

@@ -57,9 +57,13 @@ enum LoveMeInvitePackCopy {
     static let unlockCta = "열기"
     static let needHearts = "♡ 하트 10이 필요해요."
     static let shopTitle = "상점"
-    static let shopCta = "29,000원에 | ♡ 12"
+    static let shopCta = "29,000원에 하트 12"
     static let later = "나중에"
     static let partnerWait = "상대가 열면 이어집니다."
+    static let certificateBody = "두 사람이 이 질문집을 마쳤어요"
+    static let homeCta = "홈으로"
+    static let debugDone = "수료"
+    static let stampHeart = "♡"
     static let debug = "[debug]"
     static let inviteHeadline = "링크 보내기"
     static let inviteSub = "초대를 보내면 상대도 같은 팩을 받아요."
@@ -90,8 +94,9 @@ extension View {
 }
 
 struct LoveMeDebugLine: View {
+    var extra: String = ""
     var body: some View {
-        Text(LoveMeInvitePackCopy.debug)
+        Text(extra.isEmpty ? LoveMeInvitePackCopy.debug : "\(LoveMeInvitePackCopy.debug) \(extra)")
             .font(.caption)
             .foregroundStyle(LoveMeTheme.muted)
     }
@@ -342,16 +347,29 @@ struct LoveMePartnerWaitScreen: View {
 
 struct LoveMeCertificateScreen: View {
     var packLabel: String = "결혼"
-    var onBackToList: () -> Void = {}
+    var sameCount: Int = 0
+    var closeCount: Int = 0
+    var talkCount: Int = 0
+    var onHome: () -> Void = {}
     var body: some View {
         VStack(spacing: 16) {
-            Text("이수증").font(.title.weight(.bold))
-            Text(packLabel)
-            Text("두 사람 답을 비교한 예시입니다.")
-            Text(LoveMeInvitePackCopy.example).foregroundStyle(LoveMeTheme.muted)
             Spacer()
-            Button("목록으로", action: onBackToList)
-            LoveMeDebugLine()
+            Text(LoveMeInvitePackCopy.stampHeart)
+                .font(.system(size: 64))
+            Text(packLabel)
+                .font(LoveMeFont.title(28))
+            Text(LoveMeInvitePackCopy.certificateBody)
+                .font(LoveMeFont.body(16))
+                .multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                Text("\(LoveMeInvitePackCopy.aligned) \(sameCount)")
+                Text("\(LoveMeInvitePackCopy.close) \(closeCount)")
+                Text("\(LoveMeInvitePackCopy.discuss) \(talkCount)")
+            }
+            .font(LoveMeFont.body(13, weight: .semibold))
+            Spacer()
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.homeCta, action: onHome)
+            LoveMeDebugLine(extra: LoveMeInvitePackCopy.debugDone)
         }
         .foregroundStyle(LoveMeTheme.charcoal)
         .loveMeSafeChrome()

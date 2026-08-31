@@ -19,7 +19,7 @@ test("buyer and partner copy is locked", () => {
   assert.equal(PAYWALL_COPY.buyerBody, "나머지 문항을 이어서 열 수 있어요.");
   assert.equal(PAYWALL_COPY.buyerCta, "열기");
   assert.equal(PAYWALL_COPY.needHearts, "♡ 하트 10이 필요해요.");
-  assert.equal(PAYWALL_COPY.shopCta, "29,000원에 | ♡ 12");
+  assert.equal(PAYWALL_COPY.shopCta, "29,000원에 하트 12");
   assert.equal(PAYWALL_COPY.later, "나중에");
   assert.equal(PAYWALL_COPY.partnerTitle, "상대가 열면 이어집니다.");
   assert.equal(PAYWALL_COPY.partnerBody, "");
@@ -33,7 +33,7 @@ test("iOS, Android, and RN copy tables match and stay off forbidden surfaces", (
     const text = readFileSync(file, "utf8");
     assert.match(text, /두 사람 답을 비교했어요/);
     assert.match(text, /열기/);
-    assert.match(text, /29,000원에 \| ♡ 12/);
+    assert.match(text, /29,000원에 하트 12/);
     assert.match(text, /나중에/);
     assert.match(text, /상대가 열면 이어집니다/);
     assert.match(text, /같음/);

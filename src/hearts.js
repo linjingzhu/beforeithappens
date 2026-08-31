@@ -13,7 +13,7 @@ export const HEART_COPY = Object.freeze({
   unlockCta: "열기",
   needHearts: "♡ 하트 10이 필요해요.",
   shopTitle: "상점",
-  shopCta: "29,000원에 | ♡ 12",
+  shopCta: "29,000원에 하트 12",
   shopCtaPlain: "29,000원에 하트 12",
   later: "나중에",
   partnerWait: "상대가 열면 이어집니다.",

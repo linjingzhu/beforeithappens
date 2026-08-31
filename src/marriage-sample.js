@@ -14,9 +14,10 @@ export const SAMPLE_LABELS = Object.freeze({
 });
 
 export const CERTIFICATE_COPY = Object.freeze({
-  title: "이수증",
-  body: "두 사람 답을 비교한 예시입니다.",
-  cta: "목록으로"
+  body: "두 사람이 이 질문집을 마쳤어요",
+  cta: "홈으로",
+  debugExtra: "수료",
+  stamp: "♡"
 });
 
 /** Only marriage has existing 4-choice questions in-repo. Other packs must not invent copy. */
@@ -83,6 +84,26 @@ export function pickPartnerChoice(question, myChoiceId, rng = Math.random) {
   const others = (question?.choices || []).filter((choice) => choice.id !== myChoiceId);
   if (!others.length) return question?.choices?.[0] || null;
   return others[Math.floor(rng() * others.length)];
+}
+
+export function classifySamplePair(question, userChoiceId, partnerChoiceId) {
+  const choices = question?.choices || [];
+  const userIndex = choices.findIndex((choice) => choice.id === userChoiceId);
+  const partnerIndex = choices.findIndex((choice) => choice.id === partnerChoiceId);
+  if (userIndex < 0 || partnerIndex < 0) return "discuss";
+  if (userIndex === partnerIndex) return "aligned";
+  if (Math.abs(userIndex - partnerIndex) === 1) return "close";
+  return "discuss";
+}
+
+export function countSampleLabels(answers, questions) {
+  const counts = { aligned: 0, close: 0, discuss: 0 };
+  const byId = new Map((questions || []).map((question) => [question.id, question]));
+  for (const answer of answers || []) {
+    const key = classifySamplePair(byId.get(answer.questionId), answer.choiceId, answer.partnerChoiceId);
+    counts[key] += 1;
+  }
+  return counts;
 }
 
 export function sampleAnswerComplete(choiceId, reason) {

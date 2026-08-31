@@ -11,7 +11,7 @@
 - Label private and shared writing areas with text, not color alone.
 - A shared agreement requires the partner's approval; edits require reapproval.
 - Summaries show conversations, agreements, deferrals, and revisit items—not a relationship score.
-- LoveMe NEXT home (this PR; live `d3be894e` stays splash→`질문집`): splash → magic-link login (`로그인 링크 보내기`, iOS system notification permission, virtual `[debug]` send) → `질문집` with hearts from 0. Coming-soon packs keep `곧 열려요` and use the marriage sample engine on existing questions only (no invented `임신`/`출산`/`육아` copy). Shop SKU `29,000원에 | ♡ 12`; `열기` costs 10 hearts; certificate `이수증` has no scores or faces. Titles/stems: MaruBuri. Body/choices/buttons/`곧 열려요`: Pretendard. Sample header `결혼 1/3`. Prompt `왜 그 선택인지 한 줄로 적어주세요.` Do not show the font-name label `MaruBuri 🐾`.
+- LoveMe NEXT home (this PR; live `d3be894e` stays splash→`질문집`): splash → magic-link login (`로그인 링크 보내기`, iOS system notification permission, virtual `[debug]` send) → `질문집` with hearts from 0. Coming-soon packs keep `곧 열려요` and use the marriage sample engine on existing questions only (no invented `임신`/`출산`/`육아` copy). Shop SKU `29,000원에 하트 12`; `열기` costs 10 hearts (enough → `열기` only). After 3 sample questions stay on sample result (`예시입니다` / `같음`·`가까움`·`이야기해요`), not the certificate. After virtual 10-heart `열기`, certificate: pack name, `두 사람이 이 질문집을 마쳤어요`, counts for `같음` / `가까움` / `이야기해요` only, heart stamp, CTA `홈으로`, `[debug] 수료` (not a conversion). No scores, faces, or graphs. Titles/stems: MaruBuri. Body/choices/buttons/`곧 열려요`: Pretendard. Sample header `결혼 1/3`. Prompt `왜 그 선택인지 한 줄로 적어주세요.` Do not show the font-name label `MaruBuri 🐾`.
 
 
 ## Foundation auth flow

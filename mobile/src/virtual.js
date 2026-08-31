@@ -14,8 +14,10 @@ export function isVirtualDebug(env = globalThis.process?.env || {}) {
   return true;
 }
 
-export function debugLine(env = globalThis.process?.env || {}) {
-  return isStoreBuild(env) ? "" : DEBUG_LINE;
+export function debugLine(env = globalThis.process?.env || {}, extra = "") {
+  if (isStoreBuild(env)) return "";
+  const word = String(extra || "").trim();
+  return word ? `${DEBUG_LINE} ${word}` : DEBUG_LINE;
 }
 
 export function fakeSession(email, { role = "buyer", acceptedPartner = false, partnerEmail = "" } = {}) {

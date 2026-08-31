@@ -1,6 +1,6 @@
 import { ACCOUNT_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, FORBIDDEN_APP_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, packListLabel, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../src/hearts.js";
-import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, SAMPLE_SIZE, sampleCounterLabel, TOGETHER_CTA } from "../src/marriage-sample.js";
+import { CERTIFICATE_COPY, comingSoonExistingQuestion, countSampleLabels, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, SAMPLE_SIZE, sampleCounterLabel, TOGETHER_CTA } from "../src/marriage-sample.js";
 import { debugLine } from "./src/virtual.js";
 
 function escapeHtml(value = "") {
@@ -13,8 +13,8 @@ function escapeHtml(value = "") {
   })[char]);
 }
 
-function debug() {
-  const line = debugLine();
+function debug(extra = "") {
+  const line = debugLine(undefined, extra);
   return line ? `<p class="loveme-debug" data-debug="1">${escapeHtml(line)}</p>` : "";
 }
 
@@ -260,15 +260,22 @@ export function renderPartnerWaitScreen() {
   `;
 }
 
-export function renderCertificateScreen({ packLabel = "결혼" } = {}) {
+export function renderCertificateScreen({
+  packLabel = "결혼",
+  counts = { aligned: 0, close: 0, discuss: 0 }
+} = {}) {
   return `
     <section class="loveme-screen loveme-certificate" data-screen="certificate">
-      <h1>${escapeHtml(CERTIFICATE_COPY.title)}</h1>
-      <p>${escapeHtml(packLabel)}</p>
-      <p class="loveme-example">${escapeHtml(CERTIFICATE_COPY.body)}</p>
-      <p class="loveme-example">${escapeHtml(SAMPLE_RESULT_EXAMPLE)}</p>
-      <button class="loveme-text-link" type="button" data-action="back-certificate">${escapeHtml(CERTIFICATE_COPY.cta)}</button>
-      ${debug()}
+      <p class="loveme-certificate-stamp" aria-hidden="true">${escapeHtml(CERTIFICATE_COPY.stamp)}</p>
+      <h1>${escapeHtml(packLabel)}</h1>
+      <p>${escapeHtml(CERTIFICATE_COPY.body)}</p>
+      <ul class="loveme-certificate-counts">
+        <li>${escapeHtml(SAMPLE_LABELS.aligned)} ${Number(counts.aligned) || 0}</li>
+        <li>${escapeHtml(SAMPLE_LABELS.close)} ${Number(counts.close) || 0}</li>
+        <li>${escapeHtml(SAMPLE_LABELS.discuss)} ${Number(counts.discuss) || 0}</li>
+      </ul>
+      <button class="loveme-primary" type="button" data-action="back-certificate">${escapeHtml(CERTIFICATE_COPY.cta)}</button>
+      ${debug(CERTIFICATE_COPY.debugExtra)}
     </section>
   `;
 }
@@ -335,7 +342,12 @@ export function renderNativeScreen(state) {
     return renderSampleResultScreen({ question, myChoice: mine, partnerChoice: state.samplePartner || {} });
   }
   if (state.screen === "unlock") return renderUnlockScreen({ hearts: state.hearts, shopOpen: state.shopOpen });
-  if (state.screen === "certificate") return renderCertificateScreen({ packLabel: packListLabel(state.samplePackId) || "결혼" });
+  if (state.screen === "certificate") {
+    return renderCertificateScreen({
+      packLabel: packListLabel(state.samplePackId) || "결혼",
+      counts: countSampleLabels(state.sampleAnswers, state.sampleQuestions)
+    });
+  }
   if (state.screen === "partner-wait") return renderPartnerWaitScreen();
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
   if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });

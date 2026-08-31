@@ -5,7 +5,7 @@ export const PAYWALL_COPY = Object.freeze({
   buyerCta: "열기",
   needHearts: "♡ 하트 10이 필요해요.",
   shopTitle: "상점",
-  shopCta: "29,000원에 | ♡ 12",
+  shopCta: "29,000원에 하트 12",
   later: "나중에",
   partnerTitle: "상대가 열면 이어집니다.",
   partnerBody: "",

@@ -63,7 +63,7 @@ import {
   tapUnlock
 } from "./s0-s2-s3-flow.js";
 import { packListLabel } from "./src/copy.js";
-import { sampleCounterLabel, SAMPLE_SIZE } from "../src/marriage-sample.js";
+import { countSampleLabels, sampleCounterLabel, SAMPLE_SIZE } from "../src/marriage-sample.js";
 import { FONT_ASSETS } from "./src/fonts.js";
 import * as Font from "expo-font";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
@@ -208,7 +208,8 @@ export default function App() {
       {state.screen === "certificate" ? (
         <CertificateScreen
           packLabel={packListLabel(state.samplePackId) || "결혼"}
-          onBackToList={() => setState(backFromCertificate(state))}
+          counts={countSampleLabels(state.sampleAnswers, state.sampleQuestions)}
+          onHome={() => setState(backFromCertificate(state))}
         />
       ) : null}
       {state.screen === "account" ? (
