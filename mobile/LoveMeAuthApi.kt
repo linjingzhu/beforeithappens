@@ -16,6 +16,9 @@ object LoveMeAuthApi {
     const val previewQ1Path = "/api/preview-q1"
     const val logoutPath = "/api/auth/logout"
     const val magicLinkTtlMs = 10 * 60 * 1000
+    const val SESSION_FETCH_MS = 2_000
+    const val AUTH_FETCH_MS = 55_000
+    const val OAUTH_FETCH_MS = 5_000
 
     fun extractMagicLinkToken(url: String): String? {
         val uri = runCatching { URI(url) }.getOrNull() ?: return null
@@ -76,6 +79,12 @@ class LoveMeAuthClient(
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
     }
 
+    private fun timeoutMs(path: String): Int = when (path) {
+        LoveMeAuthApi.sessionPath -> LoveMeAuthApi.SESSION_FETCH_MS
+        LoveMeAuthApi.oauthStartPath -> LoveMeAuthApi.OAUTH_FETCH_MS
+        else -> LoveMeAuthApi.AUTH_FETCH_MS
+    }
+
     private fun get(path: String): Map<String, Any?> = request("GET", path, null)
 
     private fun post(path: String, body: String): Map<String, Any?> = request("POST", path, body)
@@ -83,8 +92,9 @@ class LoveMeAuthClient(
     private fun request(method: String, path: String, body: String?): Map<String, Any?> {
         val connection = URL(origin.trimEnd('/') + path).openConnection() as HttpURLConnection
         connection.requestMethod = method
-        connection.connectTimeout = 8000
-        connection.readTimeout = 8000
+        val timeout = timeoutMs(path)
+        connection.connectTimeout = timeout
+        connection.readTimeout = timeout
         connection.doInput = true
         if (cookie.isNotEmpty()) connection.setRequestProperty("Cookie", cookie.joinToString("; "))
         if (body != null) {

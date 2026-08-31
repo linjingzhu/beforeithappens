@@ -12,6 +12,9 @@ enum LoveMeAuthApi {
     static let previewQ1Path = "/api/preview-q1"
     static let logoutPath = "/api/auth/logout"
     static let magicLinkTtlSeconds = 10 * 60
+    static let sessionTimeout: TimeInterval = 2
+    static let oauthTimeout: TimeInterval = 5
+    static let authTimeout: TimeInterval = 55
 
     static func extractMagicLinkToken(from url: URL) -> String? {
         let blocked = ["/invite/accept", "/install", "/start"]
@@ -104,13 +107,23 @@ struct LoveMeAuthClient {
         }
     }
 
+    private func timeout(for path: String) -> TimeInterval {
+        switch path {
+        case LoveMeAuthApi.sessionPath: return LoveMeAuthApi.sessionTimeout
+        case LoveMeAuthApi.oauthStartPath: return LoveMeAuthApi.oauthTimeout
+        default: return LoveMeAuthApi.authTimeout
+        }
+    }
+
     private func get(path: String) async throws -> [String: Any] {
-        let request = URLRequest(url: origin.appending(path: path))
+        var request = URLRequest(url: origin.appending(path: path))
+        request.timeoutInterval = timeout(for: path)
         return try await send(request)
     }
 
     private func post(path: String, body: [String: Any]) async throws -> [String: Any] {
         var request = URLRequest(url: origin.appending(path: path))
+        request.timeoutInterval = timeout(for: path)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)

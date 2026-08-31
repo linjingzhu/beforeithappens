@@ -32,7 +32,6 @@ export function renderS2SignupScreen({ email = "", error = "", busy = false } = 
     <section class="loveme-gate" data-screen="signup">
       <p class="loveme-gate-brand">${escapeHtml(S0_COPY.brand)}</p>
       <article class="loveme-gate-card">
-        <h1>${escapeHtml(S2_COPY.title)}</h1>
         <p>${escapeHtml(S2_COPY.body)}</p>
         <form class="loveme-form" data-s2-form>
           <label for="s2-email">${escapeHtml(S2_COPY.emailLabel)}</label>
@@ -50,7 +49,6 @@ export function renderS2SentScreen({ email = "" } = {}) {
     ${brand()}
     <section class="loveme-screen loveme-card" data-screen="sent">
       <span class="loveme-eyebrow">AB · EMAIL SIGN IN</span>
-      <h1>${escapeHtml(S2_COPY.title)}</h1>
       <p role="status">${escapeHtml(S2_COPY.sent)}</p>
       ${email ? `<p class="loveme-email">${escapeHtml(email)}</p>` : ""}
       <button class="loveme-secondary" type="button" data-action="back-to-signup">${escapeHtml(S2_COPY.otherEmail)}</button>
@@ -63,7 +61,6 @@ export function renderS2LoginNoticeScreen({ email = "", error = "", busy = false
     ${brand()}
     <section class="loveme-screen loveme-card" data-screen="notice">
       <span class="loveme-eyebrow">AB · SIGNED IN</span>
-      <h1>${escapeHtml(S2_COPY.title)}</h1>
       <p role="status">${escapeHtml(S2_COPY.afterLogin)}</p>
       ${email ? `<p class="loveme-email">${escapeHtml(email)}</p>` : ""}
       <button class="loveme-primary" type="button" data-action="ack-notice" ${busy ? "disabled" : ""}>${escapeHtml(S2_COPY.ack)}</button>

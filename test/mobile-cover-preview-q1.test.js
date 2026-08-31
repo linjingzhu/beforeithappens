@@ -41,7 +41,7 @@ test("splash opens magic-link login, not the discarded workbook cover", () => {
   assert.notEqual(state.screen, "preview-q1");
   const login = renderS2SignupScreen();
   assert.match(login, /LoveMe/);
-  assert.match(login, /두 사람의 결혼 준비, 한곳에/);
+  assert.equal(login.includes("두 사람의 결혼 준비, 한곳에"), false);
   assert.match(login, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(login, /로그인 링크 보내기/);
   assert.equal(login.includes("미리 질문 하나 보기"), false);

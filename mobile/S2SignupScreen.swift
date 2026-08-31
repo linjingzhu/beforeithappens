@@ -54,8 +54,6 @@ struct S2SignupScreen: View {
                 .font(.system(size: 22, weight: .medium, design: .serif))
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
             VStack(alignment: .leading, spacing: 12) {
-                Text(LoveMeS2Copy.title)
-                    .font(.title2.weight(.bold))
                 Text(LoveMeS2Copy.body)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
                 Text(LoveMeS2Copy.emailLabel)
@@ -92,9 +90,9 @@ struct S2SignupScreen: View {
             Text("AB · EMAIL SIGN IN")
                 .font(.caption.weight(.heavy))
                 .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-            Text(phase == .bind ? LoveMeS2Copy.bindTitle : LoveMeS2Copy.title)
-                .font(.title2.weight(.bold))
             if phase == .bind {
+                Text(LoveMeS2Copy.bindTitle)
+                    .font(.title2.weight(.bold))
                 Text(LoveMeS2Copy.bindBody)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
                 Text(LoveMeS2Copy.emailLabel)

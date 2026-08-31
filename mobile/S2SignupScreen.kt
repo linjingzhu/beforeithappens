@@ -79,8 +79,7 @@ fun S2SignupScreen(
                     .background(Color.White, RoundedCornerShape(20.dp))
                     .padding(24.dp)
             ) {
-                Text(LoveMeS2Copy.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2B2521))
-                Text(LoveMeS2Copy.body, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))
+                Text(LoveMeS2Copy.body, color = Color(0xFF81756E), modifier = Modifier.padding(bottom = 20.dp))
                 Text(LoveMeS2Copy.emailLabel)
                 OutlinedTextField(
                     value = emailDraft,
@@ -111,12 +110,14 @@ fun S2SignupScreen(
     }
     Column(modifier = Modifier.padding(22.dp)) {
         Text("AB · EMAIL SIGN IN", color = Color(0xFFEE775F), fontSize = 11.sp)
-        Text(
-            if (phase == S2SignupPhase.Bind) LoveMeS2Copy.bindTitle else LoveMeS2Copy.title,
-            fontSize = 34.sp,
-            color = Color(0xFF2B2521),
-            modifier = Modifier.padding(top = 8.dp)
-        )
+        if (phase == S2SignupPhase.Bind) {
+            Text(
+                LoveMeS2Copy.bindTitle,
+                fontSize = 34.sp,
+                color = Color(0xFF2B2521),
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
         when (phase) {
             S2SignupPhase.Signup -> { }
             S2SignupPhase.Bind -> {

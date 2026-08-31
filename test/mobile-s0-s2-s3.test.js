@@ -145,7 +145,7 @@ test("native flow is splash → login, never unauthenticated cover or pack", () 
   state = finishSplash(state);
   assert.equal(state.screen, "signup");
   const signup = renderS2SignupScreen({ email: "" });
-  assert.match(signup, /두 사람의 결혼 준비, 한곳에/);
+  assert.equal(signup.includes("두 사람의 결혼 준비, 한곳에"), false);
   assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(signup, /로그인 링크 보내기/);
   assert.equal(signup.includes("이 답을 남기려면 로그인해 주세요"), false);
@@ -407,7 +407,7 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   assert.match(signup, /pressableStyle\(styles\.primary/);
   assert.equal(signup.includes("pressableStyle(styles.secondary"), false);
   assert.match(signup, /testID="signup"/);
-  assert.match(signup, /S2_COPY.title/);
+  assert.equal(signup.includes("S2_COPY.title"), false);
   assert.match(signup, /S2_COPY.body/);
   assert.match(bind, /<AuthKeyboardShell testID="bind">/);
   const ctaAt = signup.indexOf("AUTH_COPY.cta");
@@ -469,9 +469,41 @@ test("502 magic-link failed copy sits under the CTA", async () => {
 });
 
 test("magic-link waits out a cold start; oauth stays fail-fast", async () => {
-  assert.ok(AUTH_FETCH_MS >= 20000 && AUTH_FETCH_MS <= 30000);
+  assert.ok(AUTH_FETCH_MS >= 45000 && AUTH_FETCH_MS <= 60000);
   assert.ok(OAUTH_FETCH_MS >= 2000 && OAUTH_FETCH_MS <= 8000);
   assert.ok(OAUTH_FETCH_MS < AUTH_FETCH_MS);
+
+  const apiSwift = await readFile("mobile/LoveMeAuthApi.swift", "utf8");
+  const apiKt = await readFile("mobile/LoveMeAuthApi.kt", "utf8");
+  assert.match(apiSwift, /static let authTimeout: TimeInterval = 55/);
+  assert.match(apiKt, /const val AUTH_FETCH_MS = 55_000/);
+  assert.equal(apiKt.includes("connectTimeout = 8000"), false);
+
+  const inFlightState = requestLinkStarted(setEmail(finishSplash(createNativeFlow()), "buyer@example.com"));
+  assert.equal(inFlightState.busy, true);
+  assert.equal(inFlightState.error, "");
+  const inFlight = renderS2SignupScreen({ email: inFlightState.email, error: inFlightState.error, busy: inFlightState.busy });
+  assert.equal(inFlight.includes(S2_ERRORS.failed), false);
+  assert.equal(inFlight.includes("두 사람의 결혼 준비, 한곳에"), false);
+  assert.match(inFlight, /disabled/);
+
+  const preview = await readFile("mobile/s0-s2-s3-preview.html", "utf8");
+  const submitAt = preview.indexOf("data-s2-form");
+  const startedAt = preview.indexOf("requestLinkStarted", submitAt);
+  const firstPaintAt = preview.indexOf("paint();", startedAt);
+  const sendAt = preview.indexOf("submitMagicLink", startedAt);
+  assert.ok(startedAt > 0 && firstPaintAt > startedAt && sendAt > firstPaintAt);
+
+  const s2Swift = await readFile("mobile/S2SignupScreen.swift", "utf8");
+  const s2Kt = await readFile("mobile/S2SignupScreen.kt", "utf8");
+  const loginGate = s2Swift.slice(s2Swift.indexOf("private var loginGate"), s2Swift.indexOf("private var legacyCard"));
+  assert.equal(loginGate.includes("LoveMeS2Copy.title"), false);
+  assert.match(loginGate, /LoveMeS2Copy.body/);
+  assert.match(loginGate, /LoveMeS2Copy.cta/);
+  const ktSignup = s2Kt.slice(s2Kt.indexOf("S2SignupPhase.Signup"), s2Kt.indexOf("S2SignupPhase.Sent"));
+  assert.equal(ktSignup.includes("LoveMeS2Copy.title"), false);
+  assert.match(ktSignup, /LoveMeS2Copy.body/);
+  assert.match(ktSignup, /LoveMeS2Copy.cta/);
 
   const delayedOk = createAuthApi({
     origin: "https://example.test",
