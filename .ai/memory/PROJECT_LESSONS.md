@@ -94,11 +94,11 @@ Impact: Session lands in the app; preview Q1 draft can resume.
 Recommended future behavior: Keep login mail on the custom scheme. Do not put pair codes in share URLs. Do not add AASA on onrender.com for this slice.
 Confidence: high
 
-### 2026-08-30 — 질문집 pack-list is cold home, never consume landing or profile
+### 2026-08-30 — Logged-in path discards cover and preview Q1
 Area: iOS measurement routing
-Evidence: Designer/CPO lock: consume resumes in-progress Q1 then invite after save; the next cold logged-in open (no in-flight Q1/invite) is `질문집`. Profile sheet is a later wave.
-Impact: Treating pack-list as the consume destination drops the Q1 draft. Treating it as a profile sheet pulls prices/gifts/100-q into this slice.
-Recommended future behavior: Keep consume off `pack-list`. Persist invite as session-only. Do not add a profile sheet, prices, 100-q content, or gift codes here.
+Evidence: CPO lock after PR #27: splash → login → `질문집` → marriage pack detail → `링크 보내기`. Unauthenticated workbook cover and preview-Q1-before-login are discarded. Questions stay closed until pair-code connect.
+Impact: Resume-Q1-after-consume and cover-first splash contradict the new main path.
+Recommended future behavior: Fail-open splash to login. Consume to notice then `질문집`. Opening `결혼` is pack detail, not Q1. Account is email + logout only — no handoff caption, prices, gifts, or 100-q.
 Confidence: high
 
 ## Recording rule

@@ -46,7 +46,7 @@ import {
 } from "../mobile/s0-s2-s3-flow.js";
 import {
   renderNativeScreen,
-  renderCoverScreen,
+  renderPackDetailScreen,
   renderS0SplashScreen,
   renderS2LoginNoticeScreen,
   renderS2SentScreen,
@@ -138,16 +138,17 @@ test("S0 splash is brand-only and S3 is workspace-created with invite CTA", () =
   assert.equal(workspace.includes("data-action=\"open-pack\""), false);
 });
 
-test("native flow is splash → cover, never pack", () => {
+test("native flow is splash → login, never unauthenticated cover or pack", () => {
   let state = createNativeFlow();
   assert.equal(resolveNativeScreen(state), "splash");
   assert.equal(s0ShowsInstallLanding(), false);
   state = finishSplash(state);
-  assert.equal(state.screen, "cover");
+  assert.equal(state.screen, "signup");
   const signup = renderS2SignupScreen({ email: "" });
-  assert.match(signup, /이 답을 남기려면 로그인해 주세요/);
+  assert.match(signup, /두 사람의 결혼 준비, 한곳에/);
   assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(signup, /로그인 링크 보내기/);
+  assert.equal(signup.includes("이 답을 남기려면 로그인해 주세요"), false);
   assert.equal(signup.includes("카카오로 시작"), false);
   assert.equal(signup.includes("네이버로 시작"), false);
   assert.equal(signup.includes("Google로 시작"), false);
@@ -249,11 +250,10 @@ test("mobile API client reuses web magic-link and workspace session", async () =
 
     const failed = requestLinkFailed(finishSplash(createNativeFlow()), "expired");
     assert.match(failed.error, /만료/);
-    const back = backToSignup({
-      ...finishSplash(createNativeFlow()),
-      sentEmail: "buyer@example.com",
-      previewQ1: { questionId: "home-01", choiceId: "home-rest", open: true, keepAnswer: true }
-    });
+  const back = backToSignup({
+    ...finishSplash(createNativeFlow()),
+    sentEmail: "buyer@example.com"
+  });
     assert.equal(back.screen, "signup");
   } finally {
     await new Promise((resolve) => server.close(resolve));
@@ -271,12 +271,12 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   const emptyOrigin = createAuthApi({ origin: "", fetchImpl: mustNotFetch });
   const fromEmpty = await restoreSessionAfterSplash(createNativeFlow(), emptyOrigin);
   assert.equal(fromEmpty.splashDone, true);
-  assert.equal(fromEmpty.screen, "cover");
+  assert.equal(fromEmpty.screen, "signup");
   assert.equal(fromEmpty.session?.user ?? null, null);
 
   const hostEmpty = await finishHostSplash(createNativeFlow(), emptyOrigin);
   assert.equal(hostEmpty.splashDone, true);
-  assert.equal(hostEmpty.screen, "cover");
+  assert.equal(hostEmpty.screen, "signup");
 
   const openedEmpty = await finishHostOpen(
     createNativeFlow(),
@@ -285,7 +285,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
     { pathname: "/", search: "" }
   );
   assert.equal(openedEmpty.splashDone, true);
-  assert.equal(openedEmpty.screen, "cover");
+  assert.equal(openedEmpty.screen, "signup");
 
   const rejected = createAuthApi({
     origin: "https://example.test",
@@ -295,7 +295,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromReject = await restoreSessionAfterSplash(createNativeFlow(), rejected);
   assert.equal(fromReject.splashDone, true);
-  assert.equal(fromReject.screen, "cover");
+  assert.equal(fromReject.screen, "signup");
 
   const hanging = createAuthApi({
     origin: "https://example.test",
@@ -304,10 +304,10 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromHang = await restoreSessionAfterSplash(createNativeFlow(), hanging, { timeoutMs: 20 });
   assert.equal(fromHang.splashDone, true);
-  assert.equal(fromHang.screen, "cover");
+  assert.equal(fromHang.screen, "signup");
 
   const opened = createNativeFlow();
-  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "cover");
+  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "signup");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "signup" }).screen, "signup");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "workspace" }).screen, "workspace");
 
@@ -349,8 +349,10 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.match(s2, /로그인 링크 보내기/);
   assert.match(s2, /메일을 확인해 주세요\. 링크는 10분 동안만 유효해요/);
   assert.match(s2, /이 기기 임시 답은 이어지지 않아요/);
-  assert.match(s2, /질문은 나만 먼저 답해요\./);
-  assert.match(s2, /이 답을 남기려면 로그인해 주세요/);
+  assert.match(s2, /예시 질문/);
+  assert.match(s2, /여기서 답하지 않아요/);
+  assert.match(s2, /파트너가 연결된 다음 질문이 열려요/);
+  assert.equal(s2.includes("이 답을 남기려면 로그인해 주세요"), false);
   assert.equal(s2.includes("카카오로 시작"), false);
   assert.equal(s2.includes("네이버로 시작"), false);
   assert.equal(s2.includes("Google로 시작"), false);
@@ -370,7 +372,7 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.equal(s0ShowsInstallLanding(), false);
   for (const html of [
     renderS0SplashScreen(),
-    renderCoverScreen(),
+    renderPackDetailScreen(),
     renderS2SignupScreen(),
     renderS2SentScreen(),
     renderS2EmailBindScreen(),
@@ -405,8 +407,8 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   assert.match(signup, /pressableStyle\(styles\.primary/);
   assert.equal(signup.includes("pressableStyle(styles.secondary"), false);
   assert.match(signup, /testID="signup"/);
-  assert.match(signup, /S2_KEEP_COPY.title/);
-  assert.match(signup, /S2_KEEP_COPY.body/);
+  assert.match(signup, /S2_COPY.title/);
+  assert.match(signup, /S2_COPY.body/);
   assert.match(bind, /<AuthKeyboardShell testID="bind">/);
   const ctaAt = signup.indexOf("AUTH_COPY.cta");
   const errorAt = signup.indexOf("{error ?");

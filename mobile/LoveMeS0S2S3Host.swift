@@ -2,14 +2,16 @@ import SwiftUI
 
 enum LoveMeNativeScreen {
     case splash
-    case cover
-    case previewQ1
     case signup
     case sent
     case bind
     case notice
     case packList
+    case packDetail
+    case comingSoon
+    case tasteResult
     case invite
+    case account
     case workspace
 }
 
@@ -22,31 +24,53 @@ struct LoveMeS0S2S3Host: View {
     @State private var error = ""
     @State private var busy = false
     @State private var pairCode = ""
+    @State private var comingSoonTitle = "가정 경영"
 
     var body: some View {
         Group {
             switch screen {
             case .splash:
                 S0SplashScreen(onFinished: restoreSession)
-            case .cover:
-                LoveMeCoverScreen(onPreviewQuestion: { screen = .previewQ1 })
-            case .previewQ1:
-                LoveMePreviewQ1Screen(
-                    loggedIn: !email.isEmpty,
-                    onKeepAnswer: {
-                        LoveMePreviewDraft.save(choiceId: LoveMePreviewDraft.loadChoiceId().isEmpty ? "home-rest" : LoveMePreviewDraft.loadChoiceId(), open: true, keepAnswer: true, saved: false)
-                        screen = .signup
+            case .packList:
+                LoveMePackListScreen(
+                    onOpenMarriage: { screen = .packDetail },
+                    onOpenComingSoon: { id in
+                        comingSoonTitle = [
+                            "home-mgmt": "가정 경영",
+                            "pregnancy": "임신",
+                            "birth": "출산",
+                            "parenting": "육아"
+                        ][id] ?? "가정 경영"
+                        screen = .comingSoon
                     },
-                    onContinue: {
-                        LoveMePreviewDraft.save(choiceId: LoveMePreviewDraft.loadChoiceId(), open: false, keepAnswer: false, saved: true)
+                    onOpenAccount: { screen = .account }
+                )
+            case .comingSoon:
+                LoveMeComingSoonScreen(
+                    title: comingSoonTitle,
+                    onTasteResult: { screen = .tasteResult },
+                    onBackToList: { screen = .packList }
+                )
+            case .tasteResult:
+                LoveMeTasteResultScreen(onBackToList: { screen = .packList })
+            case .packDetail:
+                LoveMePackDetailScreen(
+                    onBack: { screen = .packList },
+                    onSendLink: {
                         screen = .invite
+                        Task { await loadPairCode() }
                     }
                 )
-            case .packList:
-                LoveMePackListScreen(onOpenMarriage: { screen = .cover })
+            case .account:
+                LoveMeAccountScreen(
+                    email: email,
+                    onBack: { screen = .packList },
+                    onLogout: logout
+                )
             case .invite:
                 LoveMeInviteScreen(
                     pairCodeDisplay: pairCode,
+                    onBack: { screen = .packDetail },
                     onCopyLink: {},
                     onShareInstagram: {},
                     onShareKakao: {},
@@ -82,17 +106,13 @@ struct LoveMeS0S2S3Host: View {
                 let needsEmail = user["needsEmail"] as? Bool == true || email.isEmpty
                 if needsEmail {
                     screen = .bind
-                } else if LoveMePreviewDraft.isInFlight {
-                    screen = .previewQ1
                 } else if (session?["notice"] as? String)?.isEmpty == false {
                     screen = .notice
                 } else {
                     screen = .packList
                 }
-            } else if LoveMePreviewDraft.isInFlight {
-                screen = LoveMePreviewDraft.wantsLoginGate ? .signup : .previewQ1
             } else {
-                screen = .cover
+                screen = .signup
             }
         }
     }
@@ -122,12 +142,10 @@ struct LoveMeS0S2S3Host: View {
                 if let user = session["user"] as? [String: Any] {
                     email = user["email"] as? String ?? email
                 }
-                if LoveMePreviewDraft.isInFlight {
-                    screen = .previewQ1
-                } else if (session["notice"] as? String)?.isEmpty == false {
+                if (session["notice"] as? String)?.isEmpty == false {
                     screen = .notice
                 } else {
-                    screen = .cover
+                    screen = .packList
                 }
             } catch LoveMeAuthError.expired {
                 error = "로그인 링크가 만료되었어요. 다시 요청해 주세요."
@@ -176,6 +194,15 @@ struct LoveMeS0S2S3Host: View {
                 self.error = "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
             }
             busy = false
+        }
+    }
+
+    private func logout() {
+        Task {
+            _ = try? await client.logout()
+            email = ""
+            pairCode = ""
+            screen = .signup
         }
     }
 }

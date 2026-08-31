@@ -1,15 +1,12 @@
 package com.beforeithappens.loveme
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -22,12 +19,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -40,11 +35,12 @@ object LoveMeS2Copy {
     const val emailLabel = "이메일"
     const val ack = "확인"
     const val otherEmail = "다른 이메일로 요청"
-    const val coverTitle = "두 사람의 결혼 준비, 한곳에"
-    const val coverLine1 = "질문은 나만 먼저 답해요."
-    const val coverLine2 = "비교는 둘이 낸 뒤에만 열려요."
-    const val coverCta = "미리 질문 하나 보기"
-    const val keepTitle = "이 답을 남기려면 로그인해 주세요"
+    const val packDetailTitle = "결혼"
+    const val packDetailSub = "두 사람의 결혼 준비, 한곳에."
+    const val samplesTitle = "예시 질문"
+    const val caption1 = "여기서 답하지 않아요."
+    const val caption2 = "파트너가 연결된 다음 질문이 열려요."
+    const val packDetailCta = "링크 보내기"
     const val bindTitle = "이메일을 연결해 주세요."
     const val bindCta = "이메일 연결하기"
     const val bindBody = "초대를 수락하려면 이메일을 연결해야 해요."
@@ -72,6 +68,7 @@ fun S2SignupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(cream)
+                .systemBarsPadding()
                 .padding(24.dp)
         ) {
             Text("LoveMe", color = coral, fontSize = 22.sp, fontWeight = FontWeight.Medium)
@@ -82,7 +79,7 @@ fun S2SignupScreen(
                     .background(Color.White, RoundedCornerShape(20.dp))
                     .padding(24.dp)
             ) {
-                Text(LoveMeS2Copy.keepTitle, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2B2521))
+                Text(LoveMeS2Copy.title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2B2521))
                 Text(LoveMeS2Copy.body, color = Color(0xFF81756E), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp))
                 Text(LoveMeS2Copy.emailLabel)
                 OutlinedTextField(
@@ -175,60 +172,3 @@ fun S2SignupScreen(
     }
 }
 
-@Composable
-fun LoveMeCoverScreen(onPreviewQuestion: () -> Unit = {}) {
-    val cream = Color(0xFFFDFBF7)
-    val coral = Color(0xFFEE775F)
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(cream)
-            .padding(28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("LoveMe", color = coral, fontSize = 28.sp, fontWeight = FontWeight.Medium)
-        Text("♡", color = coral, fontSize = 18.sp, modifier = Modifier.padding(top = 8.dp, bottom = 16.dp))
-        Text(
-            LoveMeS2Copy.coverTitle,
-            color = Color(0xFF2B2521),
-            fontSize = 26.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-        Box(
-            modifier = Modifier
-                .padding(bottom = 24.dp)
-                .size(176.dp)
-                .background(Color(0xFFF7F0E4), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("♡", color = coral, fontSize = 32.sp)
-        }
-        Text(LoveMeS2Copy.coverLine1, color = Color(0xFF2B2521), textAlign = TextAlign.Center)
-        Text(LoveMeS2Copy.coverLine2, color = Color(0xFF2B2521), textAlign = TextAlign.Center)
-        Spacer(modifier = Modifier.weight(1f))
-        Button(
-            onClick = onPreviewQuestion,
-            colors = ButtonDefaults.buttonColors(containerColor = coral),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp)
-        ) { Text(LoveMeS2Copy.coverCta) }
-    }
-}
-
-@Composable
-fun LoveMePreviewQ1Screen(loggedIn: Boolean = false, onKeepAnswer: () -> Unit = {}, onContinue: () -> Unit = {}) {
-    Column(modifier = Modifier.padding(28.dp)) {
-        Text("나만 보임", color = Color(0xFFEE775F), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Text("우리에게 집은 어떤 의미에 가장 가까울까요?", fontSize = 22.sp, modifier = Modifier.padding(top = 12.dp))
-        Button(
-            onClick = if (loggedIn) onContinue else onKeepAnswer,
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEE775F)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .padding(top = 16.dp)
-        ) { Text(if (loggedIn) "계속하기" else "이 답 남기기") }
-    }
-}

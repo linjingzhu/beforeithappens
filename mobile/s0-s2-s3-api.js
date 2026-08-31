@@ -7,7 +7,8 @@ export const AUTH_API = {
   emailBind: "/api/auth/email-bind",
   pairCode: "/api/pair-code",
   pairConnect: "/api/pair-code/connect",
-  previewQ1: "/api/preview-q1"
+  previewQ1: "/api/preview-q1",
+  logout: "/api/auth/logout"
 };
 
 export const SESSION_FETCH_MS = 2000;
@@ -191,6 +192,16 @@ export function createAuthApi({
       } catch {
         return { ok: false, error: "failed" };
       }
+    },
+
+    async logout() {
+      try {
+        await withTimeout(request(AUTH_API.logout, { method: "POST" }), sessionTimeoutMs);
+      } catch {
+        /* still clear the local cookie */
+      }
+      if (setCookie) setCookie("");
+      return { ok: true };
     }
   };
 }

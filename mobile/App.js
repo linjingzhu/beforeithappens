@@ -4,15 +4,17 @@ import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
 import {
-  CoverScreen,
+  AccountScreen,
+  ComingSoonScreen,
   EmailBindScreen,
   InviteScreen,
   NoticeScreen,
+  PackDetailScreen,
   PackListScreen,
-  PreviewQ1Screen,
   SentScreen,
   SignupScreen,
   SplashScreenView,
+  TasteResultScreen,
   WorkspaceScreen
 } from "./src/screens.js";
 import {
@@ -20,28 +22,33 @@ import {
   createHostApi,
   finishHostSplash,
   hostCookieAccess,
+  logoutHost,
   sendHostEmailBind,
   sendHostMagicLink,
   splashOpenResult,
   startHostFlow
 } from "./src/session.js";
 import {
+  backFromAccount,
+  backFromComingSoon,
+  backFromInvite,
+  backFromPackDetail,
+  backToPackList,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
   finishSplash,
-  keepPreviewAnswer,
   loadInvitePairCode,
+  openAccount,
+  openComingSoonFromList,
   openMarriageFromList,
-  openPreviewQ1,
+  openSendLink,
+  openTasteResult,
   requestLinkStarted,
-  savePreviewAndOpenInvite,
-  selectPreviewChoice,
   setEmail,
   setPartnerCode,
   shareMeasurementInvite
 } from "./s0-s2-s3-flow.js";
-import { createPersistingPreviewStorage, defaultPreviewStorage, hydratePreviewStorage, previewQ1Question } from "./preview-q1.js";
 import { colors } from "./src/theme.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
@@ -49,8 +56,6 @@ import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.
 import { PaywallBuyerScreen, PaywallPartnerScreen } from "./paywall/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
-
-const previewStorage = createPersistingPreviewStorage(defaultPreviewStorage());
 
 function shareIo() {
   return {
@@ -64,7 +69,7 @@ function shareIo() {
 }
 
 export default function App() {
-  const [state, setState] = useState(() => startHostFlow(previewStorage));
+  const [state, setState] = useState(() => startHostFlow());
   const stateRef = useRef(state);
   stateRef.current = state;
   const api = createHostApi();
@@ -76,14 +81,13 @@ export default function App() {
     let sub;
     (async () => {
       await SplashScreen.hideAsync().catch(() => {});
-      await hydratePreviewStorage(previewStorage);
       if (cancelled) return;
-      const opened = startHostFlow(previewStorage);
+      const opened = startHostFlow();
       const initialUrl = await Linking.getInitialURL().catch(() => null);
       const loc = typeof location !== "undefined"
         ? location
         : (initialUrl ? { href: initialUrl, search: "", pathname: "" } : null);
-      const openWork = finishHostOpen(opened, api, inviteApi, loc, previewStorage);
+      const openWork = finishHostOpen(opened, api, inviteApi, loc);
       timer = setTimeout(async () => {
         if (cancelled) return;
         try {
@@ -99,7 +103,7 @@ export default function App() {
         }
       }, SPLASH_MS);
       sub = Linking.addEventListener("url", async ({ url }) => {
-        const next = await finishHostOpen(stateRef.current, api, inviteApi, { href: url }, previewStorage);
+        const next = await finishHostOpen(stateRef.current, api, inviteApi, { href: url });
         if (!cancelled) setState(next);
       });
     })();
@@ -127,23 +131,35 @@ export default function App() {
     <>
       <StatusBar style="dark" backgroundColor={colors.paper} />
       {state.screen === "splash" ? <SplashScreenView /> : null}
-      {state.screen === "cover" ? (
-        <CoverScreen onPreviewQuestion={() => setState(openPreviewQ1(state, previewStorage))} />
-      ) : null}
       {state.screen === "pack-list" ? (
-        <PackListScreen onOpenMarriage={() => setState(openMarriageFromList(state, previewStorage))} />
+        <PackListScreen
+          onOpenMarriage={() => setState(openMarriageFromList(state))}
+          onOpenComingSoon={(packId) => setState(openComingSoonFromList(state, packId))}
+          onOpenAccount={() => setState(openAccount(state))}
+        />
       ) : null}
-      {state.screen === "preview-q1" ? (
-        <PreviewQ1Screen
-          question={previewQ1Question()}
-          choiceId={state.previewQ1?.choiceId || ""}
-          loggedIn={Boolean(state.session?.user)}
-          onSelectChoice={(choiceId) => setState(selectPreviewChoice(state, choiceId, previewStorage))}
-          onKeepAnswer={() => {
-            if (!state.previewQ1?.choiceId) return;
-            setState(keepPreviewAnswer(state, previewStorage));
-          }}
-          onContinue={async () => setState(await savePreviewAndOpenInviteThenLoad(state, api))}
+      {state.screen === "coming-soon" ? (
+        <ComingSoonScreen
+          packId={state.comingSoonId}
+          onTasteResult={() => setState(openTasteResult(state))}
+          onBackToList={() => setState(backFromComingSoon(state))}
+        />
+      ) : null}
+      {state.screen === "taste-result" ? (
+        <TasteResultScreen onBackToList={() => setState(backToPackList(state))} />
+      ) : null}
+      {state.screen === "pack-detail" ? (
+        <PackDetailScreen
+          onBack={() => setState(backFromPackDetail(state))}
+          onSendLink={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
+        />
+      ) : null}
+      {state.screen === "account" ? (
+        <AccountScreen
+          email={state.session?.user?.email || ""}
+          busy={state.busy}
+          onBack={() => setState(backFromAccount(state))}
+          onLogout={async () => setState(await logoutHost(state, api))}
         />
       ) : null}
       {state.screen === "signup" ? (
@@ -191,6 +207,7 @@ export default function App() {
           codeCopied={state.codeCopied}
           error={state.error}
           busy={state.busy}
+          onBack={() => setState(backFromInvite(state))}
           onChangePartnerCode={(value) => setState(setPartnerCode(state, value))}
           onCopyLink={async () => setState(await shareMeasurementInvite(state, "copy", shareIo()))}
           onShareInstagram={async () => setState(await shareMeasurementInvite(state, "instagram", shareIo()))}
@@ -226,10 +243,4 @@ export default function App() {
       ) : null}
     </>
   );
-}
-
-async function savePreviewAndOpenInviteThenLoad(state, api) {
-  const next = await savePreviewAndOpenInvite(state, api, previewStorage);
-  if (next.screen !== "invite") return next;
-  return loadInvitePairCode(next, api);
 }

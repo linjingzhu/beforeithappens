@@ -14,6 +14,7 @@ object LoveMeAuthApi {
     const val pairCodePath = "/api/pair-code"
     const val pairConnectPath = "/api/pair-code/connect"
     const val previewQ1Path = "/api/preview-q1"
+    const val logoutPath = "/api/auth/logout"
     const val magicLinkTtlMs = 10 * 60 * 1000
 
     fun extractMagicLinkToken(url: String): String? {
@@ -65,6 +66,10 @@ class LoveMeAuthClient(
 
     fun savePreviewQ1(choiceId: String): Map<String, Any?> {
         return post(LoveMeAuthApi.previewQ1Path, """{"questionId":"home-01","choiceId":${jsonString(choiceId)}}""")
+    }
+
+    fun logout(): Map<String, Any?> {
+        return post(LoveMeAuthApi.logoutPath, "{}")
     }
 
     private fun jsonString(value: String): String {
