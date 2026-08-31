@@ -108,6 +108,13 @@ Impact: Resume-Q1-after-consume and cover-first splash contradict the new main p
 Recommended future behavior: Fail-open splash to login. Consume to notice then `질문집`. Opening `결혼` is pack detail, not Q1. Account is email + logout only — no handoff caption, prices, gifts, or 100-q.
 Confidence: high
 
+### 2026-08-31 — First-run splash must not force login
+Area: iOS measurement routing / CPO keep-gate
+Evidence: `resolveNativeScreen` logged-out branch returned `signup`, so splash always opened S2 even when the user only wanted to browse `질문집` samples and coming-soon taste.
+Impact: First launch looked like a signup wall. Coming-soon and pack-detail were unreachable without an account.
+Recommended future behavior: Splash fail-open to `질문집`. Require magic-link only for `링크 보내기`, in-app `연결하기`, 결제, and `계정`. Preserve `pendingGate` through consume/notice and resume that destination. Keep `AUTH_FETCH_MS` 55s and do not render pack-detail title on login.
+Confidence: high
+
 ## Recording rule
 
 Add only concise, evidence-backed facts such as:

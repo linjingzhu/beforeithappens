@@ -324,15 +324,24 @@ fun LoveMeTasteResultScreen(onBackToList: () -> Unit = {}) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(LoveMeInvitePackCopy.tasteResultTitle, fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Text(
-            LoveMeInvitePackCopy.tasteLabel,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            modifier = Modifier
-                .padding(top = 16.dp)
-                .background(Color(0xFFF4EBE2), RoundedCornerShape(999.dp))
-                .padding(horizontal = 14.dp, vertical = 6.dp)
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp)) {
+            listOf(
+                LoveMeInvitePackCopy.tasteAligned,
+                LoveMeInvitePackCopy.tasteClose,
+                LoveMeInvitePackCopy.tasteDiscuss
+            ).forEach { label ->
+                val on = label == LoveMeInvitePackCopy.tasteLabel
+                Text(
+                    label,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = if (on) Color(0xFF2B2521) else Color(0xFF81756E),
+                    modifier = Modifier
+                        .background(if (on) Color(0xFFF4EBE2) else Color(0xFFF8F3ED), RoundedCornerShape(999.dp))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+        }
         Text(LoveMeInvitePackCopy.sampleQuestion, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 18.dp, bottom = 16.dp))
         Column(
             modifier = Modifier

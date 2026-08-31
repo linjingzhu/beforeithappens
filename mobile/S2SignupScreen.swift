@@ -37,6 +37,7 @@ struct S2SignupScreen: View {
     var onUseOtherEmail: () -> Void = {}
     var onAcknowledgeNotice: () -> Void = {}
     var onBindEmail: (String) -> Void = { _ in }
+    var onBack: () -> Void = {}
 
     @State private var emailDraft = ""
 
@@ -50,9 +51,15 @@ struct S2SignupScreen: View {
 
     private var loginGate: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("LoveMe")
-                .font(.system(size: 22, weight: .medium, design: .serif))
-                .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+            HStack {
+                Button("‹", action: onBack)
+                    .font(.title)
+                    .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
+                Text("LoveMe")
+                    .font(.system(size: 22, weight: .medium, design: .serif))
+                    .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
+                Spacer()
+            }
             VStack(alignment: .leading, spacing: 12) {
                 Text(LoveMeS2Copy.body)
                     .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))

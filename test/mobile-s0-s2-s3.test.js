@@ -138,12 +138,12 @@ test("S0 splash is brand-only and S3 is workspace-created with invite CTA", () =
   assert.equal(workspace.includes("data-action=\"open-pack\""), false);
 });
 
-test("native flow is splash → login, never unauthenticated cover or pack", () => {
+test("native flow is splash → 질문집, never unauthenticated cover, login only at keep-gates", () => {
   let state = createNativeFlow();
   assert.equal(resolveNativeScreen(state), "splash");
   assert.equal(s0ShowsInstallLanding(), false);
   state = finishSplash(state);
-  assert.equal(state.screen, "signup");
+  assert.equal(state.screen, "pack-list");
   const signup = renderS2SignupScreen({ email: "" });
   assert.equal(signup.includes("두 사람의 결혼 준비, 한곳에"), false);
   assert.match(signup, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
@@ -163,6 +163,7 @@ test("native flow is splash → login, never unauthenticated cover or pack", () 
   state = setEmail(state, "nope");
   state = requestLinkStarted(state);
   assert.match(state.error, /이메일/);
+  assert.equal(state.screen, "signup");
   state = setEmail(state, "buyer@example.com");
   state = requestLinkStarted(state);
   state = { ...state, sentEmail: state.email, busy: false, screen: "sent" };
@@ -271,12 +272,12 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   const emptyOrigin = createAuthApi({ origin: "", fetchImpl: mustNotFetch });
   const fromEmpty = await restoreSessionAfterSplash(createNativeFlow(), emptyOrigin);
   assert.equal(fromEmpty.splashDone, true);
-  assert.equal(fromEmpty.screen, "signup");
+  assert.equal(fromEmpty.screen, "pack-list");
   assert.equal(fromEmpty.session?.user ?? null, null);
 
   const hostEmpty = await finishHostSplash(createNativeFlow(), emptyOrigin);
   assert.equal(hostEmpty.splashDone, true);
-  assert.equal(hostEmpty.screen, "signup");
+  assert.equal(hostEmpty.screen, "pack-list");
 
   const openedEmpty = await finishHostOpen(
     createNativeFlow(),
@@ -285,7 +286,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
     { pathname: "/", search: "" }
   );
   assert.equal(openedEmpty.splashDone, true);
-  assert.equal(openedEmpty.screen, "signup");
+  assert.equal(openedEmpty.screen, "pack-list");
 
   const rejected = createAuthApi({
     origin: "https://example.test",
@@ -295,7 +296,7 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromReject = await restoreSessionAfterSplash(createNativeFlow(), rejected);
   assert.equal(fromReject.splashDone, true);
-  assert.equal(fromReject.screen, "signup");
+  assert.equal(fromReject.screen, "pack-list");
 
   const hanging = createAuthApi({
     origin: "https://example.test",
@@ -304,10 +305,10 @@ test("empty origin or rejected fetch still leaves splash after 1.2s", async () =
   });
   const fromHang = await restoreSessionAfterSplash(createNativeFlow(), hanging, { timeoutMs: 20 });
   assert.equal(fromHang.splashDone, true);
-  assert.equal(fromHang.screen, "signup");
+  assert.equal(fromHang.screen, "pack-list");
 
   const opened = createNativeFlow();
-  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "signup");
+  assert.equal(splashOpenResult(opened, { screen: "splash" }).screen, "pack-list");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "signup" }).screen, "signup");
   assert.equal(splashOpenResult(opened, { splashDone: true, screen: "workspace" }).screen, "workspace");
 
@@ -369,6 +370,8 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   const hosts = texts[8] + texts[9];
   assert.match(hosts, /currentSession/);
   assert.match(hosts, /acknowledgeNotice/);
+  assert.match(hosts, /pendingGate/);
+  assert.match(hosts, /PackList/);
   assert.equal(s0ShowsInstallLanding(), false);
   for (const html of [
     renderS0SplashScreen(),
@@ -407,6 +410,8 @@ test("signup taps persist with the keyboard open and errors sit under the CTA", 
   assert.match(signup, /pressableStyle\(styles\.primary/);
   assert.equal(signup.includes("pressableStyle(styles.secondary"), false);
   assert.match(signup, /testID="signup"/);
+  assert.match(signup, /testID="signup-back"/);
+  assert.match(signup, /onBack/);
   assert.equal(signup.includes("S2_COPY.title"), false);
   assert.match(signup, /S2_COPY.body/);
   assert.match(bind, /<AuthKeyboardShell testID="bind">/);

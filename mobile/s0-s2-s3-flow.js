@@ -5,6 +5,8 @@ import { shareContainsPairCode } from "../src/pair-code.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const LOGIN_GATES = Object.freeze(["invite", "connect", "paywall", "account"]);
+
 export function emptyNativeSession() {
   return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
 }
@@ -14,7 +16,9 @@ export function createNativeFlow(session = emptyNativeSession(), {
   packDetailOpen = false,
   accountOpen = false,
   comingSoonId = "",
-  tasteResultOpen = false
+  tasteResultOpen = false,
+  signupOpen = false,
+  pendingGate = ""
 } = {}) {
   return {
     screen: "splash",
@@ -31,6 +35,8 @@ export function createNativeFlow(session = emptyNativeSession(), {
     inviteOpen: Boolean(inviteOpen),
     comingSoonId: isComingSoonPackId(comingSoonId) ? comingSoonId : "",
     tasteResultOpen: Boolean(tasteResultOpen) && isComingSoonPackId(comingSoonId),
+    signupOpen: Boolean(signupOpen),
+    pendingGate: isLoginGate(pendingGate) ? pendingGate : "",
     pairCode: "",
     pairCodeDisplay: "",
     inviteUrl: "",
@@ -38,6 +44,10 @@ export function createNativeFlow(session = emptyNativeSession(), {
     copied: false,
     codeCopied: false
   };
+}
+
+export function isLoginGate(gate) {
+  return LOGIN_GATES.includes(String(gate || ""));
 }
 
 export function isValidEmail(email) {
@@ -66,7 +76,11 @@ export function resolveNativeScreen(state) {
     return "pack-list";
   }
   if (state.sentEmail) return "sent";
-  return "signup";
+  if (state.signupOpen) return "signup";
+  if (state.tasteResultOpen && isComingSoonPackId(state.comingSoonId)) return "taste-result";
+  if (isComingSoonPackId(state.comingSoonId)) return "coming-soon";
+  if (state.packDetailOpen) return "pack-detail";
+  return "pack-list";
 }
 
 export function applyScreen(state) {
@@ -77,20 +91,91 @@ export function finishSplash(state) {
   return applyScreen({ ...state, splashDone: true });
 }
 
+export function resumePendingGate(state, gate = state.pendingGate) {
+  const pending = isLoginGate(gate) ? gate : "";
+  if (pending === "invite" || pending === "connect") {
+    return applyScreen({
+      ...state,
+      signupOpen: false,
+      pendingGate: "",
+      inviteOpen: true,
+      accountOpen: false,
+      packDetailOpen: false,
+      comingSoonId: "",
+      tasteResultOpen: false
+    });
+  }
+  if (pending === "account") {
+    return applyScreen({
+      ...state,
+      signupOpen: false,
+      pendingGate: "",
+      accountOpen: true,
+      inviteOpen: false,
+      packDetailOpen: false,
+      comingSoonId: "",
+      tasteResultOpen: false
+    });
+  }
+  return applyScreen({
+    ...state,
+    signupOpen: false,
+    pendingGate: "",
+    inviteOpen: false,
+    accountOpen: false,
+    packDetailOpen: pending === "paywall" ? Boolean(state.packDetailOpen) : false,
+    comingSoonId: pending === "paywall" && isComingSoonPackId(state.comingSoonId) ? state.comingSoonId : "",
+    tasteResultOpen: pending === "paywall" ? Boolean(state.tasteResultOpen) : false
+  });
+}
+
+export function requireLogin(state, gate) {
+  const pending = isLoginGate(gate) ? gate : "";
+  if (state.session?.user) return resumePendingGate(state, pending);
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    signupOpen: true,
+    pendingGate: pending,
+    sentEmail: "",
+    error: "",
+    busy: false,
+    inviteOpen: false,
+    accountOpen: false
+  });
+}
+
+export function requireLoginForPay(state) {
+  return requireLogin(state, "paywall");
+}
+
+export function cancelLogin(state) {
+  return applyScreen({
+    ...state,
+    signupOpen: false,
+    sentEmail: "",
+    pendingGate: "",
+    error: "",
+    busy: false,
+    inviteOpen: false,
+    accountOpen: false
+  });
+}
+
 export function setEmail(state, email) {
   return { ...state, email: String(email || ""), error: "" };
 }
 
 export function backToSignup(state) {
-  return applyScreen({ ...state, sentEmail: "", error: "", busy: false });
+  return applyScreen({ ...state, sentEmail: "", error: "", busy: false, signupOpen: true });
 }
 
 export function requestLinkStarted(state) {
   const email = String(state.email || "").trim();
   if (!isValidEmail(email)) {
-    return applyScreen({ ...state, busy: false, error: S2_ERRORS["invalid-email"] });
+    return applyScreen({ ...state, signupOpen: true, busy: false, error: S2_ERRORS["invalid-email"] });
   }
-  return { ...state, email, busy: true, error: "" };
+  return { ...state, email, busy: true, error: "", signupOpen: true };
 }
 
 export function requestLinkSucceeded(state) {
@@ -106,6 +191,7 @@ export function requestLinkSucceeded(state) {
 export function requestLinkFailed(state, error = "failed") {
   return applyScreen({
     ...state,
+    signupOpen: true,
     busy: false,
     error: S2_ERRORS[error] || S2_ERRORS.failed
   });
@@ -113,19 +199,20 @@ export function requestLinkFailed(state, error = "failed") {
 
 export function consumeSucceeded(state, session) {
   const nextSession = session || emptyNativeSession();
-  return applyScreen({
+  const pendingGate = isLoginGate(state.pendingGate) ? state.pendingGate : "";
+  const next = {
     ...state,
     busy: false,
     error: "",
     sentEmail: "",
-    packDetailOpen: false,
-    accountOpen: false,
-    inviteOpen: false,
-    comingSoonId: "",
-    tasteResultOpen: false,
+    signupOpen: false,
+    pendingGate,
     noticeDismissed: false,
     session: nextSession
-  });
+  };
+  if (userNeedsEmail(nextSession.user)) return applyScreen(next);
+  if (nextSession.notice) return applyScreen(next);
+  return resumePendingGate(next, pendingGate);
 }
 
 export function consumeFailed(state, error = "invalid") {
@@ -134,17 +221,18 @@ export function consumeFailed(state, error = "invalid") {
     busy: false,
     splashDone: true,
     sentEmail: "",
+    signupOpen: true,
     session: emptyNativeSession(),
     error: S2_ERRORS[error] || S2_ERRORS.invalid
   });
 }
 
 export function noticeAcknowledged(state, session) {
-  return applyScreen({
+  return resumePendingGate({
     ...state,
     noticeDismissed: true,
     session: session || { ...state.session, notice: null }
-  });
+  }, state.pendingGate);
 }
 
 export function invitePartner(state) {
@@ -153,7 +241,6 @@ export function invitePartner(state) {
 }
 
 export function openMarriageFromList(state) {
-  if (!state.session?.user) return applyScreen(state);
   return applyScreen({
     ...state,
     splashDone: true,
@@ -161,12 +248,13 @@ export function openMarriageFromList(state) {
     accountOpen: false,
     inviteOpen: false,
     comingSoonId: "",
-    tasteResultOpen: false
+    tasteResultOpen: false,
+    signupOpen: false
   });
 }
 
 export function openComingSoonFromList(state, packId) {
-  if (!state.session?.user || !isComingSoonPackId(packId)) return applyScreen(state);
+  if (!isComingSoonPackId(packId)) return applyScreen(state);
   return applyScreen({
     ...state,
     splashDone: true,
@@ -174,19 +262,21 @@ export function openComingSoonFromList(state, packId) {
     accountOpen: false,
     inviteOpen: false,
     comingSoonId: packId,
-    tasteResultOpen: false
+    tasteResultOpen: false,
+    signupOpen: false
   });
 }
 
 export function openTasteResult(state) {
-  if (!state.session?.user || !isComingSoonPackId(state.comingSoonId)) return applyScreen(state);
+  if (!isComingSoonPackId(state.comingSoonId)) return applyScreen(state);
   return applyScreen({
     ...state,
     splashDone: true,
     packDetailOpen: false,
     accountOpen: false,
     inviteOpen: false,
-    tasteResultOpen: true
+    tasteResultOpen: true,
+    signupOpen: false
   });
 }
 
@@ -210,7 +300,9 @@ export function backToPackList(state) {
 }
 
 export function openSendLink(state) {
-  if (!state.session?.user) return applyScreen(state);
+  if (!state.session?.user) {
+    return requireLogin({ ...state, packDetailOpen: true }, "invite");
+  }
   return applyScreen({
     ...state,
     splashDone: true,
@@ -218,12 +310,15 @@ export function openSendLink(state) {
     accountOpen: false,
     inviteOpen: true,
     comingSoonId: "",
-    tasteResultOpen: false
+    tasteResultOpen: false,
+    signupOpen: false
   });
 }
 
 export function openAccount(state) {
-  if (!state.session?.user) return applyScreen(state);
+  if (!state.session?.user) {
+    return requireLogin({ ...state, packDetailOpen: false }, "account");
+  }
   return applyScreen({
     ...state,
     splashDone: true,
@@ -231,7 +326,8 @@ export function openAccount(state) {
     packDetailOpen: false,
     inviteOpen: false,
     comingSoonId: "",
-    tasteResultOpen: false
+    tasteResultOpen: false,
+    signupOpen: false
   });
 }
 
@@ -309,7 +405,9 @@ export async function consumeOpenedLink(state, api, tokenOrUrl) {
   try {
     const result = await api.consumeMagicLink(tokenOrUrl);
     if (!result.ok) return consumeFailed(next, result.error);
-    return consumeSucceeded(next, result.session);
+    const succeeded = consumeSucceeded(next, result.session);
+    if (succeeded.screen === "invite") return loadInvitePairCode(succeeded, api);
+    return succeeded;
   } catch {
     return consumeFailed(next, "invalid");
   }
@@ -367,7 +465,9 @@ export async function acknowledgeLoginNotice(state, api) {
   try {
     const result = await api.acknowledgeNotice();
     if (!result.ok) return { ...pending, busy: false, error: S2_ERRORS.failed };
-    return { ...noticeAcknowledged(pending, result.session), busy: false, error: "" };
+    const next = { ...noticeAcknowledged(pending, result.session), busy: false, error: "" };
+    if (next.screen === "invite") return loadInvitePairCode(next, api);
+    return next;
   } catch {
     return { ...pending, busy: false, error: S2_ERRORS.failed };
   }
@@ -406,6 +506,7 @@ export function setPartnerCode(state, code) {
 }
 
 export async function connectPartnerCode(state, api) {
+  if (!state.session?.user) return requireLogin(state, "connect");
   const pending = { ...state, inviteOpen: true, busy: true, error: "" };
   try {
     const result = await api.connectPairCode(state.partnerCode);

@@ -2,7 +2,7 @@
 
 ## Experience rules
 
-- The product entry is magic-link email onboarding plus Kakao/Naver/Google start. There is no password or role switcher. Kakao login copy is `카카오로 시작`. S4 share stays `카카오톡`. iOS measurement next-build is logged-in first (no social stubs): splash → login → `질문집` → marriage pack detail → `링크 보내기`. Discarded: unauthenticated cover, preview Q1 before login, `미리 질문 하나 보기`, `이 답을 남기려면 로그인해 주세요`. Pack list: `결혼만 지금 열려 있어요.` Closed packs show `곧 열려요` and open a coming-soon taste, not a sale or invite. Top-right `계정`. Account has email + `로그아웃` only. Invite title is `링크 보내기` with `초대를 보내면 상대도 같은 팩을 받아요.` Questions stay closed until a partner connects. Coming-soon taste: `임시 체험` / `가사와 시간은 어떻게 나누고 싶나요?` / `결과 맛보기` / `목록으로`. Result badge is `가까움` (never `ALIGNED` / `CLOSE` / `DISCUSS`). Safe Area: top chrome below the Dynamic Island, bottom CTAs above the home indicator. No QR-code screen.
+- The product entry is magic-link email onboarding plus Kakao/Naver/Google start. There is no password or role switcher. Kakao login copy is `카카오로 시작`. S4 share stays `카카오톡`. iOS measurement next-build is browse-first (no social stubs): splash → `질문집` home without login. Marriage pack detail and coming-soon taste are readable logged out. Login (magic link only) opens only when tapping `링크 보내기`, in-app `연결하기`, 결제, or `계정`. After a successful consume, return to that intended destination (notice first when present). Discarded: unauthenticated cover, preview Q1 before login, `미리 질문 하나 보기`, `이 답을 남기려면 로그인해 주세요`. Pack list: `결혼만 지금 열려 있어요.` Closed packs show `곧 열려요` and open a coming-soon taste, not a sale or invite. Top-right `계정`. Account has email + `로그아웃` only. Invite title is `링크 보내기` with `초대를 보내면 상대도 같은 팩을 받아요.` Questions stay closed until a partner connects. Coming-soon taste: `임시 체험` / `가사와 시간은 어떻게 나누고 싶나요?` / `결과 맛보기` / `목록으로`. Result labels are `같음` / `가까움` / `이야기해요` (never `ALIGNED` / `CLOSE` / `DISCUSS`). Safe Area: top chrome below the Dynamic Island, bottom CTAs above the home indicator. No QR-code screen.
 - Explain expected time and the reveal rule before answering starts. The pack opens only after the partner accepts the invite. The invited partner is free. After the third sample lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. The 100-question lifecycle line is out of this slice.
 - Use one question per screen with explicit save state and resume behavior.
 - Let one person continue while waiting for the partner, after the pack is unlocked.
@@ -17,7 +17,7 @@
 
 ### Entry point
 
-Signed-out `/`. Primary action: request a login link.
+Signed-out `/` on web: request a login link. iOS measurement first run: splash then `질문집` home. Login is a keep-gate, not the first screen.
 
 ### Required copy
 
@@ -76,14 +76,14 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 
 ### Expected visible result
 
-1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes. Web S2 also shows `카카오로 시작` / `네이버로 시작` / `Google로 시작` without replacing the magic-link form. iOS measurement next-build is splash → login (`비밀번호 없이 이메일로 로그인 링크를 보내드려요.` / `로그인 링크 보내기`) → `질문집` → marriage pack detail (`결혼` / `두 사람의 결혼 준비, 한곳에.` / `예시 질문` / `예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?` / `명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?` / `우리에게 집은 어떤 의미에 가장 가까울까요?` / `여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.` / `링크 보내기`) → invite (`링크 보내기` / `초대를 보내면 상대도 같은 팩을 받아요.` / `연결하기`). Coming-soon packs from `질문집` (`가정 경영` `임신` `출산` `육아`) open `곧 열려요` / `임시 체험` / `가사와 시간은 어떻게 나누고 싶나요?` / `예시입니다. 여기서 답하거나 팔지 않아요.` / `결과 맛보기` / `목록으로`, then `결과 맛보기` / `가까움` / `나` / `상대` / `진짜 비교는 열린 팩에서 둘이 낸 다음입니다.` / `예시입니다.` No `링크 보내기` there. Discarded cover/preview-Q1 copy: `미리 질문 하나 보기`, `이 답을 남기려면 로그인해 주세요`. Login does not show `두 사람의 결혼 준비, 한곳에`; that line is marriage pack detail only. Consume opens the installed app via `loveme:///auth/consume` and lands on notice then `질문집`. Account is `계정` / `이메일` / `로그아웃`.
+1. Valid email plus CTA shows the sent copy. The magic link is valid for 10 minutes. Web S2 also shows `카카오로 시작` / `네이버로 시작` / `Google로 시작` without replacing the magic-link form. iOS measurement next-build is splash → `질문집` (no login gate) → marriage pack detail (`결혼` / `두 사람의 결혼 준비, 한곳에.` / `예시 질문` / `예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?` / `명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?` / `우리에게 집은 어떤 의미에 가장 가까울까요?` / `여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.` / `링크 보내기`) readable logged out. Tapping `링크 보내기` / in-app `연결하기` / 결제 / `계정` opens login (`비밀번호 없이 이메일로 로그인 링크를 보내드려요.` / `로그인 링크 보내기`). After consume, return to that intended destination, not a generic home reset. Coming-soon packs from `질문집` (`가정 경영` `임신` `출산` `육아`) open `곧 열려요` / `임시 체험` / `가사와 시간은 어떻게 나누고 싶나요?` / `예시입니다. 여기서 답하거나 팔지 않아요.` / `결과 맛보기` / `목록으로`, then `결과 맛보기` / `같음` / `가까움` / `이야기해요` / `나` / `상대` / `진짜 비교는 열린 팩에서 둘이 낸 다음입니다.` / `예시입니다.` No `링크 보내기` there and no login. Discarded cover/preview-Q1 copy: `미리 질문 하나 보기`, `이 답을 남기려면 로그인해 주세요`. Login does not show `두 사람의 결혼 준비, 한곳에`; that line is marriage pack detail only. Consume opens the installed app via `loveme:///auth/consume` and lands on notice then the intended keep-gate (or `질문집` when there is no pending gate). Account is `계정` / `이메일` / `로그아웃`.
 2. A valid link establishes one server session and shows the post-login notice before anything else.
 3. Buyer home is invite-waiting. It has no pack CTA and does not open the marriage pack.
 4. After the first send, buyer home shows share copy, copy/Instagram/KakaoTalk actions for the existing invite link, the device rule, and the email-typo field with `이메일 수정하고 다시 보내기`.
 5. Opening an invite while another account is logged in shows the same-session copy and `로그아웃하고 넘기기`. Accept cannot succeed. The CTA force-logs out and continues magic-link accept for the invited email.
 6. Logged-in buyer home and pack may show the install banner. `앱 설치하기` opens `/install`. `웹에서 계속` or `지금은 웹에서 시작할래요.` keeps the web flow open.
 7. Instagram `시작하기` opens `/install`. In Instagram/Kakao in-app browsers the landing shows the in-app hint and `브라우저에서 열기`.
-8. Logout returns the user to onboarding and invalidates the session.
+8. Logout on iOS measurement returns the user to `질문집` home. Web logout still returns to onboarding and invalidates the session.
 
 ### Important states
 
@@ -102,7 +102,7 @@ Instagram and KakaoTalk buttons share the existing invite link through copy or t
 ### Disabled / blocked behavior
 
 - Empty or invalid email cannot send a link.
-- Unauthenticated sessions cannot open the pack.
+- Unauthenticated sessions can browse `질문집`, marriage pack detail samples, and coming-soon taste. They cannot send an invite, connect a pair code, pay, or open `계정` until magic-link login succeeds.
 - Sessions without an accepted partner cannot open the pack, including ghost workspaces.
 - Install is never required. Skip and web-continue always return to the web flow.
 - Onboarding does not migrate or resume local-simulator drafts.

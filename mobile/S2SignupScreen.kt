@@ -2,6 +2,7 @@ package com.beforeithappens.loveme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -14,6 +15,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,7 +60,8 @@ fun S2SignupScreen(
     onSubmitEmail: (String) -> Unit = {},
     onUseOtherEmail: () -> Unit = {},
     onAcknowledgeNotice: () -> Unit = {},
-    onBindEmail: (String) -> Unit = {}
+    onBindEmail: (String) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     var emailDraft by remember { mutableStateOf(email) }
     val cream = Color(0xFFFDFBF7)
@@ -71,7 +74,10 @@ fun S2SignupScreen(
                 .systemBarsPadding()
                 .padding(24.dp)
         ) {
-            Text("LoveMe", color = coral, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+            Row {
+                TextButton(onClick = onBack) { Text("‹", fontSize = 28.sp, color = Color(0xFF2B2521)) }
+                Text("LoveMe", color = coral, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+            }
             Column(
                 modifier = Modifier
                     .padding(top = 28.dp)

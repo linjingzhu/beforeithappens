@@ -23,7 +23,38 @@ fun LoveMeS0S2S3Host(
     var busy by remember { mutableStateOf(false) }
     var pairCode by remember { mutableStateOf("") }
     var comingSoonTitle by remember { mutableStateOf("가정 경영") }
+    var pendingGate by remember { mutableStateOf("") }
+    var signedIn by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    fun resumePending(gate: String = pendingGate) {
+        pendingGate = ""
+        signedIn = true
+        when (gate) {
+            "invite", "connect" -> {
+                screen = LoveMeNativeScreen.Invite
+            }
+            "account" -> screen = LoveMeNativeScreen.Account
+            else -> screen = LoveMeNativeScreen.PackList
+        }
+    }
+
+    fun requireLogin(gate: String) {
+        if (signedIn) {
+            resumePending(gate)
+            return
+        }
+        pendingGate = gate
+        screen = LoveMeNativeScreen.Signup
+    }
+
+    fun cancelLogin() {
+        val returnToDetail = pendingGate == "invite" || pendingGate == "connect"
+        pendingGate = ""
+        error = ""
+        busy = false
+        screen = if (returnToDetail) LoveMeNativeScreen.PackDetail else LoveMeNativeScreen.PackList
+    }
 
     when (screen) {
         LoveMeNativeScreen.Splash -> S0SplashScreen {
@@ -38,8 +69,10 @@ fun LoveMeS0S2S3Host(
                         body.contains("\"notice\":\"no-local-draft\"") -> LoveMeNativeScreen.Notice
                         else -> LoveMeNativeScreen.PackList
                     }
+                    signedIn = screen != LoveMeNativeScreen.Bind
                 } else {
-                    screen = LoveMeNativeScreen.Signup
+                    signedIn = false
+                    screen = LoveMeNativeScreen.PackList
                 }
             }
         }
@@ -54,7 +87,7 @@ fun LoveMeS0S2S3Host(
                 }
                 screen = LoveMeNativeScreen.ComingSoon
             },
-            onOpenAccount = { screen = LoveMeNativeScreen.Account }
+            onOpenAccount = { requireLogin("account") }
         )
         LoveMeNativeScreen.ComingSoon -> LoveMeComingSoonScreen(
             title = comingSoonTitle,
@@ -66,7 +99,7 @@ fun LoveMeS0S2S3Host(
         )
         LoveMeNativeScreen.PackDetail -> LoveMePackDetailScreen(
             onBack = { screen = LoveMeNativeScreen.PackList },
-            onSendLink = { screen = LoveMeNativeScreen.Invite }
+            onSendLink = { requireLogin("invite") }
         )
         LoveMeNativeScreen.Account -> LoveMeAccountScreen(
             email = email,
@@ -76,11 +109,17 @@ fun LoveMeS0S2S3Host(
                     withContext(Dispatchers.IO) { client.logout() }
                     email = ""
                     pairCode = ""
-                    screen = LoveMeNativeScreen.Signup
+                    signedIn = false
+                    pendingGate = ""
+                    screen = LoveMeNativeScreen.PackList
                 }
             }
         )
-        LoveMeNativeScreen.Invite -> LoveMeInviteScreen(pairCodeDisplay = pairCode, onBack = { screen = LoveMeNativeScreen.PackDetail })
+        LoveMeNativeScreen.Invite -> LoveMeInviteScreen(
+            pairCodeDisplay = pairCode,
+            onBack = { screen = LoveMeNativeScreen.PackDetail },
+            onConnect = { _ -> requireLogin("connect") }
+        )
         LoveMeNativeScreen.Signup -> S2SignupScreen(
             phase = S2SignupPhase.Signup,
             email = email,
@@ -99,7 +138,8 @@ fun LoveMeS0S2S3Host(
                     else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
                     busy = false
                 }
-            }
+            },
+            onBack = { cancelLogin() }
         )
         LoveMeNativeScreen.Sent -> S2SignupScreen(
             phase = S2SignupPhase.Sent,
@@ -137,7 +177,7 @@ fun LoveMeS0S2S3Host(
                 scope.launch {
                     val result = withContext(Dispatchers.IO) { client.acknowledgeNotice() }
                     val status = result["status"] as? Int ?: 500
-                    if (status == 200) screen = LoveMeNativeScreen.PackList
+                    if (status == 200) resumePending()
                     else error = "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
                     busy = false
                 }
@@ -150,7 +190,13 @@ fun LoveMeS0S2S3Host(
     }
 }
 
-fun openMagicLink(client: LoveMeAuthClient, url: String): Pair<LoveMeNativeScreen, String> {
+fun resumeNativeGate(pendingGate: String): LoveMeNativeScreen = when (pendingGate) {
+    "invite", "connect" -> LoveMeNativeScreen.Invite
+    "account" -> LoveMeNativeScreen.Account
+    else -> LoveMeNativeScreen.PackList
+}
+
+fun openMagicLink(client: LoveMeAuthClient, url: String, pendingGate: String = ""): Pair<LoveMeNativeScreen, String> {
     val token = LoveMeAuthApi.extractMagicLinkToken(url) ?: return LoveMeNativeScreen.Signup to "로그인 링크가 유효하지 않아요."
     val result = client.consumeMagicLink(token)
     val status = result["status"] as? Int ?: 500
@@ -159,7 +205,7 @@ fun openMagicLink(client: LoveMeAuthClient, url: String): Pair<LoveMeNativeScree
     if (status == 200 && body.contains("\"notice\":\"") && !body.contains("\"notice\":null")) {
         return LoveMeNativeScreen.Notice to ""
     }
-    if (status == 200) return LoveMeNativeScreen.PackList to ""
+    if (status == 200) return resumeNativeGate(pendingGate) to ""
     val error = when {
         body.contains("expired") -> "로그인 링크가 만료되었어요. 다시 요청해 주세요."
         body.contains("used") -> "이미 사용한 로그인 링크예요. 새 링크를 요청해 주세요."

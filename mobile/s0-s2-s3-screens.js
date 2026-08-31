@@ -30,6 +30,7 @@ export function renderS0SplashScreen() {
 export function renderS2SignupScreen({ email = "", error = "", busy = false } = {}) {
   return `
     <section class="loveme-gate" data-screen="signup">
+      ${backButton("cancel-login")}
       <p class="loveme-gate-brand">${escapeHtml(S0_COPY.brand)}</p>
       <article class="loveme-gate-card">
         <p>${escapeHtml(S2_COPY.body)}</p>
@@ -136,10 +137,14 @@ export function renderComingSoonScreen({ packId = "home-mgmt" } = {}) {
 }
 
 export function renderTasteResultScreen({ packId = "home-mgmt" } = {}) {
+  const labels = Object.values(RESULT_TASTE_COPY.labels).map((label) => {
+    const on = label === RESULT_TASTE_COPY.label ? " is-on" : "";
+    return `<span class="loveme-taste-label-chip${on}">${escapeHtml(label)}</span>`;
+  }).join("");
   return `
     <section class="loveme-screen loveme-taste-result" data-screen="taste-result" data-pack="${escapeHtml(packId)}">
       <h1>${escapeHtml(RESULT_TASTE_COPY.title)}</h1>
-      <span class="loveme-taste-label">${escapeHtml(RESULT_TASTE_COPY.label)}</span>
+      <div class="loveme-taste-labels">${labels}</div>
       <p class="loveme-taste-question">${escapeHtml(RESULT_TASTE_COPY.question)}</p>
       <article class="loveme-taste-answer">
         <span>${escapeHtml(RESULT_TASTE_COPY.me)}</span>
