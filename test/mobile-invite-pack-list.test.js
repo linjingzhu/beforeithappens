@@ -275,8 +275,10 @@ test("Expo screens keep pack-list and invite and do not add profile or prices", 
   assert.match(packScreens, /계정/);
   assert.equal(packScreens.includes("wantsLoginGate"), false);
   assert.equal(swiftHost.includes("wantsLoginGate"), false);
-  assert.match(consumeSwift, /packList/);
-  assert.match(consumeKotlin, /PackList/);
+  assert.match(consumeSwift, /resumePending/);
+  assert.match(swiftHost, /screen = \.packList/);
+  assert.match(consumeKotlin, /resumeNativeGate/);
+  assert.match(kotlinHost, /PackList/);
   assert.equal(`${packScreens}\n${screens}`.includes("프로필"), false);
   assert.equal(`${packScreens}\n${screens}`.includes("29,000"), false);
   assert.equal(`${packScreens}\n${screens}`.includes("선물"), false);

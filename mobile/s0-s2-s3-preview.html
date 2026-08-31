@@ -18,6 +18,7 @@
       backToSignup,
       backFromComingSoon,
       backToPackList,
+      cancelLogin,
       consumeOpenedLink,
       consumeSucceeded,
       createNativeFlow,
@@ -30,6 +31,7 @@
       openMarriageFromList,
       openSendLink,
       openTasteResult,
+      requireLogin,
       restoreSessionAfterSplash,
       setEmail,
       requestLinkStarted,
@@ -46,10 +48,10 @@
       workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
     };
     let state = createNativeFlow();
-    if (start === "signup") state = finishSplash(state);
-    if (start === "sent") state = { ...finishSplash(state), sentEmail: "buyer@example.com", email: "buyer@example.com", screen: "sent" };
+    if (start === "signup") state = requireLogin(finishSplash(state), "account");
+    if (start === "sent") state = { ...requireLogin(finishSplash(state), "account"), sentEmail: "buyer@example.com", email: "buyer@example.com", screen: "sent" };
     if (start === "notice") {
-      state = consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" });
+      state = consumeSucceeded(requireLogin(finishSplash(state), "account"), { ...loggedIn, notice: "no-local-draft" });
     }
     if (start === "bind") {
       state = consumeSucceeded(finishSplash(state), {
@@ -58,12 +60,11 @@
         workspace: { id: "ws_demo", role: "buyer", acceptedPartner: false }
       });
     }
-    if (start === "workspace" || start === "pack-list") {
+    if (start === "workspace") {
       state = noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn);
     }
-    if (start === "pack-detail") {
-      state = openMarriageFromList(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
-    }
+    if (start === "pack-list") state = finishSplash(state);
+    if (start === "pack-detail") state = openMarriageFromList(finishSplash(state));
     if (start === "account") {
       state = openAccount(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
     }
@@ -73,7 +74,7 @@
     }
     if (start === "coming-soon" || start === "taste-result") {
       const pack = params.get("pack") || "home-mgmt";
-      state = openComingSoonFromList(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn), pack);
+      state = openComingSoonFromList(finishSplash(state), pack);
       if (start === "taste-result") state = openTasteResult(state);
     }
 
@@ -119,6 +120,7 @@
       const action = event.target.closest("[data-action]")?.dataset.action;
       if (!action) return;
       if (action === "back-to-signup") state = backToSignup(state);
+      else if (action === "cancel-login") state = cancelLogin(state);
       else if (action === "ack-notice") {
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })

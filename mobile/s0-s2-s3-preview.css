@@ -358,10 +358,17 @@ body {
   flex-direction: column;
   background: #fdfbf7;
   padding: 28px 20px 32px;
+  position: relative;
+}
+
+.loveme-gate .loveme-back {
+  position: absolute;
+  top: 20px;
+  left: 12px;
 }
 
 .loveme-gate-brand {
-  margin: 0 0 28px;
+  margin: 0 0 28px 36px;
   color: var(--coral);
   font: 500 22px Georgia, "Times New Roman", serif;
 }
@@ -718,6 +725,32 @@ body {
   background: #f4ebe2;
   color: var(--ink);
   font-size: 13px;
+  font-weight: 700;
+}
+
+.loveme-taste-labels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.loveme-taste-label-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #f8f3ed;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.loveme-taste-label-chip.is-on {
+  background: #f4ebe2;
+  color: var(--ink);
   font-weight: 700;
 }
 

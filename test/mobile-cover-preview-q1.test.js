@@ -8,16 +8,20 @@ import {
   backFromPackDetail,
   backFromTasteResult,
   backToPackList,
+  cancelLogin,
   consumeSucceeded,
   createNativeFlow,
   finishSplash,
   loggedOutHome,
   logoutAccount,
+  noticeAcknowledged,
   openAccount,
   openComingSoonFromList,
   openMarriageFromList,
   openSendLink,
   openTasteResult,
+  requireLogin,
+  requireLoginForPay,
   resolveNativeScreen
 } from "../mobile/s0-s2-s3-flow.js";
 import { renderAccountScreen, renderComingSoonScreen, renderPackDetailScreen, renderS2SignupScreen, renderTasteResultScreen } from "../mobile/s0-s2-s3-screens.js";
@@ -34,9 +38,10 @@ test("logged-in pack detail and account copy are designer-locked", () => {
   assert.equal(ACCOUNT_COPY.logout, "로그아웃");
 });
 
-test("splash opens magic-link login, not the discarded workbook cover", () => {
+test("splash opens 질문집 home, not magic-link login or the discarded workbook cover", () => {
   const state = finishSplash(createNativeFlow());
-  assert.equal(state.screen, "signup");
+  assert.equal(state.screen, "pack-list");
+  assert.notEqual(state.screen, "signup");
   assert.notEqual(state.screen, "cover");
   assert.notEqual(state.screen, "preview-q1");
   const login = renderS2SignupScreen();
@@ -44,6 +49,7 @@ test("splash opens magic-link login, not the discarded workbook cover", () => {
   assert.equal(login.includes("두 사람의 결혼 준비, 한곳에"), false);
   assert.match(login, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.match(login, /로그인 링크 보내기/);
+  assert.match(login, /cancel-login/);
   assert.equal(login.includes("미리 질문 하나 보기"), false);
   assert.equal(login.includes("이 답을 남기려면 로그인해 주세요"), false);
   assert.equal(login.includes("카카오로 시작"), false);
@@ -128,8 +134,8 @@ test("consume and logout never resume preview Q1", async () => {
   });
   assert.equal(bare.screen, "pack-list");
   const out = await logoutAccount(bare, { logout: async () => ({ ok: true }) });
-  assert.equal(out.screen, "signup");
-  assert.equal(loggedOutHome().screen, "signup");
+  assert.equal(out.screen, "pack-list");
+  assert.equal(loggedOutHome().screen, "pack-list");
   assert.equal(S2_COPY.cta, "로그인 링크 보내기");
 });
 
@@ -236,7 +242,9 @@ test("coming-soon packs are enterable taste, not sale or invite", () => {
   assert.equal(state.screen, "taste-result");
   const result = renderTasteResultScreen({ packId: "home-mgmt" });
   assert.match(result, /결과 맛보기/);
+  assert.match(result, /같음/);
   assert.match(result, /가까움/);
+  assert.match(result, /이야기해요/);
   assert.match(result, /가사와 시간은 어떻게 나누고 싶나요\?/);
   assert.match(result, /나/);
   assert.match(result, /상대/);
@@ -258,4 +266,61 @@ test("coming-soon packs are enterable taste, not sale or invite", () => {
   const fromResult = backToPackList(openTasteResult(openComingSoonFromList(finishSplash(createNativeFlow(loggedIn)), "pregnancy")));
   assert.equal(fromResult.screen, "pack-list");
   assert.equal(PACK_DETAIL_COPY.samples[2], "우리에게 집은 어떤 의미에 가장 가까울까요?");
+});
+
+test("logged-out browse stays on home and coming-soon; keep-gates require login and resume the destination", () => {
+  let state = finishSplash(createNativeFlow());
+  assert.equal(state.screen, "pack-list");
+  state = openMarriageFromList(state);
+  assert.equal(state.screen, "pack-detail");
+  const gated = openSendLink(state);
+  assert.equal(gated.screen, "signup");
+  assert.equal(gated.pendingGate, "invite");
+  assert.equal(gated.packDetailOpen, true);
+  const cancelled = cancelLogin(gated);
+  assert.equal(cancelled.screen, "pack-detail");
+  assert.equal(cancelled.signupOpen, false);
+
+  const accountGate = openAccount(finishSplash(createNativeFlow()));
+  assert.equal(accountGate.screen, "signup");
+  assert.equal(accountGate.pendingGate, "account");
+  assert.equal(cancelLogin(accountGate).screen, "pack-list");
+
+  const payGate = requireLoginForPay(finishSplash(createNativeFlow()));
+  assert.equal(payGate.screen, "signup");
+  assert.equal(payGate.pendingGate, "paywall");
+  const loggedIn = {
+    user: { id: "usr_1", email: "buyer@example.com" },
+    notice: null,
+    workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
+  };
+  const payLoggedIn = requireLoginForPay(finishSplash(createNativeFlow(loggedIn)));
+  assert.notEqual(payLoggedIn.screen, "signup");
+  assert.notEqual(payLoggedIn.screen, "paywall");
+  assert.equal(payLoggedIn.screen, "pack-list");
+
+  let soon = openComingSoonFromList(finishSplash(createNativeFlow()), "home-mgmt");
+  assert.equal(soon.screen, "coming-soon");
+  soon = openTasteResult(soon);
+  assert.equal(soon.screen, "taste-result");
+  assert.equal(openSendLink(soon).pendingGate, "invite");
+
+  const session = {
+    user: { id: "usr_2", email: "buyer@example.com" },
+    notice: "no-local-draft",
+    workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
+  };
+  let headed = consumeSucceeded(openSendLink(finishSplash(createNativeFlow())), session);
+  assert.equal(headed.screen, "notice");
+  assert.equal(headed.pendingGate, "invite");
+  headed = noticeAcknowledged(headed, { ...session, notice: null });
+  assert.equal(headed.screen, "invite");
+
+  const accountResume = consumeSucceeded(openAccount(finishSplash(createNativeFlow())), {
+    user: { id: "usr_3", email: "buyer@example.com" },
+    notice: null,
+    workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
+  });
+  assert.equal(accountResume.screen, "account");
+  assert.equal(requireLogin(finishSplash(createNativeFlow()), "connect").pendingGate, "connect");
 });

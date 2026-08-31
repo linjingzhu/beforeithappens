@@ -33,7 +33,7 @@ npm ci
 npm run web
 ```
 
-Opens the shared UI in a browser. Confirm splash (1.2s) then S2 signup.
+Opens the shared UI in a browser. Confirm splash (1.2s) then `질문집` home. Login opens only from `링크 보내기`, pair connect, or `계정`.
 
 ### Android
 

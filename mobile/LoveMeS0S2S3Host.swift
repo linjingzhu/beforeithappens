@@ -25,6 +25,8 @@ struct LoveMeS0S2S3Host: View {
     @State private var busy = false
     @State private var pairCode = ""
     @State private var comingSoonTitle = "가정 경영"
+    @State private var pendingGate = ""
+    @State private var signedIn = false
 
     var body: some View {
         Group {
@@ -43,7 +45,7 @@ struct LoveMeS0S2S3Host: View {
                         ][id] ?? "가정 경영"
                         screen = .comingSoon
                     },
-                    onOpenAccount: { screen = .account }
+                    onOpenAccount: { requireLogin("account") }
                 )
             case .comingSoon:
                 LoveMeComingSoonScreen(
@@ -56,10 +58,7 @@ struct LoveMeS0S2S3Host: View {
             case .packDetail:
                 LoveMePackDetailScreen(
                     onBack: { screen = .packList },
-                    onSendLink: {
-                        screen = .invite
-                        Task { await loadPairCode() }
-                    }
+                    onSendLink: { requireLogin("invite") }
                 )
             case .account:
                 LoveMeAccountScreen(
@@ -75,7 +74,7 @@ struct LoveMeS0S2S3Host: View {
                     onShareInstagram: {},
                     onShareKakao: {},
                     onCopyCode: {},
-                    onConnect: { _ in }
+                    onConnect: { _ in requireLogin("connect") }
                 )
                 .task { await loadPairCode() }
             case .signup:
@@ -84,7 +83,8 @@ struct LoveMeS0S2S3Host: View {
                     email: email,
                     error: error,
                     busy: busy,
-                    onSubmitEmail: requestLink
+                    onSubmitEmail: requestLink,
+                    onBack: cancelLogin
                 )
             case .sent:
                 S2SignupScreen(phase: .sent, email: email, error: error, onUseOtherEmail: { screen = .signup; error = "" })
@@ -103,6 +103,7 @@ struct LoveMeS0S2S3Host: View {
             let session = try? await client.currentSession()
             if let user = session?["user"] as? [String: Any] {
                 email = user["email"] as? String ?? ""
+                signedIn = true
                 let needsEmail = user["needsEmail"] as? Bool == true || email.isEmpty
                 if needsEmail {
                     screen = .bind
@@ -112,8 +113,41 @@ struct LoveMeS0S2S3Host: View {
                     screen = .packList
                 }
             } else {
-                screen = .signup
+                signedIn = false
+                screen = .packList
             }
+        }
+    }
+
+    private func requireLogin(_ gate: String) {
+        if signedIn {
+            resumePending(gate)
+            return
+        }
+        pendingGate = gate
+        screen = .signup
+    }
+
+    private func cancelLogin() {
+        let returnToDetail = pendingGate == "invite" || pendingGate == "connect"
+        pendingGate = ""
+        error = ""
+        busy = false
+        screen = returnToDetail ? .packDetail : .packList
+    }
+
+    private func resumePending(_ gate: String = "") {
+        let pending = gate.isEmpty ? pendingGate : gate
+        pendingGate = ""
+        signedIn = true
+        switch pending {
+        case "invite", "connect":
+            screen = .invite
+            Task { await loadPairCode() }
+        case "account":
+            screen = .account
+        default:
+            screen = .packList
         }
     }
 
@@ -145,7 +179,7 @@ struct LoveMeS0S2S3Host: View {
                 if (session["notice"] as? String)?.isEmpty == false {
                     screen = .notice
                 } else {
-                    screen = .packList
+                    resumePending()
                 }
             } catch LoveMeAuthError.expired {
                 error = "로그인 링크가 만료되었어요. 다시 요청해 주세요."
@@ -189,7 +223,7 @@ struct LoveMeS0S2S3Host: View {
         Task {
             do {
                 _ = try await client.acknowledgeNotice()
-                screen = .packList
+                resumePending()
             } catch {
                 self.error = "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
             }
@@ -202,7 +236,9 @@ struct LoveMeS0S2S3Host: View {
             _ = try? await client.logout()
             email = ""
             pairCode = ""
-            screen = .signup
+            signedIn = false
+            pendingGate = ""
+            screen = .packList
         }
     }
 }

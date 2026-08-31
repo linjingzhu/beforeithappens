@@ -34,6 +34,7 @@ import {
   backFromInvite,
   backFromPackDetail,
   backToPackList,
+  cancelLogin,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
@@ -167,6 +168,7 @@ export default function App() {
           email={state.email}
           error={state.error}
           busy={state.busy}
+          onBack={() => setState(cancelLogin(state))}
           onSubmitEmail={async (email) => {
             const started = requestLinkStarted(setEmail(state, email));
             setState(started);

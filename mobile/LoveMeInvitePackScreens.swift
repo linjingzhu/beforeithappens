@@ -326,12 +326,17 @@ struct LoveMeTasteResultScreen: View {
         VStack(spacing: 12) {
             Text(LoveMeInvitePackCopy.tasteResultTitle)
                 .font(.system(size: 32, weight: .bold))
-            Text(LoveMeInvitePackCopy.tasteLabel)
-                .font(.caption.weight(.bold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(Color(red: 0.96, green: 0.92, blue: 0.89))
-                .clipShape(Capsule())
+            HStack(spacing: 8) {
+                ForEach([LoveMeInvitePackCopy.tasteAligned, LoveMeInvitePackCopy.tasteClose, LoveMeInvitePackCopy.tasteDiscuss], id: \.self) { label in
+                    Text(label)
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(label == LoveMeInvitePackCopy.tasteLabel ? Color(red: 0.96, green: 0.92, blue: 0.89) : Color(red: 0.97, green: 0.95, blue: 0.93))
+                        .foregroundStyle(label == LoveMeInvitePackCopy.tasteLabel ? Color(red: 0.17, green: 0.15, blue: 0.13) : Color(red: 0.51, green: 0.46, blue: 0.43))
+                        .clipShape(Capsule())
+                }
+            }
             Text(LoveMeInvitePackCopy.sampleQuestion)
                 .multilineTextAlignment(.center)
                 .padding(.top, 6)

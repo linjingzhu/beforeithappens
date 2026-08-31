@@ -98,7 +98,7 @@ export async function logoutFromS4Home(state, inviteApi) {
   await inviteApi.logoutAndContinue();
   return {
     splashDone: true,
-    screen: "signup",
+    screen: "pack-list",
     email: "",
     sentEmail: "",
     error: "",

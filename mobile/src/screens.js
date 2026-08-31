@@ -56,7 +56,7 @@ export function SplashScreenView() {
   );
 }
 
-export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
+export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail, onBack }) {
   const [draft, setDraft] = useState(email);
   return (
     <SafeScreen style={styles.coverShell} testID="signup">
@@ -64,7 +64,10 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
         style={styles.flexFill}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-      <Text style={styles.gateBrand}>{WORDMARK}</Text>
+      <View style={styles.gateTop}>
+        <BackButton onPress={onBack} testID="signup-back" />
+        <Text style={styles.gateBrand}>{WORDMARK}</Text>
+      </View>
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.gateScroll}>
         <View style={styles.gateCard}>
           <Text style={styles.body}>{S2_COPY.body}</Text>
@@ -282,8 +285,12 @@ export function TasteResultScreen({ onBackToList }) {
   return (
     <SafeScreen style={styles.tasteShell} testID="taste-result">
       <Text style={styles.tasteResultTitle}>{RESULT_TASTE_COPY.title}</Text>
-      <View style={styles.tasteLabelPill}>
-        <Text style={styles.tasteLabelText}>{RESULT_TASTE_COPY.label}</Text>
+      <View style={styles.tasteLabelsRow}>
+        {Object.values(RESULT_TASTE_COPY.labels).map((label) => (
+          <View key={label} style={label === RESULT_TASTE_COPY.label ? styles.tasteLabelPill : styles.tasteLabelChip}>
+            <Text style={label === RESULT_TASTE_COPY.label ? styles.tasteLabelText : styles.tasteLabelChipText}>{label}</Text>
+          </View>
+        ))}
       </View>
       <Text style={styles.tasteQuestionCenter}>{RESULT_TASTE_COPY.question}</Text>
       <View style={styles.tasteAnswer}>
@@ -762,6 +769,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 16
   },
+  tasteLabelsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16
+  },
+  tasteLabelChip: {
+    minHeight: 28,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: "#f8f3ed",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  tasteLabelChipText: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "600"
+  },
   tasteLabelText: {
     color: colors.ink,
     fontSize: 13,
@@ -830,6 +857,13 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "500",
     marginBottom: 12
+  },
+  gateTop: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8
   },
   gateScroll: {
     flexGrow: 1,
