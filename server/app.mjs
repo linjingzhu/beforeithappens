@@ -2,7 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
-import { isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl } from "./oauth.mjs";
+import { createOAuthState, exchangeOAuthCode, isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl, oauthRedirectUri, verifyOAuthState } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
 import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml } from "./mail.mjs";
 import { inviteShareUrl } from "../src/pair-code.js";
@@ -57,6 +57,7 @@ export function createListener({
   oauthEnv = process.env,
   mailEnv = process.env,
   mailFetch = globalThis.fetch,
+  oauthFetch = globalThis.fetch,
   outbox = []
 } = {}) {
   if (!auth) throw new Error("auth is required");
@@ -125,8 +126,9 @@ export function createListener({
           sendJson(response, 501, { ok: false, error: "oauth-unconfigured" });
           return;
         }
-        const startUrl = oauthAuthorizeUrl(provider, { origin: requestOrigin(request), env: oauthEnv });
-        sendJson(response, 200, { ok: true, provider, url: startUrl, stubbed: false });
+        const startState = createOAuthState({ provider, env: oauthEnv });
+        const startUrl = oauthAuthorizeUrl(provider, { origin: requestOrigin(request), env: oauthEnv, state: startState });
+        sendJson(response, 200, { ok: true, provider, url: startUrl, state: startState, stubbed: false });
         return;
       }
 
@@ -152,11 +154,60 @@ export function createListener({
           return;
         }
         const wantsJson = String(request.headers.accept || "").includes("application/json");
-        if (wantsJson) {
-          sendJson(response, 501, { ok: false, error: "oauth-unconfigured", stubbed: true, provider });
+        const failOAuth = (status, error) => {
+          if (wantsJson) {
+            sendJson(response, status, { ok: false, error, provider });
+            return;
+          }
+          response.writeHead(302, { location: `/?authError=${encodeURIComponent(error)}` });
+          response.end();
+        };
+
+        if (!isOAuthConfigured(provider, oauthEnv)) {
+          if (wantsJson) {
+            sendJson(response, 501, { ok: false, error: "oauth-unconfigured", stubbed: true, provider });
+            return;
+          }
+          response.writeHead(302, { location: `/?authError=oauth-unconfigured` });
+          response.end();
           return;
         }
-        response.writeHead(302, { location: `/?authError=oauth-unconfigured` });
+
+        const callbackState = url.searchParams.get("state") || "";
+        if (!verifyOAuthState(callbackState, { provider, env: oauthEnv }).ok || url.searchParams.get("error")) {
+          failOAuth(400, "invalid");
+          return;
+        }
+
+        const exchanged = await exchangeOAuthCode({
+          provider,
+          code: url.searchParams.get("code") || "",
+          redirectUri: oauthRedirectUri(provider, requestOrigin(request)),
+          state: callbackState,
+          env: oauthEnv,
+          fetchImpl: oauthFetch
+        });
+        if (!exchanged.ok) {
+          const unconfigured = exchanged.error === "oauth-unconfigured";
+          failOAuth(unconfigured ? 501 : 400, unconfigured ? "oauth-unconfigured" : "invalid");
+          return;
+        }
+
+        const oauthLogin = auth.completeOAuth({
+          provider: exchanged.provider,
+          providerUserId: exchanged.providerUserId,
+          email: exchanged.email
+        });
+        if (!oauthLogin.ok) {
+          failOAuth(400, oauthLogin.error);
+          return;
+        }
+        const oauthCookie = sessionCookieHeader(SESSION_COOKIE, oauthLogin.sessionId, cookieOptions(request));
+        if (wantsJson) {
+          sendJson(response, 200, { ok: true, session: auth.sessionFor(oauthLogin.sessionId) }, { "set-cookie": oauthCookie });
+          return;
+        }
+        response.writeHead(302, { location: "/", "set-cookie": oauthCookie });
         response.end();
         return;
       }
