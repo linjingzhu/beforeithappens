@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Linking, Share } from "react-native";
+import { Alert, Linking, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
@@ -31,7 +31,8 @@ import {
   sendHostEmailBind,
   sendHostMagicLink,
   splashOpenResult,
-  startHostFlow
+  startHostFlow,
+  withdrawHost
 } from "./src/session.js";
 import { PackMount } from "./pack/screens.js";
 import marriagePackCatalog from "./pack/contract/marriage-pack.json";
@@ -243,6 +244,13 @@ export default function App() {
           onLogout={async () => setState(await logoutHost(state, api))}
           onLogin={() => setState(openAccount(state))}
           onInvite={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
+          onWithdraw={async () => {
+            setState({ ...state, busy: true, error: "" });
+            const next = await withdrawHost(state, api);
+            setState(next);
+            // The account screen has no error line of its own, so a failed 탈퇴 has to say so here.
+            if (next.error) Alert.alert(next.error);
+          }}
         />
       ) : null}
       {state.screen === "signup" ? (

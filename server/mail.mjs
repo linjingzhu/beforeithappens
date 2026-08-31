@@ -61,7 +61,84 @@ export function loginMailHtml(url) {
 }
 
 export function hasResendKey(env = process.env) {
-  return Boolean(String(env.RESEND_API_KEY || "").trim());
+  return Boolean(String(env?.RESEND_API_KEY || "").trim());
+}
+
+/**
+ * Distinct, non-leaking failure codes. A 502 carries one of these so the host log and the
+ * operator can tell "nobody configured a key" from "Resend refused this send" without ever
+ * putting an API key, a login token or a recipient address in the response.
+ */
+export const MAIL_ERRORS = Object.freeze({
+  notConfigured: "mail-not-configured",
+  outboxRefused: "mail-outbox-refused",
+  keyRejected: "mail-key-rejected",
+  senderRestricted: "mail-sender-restricted",
+  senderRejected: "mail-sender-rejected",
+  rateLimited: "mail-rate-limited",
+  providerUnavailable: "mail-provider-unavailable",
+  providerError: "mail-provider-error",
+  unreachable: "mail-unreachable"
+});
+
+export const MAIL_VIA = Object.freeze({
+  resend: "resend",
+  outbox: "outbox",
+  none: "none"
+});
+
+/**
+ * Every non-2xx Resend reply used to collapse into `failed`. Status alone is enough to name
+ * the misconfiguration, and the provider body is never read: its 403 text quotes the
+ * recipient address back at you, which must not reach a client or a log line.
+ */
+export function mailErrorForStatus(status) {
+  const code = Number(status);
+  if (code === 401) return MAIL_ERRORS.keyRejected;
+  if (code === 403) return MAIL_ERRORS.senderRestricted;
+  if (code === 422) return MAIL_ERRORS.senderRejected;
+  if (code === 429) return MAIL_ERRORS.rateLimited;
+  if (Number.isFinite(code) && code >= 500) return MAIL_ERRORS.providerUnavailable;
+  return MAIL_ERRORS.providerError;
+}
+
+// Hosts that announce themselves. A deploy that forgot NODE_ENV=production still sets one of
+// these, so the dev outbox cannot quietly stand in for real mail on a live box.
+export const PRODUCTION_HOST_ENV_KEYS = Object.freeze([
+  "RENDER",
+  "RENDER_SERVICE_ID",
+  "RENDER_EXTERNAL_URL",
+  "FLY_APP_NAME",
+  "DYNO",
+  "K_SERVICE",
+  "VERCEL",
+  "RAILWAY_ENVIRONMENT",
+  "AWS_EXECUTION_ENV"
+]);
+
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]"]);
+
+function isRemoteOrigin(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  let host;
+  try {
+    host = new URL(raw).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  if (!host || LOCAL_HOSTNAMES.has(host)) return false;
+  return !host.endsWith(".local") && !host.endsWith(".localhost");
+}
+
+/**
+ * True when this process is answering the public internet: NODE_ENV says so, the platform
+ * says so, or AB_PUBLIC_ORIGIN points at a non-local host.
+ */
+export function looksLikeProductionHost(env = process.env) {
+  if (String(env?.NODE_ENV || "").trim().toLowerCase() === "production") return true;
+  if (PRODUCTION_HOST_ENV_KEYS.some((key) => String(env?.[key] || "").trim())) return true;
+  return isRemoteOrigin(env?.AB_PUBLIC_ORIGIN);
 }
 
 export async function sendLoginEmail({
@@ -70,9 +147,9 @@ export async function sendLoginEmail({
   fetchImpl = globalThis.fetch,
   env = process.env
 } = {}) {
-  const apiKey = String(env.RESEND_API_KEY || "").trim();
-  if (!apiKey) return { ok: false, error: "missing-key" };
-  const from = String(env.MAIL_FROM || "").trim() || DEFAULT_MAIL_FROM;
+  const apiKey = String(env?.RESEND_API_KEY || "").trim();
+  if (!apiKey) return { ok: false, error: MAIL_ERRORS.notConfigured };
+  const from = String(env?.MAIL_FROM || "").trim() || DEFAULT_MAIL_FROM;
   let response;
   try {
     response = await fetchImpl(RESEND_EMAILS_URL, {
@@ -90,15 +167,23 @@ export async function sendLoginEmail({
       })
     });
   } catch {
-    return { ok: false, error: "failed" };
+    return { ok: false, error: MAIL_ERRORS.unreachable };
   }
   const status = Number(response?.status);
   if (!Number.isFinite(status) || status < 200 || status >= 300) {
-    return { ok: false, error: "failed" };
+    return { ok: false, error: mailErrorForStatus(status), status: Number.isFinite(status) ? status : 0 };
   }
-  return { ok: true };
+  return { ok: true, delivered: true, via: MAIL_VIA.resend };
 }
 
+/**
+ * Resolves to `{ ok, delivered, via, error? }`.
+ *
+ * `ok` only says the request may return 200. `delivered` is the one field that means a mail
+ * provider accepted the message, and it is true only for `via: "resend"`. The dev outbox
+ * answers `{ ok: true, delivered: false, via: "outbox" }` so no caller can print
+ * "we sent the mail" off a truthy `ok`; use `wasMailDelivered(result)` for that claim.
+ */
 export async function deliverLoginLink({
   to,
   url,
@@ -108,9 +193,21 @@ export async function deliverLoginLink({
 } = {}) {
   if (hasResendKey(env)) {
     const sent = await sendLoginEmail({ to, url, fetchImpl, env });
-    if (!sent.ok) return { ok: false, error: "failed" };
-    return { ok: true };
+    if (!sent.ok) return { ok: false, delivered: false, via: MAIL_VIA.resend, error: sent.error };
+    return { ok: true, delivered: true, via: MAIL_VIA.resend };
   }
-  if (allowDevOutbox) return { ok: true, via: "outbox" };
-  return { ok: false, error: "failed" };
+  if (allowDevOutbox) {
+    // Refuse outright rather than hand back a success a live host would repeat to a real user:
+    // the outbox is a developer console, and on a public host it is a lie plus a token leak.
+    if (looksLikeProductionHost(env)) {
+      return { ok: false, delivered: false, via: MAIL_VIA.none, error: MAIL_ERRORS.outboxRefused };
+    }
+    return { ok: true, delivered: false, via: MAIL_VIA.outbox };
+  }
+  return { ok: false, delivered: false, via: MAIL_VIA.none, error: MAIL_ERRORS.notConfigured };
+}
+
+/** True only when a mail provider accepted the message. The outbox never satisfies this. */
+export function wasMailDelivered(result) {
+  return Boolean(result?.ok && result?.delivered === true && result?.via === MAIL_VIA.resend);
 }

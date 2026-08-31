@@ -8,7 +8,8 @@ export const AUTH_API = {
   pairCode: "/api/pair-code",
   pairConnect: "/api/pair-code/connect",
   previewQ1: "/api/preview-q1",
-  logout: "/api/auth/logout"
+  logout: "/api/auth/logout",
+  accountDelete: "/api/account/delete"
 };
 
 export const SESSION_FETCH_MS = 2000;
@@ -200,6 +201,26 @@ export function createAuthApi({
       } catch {
         /* still clear the local cookie */
       }
+      if (setCookie) setCookie("");
+      return { ok: true };
+    },
+
+    /**
+     * 탈퇴. Irreversible, so it never fails open the way logout does: a failure is reported and
+     * the local session cookie is kept. The long auth timeout is deliberate — reporting a
+     * timeout on a delete the server actually completed is the worse lie.
+     */
+    async deleteAccount() {
+      let result;
+      try {
+        result = await withTimeout(request(AUTH_API.accountDelete, {
+          method: "POST",
+          body: { confirm: true }
+        }), authTimeoutMs);
+      } catch {
+        return { ok: false, error: "failed" };
+      }
+      if (!result.ok) return { ok: false, error: result.payload.error || "failed" };
       if (setCookie) setCookie("");
       return { ok: true };
     }

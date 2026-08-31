@@ -6,10 +6,15 @@ import { createListener } from "../server/app.mjs";
 import {
   DEFAULT_MAIL_FROM,
   LOGIN_MAIL,
+  MAIL_ERRORS,
+  MAIL_VIA,
   RESEND_EMAILS_URL,
   consumeUrl,
   deliverLoginLink,
-  sendLoginEmail
+  looksLikeProductionHost,
+  mailErrorForStatus,
+  sendLoginEmail,
+  wasMailDelivered
 } from "../server/mail.mjs";
 import { createMemoryStore } from "../server/store.mjs";
 import { createCouple } from "../server/workspace.mjs";
@@ -127,16 +132,81 @@ test("sendLoginEmail uses MAIL_FROM when set", async () => {
   });
 });
 
-test("Resend non-2xx is a send failure", async () => {
-  const { fetchImpl } = mockResend({ status: 401 });
+test("Resend non-2xx is a send failure with a code that names the misconfiguration", async () => {
+  const cases = [
+    [401, MAIL_ERRORS.keyRejected],
+    [403, MAIL_ERRORS.senderRestricted],
+    [422, MAIL_ERRORS.senderRejected],
+    [429, MAIL_ERRORS.rateLimited],
+    [500, MAIL_ERRORS.providerUnavailable],
+    [418, MAIL_ERRORS.providerError]
+  ];
+  for (const [status, error] of cases) {
+    const { fetchImpl } = mockResend({ status });
+    const result = await sendLoginEmail({
+      to: "buyer@example.com",
+      url: consumeUrl("http://localhost:4173", "tok_1"),
+      fetchImpl,
+      env: { RESEND_API_KEY: "re_test_key" }
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.error, error);
+    assert.equal(result.status, status);
+    assert.equal(wasMailDelivered(result), false);
+  }
+  assert.equal(mailErrorForStatus(undefined), MAIL_ERRORS.providerError);
+});
+
+test("a Resend transport failure is unreachable, not a refusal", async () => {
   const result = await sendLoginEmail({
     to: "buyer@example.com",
     url: consumeUrl("http://localhost:4173", "tok_1"),
-    fetchImpl,
+    fetchImpl: async () => { throw new Error("socket hang up"); },
     env: { RESEND_API_KEY: "re_test_key" }
   });
   assert.equal(result.ok, false);
-  assert.equal(result.error, "failed");
+  assert.equal(result.error, MAIL_ERRORS.unreachable);
+});
+
+test("mail error codes never carry a key, token or recipient", async () => {
+  const token = "tok_secret_1";
+  const url = consumeUrl("http://localhost:4173", token);
+  const results = [];
+  for (const status of [401, 403, 422, 429, 500]) {
+    const { fetchImpl } = mockResend({ status });
+    results.push(await sendLoginEmail({
+      to: "buyer@example.com",
+      url,
+      fetchImpl,
+      env: { RESEND_API_KEY: "re_live_secret_key", MAIL_FROM: "LoveMe <login@loveme.example>" }
+    }));
+  }
+  results.push(await deliverLoginLink({ to: "buyer@example.com", url, allowDevOutbox: false, env: {} }));
+  results.push(await deliverLoginLink({
+    to: "buyer@example.com",
+    url,
+    allowDevOutbox: true,
+    env: { NODE_ENV: "production" }
+  }));
+  for (const result of results) {
+    const serialized = JSON.stringify(result);
+    assert.equal(serialized.includes("buyer@example.com"), false);
+    assert.equal(serialized.includes("re_live_secret_key"), false);
+    assert.equal(serialized.includes(token), false);
+    assert.match(String(result.error), /^mail-[a-z-]+$/);
+  }
+});
+
+test("looksLikeProductionHost trusts NODE_ENV, platform markers and a remote origin", () => {
+  assert.equal(looksLikeProductionHost({}), false);
+  assert.equal(looksLikeProductionHost({ NODE_ENV: "development" }), false);
+  assert.equal(looksLikeProductionHost({ AB_PUBLIC_ORIGIN: "http://localhost:4173" }), false);
+  assert.equal(looksLikeProductionHost({ AB_PUBLIC_ORIGIN: "http://127.0.0.1:4173" }), false);
+  assert.equal(looksLikeProductionHost({ AB_PUBLIC_ORIGIN: "not a url" }), false);
+  assert.equal(looksLikeProductionHost({ NODE_ENV: "production" }), true);
+  assert.equal(looksLikeProductionHost({ RENDER: "true" }), true);
+  assert.equal(looksLikeProductionHost({ RENDER_EXTERNAL_URL: "https://loveme.onrender.com" }), true);
+  assert.equal(looksLikeProductionHost({ AB_PUBLIC_ORIGIN: "https://loveme.onrender.com" }), true);
 });
 
 test("missing key without outbox fails; outbox-only works without key", async () => {
@@ -150,7 +220,8 @@ test("missing key without outbox fails; outbox-only works without key", async ()
     env: {}
   });
   assert.equal(missing.ok, false);
-  assert.equal(missing.error, "failed");
+  assert.equal(missing.error, MAIL_ERRORS.notConfigured);
+  assert.equal(missing.delivered, false);
   assert.equal(calls.length, 0);
 
   const outboxOnly = await deliverLoginLink({
@@ -161,8 +232,76 @@ test("missing key without outbox fails; outbox-only works without key", async ()
     env: {}
   });
   assert.equal(outboxOnly.ok, true);
-  assert.equal(outboxOnly.via, "outbox");
+  assert.equal(outboxOnly.via, MAIL_VIA.outbox);
   assert.equal(calls.length, 0);
+});
+
+test("the outbox never reports a delivered mail; a real send does", async () => {
+  const url = consumeUrl("http://localhost:4173", "tok_1");
+  const outboxOnly = await deliverLoginLink({
+    to: "buyer@example.com",
+    url,
+    allowDevOutbox: true,
+    fetchImpl: async () => { throw new Error("must not call Resend"); },
+    env: {}
+  });
+  assert.equal(outboxOnly.ok, true);
+  assert.equal(outboxOnly.delivered, false);
+  assert.equal(outboxOnly.via, MAIL_VIA.outbox);
+  assert.equal(wasMailDelivered(outboxOnly), false);
+
+  const { fetchImpl } = mockResend();
+  const real = await deliverLoginLink({
+    to: "buyer@example.com",
+    url,
+    allowDevOutbox: true,
+    fetchImpl,
+    env: { RESEND_API_KEY: "re_test_key" }
+  });
+  assert.equal(real.ok, true);
+  assert.equal(real.delivered, true);
+  assert.equal(real.via, MAIL_VIA.resend);
+  assert.equal(wasMailDelivered(real), true);
+});
+
+test("a production-looking host refuses the outbox instead of faking a send", async () => {
+  const url = consumeUrl("https://loveme.onrender.com", "tok_1");
+  const envs = [
+    { NODE_ENV: "production" },
+    { RENDER: "true" },
+    { AB_PUBLIC_ORIGIN: "https://loveme.onrender.com" }
+  ];
+  for (const env of envs) {
+    const { fetchImpl, calls } = mockResend();
+    const refused = await deliverLoginLink({
+      to: "buyer@example.com",
+      url,
+      allowDevOutbox: true,
+      fetchImpl,
+      env
+    });
+    assert.equal(refused.ok, false);
+    assert.equal(refused.delivered, false);
+    assert.equal(refused.via, MAIL_VIA.none);
+    assert.equal(refused.error, MAIL_ERRORS.outboxRefused);
+    assert.equal(wasMailDelivered(refused), false);
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("a key on a production host still sends, and its failure keeps the Resend code", async () => {
+  const url = consumeUrl("https://loveme.onrender.com", "tok_1");
+  const { fetchImpl, calls } = mockResend({ status: 403 });
+  const result = await deliverLoginLink({
+    to: "buyer@example.com",
+    url,
+    allowDevOutbox: true,
+    fetchImpl,
+    env: { NODE_ENV: "production", RESEND_API_KEY: "re_test_key" }
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.error, MAIL_ERRORS.senderRestricted);
+  assert.equal(calls.length, 1);
 });
 
 test("HTTP magic-link calls Resend with to/from/subject/url", async () => {

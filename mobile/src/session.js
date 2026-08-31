@@ -1,15 +1,18 @@
 import { createAuthApi } from "../s0-s2-s3-api.js";
 import {
   acknowledgeLoginNotice,
+  applyScreen,
   consumeOpenedLink,
   createNativeFlow,
   finishSplash,
+  loggedOutHome,
   logoutAccount,
   restoreSessionAfterSplash,
   startSocialLogin,
   submitEmailBind,
   submitMagicLink
 } from "../s0-s2-s3-flow.js";
+import { WITHDRAW_ERRORS } from "./copy.js";
 
 let cookie = "";
 
@@ -76,4 +79,26 @@ export async function sendHostEmailBind(state, api = createHostApi()) {
 
 export async function logoutHost(state, api = createHostApi()) {
   return logoutAccount(state, api);
+}
+
+/**
+ * 탈퇴. The account screen has already taken the second confirmation, so this deletes.
+ * Success lands on the same logged-out home as a logout; a failure keeps the user signed in
+ * on the account screen and says so, because a silent no-op would read as "탈퇴됐다".
+ */
+export async function withdrawHost(state, api = createHostApi()) {
+  let result;
+  try {
+    result = await api.deleteAccount?.();
+  } catch {
+    result = { ok: false, error: "failed" };
+  }
+  if (!result?.ok) {
+    return applyScreen({
+      ...state,
+      busy: false,
+      error: WITHDRAW_ERRORS[result?.error] || WITHDRAW_ERRORS.failed
+    });
+  }
+  return loggedOutHome({ ...state, error: "" });
 }
