@@ -1,13 +1,48 @@
 :root {
-  --ink: #2b2521;
-  --muted: #81756e;
-  --paper: #f8f3ed;
-  --card: #fffdfa;
-  --line: #e7ddd5;
-  --coral: #ee775f;
-  --soft: #fce8e1;
+  --ink: #3A3338;
+  --charcoal: #3A3338;
+  --muted: #7A7278;
+  --paper: #F6C8D8;
+  --card: rgba(255, 255, 255, 0.72);
+  --line: rgba(58, 51, 56, 0.14);
+  --coral: #F6C8D8;
+  --soft: #B7D9F0;
+  --baby-pink: #F6C8D8;
+  --sky-blue: #B7D9F0;
+  --gradient: linear-gradient(180deg, #F6C8D8 0%, #B7D9F0 100%);
+  --gradient-h: linear-gradient(90deg, #F6C8D8 0%, #B7D9F0 100%);
   --safe-top: max(59px, env(safe-area-inset-top, 0px));
   --safe-bottom: max(34px, env(safe-area-inset-bottom, 0px));
+  --font-title: "MaruBuri", "Times New Roman", serif;
+  --font-body: "Pretendard", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+@font-face {
+  font-family: "MaruBuri";
+  src: url("./assets/fonts/MaruBuri-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MaruBuri";
+  src: url("./assets/fonts/MaruBuri-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("./assets/fonts/Pretendard-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("./assets/fonts/Pretendard-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-display: swap;
 }
 
 * { box-sizing: border-box; }
@@ -15,9 +50,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #fdfbf7;
-  color: var(--ink);
-  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  background: var(--gradient);
+  color: var(--charcoal);
+  font-family: var(--font-body);
 }
 
 .preview-frame {
@@ -28,7 +63,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: #fdfbf7;
+  background: var(--gradient);
   padding-top: var(--safe-top);
   padding-bottom: var(--safe-bottom);
   box-sizing: border-box;
@@ -80,10 +115,59 @@ body {
 }
 
 .loveme-splash h1,
+.loveme-login-mark,
+.loveme-title,
+.loveme-stem,
+.loveme-pack-list h1,
+.loveme-gate-card h1,
 .loveme-card h1 {
-  margin: 8px 0 0;
-  font: 500 34px/1.15 Georgia, serif;
-  letter-spacing: -.04em;
+  font-family: var(--font-title);
+}
+
+.loveme-pack-name {
+  font-family: var(--font-title);
+}
+
+.loveme-primary,
+.loveme-secondary,
+.loveme-soon,
+.loveme-choice,
+.loveme-sample-progress,
+.loveme-reason-label,
+.loveme-account-entry {
+  font-family: var(--font-body);
+}
+
+.loveme-sample-progress {
+  margin: 0 0 8px 36px;
+  font-size: 15px;
+}
+
+.loveme-reason-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.loveme-reason-heart {
+  color: var(--baby-pink);
+  font-size: 16px;
+}
+
+.loveme-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.loveme-choice input {
+  accent-color: var(--charcoal);
 }
 
 .loveme-splash p,
@@ -148,7 +232,7 @@ body {
 
 .loveme-primary {
   border: 0;
-  background: var(--coral);
+  background: var(--gradient-h);
   color: white;
 }
 
@@ -356,8 +440,9 @@ body {
   min-height: 100%;
   display: flex;
   flex-direction: column;
-  background: #fdfbf7;
-  padding: 28px 20px 32px;
+  justify-content: center;
+  background: transparent;
+  padding: 28px 28px 32px;
   position: relative;
 }
 
@@ -365,6 +450,54 @@ body {
   position: absolute;
   top: 20px;
   left: 12px;
+}
+
+.loveme-login-mark {
+  margin: 0 0 36px;
+  text-align: center;
+  font: 700 44px/1.1 var(--font-title);
+  letter-spacing: -0.04em;
+  background: var(--gradient-h);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.loveme-login-body {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.loveme-login-form {
+  margin-top: 0;
+}
+
+.loveme-email-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: #fff;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.loveme-mail-icon {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.loveme-email-field input {
+  flex: 1;
+  min-height: 52px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
 }
 
 .loveme-gate-brand {
@@ -809,9 +942,106 @@ body {
   margin-top: auto;
   border: 0;
   border-radius: 16px;
-  background: #d8a07a;
+  background: var(--gradient-h);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
 }
+
+.loveme-hearts {
+  text-align: center;
+  font-weight: 600;
+  color: var(--charcoal);
+  margin: 0 0 8px;
+}
+
+.loveme-debug {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: auto;
+}
+
+.loveme-shop {
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--card);
+  text-align: center;
+}
+
+.loveme-need {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.loveme-choice {
+  display: block;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.loveme-choice.is-on {
+  box-shadow: inset 0 0 0 1.5px var(--charcoal);
+}
+
+.loveme-account-entry {
+  margin-top: auto;
+  background: none;
+  border: 0;
+  color: var(--charcoal);
+  font-size: 16px;
+  font-weight: 600;
+  min-height: 48px;
+}
+
+.loveme-pack-list h1,
+.loveme-unlock h1,
+.loveme-certificate h1,
+.loveme-coming-soon h1 {
+  font-family: var(--font-title);
+  color: var(--charcoal);
+}
+
+.loveme-certificate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.loveme-certificate-stamp {
+  font-size: 64px;
+  line-height: 1;
+  margin: 36px 0 12px;
+  color: var(--charcoal);
+}
+
+.loveme-certificate-counts {
+  list-style: none;
+  margin: 16px 0 24px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.loveme-certificate-counts li {
+  background: var(--card);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.loveme-certificate .loveme-primary {
+  margin-top: auto;
+  width: 100%;
+}
+

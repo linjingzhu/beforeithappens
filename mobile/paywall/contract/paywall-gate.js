@@ -71,7 +71,9 @@ export function paywallScreen({
       body: PAYWALL_COPY.buyerBody,
       cta: PAYWALL_COPY.buyerCta,
       secondary: PAYWALL_COPY.later,
-      labels: [PAYWALL_COPY.aligned, PAYWALL_COPY.close, PAYWALL_COPY.discuss]
+      labels: [],
+      hearts: session?.hearts ?? 0,
+      shopOpen: false
     };
   }
   return {
@@ -82,6 +84,6 @@ export function paywallScreen({
     body: PAYWALL_COPY.partnerBody,
     cta: "",
     secondary: "",
-    labels: [PAYWALL_COPY.aligned, PAYWALL_COPY.close, PAYWALL_COPY.discuss]
+    labels: []
   };
 }

@@ -4,26 +4,37 @@ struct PaywallBuyerView: View {
     @ObservedObject var model: PaywallViewModel
     var onPurchase: (() async -> Void)?
     var onLater: (() -> Void)?
+    @State private var shopOpen = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 16) {
+            Text("♡ 0")
             Text(PaywallCopy.buyerTitle)
                 .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
             Text(PaywallCopy.buyerBody)
-                .foregroundStyle(.secondary)
-            labelRow
-            Button(PaywallCopy.buyerCta) {
-                Task { if let onPurchase { await onPurchase() } else { await model.purchase() } }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(red: 0.933, green: 0.467, blue: 0.373))
-            .frame(minHeight: 44)
+                .foregroundStyle(LoveMeTheme.charcoal)
+                .multilineTextAlignment(.center)
+            Button(PaywallCopy.buyerCta) { shopOpen = true }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(LoveMeTheme.buttonGradient)
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .accessibilityIdentifier("paywall-purchase")
-            Button(PaywallCopy.later) {
-                if let onLater { onLater() } else { model.later() }
+            Text(PaywallCopy.needHearts)
+                .font(.footnote)
+                .foregroundStyle(LoveMeTheme.muted)
+            if shopOpen {
+                Text(PaywallCopy.shopTitle)
+                Button(PaywallCopy.shopCta) {
+                    Task { if let onPurchase { await onPurchase() } else { await model.purchase() } }
+                }
+                Button(PaywallCopy.later) {
+                    shopOpen = false
+                    if let onLater { onLater() } else { model.later() }
+                }
+                .accessibilityIdentifier("paywall-later")
             }
-            .frame(minHeight: 44)
-            .accessibilityIdentifier("paywall-later")
             if !model.error.isEmpty {
                 Text(model.error)
                     .font(.footnote)
@@ -31,23 +42,9 @@ struct PaywallBuyerView: View {
             }
         }
         .padding(24)
-        .background(Color(red: 1, green: 0.992, blue: 0.980))
+        .background(LoveMeTheme.screenGradient)
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .accessibilityIdentifier("paywall-buyer")
-    }
-
-    private var labelRow: some View {
-        HStack(spacing: 8) {
-            ForEach(model.labels, id: \.self) { label in
-                Text(label)
-                    .font(.caption.weight(.bold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color(red: 0.988, green: 0.910, blue: 0.882))
-                    .clipShape(Capsule())
-            }
-        }
-        .accessibilityIdentifier("paywall-labels")
     }
 }
 
@@ -56,27 +53,14 @@ struct PaywallPartnerView: View {
     var onLater: (() -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 16) {
             Text(PaywallCopy.partnerTitle)
                 .font(.title2.weight(.semibold))
-            Text(PaywallCopy.partnerBody)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                Text(PaywallCopy.aligned)
-                Text(PaywallCopy.close)
-                Text(PaywallCopy.discuss)
-            }
-            .font(.caption.weight(.bold))
-            .accessibilityIdentifier("paywall-labels")
-            Button(PaywallCopy.later) {
-                if let onLater { onLater() } else { model.later() }
-            }
-            .frame(minHeight: 44)
-            .accessibilityIdentifier("paywall-later")
+                .multilineTextAlignment(.center)
         }
         .padding(24)
-        .background(Color(red: 1, green: 0.992, blue: 0.980))
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(LoveMeTheme.screenGradient)
         .accessibilityIdentifier("paywall-partner")
     }
 }

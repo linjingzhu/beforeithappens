@@ -42,7 +42,7 @@ test("gate appears after the third sample lock and sits on the comparison", () =
   assert.equal(partner.canPurchase, false);
   assert.equal(partner.cta, "");
   assert.equal(partner.title, PAYWALL_COPY.partnerTitle);
-  assert.deepEqual(partner.labels, ["ALIGNED", "CLOSE", "DISCUSS"]);
+  assert.deepEqual(partner.labels, []);
 });
 
 test("나중에 dismisses the gate without unlocking the rest", () => {

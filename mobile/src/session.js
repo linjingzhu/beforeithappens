@@ -33,8 +33,8 @@ export function isLoggedIn(session) {
   return Boolean(session?.user);
 }
 
-export function afterSplashScreen(_loggedIn = isLoggedIn()) {
-  return "pack-list";
+export function afterSplashScreen(loggedIn = isLoggedIn()) {
+  return loggedIn ? "pack-list" : "signup";
 }
 
 export function startHostFlow() {

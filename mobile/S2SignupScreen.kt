@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,7 +33,8 @@ object LoveMeS2Copy {
     const val cta = "로그인 링크 보내기"
     const val sent = "메일을 확인해 주세요. 링크는 10분 동안만 유효해요."
     const val afterLogin = "이 기기 임시 답은 이어지지 않아요."
-    const val emailLabel = "이메일"
+    const val emailLabel = "이메일 주소"
+    const val emailPlaceholder = "이메일 주소를 입력해주세요"
     const val ack = "확인"
     const val otherEmail = "다른 이메일로 요청"
     const val packDetailTitle = "결혼"
@@ -61,11 +61,12 @@ fun S2SignupScreen(
     onUseOtherEmail: () -> Unit = {},
     onAcknowledgeNotice: () -> Unit = {},
     onBindEmail: (String) -> Unit = {},
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    firstRun: Boolean = true
 ) {
     var emailDraft by remember { mutableStateOf(email) }
-    val cream = Color(0xFFFDFBF7)
-    val coral = Color(0xFFEE775F)
+    val cream = Color(0xFFF6C8D8)
+    val coral = Color(0xFFF6C8D8)
     if (phase == S2SignupPhase.Signup) {
         Column(
             modifier = Modifier
@@ -74,42 +75,38 @@ fun S2SignupScreen(
                 .systemBarsPadding()
                 .padding(24.dp)
         ) {
-            Row {
-                TextButton(onClick = onBack) { Text("‹", fontSize = 28.sp, color = Color(0xFF2B2521)) }
-                Text("LoveMe", color = coral, fontSize = 22.sp, fontWeight = FontWeight.Medium)
-            }
-            Column(
-                modifier = Modifier
-                    .padding(top = 28.dp)
-                    .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(20.dp))
-                    .padding(24.dp)
-            ) {
-                Text(LoveMeS2Copy.body, color = Color(0xFF81756E), modifier = Modifier.padding(bottom = 20.dp))
-                Text(LoveMeS2Copy.emailLabel)
-                OutlinedTextField(
-                    value = emailDraft,
-                    onValueChange = { emailDraft = it },
-                    enabled = !busy,
-                    singleLine = true,
-                    placeholder = { Text(LoveMeS2Copy.emailLabel) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                )
-                Button(
-                    onClick = { onSubmitEmail(emailDraft) },
-                    enabled = !busy,
-                    colors = ButtonDefaults.buttonColors(containerColor = coral),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .padding(top = 8.dp)
-                ) { Text(LoveMeS2Copy.cta) }
-                if (error.isNotEmpty()) {
-                    Text(error, color = Color(0xFFB64838), modifier = Modifier.padding(top = 16.dp))
+            if (!firstRun) {
+                Row {
+                    TextButton(onClick = onBack) { Text("‹", fontSize = 28.sp, color = Color(0xFF3A3338)) }
                 }
+            }
+            Text("LoveMe", color = Color(0xFF3A3338), fontSize = 44.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 24.dp, bottom = 36.dp))
+            if (!firstRun) {
+                Text(LoveMeS2Copy.body, color = Color(0xFF7A7278), modifier = Modifier.padding(bottom = 16.dp))
+            }
+            OutlinedTextField(
+                value = emailDraft,
+                onValueChange = { emailDraft = it },
+                enabled = !busy,
+                singleLine = true,
+                placeholder = { Text(LoveMeS2Copy.emailPlaceholder) },
+                leadingIcon = { Text("✉", color = Color(0xFF7A7278)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+            )
+            Button(
+                onClick = { onSubmitEmail(emailDraft) },
+                enabled = !busy,
+                colors = ButtonDefaults.buttonColors(containerColor = coral),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp)
+                    .padding(top = 12.dp)
+            ) { Text(LoveMeS2Copy.cta) }
+            if (error.isNotEmpty()) {
+                Text(error, color = Color(0xFFB64838), modifier = Modifier.padding(top = 16.dp))
             }
         }
         return

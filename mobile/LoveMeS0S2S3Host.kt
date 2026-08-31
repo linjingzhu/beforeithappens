@@ -10,7 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, PackList, PackDetail, ComingSoon, TasteResult, Invite, Account, Workspace }
+enum class LoveMeNativeScreen {
+    Splash, Signup, Sent, Bind, Notice, PackList, SampleQ, SampleResult, Unlock, Certificate, PartnerWait, ComingSoon, Invite, Account, Workspace
+}
 
 @Composable
 fun LoveMeS0S2S3Host(
@@ -23,19 +25,35 @@ fun LoveMeS0S2S3Host(
     var busy by remember { mutableStateOf(false) }
     var pairCode by remember { mutableStateOf("") }
     var comingSoonTitle by remember { mutableStateOf("가정 경영") }
+    var comingSoonQuestion by remember { mutableStateOf("") }
     var pendingGate by remember { mutableStateOf("") }
     var signedIn by remember { mutableStateOf(false) }
+    var acceptedPartner by remember { mutableStateOf(false) }
+    var partnerEmail by remember { mutableStateOf("") }
+    var isPartner by remember { mutableStateOf(false) }
+    var hearts by remember { mutableStateOf(0) }
+    var shopOpen by remember { mutableStateOf(false) }
+    var sampleIndex by remember { mutableStateOf(0) }
+    var sampleChoice by remember { mutableStateOf("") }
+    var sampleReason by remember { mutableStateOf("") }
+    var sampleMine by remember { mutableStateOf("") }
+    var samplePartner by remember { mutableStateOf("") }
+    var samplePackLabel by remember { mutableStateOf("결혼") }
+    var sameCount by remember { mutableStateOf(0) }
+    var closeCount by remember { mutableStateOf(0) }
+    var talkCount by remember { mutableStateOf(0) }
     val scope = rememberCoroutineScope()
 
     fun resumePending(gate: String = pendingGate) {
         pendingGate = ""
         signedIn = true
-        when (gate) {
+        screen = when (gate) {
             "invite", "connect" -> {
-                screen = LoveMeNativeScreen.Invite
+                pairCode = "VIRT UAL1"
+                LoveMeNativeScreen.Invite
             }
-            "account" -> screen = LoveMeNativeScreen.Account
-            else -> screen = LoveMeNativeScreen.PackList
+            "account" -> LoveMeNativeScreen.Account
+            else -> LoveMeNativeScreen.PackList
         }
     }
 
@@ -49,11 +67,51 @@ fun LoveMeS0S2S3Host(
     }
 
     fun cancelLogin() {
-        val returnToDetail = pendingGate == "invite" || pendingGate == "connect"
-        pendingGate = ""
+        pendingGate = "home"
         error = ""
         busy = false
-        screen = if (returnToDetail) LoveMeNativeScreen.PackDetail else LoveMeNativeScreen.PackList
+        screen = LoveMeNativeScreen.Signup
+    }
+
+    fun startSample() {
+        sampleChoice = ""
+        sampleReason = ""
+        screen = LoveMeNativeScreen.SampleQ
+    }
+
+    fun recordPair(myIndex: Int, partnerIndex: Int) {
+        when {
+            myIndex < 0 || partnerIndex < 0 -> talkCount += 1
+            myIndex == partnerIndex -> sameCount += 1
+            kotlin.math.abs(myIndex - partnerIndex) == 1 -> closeCount += 1
+            else -> talkCount += 1
+        }
+    }
+
+    fun submitSample() {
+        if (sampleChoice.isEmpty() || sampleReason.trim().isEmpty()) return
+        val myIndex = sampleChoice.toIntOrNull() ?: -1
+        val partnerIndex = if (myIndex == 0) 1 else 0
+        recordPair(myIndex, partnerIndex)
+        if (sampleIndex >= 2) {
+            val choices = LoveMeInvitePackCopy.sampleChoices
+            sampleMine = choices.getOrNull(myIndex) ?: choices.first()
+            samplePartner = choices.getOrNull(partnerIndex) ?: choices.first()
+            screen = LoveMeNativeScreen.SampleResult
+            return
+        }
+        sampleIndex += 1
+        startSample()
+    }
+
+    fun tapUnlock() {
+        if (hearts < 10) {
+            shopOpen = true
+        } else {
+            hearts -= 10
+            shopOpen = false
+            screen = LoveMeNativeScreen.Certificate
+        }
     }
 
     when (screen) {
@@ -72,37 +130,87 @@ fun LoveMeS0S2S3Host(
                     signedIn = screen != LoveMeNativeScreen.Bind
                 } else {
                     signedIn = false
-                    screen = LoveMeNativeScreen.PackList
+                    screen = LoveMeNativeScreen.Signup
+                    pendingGate = "home"
                 }
             }
         }
         LoveMeNativeScreen.PackList -> LoveMePackListScreen(
-            onOpenMarriage = { screen = LoveMeNativeScreen.PackDetail },
+            hearts = hearts,
+            showHearts = !isPartner,
+            onOpenMarriage = {
+                sampleIndex = 0
+                samplePackLabel = "결혼"
+                sameCount = 0
+                closeCount = 0
+                talkCount = 0
+                startSample()
+            },
             onOpenComingSoon = { id ->
-                comingSoonTitle = when (id) {
+                samplePackLabel = when (id) {
+                    "dating" -> "연애"
                     "pregnancy" -> "임신"
                     "birth" -> "출산"
                     "parenting" -> "육아"
                     else -> "가정 경영"
                 }
-                screen = LoveMeNativeScreen.ComingSoon
+                sameCount = 0
+                closeCount = 0
+                talkCount = 0
+                sampleMine = ""
+                samplePartner = ""
+                screen = LoveMeNativeScreen.SampleResult
             },
             onOpenAccount = { requireLogin("account") }
         )
         LoveMeNativeScreen.ComingSoon -> LoveMeComingSoonScreen(
             title = comingSoonTitle,
-            onTasteResult = { screen = LoveMeNativeScreen.TasteResult },
+            question = comingSoonQuestion,
             onBackToList = { screen = LoveMeNativeScreen.PackList }
         )
-        LoveMeNativeScreen.TasteResult -> LoveMeTasteResultScreen(
-            onBackToList = { screen = LoveMeNativeScreen.PackList }
+        LoveMeNativeScreen.SampleQ ->         LoveMeSampleQuestionScreen(
+            title = LoveMeInvitePackCopy.sampleTitles.getOrElse(sampleIndex) { LoveMeInvitePackCopy.sampleTitles.last() },
+            choices = LoveMeInvitePackCopy.sampleChoices.mapIndexed { index, label -> index.toString() to label },
+            choiceId = sampleChoice,
+            reason = sampleReason,
+            progressLabel = "$samplePackLabel ${sampleIndex + 1}/3",
+            onChoose = { sampleChoice = it },
+            onReason = { sampleReason = it },
+            onSubmit = { submitSample() },
+            onBack = { screen = LoveMeNativeScreen.PackList }
         )
-        LoveMeNativeScreen.PackDetail -> LoveMePackDetailScreen(
-            onBack = { screen = LoveMeNativeScreen.PackList },
-            onSendLink = { requireLogin("invite") }
+        LoveMeNativeScreen.SampleResult -> LoveMeSampleResultScreen(
+            question = LoveMeInvitePackCopy.sampleTitles.last(),
+            mine = sampleMine,
+            partner = samplePartner,
+            onTogether = {
+                acceptedPartner = true
+                screen = if (isPartner) LoveMeNativeScreen.PartnerWait else LoveMeNativeScreen.Unlock
+            }
         )
+        LoveMeNativeScreen.Unlock -> LoveMeUnlockScreen(
+            hearts = hearts,
+            shopOpen = shopOpen,
+            onUnlock = { tapUnlock() },
+            onBuy = {
+                hearts += 12
+                shopOpen = false
+            },
+            onLater = { shopOpen = false }
+        )
+        LoveMeNativeScreen.Certificate -> LoveMeCertificateScreen(
+            packLabel = samplePackLabel,
+            sameCount = sameCount,
+            closeCount = closeCount,
+            talkCount = talkCount,
+            onHome = { screen = LoveMeNativeScreen.PackList }
+        )
+        LoveMeNativeScreen.PartnerWait -> LoveMePartnerWaitScreen()
         LoveMeNativeScreen.Account -> LoveMeAccountScreen(
             email = email,
+            partnerEmail = partnerEmail,
+            acceptedPartner = acceptedPartner,
+            guest = !signedIn,
             onBack = { screen = LoveMeNativeScreen.PackList },
             onLogout = {
                 scope.launch {
@@ -110,34 +218,33 @@ fun LoveMeS0S2S3Host(
                     email = ""
                     pairCode = ""
                     signedIn = false
-                    pendingGate = ""
-                    screen = LoveMeNativeScreen.PackList
+                    acceptedPartner = false
+                    hearts = 0
+                    pendingGate = "home"
+                    screen = LoveMeNativeScreen.Signup
                 }
-            }
+            },
+            onLogin = { requireLogin("account") },
+            onInvite = { requireLogin("invite") }
         )
         LoveMeNativeScreen.Invite -> LoveMeInviteScreen(
             pairCodeDisplay = pairCode,
-            onBack = { screen = LoveMeNativeScreen.PackDetail },
-            onConnect = { _ -> requireLogin("connect") }
+            onBack = { screen = LoveMeNativeScreen.Account },
+            onConnect = { _ ->
+                acceptedPartner = true
+                partnerEmail = "partner@email.com"
+                screen = LoveMeNativeScreen.Account
+            }
         )
         LoveMeNativeScreen.Signup -> S2SignupScreen(
             phase = S2SignupPhase.Signup,
             email = email,
             error = error,
             busy = busy,
+            firstRun = pendingGate == "home" || pendingGate.isEmpty(),
             onSubmitEmail = { value ->
                 email = value
-                busy = true
-                error = ""
-                scope.launch {
-                    val result = withContext(Dispatchers.IO) { client.requestMagicLink(value) }
-                    val status = result["status"] as? Int ?: 500
-                    if (status == 200) screen = LoveMeNativeScreen.Sent
-                    else error = if ((result["body"] as? String)?.contains("invalid-email") == true)
-                        "이메일 주소를 다시 확인해 주세요."
-                    else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
-                    busy = false
-                }
+                resumePending(if (pendingGate.isEmpty()) "home" else pendingGate)
             },
             onBack = { cancelLogin() }
         )
@@ -153,17 +260,7 @@ fun LoveMeS0S2S3Host(
             busy = busy,
             onBindEmail = { value ->
                 email = value
-                busy = true
-                error = ""
-                scope.launch {
-                    val result = withContext(Dispatchers.IO) { client.requestEmailBind(value) }
-                    val status = result["status"] as? Int ?: 500
-                    if (status == 200) screen = LoveMeNativeScreen.Sent
-                    else error = if ((result["body"] as? String)?.contains("invalid-email") == true)
-                        "이메일 주소를 다시 확인해 주세요."
-                    else "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
-                    busy = false
-                }
+                resumePending()
             }
         )
         LoveMeNativeScreen.Notice -> S2SignupScreen(
@@ -172,14 +269,9 @@ fun LoveMeS0S2S3Host(
             error = error,
             busy = busy,
             onAcknowledgeNotice = {
-                busy = true
-                error = ""
                 scope.launch {
-                    val result = withContext(Dispatchers.IO) { client.acknowledgeNotice() }
-                    val status = result["status"] as? Int ?: 500
-                    if (status == 200) resumePending()
-                    else error = "로그인 링크를 보내지 못했어요. 잠시 후 다시 시도해 주세요."
-                    busy = false
+                    withContext(Dispatchers.IO) { client.acknowledgeNotice() }
+                    resumePending()
                 }
             }
         )

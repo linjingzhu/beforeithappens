@@ -1,23 +1,70 @@
 import SwiftUI
+import UserNotifications
+
+enum LoveMeFont {
+    static func title(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+        .custom(weight == .regular ? "MaruBuri-Regular" : "MaruBuri-SemiBold", size: size)
+    }
+    static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        .custom(weight == .regular ? "Pretendard-Regular" : "Pretendard-SemiBold", size: size)
+    }
+}
+
+enum LoveMeTheme {
+    static let babyPink = Color(red: 0.965, green: 0.784, blue: 0.847)
+    static let skyBlue = Color(red: 0.718, green: 0.851, blue: 0.941)
+    static let charcoal = Color(red: 0.227, green: 0.200, blue: 0.220)
+    static let muted = Color(red: 0.478, green: 0.447, blue: 0.471)
+    static var screenGradient: LinearGradient {
+        LinearGradient(colors: [babyPink, skyBlue], startPoint: .top, endPoint: .bottom)
+    }
+    static var buttonGradient: LinearGradient {
+        LinearGradient(colors: [babyPink, skyBlue], startPoint: .leading, endPoint: .trailing)
+    }
+}
 
 enum LoveMeInvitePackCopy {
     static let packTitle = "질문집"
-    static let packSubtitle = "결혼만 지금 열려 있어요."
     static let packSoon = "곧 열려요"
     static let account = "계정"
-    static let packDetailTitle = "결혼"
-    static let packDetailSub = "두 사람의 결혼 준비, 한곳에."
-    static let samplesTitle = "예시 질문"
-    static let samples = [
+    static let login = "로그인"
+    static let inviteCta = "연인을 초대하세요"
+    static let logout = "로그아웃"
+    static let rows: [(id: String, label: String, open: Bool, mark: String)] = [
+        ("dating", "연애", false, "♡"),
+        ("marriage", "결혼", true, "○"),
+        ("home-mgmt", "가정 경영", false, "⌂"),
+        ("pregnancy", "임신", false, "+"),
+        ("birth", "출산", false, "✦"),
+        ("parenting", "육아", false, "✶")
+    ]
+    static let homeMgmtQuestion = "가사와 시간은 어떻게 나누고 싶나요?"
+    static let sampleTitles = [
         "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?",
         "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?",
         "우리에게 집은 어떤 의미에 가장 가까울까요?"
     ]
-    static let caption1 = "여기서 답하지 않아요."
-    static let caption2 = "파트너가 연결된 다음 질문이 열려요."
-    static let packDetailCta = "링크 보내기"
-    static let email = "이메일"
-    static let logout = "로그아웃"
+    static let backToList = "목록으로"
+    static let reason = "왜 그 선택인지 한 줄로 적어주세요."
+    static let next = "다음"
+    static let example = "예시입니다"
+    static let together = "함께 풀어보기"
+    static let aligned = "같음"
+    static let close = "가까움"
+    static let discuss = "이야기해요"
+    static let unlockTitle = "두 사람 답을 비교했어요."
+    static let unlockBody = "나머지 문항을 이어서 열 수 있어요."
+    static let unlockCta = "열기"
+    static let needHearts = "♡ 하트 10이 필요해요."
+    static let shopTitle = "상점"
+    static let shopCta = "29,000원에 하트 12"
+    static let later = "나중에"
+    static let partnerWait = "상대가 열면 이어집니다."
+    static let certificateBody = "두 사람이 이 질문집을 마쳤어요"
+    static let homeCta = "홈으로"
+    static let debugDone = "수료"
+    static let stampHeart = "♡"
+    static let debug = "[debug]"
     static let inviteHeadline = "링크 보내기"
     static let inviteSub = "초대를 보내면 상대도 같은 팩을 받아요."
     static let copyLink = "링크 복사"
@@ -29,24 +76,6 @@ enum LoveMeInvitePackCopy {
     static let partnerCard = "상대 코드를 알고 있다면"
     static let partnerPlaceholder = "상대 코드 입력"
     static let connect = "연결하기"
-    static let soonBadge = "곧 열려요"
-    static let soonEyebrow = "LoveMe coming-soon pack"
-    static let experience = "임시 체험"
-    static let sampleQuestion = "가사와 시간은 어떻게 나누고 싶나요?"
-    static let sampleCaption = "예시입니다. 여기서 답하거나 팔지 않아요."
-    static let tasteCta = "결과 맛보기"
-    static let backToList = "목록으로"
-    static let tasteResultTitle = "결과 맛보기"
-    static let tasteLabel = "가까움"
-    static let tasteAligned = "같음"
-    static let tasteClose = "가까움"
-    static let tasteDiscuss = "이야기해요"
-    static let tasteMe = "나"
-    static let tastePartner = "상대"
-    static let tasteMeAnswer = "평일은 반반, 주말은 그때 그때요."
-    static let tastePartnerAnswer = "한 사람이 메인으로 하고 나머지는 나눠요."
-    static let tasteCaption = "진짜 비교는 열린 팩에서 둘이 낸 다음입니다."
-    static let tasteExample = "예시입니다."
 }
 
 extension View {
@@ -57,107 +86,82 @@ extension View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
                 .padding(.top, proxy.safeAreaInsets.top)
                 .padding(.bottom, proxy.safeAreaInsets.bottom)
-                .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+                .background(LoveMeTheme.screenGradient)
         }
         .ignoresSafeArea()
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea())
+        .background(LoveMeTheme.screenGradient.ignoresSafeArea())
+    }
+}
+
+struct LoveMeDebugLine: View {
+    var extra: String = ""
+    var body: some View {
+        Text(extra.isEmpty ? LoveMeInvitePackCopy.debug : "\(LoveMeInvitePackCopy.debug) \(extra)")
+            .font(.caption)
+            .foregroundStyle(LoveMeTheme.muted)
+    }
+}
+
+struct LoveMeHeartsChip: View {
+    var balance: Int
+    var body: some View {
+        Text("♡ \(balance)")
+            .foregroundStyle(LoveMeTheme.charcoal)
+            .fontWeight(.semibold)
+    }
+}
+
+struct LoveMeGradientButton: View {
+    var title: String
+    var action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(LoveMeFont.body(16, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 52)
+                .background(LoveMeTheme.buttonGradient)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
     }
 }
 
 struct LoveMePackListScreen: View {
+    var hearts: Int = 0
+    var showHearts: Bool = true
     var onOpenMarriage: () -> Void = {}
     var onOpenComingSoon: (String) -> Void = { _ in }
     var onOpenAccount: () -> Void = {}
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("LoveMe")
-                    .font(.system(size: 22, weight: .medium, design: .serif))
-                Spacer()
-                Button(LoveMeInvitePackCopy.account, action: onOpenAccount)
-                    .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            if showHearts { LoveMeHeartsChip(balance: hearts).frame(maxWidth: .infinity) }
             Text(LoveMeInvitePackCopy.packTitle)
-                .font(.largeTitle.weight(.semibold))
-            Text(LoveMeInvitePackCopy.packSubtitle)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Button(action: onOpenMarriage) {
-                HStack {
-                    Text("결혼")
-                    Spacer()
-                    Text("›")
-                }
-                .padding(.horizontal, 18)
-                .frame(minHeight: 56)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-            .buttonStyle(.plain)
-            ForEach([("home-mgmt", "가정 경영"), ("pregnancy", "임신"), ("birth", "출산"), ("parenting", "육아")], id: \.0) { pack in
-                Button(action: { onOpenComingSoon(pack.0) }) {
+                .font(LoveMeFont.title(34))
+                .foregroundStyle(LoveMeTheme.charcoal)
+                .padding(.vertical, 16)
+            ForEach(LoveMeInvitePackCopy.rows, id: \.id) { row in
+                Button(action: { row.open ? onOpenMarriage() : onOpenComingSoon(row.id) }) {
                     HStack {
-                        Text(pack.1)
+                        Text(row.mark)
+                        Text(row.label).font(LoveMeFont.title(17))
                         Spacer()
-                        Text(LoveMeInvitePackCopy.packSoon)
-                            .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                        Text(row.open ? "›" : LoveMeInvitePackCopy.packSoon)
+                            .font(LoveMeFont.body(14))
+                            .foregroundStyle(LoveMeTheme.muted)
                     }
-                    .padding(.horizontal, 18)
-                    .frame(minHeight: 56)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .foregroundStyle(LoveMeTheme.charcoal)
+                    .padding(.vertical, 16)
                 }
                 .buttonStyle(.plain)
+                Divider()
             }
             Spacer()
-        }
-        .loveMeSafeChrome()
-    }
-}
-
-struct LoveMePackDetailScreen: View {
-    var onBack: () -> Void = {}
-    var onSendLink: () -> Void = {}
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button("‹", action: onBack)
-                .font(.title)
-                .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-            Text(LoveMeInvitePackCopy.packDetailTitle)
-                .font(.system(size: 40, weight: .medium, design: .serif))
-            Text(LoveMeInvitePackCopy.packDetailSub)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Text(LoveMeInvitePackCopy.samplesTitle)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                .padding(.top, 12)
-            ForEach(Array(LoveMeInvitePackCopy.samples.enumerated()), id: \.offset) { index, sample in
-                HStack(alignment: .center, spacing: 14) {
-                    Text("\(index + 1)")
-                        .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                    Text(sample)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "lock")
-                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(LoveMeInvitePackCopy.caption1)
-                    Text(LoveMeInvitePackCopy.caption2)
-                }
-                .font(.footnote)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            }
-            .padding(.top, 6)
-            Spacer()
-            Button(action: onSendLink) {
-                Label(LoveMeInvitePackCopy.packDetailCta, systemImage: "link")
-            }
-            .buttonStyle(LoveMePrimaryButtonStyle())
+            Button(LoveMeInvitePackCopy.account, action: onOpenAccount)
+                .foregroundStyle(LoveMeTheme.charcoal)
+                .frame(maxWidth: .infinity)
+            LoveMeDebugLine()
         }
         .loveMeSafeChrome()
     }
@@ -165,38 +169,210 @@ struct LoveMePackDetailScreen: View {
 
 struct LoveMeAccountScreen: View {
     var email: String = ""
+    var partnerEmail: String = ""
+    var acceptedPartner: Bool = false
+    var guest: Bool = false
     var onBack: () -> Void = {}
     var onLogout: () -> Void = {}
+    var onLogin: () -> Void = {}
+    var onInvite: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 16) {
-            ZStack {
-                Text(LoveMeInvitePackCopy.account)
-                    .font(.title2.weight(.bold))
-                HStack {
-                    Button("‹", action: onBack)
-                        .font(.title)
-                        .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-                    Spacer()
+            if guest {
+                Text(LoveMeInvitePackCopy.account).font(.title2.weight(.bold))
+                LoveMeGradientButton(title: LoveMeInvitePackCopy.login, action: onLogin)
+            } else {
+                ZStack {
+                    Text(LoveMeInvitePackCopy.account).font(.title2.weight(.bold))
+                    HStack { Button("‹", action: onBack).font(.title).foregroundStyle(LoveMeTheme.charcoal); Spacer() }
                 }
-            }
-            HStack {
-                Text(LoveMeInvitePackCopy.email)
+                if acceptedPartner {
+                    Text(partnerEmail.isEmpty ? email : partnerEmail)
+                } else {
+                    Text(email)
+                    LoveMeGradientButton(title: LoveMeInvitePackCopy.inviteCta, action: onInvite)
+                }
                 Spacer()
-                Text(email)
+                Button(LoveMeInvitePackCopy.logout, action: onLogout)
+                    .foregroundStyle(LoveMeTheme.charcoal)
             }
-            .padding(.horizontal, 18)
-            .frame(minHeight: 56)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            Spacer()
-            Button(LoveMeInvitePackCopy.logout, action: onLogout)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Color(red: 0.77, green: 0.36, blue: 0.31))
-                .frame(maxWidth: .infinity, minHeight: 52)
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(red: 0.77, green: 0.36, blue: 0.31)))
+            LoveMeDebugLine()
         }
+        .foregroundStyle(LoveMeTheme.charcoal)
         .loveMeSafeChrome(24)
+    }
+}
+
+struct LoveMeComingSoonScreen: View {
+    var title: String = "가정 경영"
+    var question: String = ""
+    var onBackToList: () -> Void = {}
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(LoveMeInvitePackCopy.packSoon).foregroundStyle(LoveMeTheme.muted)
+            Text(title).font(.largeTitle.weight(.bold))
+            if !question.isEmpty { Text(question).multilineTextAlignment(.center) }
+            Spacer()
+            Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
+            LoveMeDebugLine()
+        }
+        .foregroundStyle(LoveMeTheme.charcoal)
+        .loveMeSafeChrome()
+    }
+}
+
+struct LoveMeSampleQuestionScreen: View {
+    var title: String
+    var choices: [(id: String, label: String)]
+    var choiceId: String
+    var reason: String
+    var progressLabel: String = "결혼 1/3"
+    var onChoose: (String) -> Void
+    var onReason: (String) -> Void
+    var onSubmit: () -> Void
+    var onBack: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Button("‹", action: onBack).font(LoveMeFont.body(28)).foregroundStyle(LoveMeTheme.charcoal)
+                Text(progressLabel).font(LoveMeFont.body(15))
+                Spacer()
+            }
+            Text(title).font(LoveMeFont.title(22))
+            ForEach(choices, id: \.id) { choice in
+                Button(action: { onChoose(choice.id) }) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Text(choiceId == choice.id ? "●" : "○")
+                            .font(LoveMeFont.body(16))
+                            .foregroundStyle(LoveMeTheme.muted)
+                        Text(choice.label)
+                            .font(LoveMeFont.body(15))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding()
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(choiceId == choice.id ? LoveMeTheme.charcoal : .clear, lineWidth: 1.5))
+                }
+                .buttonStyle(.plain)
+            }
+            HStack(spacing: 8) {
+                Text("♡").foregroundStyle(LoveMeTheme.babyPink)
+                Text(LoveMeInvitePackCopy.reason).font(LoveMeFont.body(14)).foregroundStyle(LoveMeTheme.muted)
+            }
+            TextField(LoveMeInvitePackCopy.reason, text: Binding(get: { reason }, set: onReason))
+                .font(LoveMeFont.body(16))
+                .textFieldStyle(.roundedBorder)
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.next, action: onSubmit)
+            LoveMeDebugLine()
+        }
+        .foregroundStyle(LoveMeTheme.charcoal)
+        .loveMeSafeChrome()
+    }
+}
+
+struct LoveMeSampleResultScreen: View {
+    var question: String
+    var mine: String
+    var partner: String
+    var onTogether: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(LoveMeInvitePackCopy.example).foregroundStyle(LoveMeTheme.muted)
+            HStack {
+                Text(LoveMeInvitePackCopy.aligned)
+                Text(LoveMeInvitePackCopy.close)
+                Text(LoveMeInvitePackCopy.discuss)
+            }
+            Text(question).multilineTextAlignment(.center)
+            VStack(alignment: .leading) { Text("나"); Text(mine) }.frame(maxWidth: .infinity, alignment: .leading).padding().background(.white.opacity(0.72)).clipShape(RoundedRectangle(cornerRadius: 16))
+            VStack(alignment: .leading) { Text("상대"); Text(partner) }.frame(maxWidth: .infinity, alignment: .leading).padding().background(.white.opacity(0.72)).clipShape(RoundedRectangle(cornerRadius: 16))
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.together, action: onTogether)
+            LoveMeDebugLine()
+        }
+        .foregroundStyle(LoveMeTheme.charcoal)
+        .loveMeSafeChrome()
+    }
+}
+
+struct LoveMeUnlockScreen: View {
+    var hearts: Int = 0
+    var shopOpen: Bool = false
+    var onUnlock: () -> Void = {}
+    var onBuy: () -> Void = {}
+    var onLater: () -> Void = {}
+
+    var body: some View {
+        VStack(spacing: 14) {
+            LoveMeHeartsChip(balance: hearts)
+            Text(LoveMeInvitePackCopy.unlockTitle).font(.title.weight(.bold)).multilineTextAlignment(.center)
+            Text(LoveMeInvitePackCopy.unlockBody).multilineTextAlignment(.center)
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.unlockCta, action: onUnlock)
+            if hearts < 10 { Text(LoveMeInvitePackCopy.needHearts).foregroundStyle(LoveMeTheme.muted) }
+            if shopOpen {
+                VStack(spacing: 12) {
+                    LoveMeHeartsChip(balance: hearts)
+                    Text(LoveMeInvitePackCopy.shopTitle).font(.title.weight(.bold))
+                    LoveMeGradientButton(title: LoveMeInvitePackCopy.shopCta, action: onBuy)
+                    Button(LoveMeInvitePackCopy.later, action: onLater)
+                }
+                .padding()
+                .background(.white.opacity(0.72))
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+            }
+            LoveMeDebugLine()
+        }
+        .foregroundStyle(LoveMeTheme.charcoal)
+        .loveMeSafeChrome()
+    }
+}
+
+struct LoveMePartnerWaitScreen: View {
+    var body: some View {
+        VStack {
+            Spacer()
+            Text(LoveMeInvitePackCopy.partnerWait)
+                .font(.title3.weight(.medium))
+                .foregroundStyle(LoveMeTheme.charcoal)
+            Spacer()
+            LoveMeDebugLine()
+        }
+        .loveMeSafeChrome()
+    }
+}
+
+struct LoveMeCertificateScreen: View {
+    var packLabel: String = "결혼"
+    var sameCount: Int = 0
+    var closeCount: Int = 0
+    var talkCount: Int = 0
+    var onHome: () -> Void = {}
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            Text(LoveMeInvitePackCopy.stampHeart)
+                .font(.system(size: 64))
+            Text(packLabel)
+                .font(LoveMeFont.title(28))
+            Text(LoveMeInvitePackCopy.certificateBody)
+                .font(LoveMeFont.body(16))
+                .multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                Text("\(LoveMeInvitePackCopy.aligned) \(sameCount)")
+                Text("\(LoveMeInvitePackCopy.close) \(closeCount)")
+                Text("\(LoveMeInvitePackCopy.discuss) \(talkCount)")
+            }
+            .font(LoveMeFont.body(13, weight: .semibold))
+            Spacer()
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.homeCta, action: onHome)
+            LoveMeDebugLine(extra: LoveMeInvitePackCopy.debugDone)
+        }
+        .foregroundStyle(LoveMeTheme.charcoal)
+        .loveMeSafeChrome()
     }
 }
 
@@ -211,164 +387,25 @@ struct LoveMeInviteScreen: View {
     @State private var partnerCode = ""
 
     var body: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                Text(LoveMeInvitePackCopy.inviteHeadline)
-                    .font(.title2.weight(.bold))
-                HStack {
-                    Button("‹", action: onBack)
-                        .font(.title)
-                        .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-                    Spacer()
-                }
-            }
-            Text(LoveMeInvitePackCopy.inviteSub)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                .multilineTextAlignment(.center)
-            VStack(spacing: 10) {
-                Button(LoveMeInvitePackCopy.copyLink, action: onCopyLink)
-                Button(LoveMeInvitePackCopy.instagram, action: onShareInstagram)
-                Button(LoveMeInvitePackCopy.kakao, action: onShareKakao)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity)
-            .background(Color(red: 0.95, green: 0.92, blue: 0.89))
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            VStack(alignment: .leading, spacing: 10) {
-                Text(LoveMeInvitePackCopy.appCode)
-                    .font(.caption)
-                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                HStack {
-                    Text(LoveMeInvitePackCopy.myCode)
-                    Text(pairCodeDisplay)
-                        .font(.body.weight(.semibold))
-                    Spacer()
-                    Button(LoveMeInvitePackCopy.copyCode, action: onCopyCode)
-                }
-                Text(LoveMeInvitePackCopy.partnerCard)
-                    .font(.caption)
-                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                HStack {
-                    TextField(LoveMeInvitePackCopy.partnerPlaceholder, text: $partnerCode)
-                        .textInputAutocapitalization(.characters)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 48)
-                        .background(Color.white)
-                    Button(LoveMeInvitePackCopy.connect) { onConnect(partnerCode) }
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(red: 0.95, green: 0.92, blue: 0.89))
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            Spacer()
+        VStack(spacing: 12) {
+            HStack { Button("‹", action: onBack).font(.title); Text(LoveMeInvitePackCopy.inviteHeadline).font(.title2.weight(.bold)); Spacer() }
+            Text(LoveMeInvitePackCopy.inviteSub).foregroundStyle(LoveMeTheme.muted)
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.copyLink, action: onCopyLink)
+            Button(LoveMeInvitePackCopy.instagram, action: onShareInstagram)
+            Button(LoveMeInvitePackCopy.kakao, action: onShareKakao)
+            Text(LoveMeInvitePackCopy.myCode)
+            Text(pairCodeDisplay)
+            Button(LoveMeInvitePackCopy.copyCode, action: onCopyCode)
+            TextField(LoveMeInvitePackCopy.partnerPlaceholder, text: $partnerCode)
+                .textFieldStyle(.roundedBorder)
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.connect, action: { onConnect(partnerCode) })
+            LoveMeDebugLine()
         }
+        .foregroundStyle(LoveMeTheme.charcoal)
         .loveMeSafeChrome(24)
     }
 }
 
-struct LoveMeComingSoonScreen: View {
-    var title: String = "가정 경영"
-    var onTasteResult: () -> Void = {}
-    var onBackToList: () -> Void = {}
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Text(LoveMeInvitePackCopy.soonBadge)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color(red: 0.77, green: 0.36, blue: 0.31))
-                .clipShape(Capsule())
-            Text(LoveMeInvitePackCopy.soonEyebrow)
-                .font(.footnote)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Text(title)
-                .font(.system(size: 36, weight: .semibold, design: .serif))
-            Text("⌂♡")
-                .font(.title)
-                .padding(.vertical, 8)
-            VStack(alignment: .leading, spacing: 12) {
-                Text(LoveMeInvitePackCopy.experience)
-                    .font(.subheadline.weight(.bold))
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Q")
-                        .font(.caption.weight(.bold))
-                    Text(LoveMeInvitePackCopy.sampleQuestion)
-                    Text(LoveMeInvitePackCopy.sampleCaption)
-                        .font(.footnote)
-                        .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                }
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(red: 0.96, green: 0.92, blue: 0.89))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            Spacer()
-            Button(LoveMeInvitePackCopy.tasteCta, action: onTasteResult)
-                .buttonStyle(LoveMePrimaryButtonStyle())
-            Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
-                .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-        }
-        .loveMeSafeChrome(alignment: .center)
-    }
-}
-
-struct LoveMeTasteResultScreen: View {
-    var onBackToList: () -> Void = {}
-
-    var body: some View {
-        VStack(spacing: 12) {
-            Text(LoveMeInvitePackCopy.tasteResultTitle)
-                .font(.system(size: 32, weight: .bold))
-            HStack(spacing: 8) {
-                ForEach([LoveMeInvitePackCopy.tasteAligned, LoveMeInvitePackCopy.tasteClose, LoveMeInvitePackCopy.tasteDiscuss], id: \.self) { label in
-                    Text(label)
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(label == LoveMeInvitePackCopy.tasteLabel ? Color(red: 0.96, green: 0.92, blue: 0.89) : Color(red: 0.97, green: 0.95, blue: 0.93))
-                        .foregroundStyle(label == LoveMeInvitePackCopy.tasteLabel ? Color(red: 0.17, green: 0.15, blue: 0.13) : Color(red: 0.51, green: 0.46, blue: 0.43))
-                        .clipShape(Capsule())
-                }
-            }
-            Text(LoveMeInvitePackCopy.sampleQuestion)
-                .multilineTextAlignment(.center)
-                .padding(.top, 6)
-            VStack(alignment: .leading, spacing: 8) {
-                Text(LoveMeInvitePackCopy.tasteMe)
-                    .font(.caption.weight(.bold))
-                Text(LoveMeInvitePackCopy.tasteMeAnswer)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(red: 0.96, green: 0.92, blue: 0.89))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            VStack(alignment: .leading, spacing: 8) {
-                Text(LoveMeInvitePackCopy.tastePartner)
-                    .font(.caption.weight(.bold))
-                Text(LoveMeInvitePackCopy.tastePartnerAnswer)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(red: 0.96, green: 0.92, blue: 0.89))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            Text(LoveMeInvitePackCopy.tasteCaption)
-                .font(.footnote)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                .padding(.top, 8)
-            Text(LoveMeInvitePackCopy.tasteExample)
-                .font(.footnote)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Spacer()
-            Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
-                .buttonStyle(LoveMePrimaryButtonStyle())
-        }
-        .loveMeSafeChrome(alignment: .center)
-    }
+func loveMeComingSoonQuestion(id: String) -> String {
+    id == "home-mgmt" ? LoveMeInvitePackCopy.homeMgmtQuestion : ""
 }

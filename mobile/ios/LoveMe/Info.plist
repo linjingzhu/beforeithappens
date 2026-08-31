@@ -71,6 +71,13 @@
     </array>
     <key>UIUserInterfaceStyle</key>
     <string>Light</string>
+    <key>UIAppFonts</key>
+    <array>
+      <string>MaruBuri-Regular.ttf</string>
+      <string>MaruBuri-SemiBold.ttf</string>
+      <string>Pretendard-Regular.otf</string>
+      <string>Pretendard-SemiBold.otf</string>
+    </array>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
   </dict>

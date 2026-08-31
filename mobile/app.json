@@ -8,40 +8,52 @@
     "icon": "./assets/icon.png",
     "scheme": "loveme",
     "userInterfaceStyle": "light",
-    "primaryColor": "#f8f3ed",
+    "primaryColor": "#F6C8D8",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.beforeithappens.loveme",
       "splash": {
-        "backgroundColor": "#f8f3ed",
-        "resizeMode": "contain"
+        "backgroundColor": "#F6C8D8",
+        "resizeMode": "cover"
       }
     },
     "android": {
       "package": "com.beforeithappens.loveme",
       "adaptiveIcon": {
-        "backgroundColor": "#f8f3ed",
+        "backgroundColor": "#F6C8D8",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "splash": {
-        "backgroundColor": "#f8f3ed",
-        "resizeMode": "contain"
+        "backgroundColor": "#F6C8D8",
+        "resizeMode": "cover"
       }
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "backgroundColor": "#f8f3ed",
+      "backgroundColor": "#F6C8D8",
       "bundler": "metro"
     },
     "plugins": [
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#f8f3ed",
+          "backgroundColor": "#F6C8D8",
           "image": "./assets/splash-icon.png",
-          "resizeMode": "contain"
+          "resizeMode": "cover"
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/MaruBuri-Regular.ttf",
+            "./assets/fonts/MaruBuri-SemiBold.ttf",
+            "./assets/fonts/Pretendard-Regular.otf",
+            "./assets/fonts/Pretendard-SemiBold.otf"
+          ]
         }
       ]
     ],

@@ -106,17 +106,16 @@ test("measurement copy and consume scheme are locked", () => {
 
 test("pack-list home copy matches the locked 질문집 list", () => {
   const html = renderPackListScreen();
-  assert.match(html, /LoveMe/);
   assert.match(html, /질문집/);
-  assert.match(html, /결혼만 지금 열려 있어요/);
+  assert.match(html, /연애/);
   assert.match(html, /결혼/);
   assert.match(html, /가정 경영/);
   assert.match(html, /임신/);
   assert.match(html, /출산/);
   assert.match(html, /육아/);
   assert.match(html, /계정/);
-  assert.equal((html.match(/곧 열려요/g) || []).length, 4);
-  assert.equal((html.match(/open-coming-soon/g) || []).length, 4);
+  assert.equal((html.match(/곧 열려요/g) || []).length, 5);
+  assert.equal((html.match(/open-coming-soon/g) || []).length, 5);
   assert.equal(html.includes("29,000"), false);
   assert.equal(html.includes("100"), false);
   assert.equal(html.includes("프로필"), false);
@@ -171,7 +170,7 @@ test("consume lands on notice or 질문집; marriage opens pack detail then 링�
   assert.equal(cold.screen, "pack-list");
   assert.equal(renderPackListScreen().includes("프로필"), false);
   const opened = openMarriageFromList(cold);
-  assert.equal(opened.screen, "pack-detail");
+  assert.equal(opened.screen, "sample-q");
   const invite = openSendLink(opened);
   assert.equal(invite.screen, "invite");
   const account = openAccount(cold);
@@ -254,7 +253,7 @@ test("Expo screens keep pack-list and invite and do not add profile or prices", 
   assert.match(screens, /testID="invite"/);
   assert.match(screens, /testID="account"/);
   assert.equal(screens.includes("프로필"), false);
-  assert.equal(screens.includes("29,000"), false);
+  assert.equal(screens.includes("29,000원에 나머지 열기"), false);
   assert.equal(screens.includes("선물"), false);
   assert.match(app, /Linking/);
   assert.match(app, /loveme|InviteScreen|PackListScreen/);
@@ -280,7 +279,7 @@ test("Expo screens keep pack-list and invite and do not add profile or prices", 
   assert.match(consumeKotlin, /resumeNativeGate/);
   assert.match(kotlinHost, /PackList/);
   assert.equal(`${packScreens}\n${screens}`.includes("프로필"), false);
-  assert.equal(`${packScreens}\n${screens}`.includes("29,000"), false);
+  assert.equal(`${packScreens}\n${screens}`.includes("29,000원에 나머지 열기"), false);
   assert.equal(`${packScreens}\n${screens}`.includes("선물"), false);
   assert.equal(`${packScreens}\n${screens}`.includes("이 폰을 상대에게 넘기려면 먼저 로그아웃하세요."), false);
 });

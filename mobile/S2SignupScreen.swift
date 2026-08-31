@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 enum LoveMeS2Copy {
     static let title = "두 사람의 결혼 준비, 한곳에"
@@ -6,7 +7,8 @@ enum LoveMeS2Copy {
     static let cta = "로그인 링크 보내기"
     static let sent = "메일을 확인해 주세요. 링크는 10분 동안만 유효해요."
     static let afterLogin = "이 기기 임시 답은 이어지지 않아요."
-    static let emailLabel = "이메일"
+    static let emailLabel = "이메일 주소"
+    static let emailPlaceholder = "이메일 주소를 입력해주세요"
     static let ack = "확인"
     static let otherEmail = "다른 이메일로 요청"
     static let packDetailTitle = "결혼"
@@ -38,6 +40,7 @@ struct S2SignupScreen: View {
     var onAcknowledgeNotice: () -> Void = {}
     var onBindEmail: (String) -> Void = { _ in }
     var onBack: () -> Void = {}
+    var firstRun: Bool = true
 
     @State private var emailDraft = ""
 
@@ -50,46 +53,53 @@ struct S2SignupScreen: View {
     }
 
     private var loginGate: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Button("‹", action: onBack)
-                    .font(.title)
-                    .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-                Text("LoveMe")
-                    .font(.system(size: 22, weight: .medium, design: .serif))
-                    .foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37))
-                Spacer()
-            }
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 20) {
+            if !firstRun {
+                HStack {
+                    Button("‹", action: onBack)
+                        .font(.title)
+                        .foregroundStyle(LoveMeTheme.charcoal)
+                    Spacer()
+                }
                 Text(LoveMeS2Copy.body)
-                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                Text(LoveMeS2Copy.emailLabel)
-                    .font(.caption.weight(.bold))
-                TextField(LoveMeS2Copy.emailLabel, text: $emailDraft)
+                    .foregroundStyle(LoveMeTheme.muted)
+                    .multilineTextAlignment(.center)
+            }
+            Text("LoveMe")
+                .font(LoveMeFont.title(34))
+                .overlay {
+                    LoveMeTheme.buttonGradient.mask(
+                        Text("LoveMe").font(LoveMeFont.title(34))
+                    )
+                }
+            HStack(spacing: 10) {
+                Text("✉").foregroundStyle(LoveMeTheme.muted)
+                TextField(LoveMeS2Copy.emailPlaceholder, text: $emailDraft)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 48)
-                    .background(Color.white)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(red: 0.91, green: 0.87, blue: 0.84)))
                     .disabled(busy)
-                Button(LoveMeS2Copy.cta) { onSubmitEmail(emailDraft) }
-                    .buttonStyle(LoveMePrimaryButtonStyle())
-                    .disabled(busy)
-                if !error.isEmpty {
-                    Text(error)
-                        .foregroundStyle(Color(red: 0.71, green: 0.28, blue: 0.22))
-                        .font(.footnote.weight(.bold))
-                }
             }
-            .padding(24)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 52)
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            LoveMeGradientButton(title: LoveMeS2Copy.cta, action: { onSubmitEmail(emailDraft) })
+            if !error.isEmpty {
+                Text(error)
+                    .foregroundStyle(Color(red: 0.71, green: 0.28, blue: 0.22))
+                    .font(.footnote.weight(.bold))
+            }
             Spacer()
+            Text(LoveMeInvitePackCopy.debug)
+                .font(.caption)
+                .foregroundStyle(LoveMeTheme.muted)
         }
         .loveMeSafeChrome(24)
-        .onAppear { emailDraft = email }
+        .onAppear {
+            emailDraft = email
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        }
     }
 
     private var legacyCard: some View {
@@ -146,7 +156,7 @@ struct LoveMePrimaryButtonStyle: ButtonStyle {
             .font(.body.weight(.bold))
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 48)
-            .background(Color(red: 0.93, green: 0.47, blue: 0.37))
+            .background(LoveMeTheme.buttonGradient)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }

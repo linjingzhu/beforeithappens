@@ -22,7 +22,9 @@
       consumeOpenedLink,
       consumeSucceeded,
       createNativeFlow,
+      dismissShop,
       finishSplash,
+      backFromCertificate,
       invitePartner,
       loggedOutHome,
       noticeAcknowledged,
@@ -31,11 +33,15 @@
       openMarriageFromList,
       openSendLink,
       openTasteResult,
+      openTogetherFromSample,
+      purchaseShopHearts,
       requireLogin,
       restoreSessionAfterSplash,
       setEmail,
       requestLinkStarted,
-      submitMagicLink
+      submitMagicLink,
+      submitSampleAnswer,
+      tapUnlock
     } from "./s0-s2-s3-flow.js";
     import { createAuthApi } from "./s0-s2-s3-api.js";
 
@@ -63,8 +69,8 @@
     if (start === "workspace") {
       state = noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn);
     }
-    if (start === "pack-list") state = finishSplash(state);
-    if (start === "pack-detail") state = openMarriageFromList(finishSplash(state));
+    if (start === "pack-list") state = finishSplash(createNativeFlow(loggedIn));
+    if (start === "pack-detail") state = openMarriageFromList(finishSplash(createNativeFlow(loggedIn)));
     if (start === "account") {
       state = openAccount(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
     }
@@ -72,10 +78,9 @@
       state = openSendLink(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
       state = { ...state, pairCodeDisplay: "4K7M", inviteUrl: "https://example.test/invite/open" };
     }
-    if (start === "coming-soon" || start === "taste-result") {
+    if (start === "coming-soon") {
       const pack = params.get("pack") || "home-mgmt";
-      state = openComingSoonFromList(finishSplash(state), pack);
-      if (start === "taste-result") state = openTasteResult(state);
+      state = openComingSoonFromList(finishSplash(createNativeFlow(loggedIn)), pack);
     }
 
     const api = createAuthApi({ origin: "" });
@@ -126,6 +131,17 @@
           ? noticeAcknowledged(state, { ...state.session, notice: null })
           : await acknowledgeLoginNotice(state, api);
       }       else if (action === "open-marriage") state = openMarriageFromList(state);
+      else if (action === "submit-sample") {
+        const choice = root.querySelector("input[name='sample-choice']:checked")?.value || state.sampleChoice;
+        const reason = root.querySelector("#sample-reason")?.value || state.sampleReason;
+        state = submitSampleAnswer({ ...state, sampleChoice: choice, sampleReason: reason });
+      }
+      else if (action === "together") state = openTogetherFromSample(state);
+      else if (action === "unlock-rest") state = tapUnlock(state);
+      else if (action === "buy-hearts") state = purchaseShopHearts(state);
+      else if (action === "shop-later") state = dismissShop(state);
+      else if (action === "back-certificate") state = backFromCertificate(state);
+      else if (action === "account-login") state = openAccount(state);
       else if (action === "open-coming-soon") {
         state = openComingSoonFromList(state, event.target.closest("[data-pack]")?.dataset.pack);
       }
