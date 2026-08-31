@@ -36,9 +36,14 @@ object LoveMeInvitePackCopy {
     const val account = "계정"
     const val packDetailTitle = "결혼"
     const val packDetailSub = "두 사람의 결혼 준비, 한곳에."
-    const val packDetailLine1 = "질문은 나만 먼저 답해요."
-    const val packDetailLine2 = "비교는 둘이 낸 뒤에만 열려요."
-    const val packDetailLine3 = "파트너가 연결된 다음 질문이 열려요."
+    const val samplesTitle = "예시 질문"
+    val samples = listOf(
+        "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?",
+        "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?",
+        "우리에게 집은 어떤 의미에 가장 가까울까요?"
+    )
+    const val caption1 = "여기서 답하지 않아요."
+    const val caption2 = "파트너가 연결된 다음 질문이 열려요."
     const val packDetailCta = "링크 보내기"
     const val email = "이메일"
     const val logout = "로그아웃"
@@ -103,12 +108,24 @@ fun LoveMePackDetailScreen(onBack: () -> Unit = {}, onSendLink: () -> Unit = {})
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TextButton(onClick = onBack, modifier = Modifier.align(Alignment.Start)) { Text("‹", fontSize = 28.sp, color = Color(0xFF2B2521)) }
-        Text(LoveMeInvitePackCopy.packDetailTitle, fontSize = 40.sp, fontWeight = FontWeight.Medium)
-        Text(LoveMeInvitePackCopy.packDetailSub, color = Color(0xFF81756E), modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
-        Text("♡", color = coral, fontSize = 32.sp, modifier = Modifier.padding(24.dp))
-        Text(LoveMeInvitePackCopy.packDetailLine1, color = Color(0xFF81756E), textAlign = TextAlign.Center)
-        Text(LoveMeInvitePackCopy.packDetailLine2, color = Color(0xFF81756E), textAlign = TextAlign.Center)
-        Text(LoveMeInvitePackCopy.packDetailLine3, color = Color(0xFF81756E), textAlign = TextAlign.Center)
+        Text(LoveMeInvitePackCopy.packDetailTitle, fontSize = 40.sp, fontWeight = FontWeight.Medium, modifier = Modifier.align(Alignment.Start))
+        Text(LoveMeInvitePackCopy.packDetailSub, color = Color(0xFF81756E), modifier = Modifier.align(Alignment.Start).padding(top = 8.dp, bottom = 20.dp))
+        Text(LoveMeInvitePackCopy.samplesTitle, color = Color(0xFF81756E), modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp))
+        LoveMeInvitePackCopy.samples.forEachIndexed { index, sample ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+                    .background(Color.White, RoundedCornerShape(16.dp))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("${index + 1}", color = Color(0xFF81756E), modifier = Modifier.padding(end = 14.dp))
+                Text(sample, color = Color(0xFF2B2521))
+            }
+        }
+        Text(LoveMeInvitePackCopy.caption1, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.align(Alignment.Start).padding(top = 8.dp))
+        Text(LoveMeInvitePackCopy.caption2, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.align(Alignment.Start))
         Spacer(modifier = Modifier.weight(1f))
         Button(
             onClick = onSendLink,

@@ -158,11 +158,11 @@ export function previewAllowsOnlyFirstQuestion(questionId) {
 }
 
 export function coverHasInvite(copy = PACK_DETAIL_COPY) {
-  return /초대|invite/i.test(`${copy.title}${copy.line1}${copy.line2}${copy.line3}`);
+  return /초대|invite/i.test(`${copy.title}${copy.samplesTitle}${copy.caption}${(copy.samples || []).join("")}`);
 }
 
 export function coverHasSignup(copy = PACK_DETAIL_COPY) {
-  return /로그인 링크 보내기|이메일/.test(`${copy.title}${copy.subtitle}${copy.line1}${copy.line2}${copy.line3}`);
+  return /로그인 링크 보내기|이메일/.test(`${copy.title}${copy.subtitle}${copy.samplesTitle}${copy.caption}`);
 }
 
 export function assertLockedCoverCopy() {

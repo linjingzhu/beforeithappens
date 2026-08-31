@@ -11,6 +11,9 @@ test("locked product gates are written into the three product docs", async () =>
     assert.match(text, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
     assert.match(text, /로그인 링크 보내기/);
     assert.match(text, /파트너가 연결된 다음 질문이 열려요/);
+    assert.match(text, /여기서 답하지 않아요/);
+    assert.match(text, /예시 질문/);
+    assert.match(text, /예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요/);
     assert.match(text, /링크 보내기/);
     assert.match(text, /미리 질문 하나 보기/);
     assert.match(text, /이 답을 남기려면 로그인해 주세요/);

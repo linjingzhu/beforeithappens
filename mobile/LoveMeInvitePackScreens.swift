@@ -7,9 +7,14 @@ enum LoveMeInvitePackCopy {
     static let account = "계정"
     static let packDetailTitle = "결혼"
     static let packDetailSub = "두 사람의 결혼 준비, 한곳에."
-    static let packDetailLine1 = "질문은 나만 먼저 답해요."
-    static let packDetailLine2 = "비교는 둘이 낸 뒤에만 열려요."
-    static let packDetailLine3 = "파트너가 연결된 다음 질문이 열려요."
+    static let samplesTitle = "예시 질문"
+    static let samples = [
+        "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?",
+        "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?",
+        "우리에게 집은 어떤 의미에 가장 가까울까요?"
+    ]
+    static let caption1 = "여기서 답하지 않아요."
+    static let caption2 = "파트너가 연결된 다음 질문이 열려요."
     static let packDetailCta = "링크 보내기"
     static let email = "이메일"
     static let logout = "로그아웃"
@@ -80,33 +85,41 @@ struct LoveMePackDetailScreen: View {
     var onSendLink: () -> Void = {}
 
     var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Button("‹", action: onBack)
-                    .font(.title)
-                    .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            Button("‹", action: onBack)
+                .font(.title)
+                .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
             Text(LoveMeInvitePackCopy.packDetailTitle)
                 .font(.system(size: 40, weight: .medium, design: .serif))
             Text(LoveMeInvitePackCopy.packDetailSub)
                 .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(red: 0.97, green: 0.94, blue: 0.89))
-                .frame(width: 176, height: 176)
-                .overlay(Text("♡").font(.title).foregroundStyle(Color(red: 0.93, green: 0.47, blue: 0.37)))
-            Text(LoveMeInvitePackCopy.packDetailLine1)
+            Text(LoveMeInvitePackCopy.samplesTitle)
                 .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Text(LoveMeInvitePackCopy.packDetailLine2)
+                .padding(.top, 12)
+            ForEach(Array(LoveMeInvitePackCopy.samples.enumerated()), id: \.offset) { index, sample in
+                HStack(alignment: .center, spacing: 14) {
+                    Text("\(index + 1)")
+                        .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                    Text(sample)
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+            Text(LoveMeInvitePackCopy.caption1)
+                .font(.footnote)
                 .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-            Text(LoveMeInvitePackCopy.packDetailLine3)
+                .padding(.top, 6)
+            Text(LoveMeInvitePackCopy.caption2)
+                .font(.footnote)
                 .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
             Spacer()
             Button(LoveMeInvitePackCopy.packDetailCta, action: onSendLink)
                 .buttonStyle(LoveMePrimaryButtonStyle())
         }
         .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(red: 0.99, green: 0.98, blue: 0.97))
     }
 }

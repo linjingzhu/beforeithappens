@@ -16,12 +16,22 @@ export const PAIR_COPY = Object.freeze({
   connect: "연결하기"
 });
 
+export const PACK_DETAIL_SAMPLES = Object.freeze([
+  "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?",
+  "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?",
+  "우리에게 집은 어떤 의미에 가장 가까울까요?"
+]);
+
 export const PACK_DETAIL_COPY = Object.freeze({
   title: "결혼",
   subtitle: "두 사람의 결혼 준비, 한곳에.",
-  line1: "질문은 나만 먼저 답해요.",
-  line2: "비교는 둘이 낸 뒤에만 열려요.",
-  line3: "파트너가 연결된 다음 질문이 열려요.",
+  samplesTitle: "예시 질문",
+  samples: PACK_DETAIL_SAMPLES,
+  caption: "여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.",
+  captionLines: Object.freeze([
+    "여기서 답하지 않아요.",
+    "파트너가 연결된 다음 질문이 열려요."
+  ]),
   cta: "링크 보내기"
 });
 
@@ -112,9 +122,23 @@ export function assertLockedMeasurementCopy() {
   if (PACK_LIST_ROWS.slice(1).some((row) => row.open || row.label === "결혼")) throw new Error("closed pack rows drifted");
   if (PACK_DETAIL_COPY.title !== "결혼") throw new Error("pack-detail title drifted");
   if (PACK_DETAIL_COPY.subtitle !== "두 사람의 결혼 준비, 한곳에.") throw new Error("pack-detail subtitle drifted");
-  if (PACK_DETAIL_COPY.line1 !== "질문은 나만 먼저 답해요.") throw new Error("pack-detail line1 drifted");
-  if (PACK_DETAIL_COPY.line2 !== "비교는 둘이 낸 뒤에만 열려요.") throw new Error("pack-detail line2 drifted");
-  if (PACK_DETAIL_COPY.line3 !== "파트너가 연결된 다음 질문이 열려요.") throw new Error("pack-detail line3 drifted");
+  if (PACK_DETAIL_COPY.samplesTitle !== "예시 질문") throw new Error("pack-detail samples title drifted");
+  if (PACK_DETAIL_COPY.caption !== "여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.") {
+    throw new Error("pack-detail caption drifted");
+  }
+  if (PACK_DETAIL_COPY.samples.length !== 3) throw new Error("pack-detail must show three sample cards");
+  if (PACK_DETAIL_COPY.samples[0] !== "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?") {
+    throw new Error("pack-detail sample 1 drifted");
+  }
+  if (PACK_DETAIL_COPY.samples[1] !== "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?") {
+    throw new Error("pack-detail sample 2 drifted");
+  }
+  if (PACK_DETAIL_COPY.samples[2] !== "우리에게 집은 어떤 의미에 가장 가까울까요?") {
+    throw new Error("pack-detail sample 3 drifted");
+  }
+  if (PACK_DETAIL_COPY.samples.some((sample) => /결혼식 규모|결혼 비용|양가 명절은/.test(sample))) {
+    throw new Error("discarded pack-detail samples returned");
+  }
   if (PACK_DETAIL_COPY.cta !== "링크 보내기") throw new Error("pack-detail CTA drifted");
   if (ACCOUNT_COPY.title !== "계정") throw new Error("account title drifted");
   if (ACCOUNT_COPY.email !== "이메일") throw new Error("account email drifted");

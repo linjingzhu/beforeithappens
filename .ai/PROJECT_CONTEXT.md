@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open) then magic-link login (no Kakao/Naver/Google CTAs). Logged-in home is the `질문집` pack list → marriage pack detail → `링크 보내기`. Questions stay closed until a partner is connected. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open) then magic-link login (no Kakao/Naver/Google CTAs). Logged-in home is the `질문집` pack list → marriage pack detail (three CPO-locked read-only sample cards) → `링크 보내기`. Questions stay closed until a partner is connected. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:

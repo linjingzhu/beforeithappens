@@ -213,16 +213,73 @@ body {
   line-height: 1;
 }
 
-.loveme-cover h1 {
+.loveme-cover h1,
+.loveme-pack-detail h1 {
   margin: 12px 0 8px;
   color: var(--ink);
   font: 500 40px/1.2 Georgia, "Times New Roman", serif;
 }
 
+.loveme-pack-detail {
+  align-items: stretch;
+  text-align: left;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .loveme-detail-sub {
-  margin: 0 0 20px;
+  margin: 0 0 8px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.loveme-samples-title {
+  margin: 28px 0 12px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.loveme-sample-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.loveme-sample-card {
+  min-height: 64px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 6px 16px rgba(43, 37, 33, 0.05);
+}
+
+.loveme-sample-num {
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 500;
+  width: 18px;
+}
+
+.loveme-sample-card p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.loveme-sample-caption {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.loveme-sample-caption:first-of-type {
+  margin-top: 18px;
 }
 
 .loveme-back {
@@ -242,75 +299,6 @@ body {
   color: var(--ink);
   font-size: 16px;
   line-height: 1.65;
-}
-
-.loveme-notebook {
-  position: relative;
-  width: 196px;
-  height: 196px;
-  margin: 0 0 28px;
-}
-
-.loveme-notebook-shadow {
-  position: absolute;
-  inset: 18px 12px 8px 20px;
-  background: #e8d8c4;
-  border-radius: 12px;
-}
-
-.loveme-notebook-face {
-  position: relative;
-  width: 176px;
-  height: 176px;
-  margin: 0 auto;
-  background: #f7f0e4;
-  border: 1px solid #d7c4ae;
-  border-radius: 12px;
-  box-shadow: 0 10px 24px rgba(43, 37, 33, 0.12);
-}
-
-.loveme-stitch {
-  display: grid;
-  place-items: center;
-  height: calc(100% - 16px);
-  margin: 8px;
-  border: 2px dashed #d7c4ae;
-  border-radius: 8px;
-}
-
-.loveme-notebook-heart {
-  color: var(--coral);
-  font-size: 32px;
-}
-
-.loveme-strap {
-  position: absolute;
-  right: -12px;
-  top: 68px;
-  width: 30px;
-  height: 40px;
-  border: 1px solid #d7c4ae;
-  border-radius: 4px;
-  background: #f7f0e4;
-  display: grid;
-  place-items: center;
-}
-
-.loveme-snap {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #c6a15b;
-}
-
-.loveme-ribbon {
-  position: absolute;
-  left: 28px;
-  bottom: -16px;
-  width: 10px;
-  height: 24px;
-  background: var(--coral);
-  border-radius: 0 0 6px 6px;
 }
 
 .loveme-cover-cta {

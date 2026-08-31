@@ -349,7 +349,8 @@ test("S0 S2 S3 files stay out of web and omit Kakao, payment, install, and pack 
   assert.match(s2, /로그인 링크 보내기/);
   assert.match(s2, /메일을 확인해 주세요\. 링크는 10분 동안만 유효해요/);
   assert.match(s2, /이 기기 임시 답은 이어지지 않아요/);
-  assert.match(s2, /질문은 나만 먼저 답해요\./);
+  assert.match(s2, /예시 질문/);
+  assert.match(s2, /여기서 답하지 않아요/);
   assert.match(s2, /파트너가 연결된 다음 질문이 열려요/);
   assert.equal(s2.includes("이 답을 남기려면 로그인해 주세요"), false);
   assert.equal(s2.includes("카카오로 시작"), false);

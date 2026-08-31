@@ -48,23 +48,6 @@ export function SplashScreenView() {
   );
 }
 
-function NotebookGraphic() {
-  return (
-    <View style={styles.notebookWrap} accessibilityLabel="notebook">
-      <View style={styles.notebookShadow} />
-      <View style={styles.notebook}>
-        <View style={styles.stitch}>
-          <Text style={styles.notebookHeart}>♡</Text>
-        </View>
-        <View style={styles.strap}>
-          <View style={styles.snap} />
-        </View>
-        <View style={styles.ribbon} />
-      </View>
-    </View>
-  );
-}
-
 export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
@@ -217,16 +200,24 @@ export function PackListScreen({ onOpenMarriage, onOpenAccount }) {
 
 export function PackDetailScreen({ onBack, onSendLink }) {
   return (
-    <View style={styles.coverShell} testID="pack-detail" accessibilityLabel="pack-detail">
+    <View style={styles.detailShell} testID="pack-detail" accessibilityLabel="pack-detail">
       <View style={styles.navRow}>
         <BackButton onPress={onBack} testID="pack-detail-back" />
       </View>
       <Text style={styles.detailTitle}>{PACK_DETAIL_COPY.title}</Text>
-      <Text style={styles.detailSub}>{PACK_DETAIL_COPY.subtitle}</Text>
-      <NotebookGraphic />
-      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line1}</Text>
-      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line2}</Text>
-      <Text style={styles.coverBody}>{PACK_DETAIL_COPY.line3}</Text>
+      <Text style={styles.detailSubLeft}>{PACK_DETAIL_COPY.subtitle}</Text>
+      <Text style={styles.samplesTitle}>{PACK_DETAIL_COPY.samplesTitle}</Text>
+      <View style={styles.sampleStack}>
+        {PACK_DETAIL_COPY.samples.map((sample, index) => (
+          <View key={sample} testID={`pack-detail-sample-${index + 1}`} style={styles.sampleCard}>
+            <Text style={styles.sampleNum}>{index + 1}</Text>
+            <Text style={styles.sampleText}>{sample}</Text>
+          </View>
+        ))}
+      </View>
+      {PACK_DETAIL_COPY.captionLines.map((line, index) => (
+        <Text key={line} style={[styles.sampleCaption, index === 0 ? styles.sampleCaptionFirst : null]}>{line}</Text>
+      ))}
       <Pressable
         testID="pack-detail-cta"
         accessibilityRole="button"
@@ -517,72 +508,58 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
   },
-  notebookWrap: {
-    width: 196,
-    height: 196,
-    marginVertical: 28,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  notebookShadow: {
-    position: "absolute",
-    width: 176,
-    height: 176,
-    borderRadius: 12,
-    backgroundColor: "#e8d8c4",
-    top: 16,
-    left: 18
-  },
-  notebook: {
-    width: 176,
-    height: 176,
-    backgroundColor: colors.cream,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.stitch
-  },
-  stitch: {
+  detailShell: {
     flex: 1,
-    margin: 8,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderColor: colors.stitch,
-    borderRadius: 8,
+    backgroundColor: colors.coverPaper,
+    paddingHorizontal: 28,
+    paddingTop: 28,
+    paddingBottom: 32
+  },
+  detailSubLeft: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: 8
+  },
+  samplesTitle: {
+    color: colors.muted,
+    fontSize: 15,
+    fontWeight: "600",
+    marginTop: 28,
+    marginBottom: 12
+  },
+  sampleStack: {
+    gap: 10
+  },
+  sampleCard: {
+    minHeight: 64,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#fff",
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center"
+    gap: 14
   },
-  notebookHeart: {
-    color: colors.coral,
-    fontSize: 32
+  sampleNum: {
+    color: colors.muted,
+    fontSize: 18,
+    fontWeight: "500",
+    width: 18
   },
-  strap: {
-    position: "absolute",
-    right: -12,
-    top: 68,
-    width: 30,
-    height: 40,
-    backgroundColor: colors.cream,
-    borderWidth: 1,
-    borderColor: colors.stitch,
-    borderRadius: 4,
-    alignItems: "center",
-    justifyContent: "center"
+  sampleText: {
+    flex: 1,
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 24
   },
-  snap: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.gold
+  sampleCaption: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20
   },
-  ribbon: {
-    position: "absolute",
-    left: 28,
-    bottom: -16,
-    width: 10,
-    height: 24,
-    backgroundColor: colors.muted,
-    borderBottomLeftRadius: 6,
-    borderBottomRightRadius: 6
+  sampleCaptionFirst: {
+    marginTop: 18
   },
   gateBrand: {
     alignSelf: "flex-start",
@@ -714,14 +691,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
     fontSize: 40,
     fontWeight: "500",
-    marginTop: 20
-  },
-  detailSub: {
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: 8,
-    textAlign: "center"
+    marginTop: 12
   },
   accountShell: {
     flex: 1,

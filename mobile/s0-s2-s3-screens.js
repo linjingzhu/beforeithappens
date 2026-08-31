@@ -90,22 +90,20 @@ export function renderS2EmailBindScreen({ email = "", error = "", busy = false }
 }
 
 export function renderPackDetailScreen() {
+  const samples = PACK_DETAIL_COPY.samples.map((sample, index) => `
+      <article class="loveme-sample-card" data-sample="${index + 1}">
+        <span class="loveme-sample-num">${index + 1}</span>
+        <p>${escapeHtml(sample)}</p>
+      </article>`).join("");
+  const caption = PACK_DETAIL_COPY.captionLines.map((line) => `<p class="loveme-sample-caption">${escapeHtml(line)}</p>`).join("");
   return `
-    <section class="loveme-screen loveme-cover" data-screen="pack-detail">
+    <section class="loveme-screen loveme-pack-detail" data-screen="pack-detail">
       ${backButton("back-pack-detail")}
       <h1>${escapeHtml(PACK_DETAIL_COPY.title)}</h1>
       <p class="loveme-detail-sub">${escapeHtml(PACK_DETAIL_COPY.subtitle)}</p>
-      <article class="loveme-notebook" aria-label="notebook">
-        <div class="loveme-notebook-shadow"></div>
-        <div class="loveme-notebook-face">
-          <div class="loveme-stitch"><span class="loveme-notebook-heart">♡</span></div>
-          <span class="loveme-strap"><span class="loveme-snap"></span></span>
-          <span class="loveme-ribbon"></span>
-        </div>
-      </article>
-      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line1)}</p>
-      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line2)}</p>
-      <p class="loveme-cover-line">${escapeHtml(PACK_DETAIL_COPY.line3)}</p>
+      <h2 class="loveme-samples-title">${escapeHtml(PACK_DETAIL_COPY.samplesTitle)}</h2>
+      <div class="loveme-sample-stack">${samples}</div>
+      ${caption}
       <button class="loveme-primary loveme-cover-cta" type="button" data-action="send-link">${escapeHtml(PACK_DETAIL_COPY.cta)}</button>
     </section>
   `;

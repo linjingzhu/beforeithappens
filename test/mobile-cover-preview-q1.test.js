@@ -20,9 +20,9 @@ import { renderAccountScreen, renderPackDetailScreen, renderS2SignupScreen } fro
 test("logged-in pack detail and account copy are designer-locked", () => {
   assert.equal(PACK_DETAIL_COPY.title, "결혼");
   assert.equal(PACK_DETAIL_COPY.subtitle, "두 사람의 결혼 준비, 한곳에.");
-  assert.equal(PACK_DETAIL_COPY.line1, "질문은 나만 먼저 답해요.");
-  assert.equal(PACK_DETAIL_COPY.line2, "비교는 둘이 낸 뒤에만 열려요.");
-  assert.equal(PACK_DETAIL_COPY.line3, "파트너가 연결된 다음 질문이 열려요.");
+  assert.equal(PACK_DETAIL_COPY.samplesTitle, "예시 질문");
+  assert.equal(PACK_DETAIL_COPY.caption, "여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.");
+  assert.equal(PACK_DETAIL_COPY.samples.length, 3);
   assert.equal(PACK_DETAIL_COPY.cta, "링크 보내기");
   assert.equal(ACCOUNT_COPY.title, "계정");
   assert.equal(ACCOUNT_COPY.email, "이메일");
@@ -62,11 +62,19 @@ test("marriage pack detail matches the locked mock and does not start questions"
   const html = renderPackDetailScreen();
   assert.match(html, /결혼/);
   assert.match(html, /두 사람의 결혼 준비, 한곳에\./);
-  assert.match(html, /질문은 나만 먼저 답해요\./);
-  assert.match(html, /비교는 둘이 낸 뒤에만 열려요\./);
-  assert.match(html, /파트너가 연결된 다음 질문이 열려요\./);
+  assert.match(html, /예시 질문/);
+  assert.match(html, /예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요\?/);
+  assert.match(html, /명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요\?/);
+  assert.match(html, /우리에게 집은 어떤 의미에 가장 가까울까요\?/);
+  assert.equal(html.includes("결혼식 규모"), false);
+  assert.equal(html.includes("결혼 비용"), false);
+  assert.equal(html.includes("양가 명절은"), false);
+  assert.match(html, /여기서 답하지 않아요/);
+  assert.match(html, /파트너가 연결된 다음 질문이 열려요/);
   assert.match(html, /링크 보내기/);
-  assert.match(html, /notebook/);
+  assert.equal(html.includes("notebook"), false);
+  assert.equal(html.includes("type=\"radio\""), false);
+  assert.equal(html.includes("type=\"text\""), false);
   assert.equal(html.includes("29,000"), false);
   assert.equal(html.includes("미리 질문 하나 보기"), false);
   assert.equal(html.includes("100"), false);
@@ -124,9 +132,21 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
   const screens = await readFile("mobile/src/screens.js", "utf8");
   const css = await readFile("mobile/s0-s2-s3-preview.css", "utf8");
   const app = await readFile("mobile/App.js", "utf8");
-  assert.match(screens, /PACK_DETAIL_COPY\.line1/);
-  assert.match(screens, /PACK_DETAIL_COPY\.line3/);
-  assert.match(screens, /NotebookGraphic/);
+  assert.match(screens, /PACK_DETAIL_COPY\.samplesTitle/);
+  assert.match(screens, /PACK_DETAIL_COPY\.samples\.map/);
+  assert.match(screens, /PACK_DETAIL_COPY\.captionLines/);
+  assert.equal(screens.includes("NotebookGraphic"), false);
+  assert.equal(screens.includes("결혼식 규모"), false);
+  const swift = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
+  const kotlin = await readFile("mobile/LoveMeInvitePackScreens.kt", "utf8");
+  for (const text of [swift, kotlin]) {
+    assert.match(text, /예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요\?/);
+    assert.match(text, /명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요\?/);
+    assert.match(text, /우리에게 집은 어떤 의미에 가장 가까울까요\?/);
+    assert.equal(text.includes("결혼식 규모"), false);
+    assert.equal(text.includes("결혼 비용"), false);
+    assert.equal(text.includes("양가 명절은"), false);
+  }
   assert.match(screens, /ACCOUNT_COPY\.logout/);
   assert.match(screens, /testID="pack-detail"/);
   assert.match(screens, /testID="account"/);
