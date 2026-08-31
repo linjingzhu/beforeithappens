@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { ACCOUNT_COPY, AUTH_COPY, LINE, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
+import { ACCOUNT_COPY, AUTH_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, LINE, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, RESULT_TASTE_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
 function pressableStyle(...parts) {
@@ -162,7 +162,7 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
   );
 }
 
-export function PackListScreen({ onOpenMarriage, onOpenAccount }) {
+export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount }) {
   return (
     <View style={styles.packShell} testID="pack-list" accessibilityLabel="pack-list">
       <View style={styles.packTop}>
@@ -187,10 +187,16 @@ export function PackListScreen({ onOpenMarriage, onOpenAccount }) {
               <Text style={styles.packChevron}>›</Text>
             </Pressable>
           ) : (
-            <View key={row.id} testID={`pack-${row.id}`} style={styles.packCardRow}>
+            <Pressable
+              key={row.id}
+              testID={`pack-${row.id}`}
+              accessibilityRole="button"
+              onPress={() => onOpenComingSoon?.(row.id)}
+              style={pressableStyle(styles.packCardRow)}
+            >
               <Text style={styles.packRowLabelMuted}>{row.label}</Text>
               <Text style={styles.soonPlain}>{PACK_LIST_COPY.soon}</Text>
-            </View>
+            </Pressable>
           )
         ))}
       </View>
@@ -215,16 +221,83 @@ export function PackDetailScreen({ onBack, onSendLink }) {
           </View>
         ))}
       </View>
-      {PACK_DETAIL_COPY.captionLines.map((line, index) => (
-        <Text key={line} style={[styles.sampleCaption, index === 0 ? styles.sampleCaptionFirst : null]}>{line}</Text>
-      ))}
+      <View style={styles.lockCaption}>
+        <View style={styles.lockMark} />
+        <View style={styles.lockCaptionText}>
+          {PACK_DETAIL_COPY.captionLines.map((line) => (
+            <Text key={line} style={styles.sampleCaption}>{line}</Text>
+          ))}
+        </View>
+      </View>
       <Pressable
         testID="pack-detail-cta"
         accessibilityRole="button"
         onPress={onSendLink}
         style={pressableStyle(styles.coverCta)}
       >
-        <Text style={styles.primaryLabel}>{PACK_DETAIL_COPY.cta}</Text>
+        <Text style={styles.primaryLabel}>🔗  {PACK_DETAIL_COPY.cta}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function ComingSoonScreen({ packId = "home-mgmt", onTasteResult, onBackToList }) {
+  return (
+    <View style={styles.tasteShell} testID="coming-soon" accessibilityLabel="coming-soon">
+      <View style={styles.soonBadge}>
+        <Text style={styles.soonBadgeLabel}>{COMING_SOON_TASTE_COPY.badge}</Text>
+      </View>
+      <Text style={styles.soonEyebrow}>{COMING_SOON_TASTE_COPY.eyebrow}</Text>
+      <Text style={styles.soonTitle}>{comingSoonPackLabel(packId)}</Text>
+      <Text style={styles.tasteHouse}>⌂♡</Text>
+      <View style={styles.tasteCard}>
+        <Text style={styles.tasteExperience}>{COMING_SOON_TASTE_COPY.experience}</Text>
+        <View style={styles.tasteQuestionBox}>
+          <Text style={styles.tasteQmark}>Q</Text>
+          <Text style={styles.tasteQuestion}>{COMING_SOON_TASTE_COPY.sampleQuestion}</Text>
+          <Text style={styles.tasteQuestionCaption}>{COMING_SOON_TASTE_COPY.sampleCaption}</Text>
+        </View>
+      </View>
+      <Pressable
+        testID="coming-soon-cta"
+        accessibilityRole="button"
+        onPress={onTasteResult}
+        style={pressableStyle(styles.coverCta)}
+      >
+        <Text style={styles.primaryLabel}>{COMING_SOON_TASTE_COPY.cta}</Text>
+      </Pressable>
+      <Pressable testID="coming-soon-list" accessibilityRole="button" onPress={onBackToList} style={pressableStyle(styles.textLink)}>
+        <Text style={styles.textLinkLabel}>{COMING_SOON_TASTE_COPY.backToList}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+export function TasteResultScreen({ onBackToList }) {
+  return (
+    <View style={styles.tasteShell} testID="taste-result" accessibilityLabel="taste-result">
+      <Text style={styles.tasteResultTitle}>{RESULT_TASTE_COPY.title}</Text>
+      <View style={styles.tasteLabelPill}>
+        <Text style={styles.tasteLabelText}>{RESULT_TASTE_COPY.label}</Text>
+      </View>
+      <Text style={styles.tasteQuestionCenter}>{RESULT_TASTE_COPY.question}</Text>
+      <View style={styles.tasteAnswer}>
+        <Text style={styles.tasteWho}>{RESULT_TASTE_COPY.me}</Text>
+        <Text style={styles.tasteAnswerText}>{RESULT_TASTE_COPY.meAnswer}</Text>
+      </View>
+      <View style={styles.tasteAnswer}>
+        <Text style={styles.tasteWho}>{RESULT_TASTE_COPY.partner}</Text>
+        <Text style={styles.tasteAnswerText}>{RESULT_TASTE_COPY.partnerAnswer}</Text>
+      </View>
+      <Text style={styles.tasteResultCaption}>{RESULT_TASTE_COPY.caption}</Text>
+      <Text style={styles.tasteResultExample}>{RESULT_TASTE_COPY.example}</Text>
+      <Pressable
+        testID="taste-result-cta"
+        accessibilityRole="button"
+        onPress={onBackToList}
+        style={pressableStyle(styles.tasteListCta)}
+      >
+        <Text style={styles.primaryLabel}>{RESULT_TASTE_COPY.cta}</Text>
       </Pressable>
     </View>
   );
@@ -558,8 +631,188 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20
   },
-  sampleCaptionFirst: {
+  lockCaption: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
     marginTop: 18
+  },
+  lockMark: {
+    width: 12,
+    height: 14,
+    marginTop: 3,
+    borderWidth: 1.5,
+    borderColor: colors.muted,
+    borderRadius: 3
+  },
+  lockCaptionText: {
+    flex: 1
+  },
+  tasteShell: {
+    flex: 1,
+    backgroundColor: colors.coverPaper,
+    alignItems: "center",
+    paddingHorizontal: 28,
+    paddingTop: 36,
+    paddingBottom: 32
+  },
+  soonBadge: {
+    minHeight: 28,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: colors.logout,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  soonBadgeLabel: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  soonEyebrow: {
+    color: colors.muted,
+    fontSize: 13,
+    marginTop: 14
+  },
+  soonTitle: {
+    color: colors.ink,
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia, serif" }),
+    fontSize: 36,
+    fontWeight: "600",
+    marginTop: 10
+  },
+  tasteHouse: {
+    color: colors.ink,
+    fontSize: 28,
+    marginVertical: 18
+  },
+  tasteCard: {
+    alignSelf: "stretch",
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    paddingBottom: 16,
+    borderRadius: 20,
+    backgroundColor: "#fff"
+  },
+  tasteExperience: {
+    color: colors.ink,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 12
+  },
+  tasteQuestionBox: {
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: "#f4ebe2"
+  },
+  tasteQmark: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    overflow: "hidden",
+    textAlign: "center",
+    lineHeight: 22,
+    backgroundColor: "#fff",
+    color: colors.ink,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 8
+  },
+  tasteQuestion: {
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 24
+  },
+  tasteQuestionCaption: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 8
+  },
+  textLink: {
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8
+  },
+  textLinkLabel: {
+    color: colors.ink,
+    fontSize: 15
+  },
+  tasteResultTitle: {
+    color: colors.ink,
+    fontSize: 32,
+    fontWeight: "700"
+  },
+  tasteLabelPill: {
+    minHeight: 28,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "#f4ebe2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16
+  },
+  tasteLabelText: {
+    color: colors.ink,
+    fontSize: 13,
+    fontWeight: "700"
+  },
+  tasteQuestionCenter: {
+    color: colors.ink,
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: "center",
+    marginTop: 18,
+    marginBottom: 16
+  },
+  tasteAnswer: {
+    alignSelf: "stretch",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: "#f4ebe2",
+    marginBottom: 10
+  },
+  tasteWho: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+    color: colors.ink,
+    fontSize: 12,
+    fontWeight: "700",
+    overflow: "hidden",
+    marginBottom: 8
+  },
+  tasteAnswerText: {
+    color: colors.ink,
+    fontSize: 15,
+    lineHeight: 22
+  },
+  tasteResultCaption: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 10
+  },
+  tasteResultExample: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 4
+  },
+  tasteListCta: {
+    minHeight: 52,
+    alignSelf: "stretch",
+    marginTop: "auto",
+    borderRadius: 16,
+    backgroundColor: "#d8a07a",
+    alignItems: "center",
+    justifyContent: "center"
   },
   gateBrand: {
     alignSelf: "flex-start",

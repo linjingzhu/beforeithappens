@@ -58,10 +58,32 @@ object LoveMeInvitePackCopy {
     const val partnerCard = "상대 코드를 알고 있다면"
     const val partnerPlaceholder = "상대 코드 입력"
     const val connect = "연결하기"
+    const val soonBadge = "곧 열려요"
+    const val soonEyebrow = "LoveMe coming-soon pack"
+    const val experience = "임시 체험"
+    const val sampleQuestion = "가사와 시간은 어떻게 나누고 싶나요?"
+    const val sampleCaption = "예시입니다. 여기서 답하거나 팔지 않아요."
+    const val tasteCta = "결과 맛보기"
+    const val backToList = "목록으로"
+    const val tasteResultTitle = "결과 맛보기"
+    const val tasteLabel = "가까움"
+    const val tasteAligned = "같음"
+    const val tasteClose = "가까움"
+    const val tasteDiscuss = "이야기해요"
+    const val tasteMe = "나"
+    const val tastePartner = "상대"
+    const val tasteMeAnswer = "평일은 반반, 주말은 그때 그때요."
+    const val tastePartnerAnswer = "한 사람이 메인으로 하고 나머지는 나눠요."
+    const val tasteCaption = "진짜 비교는 열린 팩에서 둘이 낸 다음입니다."
+    const val tasteExample = "예시입니다."
 }
 
 @Composable
-fun LoveMePackListScreen(onOpenMarriage: () -> Unit = {}, onOpenAccount: () -> Unit = {}) {
+fun LoveMePackListScreen(
+    onOpenMarriage: () -> Unit = {},
+    onOpenComingSoon: (String) -> Unit = {},
+    onOpenAccount: () -> Unit = {}
+) {
     val cream = Color(0xFFFDFBF7)
     Column(
         modifier = Modifier
@@ -80,17 +102,16 @@ fun LoveMePackListScreen(onOpenMarriage: () -> Unit = {}, onOpenAccount: () -> U
             colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2B2521)),
             modifier = Modifier.fillMaxWidth()
         ) { Text("결혼 ›") }
-        listOf("가정 경영", "임신", "출산", "육아").forEach { label ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp)
-                    .background(Color.White, RoundedCornerShape(16.dp))
-                    .padding(horizontal = 18.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+        listOf("home-mgmt" to "가정 경영", "pregnancy" to "임신", "birth" to "출산", "parenting" to "육아").forEach { pack ->
+            Button(
+                onClick = { onOpenComingSoon(pack.first) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF2B2521)),
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
             ) {
-                Text(label)
-                Text(LoveMeInvitePackCopy.packSoon, color = Color(0xFF81756E))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(pack.second)
+                    Text(LoveMeInvitePackCopy.packSoon, color = Color(0xFF81756E))
+                }
             }
         }
     }
@@ -124,8 +145,13 @@ fun LoveMePackDetailScreen(onBack: () -> Unit = {}, onSendLink: () -> Unit = {})
                 Text(sample, color = Color(0xFF2B2521))
             }
         }
-        Text(LoveMeInvitePackCopy.caption1, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.align(Alignment.Start).padding(top = 8.dp))
-        Text(LoveMeInvitePackCopy.caption2, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.align(Alignment.Start))
+        Row(modifier = Modifier.align(Alignment.Start).padding(top = 8.dp)) {
+            Text("🔒", fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp, top = 2.dp))
+            Column {
+                Text(LoveMeInvitePackCopy.caption1, color = Color(0xFF81756E), fontSize = 13.sp)
+                Text(LoveMeInvitePackCopy.caption2, color = Color(0xFF81756E), fontSize = 13.sp)
+            }
+        }
         Spacer(modifier = Modifier.weight(1f))
         Button(
             onClick = onSendLink,
@@ -133,7 +159,7 @@ fun LoveMePackDetailScreen(onBack: () -> Unit = {}, onSendLink: () -> Unit = {})
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp)
-        ) { Text(LoveMeInvitePackCopy.packDetailCta) }
+        ) { Text("🔗  ${LoveMeInvitePackCopy.packDetailCta}") }
     }
 }
 
@@ -234,5 +260,104 @@ fun LoveMeInviteScreen(
                 ) { Text(LoveMeInvitePackCopy.connect) }
             }
         }
+    }
+}
+
+@Composable
+fun LoveMeComingSoonScreen(
+    title: String = "가정 경영",
+    onTasteResult: () -> Unit = {},
+    onBackToList: () -> Unit = {}
+) {
+    val cream = Color(0xFFFDFBF7)
+    val coral = Color(0xFFEE775F)
+    Column(
+        modifier = Modifier.fillMaxSize().background(cream).padding(28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            LoveMeInvitePackCopy.soonBadge,
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.background(Color(0xFFC45C4E), RoundedCornerShape(999.dp)).padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+        Text(LoveMeInvitePackCopy.soonEyebrow, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.padding(top = 14.dp))
+        Text(title, fontSize = 36.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 10.dp))
+        Text("⌂♡", fontSize = 28.sp, modifier = Modifier.padding(vertical = 16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, RoundedCornerShape(20.dp))
+                .padding(16.dp)
+        ) {
+            Text(LoveMeInvitePackCopy.experience, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp)
+                    .background(Color(0xFFF4EBE2), RoundedCornerShape(14.dp))
+                    .padding(14.dp)
+            ) {
+                Text("Q", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text(LoveMeInvitePackCopy.sampleQuestion, fontSize = 16.sp, modifier = Modifier.padding(top = 8.dp))
+                Text(LoveMeInvitePackCopy.sampleCaption, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+            }
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Button(
+            onClick = onTasteResult,
+            colors = ButtonDefaults.buttonColors(containerColor = coral),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+        ) { Text(LoveMeInvitePackCopy.tasteCta) }
+        TextButton(onClick = onBackToList) { Text(LoveMeInvitePackCopy.backToList, color = Color(0xFF2B2521)) }
+    }
+}
+
+@Composable
+fun LoveMeTasteResultScreen(onBackToList: () -> Unit = {}) {
+    val cream = Color(0xFFFDFBF7)
+    Column(
+        modifier = Modifier.fillMaxSize().background(cream).padding(28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(LoveMeInvitePackCopy.tasteResultTitle, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+        Text(
+            LoveMeInvitePackCopy.tasteLabel,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .background(Color(0xFFF4EBE2), RoundedCornerShape(999.dp))
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+        )
+        Text(LoveMeInvitePackCopy.sampleQuestion, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 18.dp, bottom = 16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp)
+                .background(Color(0xFFF4EBE2), RoundedCornerShape(16.dp))
+                .padding(14.dp)
+        ) {
+            Text(LoveMeInvitePackCopy.tasteMe, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(LoveMeInvitePackCopy.tasteMeAnswer, modifier = Modifier.padding(top = 8.dp))
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFF4EBE2), RoundedCornerShape(16.dp))
+                .padding(14.dp)
+        ) {
+            Text(LoveMeInvitePackCopy.tastePartner, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(LoveMeInvitePackCopy.tastePartnerAnswer, modifier = Modifier.padding(top = 8.dp))
+        }
+        Text(LoveMeInvitePackCopy.tasteCaption, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.padding(top = 16.dp))
+        Text(LoveMeInvitePackCopy.tasteExample, color = Color(0xFF81756E), fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+        Spacer(modifier = Modifier.weight(1f))
+        Button(
+            onClick = onBackToList,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD8A07A)),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+        ) { Text(LoveMeInvitePackCopy.backToList) }
     }
 }

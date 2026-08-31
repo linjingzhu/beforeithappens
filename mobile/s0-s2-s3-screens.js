@@ -1,4 +1,4 @@
-import { ACCOUNT_COPY, FORBIDDEN_APP_COPY, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
+import { ACCOUNT_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, FORBIDDEN_APP_COPY, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, RESULT_TASTE_COPY, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, (char) => ({
@@ -95,7 +95,7 @@ export function renderPackDetailScreen() {
         <span class="loveme-sample-num">${index + 1}</span>
         <p>${escapeHtml(sample)}</p>
       </article>`).join("");
-  const caption = PACK_DETAIL_COPY.captionLines.map((line) => `<p class="loveme-sample-caption">${escapeHtml(line)}</p>`).join("");
+  const caption = PACK_DETAIL_COPY.captionLines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
   return `
     <section class="loveme-screen loveme-pack-detail" data-screen="pack-detail">
       ${backButton("back-pack-detail")}
@@ -103,8 +103,58 @@ export function renderPackDetailScreen() {
       <p class="loveme-detail-sub">${escapeHtml(PACK_DETAIL_COPY.subtitle)}</p>
       <h2 class="loveme-samples-title">${escapeHtml(PACK_DETAIL_COPY.samplesTitle)}</h2>
       <div class="loveme-sample-stack">${samples}</div>
-      ${caption}
-      <button class="loveme-primary loveme-cover-cta" type="button" data-action="send-link">${escapeHtml(PACK_DETAIL_COPY.cta)}</button>
+      <div class="loveme-lock-caption">
+        <span class="loveme-lock" aria-hidden="true"></span>
+        <div>${caption}</div>
+      </div>
+      <button class="loveme-primary loveme-cover-cta" type="button" data-action="send-link"><span class="loveme-link-mark" aria-hidden="true"></span>${escapeHtml(PACK_DETAIL_COPY.cta)}</button>
+    </section>
+  `;
+}
+
+function tasteHouse() {
+  return `<div class="loveme-taste-house" aria-hidden="true"><span class="loveme-taste-roof"></span><span class="loveme-taste-wall"><span class="loveme-taste-heart">♡</span></span></div>`;
+}
+
+export function renderComingSoonScreen({ packId = "home-mgmt" } = {}) {
+  const title = comingSoonPackLabel(packId) || comingSoonPackLabel("home-mgmt");
+  return `
+    <section class="loveme-screen loveme-coming-soon" data-screen="coming-soon" data-pack="${escapeHtml(packId)}">
+      <span class="loveme-soon-badge">${escapeHtml(COMING_SOON_TASTE_COPY.badge)}</span>
+      <p class="loveme-soon-eyebrow">${escapeHtml(COMING_SOON_TASTE_COPY.eyebrow)}</p>
+      <h1>${escapeHtml(title)}</h1>
+      ${tasteHouse()}
+      <article class="loveme-taste-card">
+        <p class="loveme-taste-experience">${escapeHtml(COMING_SOON_TASTE_COPY.experience)}</p>
+        <div class="loveme-taste-q">
+          <span class="loveme-taste-qmark">Q</span>
+          <p>${escapeHtml(COMING_SOON_TASTE_COPY.sampleQuestion)}</p>
+          <p class="loveme-taste-q-caption">${escapeHtml(COMING_SOON_TASTE_COPY.sampleCaption)}</p>
+        </div>
+      </article>
+      <button class="loveme-primary loveme-cover-cta" type="button" data-action="open-taste-result">${escapeHtml(COMING_SOON_TASTE_COPY.cta)}</button>
+      <button class="loveme-text-link" type="button" data-action="back-coming-soon">${escapeHtml(COMING_SOON_TASTE_COPY.backToList)}</button>
+    </section>
+  `;
+}
+
+export function renderTasteResultScreen({ packId = "home-mgmt" } = {}) {
+  return `
+    <section class="loveme-screen loveme-taste-result" data-screen="taste-result" data-pack="${escapeHtml(packId)}">
+      <h1>${escapeHtml(RESULT_TASTE_COPY.title)}</h1>
+      <span class="loveme-taste-label">${escapeHtml(RESULT_TASTE_COPY.label)}</span>
+      <p class="loveme-taste-question">${escapeHtml(RESULT_TASTE_COPY.question)}</p>
+      <article class="loveme-taste-answer">
+        <span>${escapeHtml(RESULT_TASTE_COPY.me)}</span>
+        <p>${escapeHtml(RESULT_TASTE_COPY.meAnswer)}</p>
+      </article>
+      <article class="loveme-taste-answer">
+        <span>${escapeHtml(RESULT_TASTE_COPY.partner)}</span>
+        <p>${escapeHtml(RESULT_TASTE_COPY.partnerAnswer)}</p>
+      </article>
+      <p class="loveme-taste-result-caption">${escapeHtml(RESULT_TASTE_COPY.caption)}</p>
+      <p class="loveme-taste-result-example">${escapeHtml(RESULT_TASTE_COPY.example)}</p>
+      <button class="loveme-taste-list-cta" type="button" data-action="back-to-list">${escapeHtml(RESULT_TASTE_COPY.cta)}</button>
     </section>
   `;
 }
@@ -112,7 +162,7 @@ export function renderPackDetailScreen() {
 export function renderPackListScreen() {
   const rows = PACK_LIST_ROWS.map((row) => row.open
     ? `<button class="loveme-pack-row is-open" type="button" data-action="open-marriage">${escapeHtml(row.label)}<span>›</span></button>`
-    : `<div class="loveme-pack-row"><span>${escapeHtml(row.label)}</span><span class="loveme-soon">${escapeHtml(PACK_LIST_COPY.soon)}</span></div>`
+    : `<button class="loveme-pack-row" type="button" data-action="open-coming-soon" data-pack="${escapeHtml(row.id)}"><span>${escapeHtml(row.label)}</span><span class="loveme-soon">${escapeHtml(PACK_LIST_COPY.soon)}</span></button>`
   ).join("");
   return `
     <section class="loveme-screen loveme-pack-list" data-screen="pack-list">
@@ -188,6 +238,8 @@ export function renderS3WorkspaceCreatedScreen({ email = "" } = {}) {
 
 export function renderNativeScreen(state) {
   if (state.screen === "splash") return renderS0SplashScreen();
+  if (state.screen === "coming-soon") return renderComingSoonScreen({ packId: state.comingSoonId });
+  if (state.screen === "taste-result") return renderTasteResultScreen({ packId: state.comingSoonId });
   if (state.screen === "pack-detail") return renderPackDetailScreen();
   if (state.screen === "sent") return renderS2SentScreen({ email: state.sentEmail });
   if (state.screen === "bind") return renderS2EmailBindScreen({ email: state.email, error: state.error, busy: state.busy });

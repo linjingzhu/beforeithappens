@@ -16,6 +16,8 @@
       backFromInvite,
       backFromPackDetail,
       backToSignup,
+      backFromComingSoon,
+      backToPackList,
       consumeOpenedLink,
       consumeSucceeded,
       createNativeFlow,
@@ -24,8 +26,10 @@
       loggedOutHome,
       noticeAcknowledged,
       openAccount,
+      openComingSoonFromList,
       openMarriageFromList,
       openSendLink,
+      openTasteResult,
       restoreSessionAfterSplash,
       setEmail,
       submitMagicLink
@@ -65,6 +69,11 @@
     if (start === "invite") {
       state = openSendLink(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
       state = { ...state, pairCodeDisplay: "4K7M", inviteUrl: "https://example.test/invite/open" };
+    }
+    if (start === "coming-soon" || start === "taste-result") {
+      const pack = params.get("pack") || "home-mgmt";
+      state = openComingSoonFromList(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn), pack);
+      if (start === "taste-result") state = openTasteResult(state);
     }
 
     const api = createAuthApi({ origin: "" });
@@ -111,7 +120,14 @@
         state = demo
           ? noticeAcknowledged(state, { ...state.session, notice: null })
           : await acknowledgeLoginNotice(state, api);
-      } else if (action === "open-marriage") state = openMarriageFromList(state);
+      }       else if (action === "open-marriage") state = openMarriageFromList(state);
+      else if (action === "open-coming-soon") {
+        state = openComingSoonFromList(state, event.target.closest("[data-pack]")?.dataset.pack);
+      }
+      else if (action === "open-taste-result") state = openTasteResult(state);
+      else if (action === "back-coming-soon" || action === "back-to-list") {
+        state = action === "back-coming-soon" ? backFromComingSoon(state) : backToPackList(state);
+      }
       else if (action === "open-account") state = openAccount(state);
       else if (action === "send-link") state = openSendLink(state);
       else if (action === "back-pack-detail") state = backFromPackDetail(state);

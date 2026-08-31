@@ -116,6 +116,7 @@ test("pack-list home copy matches the locked 질문집 list", () => {
   assert.match(html, /육아/);
   assert.match(html, /계정/);
   assert.equal((html.match(/곧 열려요/g) || []).length, 4);
+  assert.equal((html.match(/open-coming-soon/g) || []).length, 4);
   assert.equal(html.includes("29,000"), false);
   assert.equal(html.includes("100"), false);
   assert.equal(html.includes("프로필"), false);

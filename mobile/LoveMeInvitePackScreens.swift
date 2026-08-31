@@ -29,10 +29,29 @@ enum LoveMeInvitePackCopy {
     static let partnerCard = "상대 코드를 알고 있다면"
     static let partnerPlaceholder = "상대 코드 입력"
     static let connect = "연결하기"
+    static let soonBadge = "곧 열려요"
+    static let soonEyebrow = "LoveMe coming-soon pack"
+    static let experience = "임시 체험"
+    static let sampleQuestion = "가사와 시간은 어떻게 나누고 싶나요?"
+    static let sampleCaption = "예시입니다. 여기서 답하거나 팔지 않아요."
+    static let tasteCta = "결과 맛보기"
+    static let backToList = "목록으로"
+    static let tasteResultTitle = "결과 맛보기"
+    static let tasteLabel = "가까움"
+    static let tasteAligned = "같음"
+    static let tasteClose = "가까움"
+    static let tasteDiscuss = "이야기해요"
+    static let tasteMe = "나"
+    static let tastePartner = "상대"
+    static let tasteMeAnswer = "평일은 반반, 주말은 그때 그때요."
+    static let tastePartnerAnswer = "한 사람이 메인으로 하고 나머지는 나눠요."
+    static let tasteCaption = "진짜 비교는 열린 팩에서 둘이 낸 다음입니다."
+    static let tasteExample = "예시입니다."
 }
 
 struct LoveMePackListScreen: View {
     var onOpenMarriage: () -> Void = {}
+    var onOpenComingSoon: (String) -> Void = { _ in }
     var onOpenAccount: () -> Void = {}
 
     var body: some View {
@@ -60,17 +79,20 @@ struct LoveMePackListScreen: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
             .buttonStyle(.plain)
-            ForEach(["가정 경영", "임신", "출산", "육아"], id: \.self) { label in
-                HStack {
-                    Text(label)
-                    Spacer()
-                    Text(LoveMeInvitePackCopy.packSoon)
-                        .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+            ForEach([("home-mgmt", "가정 경영"), ("pregnancy", "임신"), ("birth", "출산"), ("parenting", "육아")], id: \.0) { pack in
+                Button(action: { onOpenComingSoon(pack.0) }) {
+                    HStack {
+                        Text(pack.1)
+                        Spacer()
+                        Text(LoveMeInvitePackCopy.packSoon)
+                            .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 56)
+                    .background(Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
-                .padding(.horizontal, 18)
-                .frame(minHeight: 56)
-                .background(Color.white)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .buttonStyle(.plain)
             }
             Spacer()
         }
@@ -107,16 +129,22 @@ struct LoveMePackDetailScreen: View {
                 .background(Color.white)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             }
-            Text(LoveMeInvitePackCopy.caption1)
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "lock")
+                    .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(LoveMeInvitePackCopy.caption1)
+                    Text(LoveMeInvitePackCopy.caption2)
+                }
                 .font(.footnote)
                 .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
-                .padding(.top, 6)
-            Text(LoveMeInvitePackCopy.caption2)
-                .font(.footnote)
-                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+            }
+            .padding(.top, 6)
             Spacer()
-            Button(LoveMeInvitePackCopy.packDetailCta, action: onSendLink)
-                .buttonStyle(LoveMePrimaryButtonStyle())
+            Button(action: onSendLink) {
+                Label(LoveMeInvitePackCopy.packDetailCta, systemImage: "link")
+            }
+            .buttonStyle(LoveMePrimaryButtonStyle())
         }
         .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -227,6 +255,111 @@ struct LoveMeInviteScreen: View {
             Spacer()
         }
         .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+    }
+}
+
+struct LoveMeComingSoonScreen: View {
+    var title: String = "가정 경영"
+    var onTasteResult: () -> Void = {}
+    var onBackToList: () -> Void = {}
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(LoveMeInvitePackCopy.soonBadge)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.77, green: 0.36, blue: 0.31))
+                .clipShape(Capsule())
+            Text(LoveMeInvitePackCopy.soonEyebrow)
+                .font(.footnote)
+                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+            Text(title)
+                .font(.system(size: 36, weight: .semibold, design: .serif))
+            Text("⌂♡")
+                .font(.title)
+                .padding(.vertical, 8)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(LoveMeInvitePackCopy.experience)
+                    .font(.subheadline.weight(.bold))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Q")
+                        .font(.caption.weight(.bold))
+                    Text(LoveMeInvitePackCopy.sampleQuestion)
+                    Text(LoveMeInvitePackCopy.sampleCaption)
+                        .font(.footnote)
+                        .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(red: 0.96, green: 0.92, blue: 0.89))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 20))
+            Spacer()
+            Button(LoveMeInvitePackCopy.tasteCta, action: onTasteResult)
+                .buttonStyle(LoveMePrimaryButtonStyle())
+            Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
+                .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+    }
+}
+
+struct LoveMeTasteResultScreen: View {
+    var onBackToList: () -> Void = {}
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(LoveMeInvitePackCopy.tasteResultTitle)
+                .font(.system(size: 32, weight: .bold))
+            Text(LoveMeInvitePackCopy.tasteLabel)
+                .font(.caption.weight(.bold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.96, green: 0.92, blue: 0.89))
+                .clipShape(Capsule())
+            Text(LoveMeInvitePackCopy.sampleQuestion)
+                .multilineTextAlignment(.center)
+                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(LoveMeInvitePackCopy.tasteMe)
+                    .font(.caption.weight(.bold))
+                Text(LoveMeInvitePackCopy.tasteMeAnswer)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(red: 0.96, green: 0.92, blue: 0.89))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            VStack(alignment: .leading, spacing: 8) {
+                Text(LoveMeInvitePackCopy.tastePartner)
+                    .font(.caption.weight(.bold))
+                Text(LoveMeInvitePackCopy.tastePartnerAnswer)
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(red: 0.96, green: 0.92, blue: 0.89))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            Text(LoveMeInvitePackCopy.tasteCaption)
+                .font(.footnote)
+                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+                .padding(.top, 8)
+            Text(LoveMeInvitePackCopy.tasteExample)
+                .font(.footnote)
+                .foregroundStyle(Color(red: 0.51, green: 0.46, blue: 0.43))
+            Spacer()
+            Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
+                .buttonStyle(LoveMePrimaryButtonStyle())
+        }
+        .padding(28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0.99, green: 0.98, blue: 0.97))
     }

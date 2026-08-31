@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, PackList, PackDetail, Invite, Account, Workspace }
+enum class LoveMeNativeScreen { Splash, Signup, Sent, Bind, Notice, PackList, PackDetail, ComingSoon, TasteResult, Invite, Account, Workspace }
 
 @Composable
 fun LoveMeS0S2S3Host(
@@ -22,6 +22,7 @@ fun LoveMeS0S2S3Host(
     var error by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var pairCode by remember { mutableStateOf("") }
+    var comingSoonTitle by remember { mutableStateOf("가정 경영") }
     val scope = rememberCoroutineScope()
 
     when (screen) {
@@ -44,7 +45,24 @@ fun LoveMeS0S2S3Host(
         }
         LoveMeNativeScreen.PackList -> LoveMePackListScreen(
             onOpenMarriage = { screen = LoveMeNativeScreen.PackDetail },
+            onOpenComingSoon = { id ->
+                comingSoonTitle = when (id) {
+                    "pregnancy" -> "임신"
+                    "birth" -> "출산"
+                    "parenting" -> "육아"
+                    else -> "가정 경영"
+                }
+                screen = LoveMeNativeScreen.ComingSoon
+            },
             onOpenAccount = { screen = LoveMeNativeScreen.Account }
+        )
+        LoveMeNativeScreen.ComingSoon -> LoveMeComingSoonScreen(
+            title = comingSoonTitle,
+            onTasteResult = { screen = LoveMeNativeScreen.TasteResult },
+            onBackToList = { screen = LoveMeNativeScreen.PackList }
+        )
+        LoveMeNativeScreen.TasteResult -> LoveMeTasteResultScreen(
+            onBackToList = { screen = LoveMeNativeScreen.PackList }
         )
         LoveMeNativeScreen.PackDetail -> LoveMePackDetailScreen(
             onBack = { screen = LoveMeNativeScreen.PackList },

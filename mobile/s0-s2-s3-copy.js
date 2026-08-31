@@ -1,11 +1,17 @@
 export {
   ACCOUNT_COPY,
+  COMING_SOON_SAMPLE_QUESTION,
+  COMING_SOON_TASTE_COPY,
   PACK_DETAIL_COPY,
   PACK_DETAIL_SAMPLES,
   PACK_LIST_COPY,
   PACK_LIST_ROWS,
   PAIR_COPY,
-  PAIR_ERRORS
+  PAIR_ERRORS,
+  RESULT_TASTE_COPY,
+  TASTE_LABELS,
+  comingSoonPackLabel,
+  isComingSoonPackId
 } from "../src/pair-code.js";
 
 export const MAGIC_LINK_TTL_MS = 10 * 60 * 1000;

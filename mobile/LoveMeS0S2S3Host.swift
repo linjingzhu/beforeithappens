@@ -8,6 +8,8 @@ enum LoveMeNativeScreen {
     case notice
     case packList
     case packDetail
+    case comingSoon
+    case tasteResult
     case invite
     case account
     case workspace
@@ -22,6 +24,7 @@ struct LoveMeS0S2S3Host: View {
     @State private var error = ""
     @State private var busy = false
     @State private var pairCode = ""
+    @State private var comingSoonTitle = "가정 경영"
 
     var body: some View {
         Group {
@@ -31,8 +34,25 @@ struct LoveMeS0S2S3Host: View {
             case .packList:
                 LoveMePackListScreen(
                     onOpenMarriage: { screen = .packDetail },
+                    onOpenComingSoon: { id in
+                        comingSoonTitle = [
+                            "home-mgmt": "가정 경영",
+                            "pregnancy": "임신",
+                            "birth": "출산",
+                            "parenting": "육아"
+                        ][id] ?? "가정 경영"
+                        screen = .comingSoon
+                    },
                     onOpenAccount: { screen = .account }
                 )
+            case .comingSoon:
+                LoveMeComingSoonScreen(
+                    title: comingSoonTitle,
+                    onTasteResult: { screen = .tasteResult },
+                    onBackToList: { screen = .packList }
+                )
+            case .tasteResult:
+                LoveMeTasteResultScreen(onBackToList: { screen = .packList })
             case .packDetail:
                 LoveMePackDetailScreen(
                     onBack: { screen = .packList },

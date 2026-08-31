@@ -55,6 +55,47 @@ export const PACK_LIST_ROWS = Object.freeze([
   Object.freeze({ id: "parenting", label: "육아", open: false })
 ]);
 
+/** Designer proposal for the coming-soon 임시 체험 card. Swap this constant; do not invent pack-specific questions. */
+export const COMING_SOON_SAMPLE_QUESTION = "가사와 시간은 어떻게 나누고 싶나요?";
+
+export const TASTE_LABELS = Object.freeze({
+  aligned: "같음",
+  close: "가까움",
+  discuss: "이야기해요"
+});
+
+export const COMING_SOON_TASTE_COPY = Object.freeze({
+  badge: "곧 열려요",
+  eyebrow: "LoveMe coming-soon pack",
+  experience: "임시 체험",
+  sampleQuestion: COMING_SOON_SAMPLE_QUESTION,
+  sampleCaption: "예시입니다. 여기서 답하거나 팔지 않아요.",
+  cta: "결과 맛보기",
+  backToList: "목록으로"
+});
+
+export const RESULT_TASTE_COPY = Object.freeze({
+  title: "결과 맛보기",
+  label: TASTE_LABELS.close,
+  labels: TASTE_LABELS,
+  question: COMING_SOON_SAMPLE_QUESTION,
+  me: "나",
+  partner: "상대",
+  meAnswer: "평일은 반반, 주말은 그때 그때요.",
+  partnerAnswer: "한 사람이 메인으로 하고 나머지는 나눠요.",
+  caption: "진짜 비교는 열린 팩에서 둘이 낸 다음입니다.",
+  example: "예시입니다.",
+  cta: "목록으로"
+});
+
+export function isComingSoonPackId(id) {
+  return PACK_LIST_ROWS.some((row) => row.id === id && !row.open);
+}
+
+export function comingSoonPackLabel(id) {
+  return PACK_LIST_ROWS.find((row) => row.id === id && !row.open)?.label || "";
+}
+
 export const PAIR_ERRORS = Object.freeze({
   "invalid-code": "코드를 다시 확인해 주세요.",
   "not-found": "코드를 다시 확인해 주세요.",
@@ -140,6 +181,36 @@ export function assertLockedMeasurementCopy() {
     throw new Error("discarded pack-detail samples returned");
   }
   if (PACK_DETAIL_COPY.cta !== "링크 보내기") throw new Error("pack-detail CTA drifted");
+  if (COMING_SOON_TASTE_COPY.badge !== "곧 열려요") throw new Error("coming-soon badge drifted");
+  if (COMING_SOON_TASTE_COPY.eyebrow !== "LoveMe coming-soon pack") throw new Error("coming-soon eyebrow drifted");
+  if (COMING_SOON_TASTE_COPY.experience !== "임시 체험") throw new Error("coming-soon experience drifted");
+  if (COMING_SOON_TASTE_COPY.sampleQuestion !== "가사와 시간은 어떻게 나누고 싶나요?") {
+    throw new Error("coming-soon sample question drifted");
+  }
+  if (COMING_SOON_TASTE_COPY.sampleCaption !== "예시입니다. 여기서 답하거나 팔지 않아요.") {
+    throw new Error("coming-soon sample caption drifted");
+  }
+  if (COMING_SOON_TASTE_COPY.cta !== "결과 맛보기") throw new Error("coming-soon CTA drifted");
+  if (COMING_SOON_TASTE_COPY.backToList !== "목록으로") throw new Error("coming-soon list link drifted");
+  if (RESULT_TASTE_COPY.title !== "결과 맛보기") throw new Error("taste-result title drifted");
+  if (RESULT_TASTE_COPY.label !== "가까움") throw new Error("taste-result label drifted");
+  if (RESULT_TASTE_COPY.labels.aligned !== "같음") throw new Error("taste aligned label drifted");
+  if (RESULT_TASTE_COPY.labels.close !== "가까움") throw new Error("taste close label drifted");
+  if (RESULT_TASTE_COPY.labels.discuss !== "이야기해요") throw new Error("taste discuss label drifted");
+  if (RESULT_TASTE_COPY.me !== "나") throw new Error("taste me label drifted");
+  if (RESULT_TASTE_COPY.partner !== "상대") throw new Error("taste partner label drifted");
+  if (RESULT_TASTE_COPY.meAnswer !== "평일은 반반, 주말은 그때 그때요.") throw new Error("taste me answer drifted");
+  if (RESULT_TASTE_COPY.partnerAnswer !== "한 사람이 메인으로 하고 나머지는 나눠요.") {
+    throw new Error("taste partner answer drifted");
+  }
+  if (RESULT_TASTE_COPY.caption !== "진짜 비교는 열린 팩에서 둘이 낸 다음입니다.") {
+    throw new Error("taste-result caption drifted");
+  }
+  if (RESULT_TASTE_COPY.example !== "예시입니다.") throw new Error("taste-result example line drifted");
+  if (RESULT_TASTE_COPY.cta !== "목록으로") throw new Error("taste-result CTA drifted");
+  if (["ALIGNED", "CLOSE", "DISCUSS"].includes(RESULT_TASTE_COPY.label)) {
+    throw new Error("taste-result must use Korean labels only");
+  }
   if (ACCOUNT_COPY.title !== "계정") throw new Error("account title drifted");
   if (ACCOUNT_COPY.email !== "이메일") throw new Error("account email drifted");
   if (ACCOUNT_COPY.logout !== "로그아웃") throw new Error("account logout drifted");

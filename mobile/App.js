@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
 import {
   AccountScreen,
+  ComingSoonScreen,
   EmailBindScreen,
   InviteScreen,
   NoticeScreen,
@@ -13,6 +14,7 @@ import {
   SentScreen,
   SignupScreen,
   SplashScreenView,
+  TasteResultScreen,
   WorkspaceScreen
 } from "./src/screens.js";
 import {
@@ -28,16 +30,20 @@ import {
 } from "./src/session.js";
 import {
   backFromAccount,
+  backFromComingSoon,
   backFromInvite,
   backFromPackDetail,
+  backToPackList,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
   finishSplash,
   loadInvitePairCode,
   openAccount,
+  openComingSoonFromList,
   openMarriageFromList,
   openSendLink,
+  openTasteResult,
   requestLinkStarted,
   setEmail,
   setPartnerCode,
@@ -128,8 +134,19 @@ export default function App() {
       {state.screen === "pack-list" ? (
         <PackListScreen
           onOpenMarriage={() => setState(openMarriageFromList(state))}
+          onOpenComingSoon={(packId) => setState(openComingSoonFromList(state, packId))}
           onOpenAccount={() => setState(openAccount(state))}
         />
+      ) : null}
+      {state.screen === "coming-soon" ? (
+        <ComingSoonScreen
+          packId={state.comingSoonId}
+          onTasteResult={() => setState(openTasteResult(state))}
+          onBackToList={() => setState(backFromComingSoon(state))}
+        />
+      ) : null}
+      {state.screen === "taste-result" ? (
+        <TasteResultScreen onBackToList={() => setState(backToPackList(state))} />
       ) : null}
       {state.screen === "pack-detail" ? (
         <PackDetailScreen

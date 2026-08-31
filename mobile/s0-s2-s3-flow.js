@@ -1,4 +1,4 @@
-import { PAIR_ERRORS, S2_ERRORS } from "./s0-s2-s3-copy.js";
+import { isComingSoonPackId, PAIR_ERRORS, S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
 import { shareInviteChannel } from "../src/auth.js";
 import { shareContainsPairCode } from "../src/pair-code.js";
@@ -12,7 +12,9 @@ export function emptyNativeSession() {
 export function createNativeFlow(session = emptyNativeSession(), {
   inviteOpen = false,
   packDetailOpen = false,
-  accountOpen = false
+  accountOpen = false,
+  comingSoonId = "",
+  tasteResultOpen = false
 } = {}) {
   return {
     screen: "splash",
@@ -27,6 +29,8 @@ export function createNativeFlow(session = emptyNativeSession(), {
     packDetailOpen: Boolean(packDetailOpen),
     accountOpen: Boolean(accountOpen),
     inviteOpen: Boolean(inviteOpen),
+    comingSoonId: isComingSoonPackId(comingSoonId) ? comingSoonId : "",
+    tasteResultOpen: Boolean(tasteResultOpen) && isComingSoonPackId(comingSoonId),
     pairCode: "",
     pairCodeDisplay: "",
     inviteUrl: "",
@@ -56,6 +60,8 @@ export function resolveNativeScreen(state) {
     if (state.inviteOpen) return "invite";
     if (state.accountOpen) return "account";
     if (state.session.notice && !state.noticeDismissed) return "notice";
+    if (state.tasteResultOpen && isComingSoonPackId(state.comingSoonId)) return "taste-result";
+    if (isComingSoonPackId(state.comingSoonId)) return "coming-soon";
     if (state.packDetailOpen) return "pack-detail";
     return "pack-list";
   }
@@ -115,6 +121,8 @@ export function consumeSucceeded(state, session) {
     packDetailOpen: false,
     accountOpen: false,
     inviteOpen: false,
+    comingSoonId: "",
+    tasteResultOpen: false,
     noticeDismissed: false,
     session: nextSession
   });
@@ -151,7 +159,53 @@ export function openMarriageFromList(state) {
     splashDone: true,
     packDetailOpen: true,
     accountOpen: false,
-    inviteOpen: false
+    inviteOpen: false,
+    comingSoonId: "",
+    tasteResultOpen: false
+  });
+}
+
+export function openComingSoonFromList(state, packId) {
+  if (!state.session?.user || !isComingSoonPackId(packId)) return applyScreen(state);
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    packDetailOpen: false,
+    accountOpen: false,
+    inviteOpen: false,
+    comingSoonId: packId,
+    tasteResultOpen: false
+  });
+}
+
+export function openTasteResult(state) {
+  if (!state.session?.user || !isComingSoonPackId(state.comingSoonId)) return applyScreen(state);
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    packDetailOpen: false,
+    accountOpen: false,
+    inviteOpen: false,
+    tasteResultOpen: true
+  });
+}
+
+export function backFromComingSoon(state) {
+  return applyScreen({ ...state, comingSoonId: "", tasteResultOpen: false });
+}
+
+export function backFromTasteResult(state) {
+  return applyScreen({ ...state, tasteResultOpen: false });
+}
+
+export function backToPackList(state) {
+  return applyScreen({
+    ...state,
+    packDetailOpen: false,
+    accountOpen: false,
+    inviteOpen: false,
+    comingSoonId: "",
+    tasteResultOpen: false
   });
 }
 
@@ -162,7 +216,9 @@ export function openSendLink(state) {
     splashDone: true,
     packDetailOpen: false,
     accountOpen: false,
-    inviteOpen: true
+    inviteOpen: true,
+    comingSoonId: "",
+    tasteResultOpen: false
   });
 }
 
@@ -173,7 +229,9 @@ export function openAccount(state) {
     splashDone: true,
     accountOpen: true,
     packDetailOpen: false,
-    inviteOpen: false
+    inviteOpen: false,
+    comingSoonId: "",
+    tasteResultOpen: false
   });
 }
 
@@ -268,6 +326,8 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
       inviteOpen: false,
       packDetailOpen: false,
       accountOpen: false,
+      comingSoonId: "",
+      tasteResultOpen: false,
       noticeDismissed: !session.notice,
       error: ""
     });
@@ -363,6 +423,8 @@ export async function connectPartnerCode(state, api) {
       inviteOpen: false,
       packDetailOpen: false,
       accountOpen: false,
+      comingSoonId: "",
+      tasteResultOpen: false,
       session: result.session || state.session
     });
   } catch {
