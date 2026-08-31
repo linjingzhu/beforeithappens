@@ -8,17 +8,39 @@ export const LOGIN_MAIL = {
 export const DEFAULT_MAIL_FROM = "LoveMe <onboarding@resend.dev>";
 export const RESEND_EMAILS_URL = "https://api.resend.com/emails";
 
-export function consumeUrl(_origin, token) {
-  return consumeAppUrl(token);
+export function webConsumePath(token) {
+  return `/?token=${encodeURIComponent(String(token || ""))}`;
 }
 
-export function appHopHtml(appUrl) {
+/**
+ * The mailed link stays the `loveme` app scheme, which the spec locks so an installed app
+ * opens instead of Safari. A deployment that must also serve phones without the app can set
+ * AB_WEB_CONSUME_FALLBACK=1: the mail then links to an https hop that still hands off to the
+ * app first and only falls back to the web when nothing answers.
+ */
+export function webConsumeFallback(env = process.env) {
+  return String(env?.AB_WEB_CONSUME_FALLBACK || "") === "1";
+}
+
+export function consumeUrl(origin, token, env = process.env) {
+  const base = String(origin || "").replace(/\/$/, "");
+  if (!base || !webConsumeFallback(env)) return consumeAppUrl(token);
+  return `${base}/auth/consume?token=${encodeURIComponent(String(token || ""))}`;
+}
+
+export function appHopHtml(appUrl, webFallback = "") {
   const href = escapeHtml(appUrl);
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${href}"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><script>location.replace(${JSON.stringify(String(appUrl || ""))})</script></body></html>`;
+  const app = JSON.stringify(String(appUrl || ""));
+  if (!webFallback) {
+    return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${href}"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><script>location.replace(${app})</script></body></html>`;
+  }
+  const web = JSON.stringify(String(webFallback));
+  const webHref = escapeHtml(webFallback);
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><p><a href="${webHref}">웹에서 열기</a></p><script>var w=${web};var t=setTimeout(function(){location.replace(w)},1200);document.addEventListener("visibilitychange",function(){if(document.hidden)clearTimeout(t)});location.href=${app}</script></body></html>`;
 }
 
-export function consumeHopHtml(token) {
-  return appHopHtml(consumeAppUrl(token));
+export function consumeHopHtml(token, env = process.env) {
+  return appHopHtml(consumeAppUrl(token), webConsumeFallback(env) ? webConsumePath(token) : "");
 }
 
 export function inviteHopHtml() {

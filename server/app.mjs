@@ -91,7 +91,7 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
-        const linkUrl = consumeUrl(origin, result.token);
+        const linkUrl = consumeUrl(origin, result.token, mailEnv);
         const delivered = await deliverLoginLink({
           to: result.email,
           url: linkUrl,
@@ -226,8 +226,13 @@ export function createListener({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/healthz") {
+        sendJson(response, 200, { ok: true, service: "ab", time: new Date().toISOString() });
+        return;
+      }
+
       if (request.method === "GET" && url.pathname === "/auth/consume") {
-        sendHtml(response, 200, consumeHopHtml(url.searchParams.get("token") || ""));
+        sendHtml(response, 200, consumeHopHtml(url.searchParams.get("token") || "", mailEnv));
         return;
       }
 
