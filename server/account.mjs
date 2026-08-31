@@ -119,38 +119,49 @@ export function createAccount({ store, now = Date.now } = {}) {
         if (purchase.buyerUserId === userId) purchase.buyerUserId = null;
       }
 
+      // A surviving workspace keeps no pointer to the deleted owner.
+      for (const workspace of rows(state, "workspaces")) {
+        if (workspace.ownerUserId === userId) workspace.ownerUserId = null;
+      }
+
       // The couple space closes; the person still here continues in a fresh one.
       for (const workspaceId of kept) {
+        const workspace = rows(state, "workspaces").find((item) => item.id === workspaceId);
+        if (!workspace || workspace.status !== "active") continue;
         const survivor = rows(state, "members").find((member) =>
           member.workspaceId === workspaceId && member.status === "accepted"
         );
         if (!survivor) continue;
-        const workspace = rows(state, "workspaces").find((item) => item.id === workspaceId);
-        if (workspace && workspace.status === "active") {
-          workspace.status = "archived";
-          workspace.archivedAt = iso(at);
-          workspace.pairCode = "";
-        }
+        workspace.status = "archived";
+        workspace.archivedAt = iso(at);
+        workspace.pairCode = "";
         for (const invite of rows(state, "invitations")) {
           if (invite.workspaceId !== workspaceId || invite.usedAt) continue;
           invite.expiresAt = iso(at);
           invite.shareToken = "";
         }
-        const fresh = {
-          id: createId("ws"),
-          ownerUserId: survivor.userId,
-          status: "active",
-          createdAt: iso(at)
-        };
-        rows(state, "workspaces").push(fresh);
-        rows(state, "members").push({
-          id: createId("mem"),
-          workspaceId: fresh.id,
-          userId: survivor.userId,
-          role: "buyer",
-          status: "accepted",
-          createdAt: iso(at)
-        });
+        // Normally the survivor now has no active workspace at all; reuse one if they somehow do.
+        let fresh = rows(state, "members")
+          .filter((member) => member.userId === survivor.userId && member.status === "accepted")
+          .map((member) => rows(state, "workspaces").find((item) => item.id === member.workspaceId))
+          .find((item) => item?.status === "active") || null;
+        if (!fresh) {
+          fresh = {
+            id: createId("ws"),
+            ownerUserId: survivor.userId,
+            status: "active",
+            createdAt: iso(at)
+          };
+          rows(state, "workspaces").push(fresh);
+          rows(state, "members").push({
+            id: createId("mem"),
+            workspaceId: fresh.id,
+            userId: survivor.userId,
+            role: "buyer",
+            status: "accepted",
+            createdAt: iso(at)
+          });
+        }
         for (const entitlement of rows(state, "entitlements")) {
           if (entitlement.workspaceId !== workspaceId || entitlement.status !== "active") continue;
           entitlement.transferredFromWorkspaceId = workspaceId;

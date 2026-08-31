@@ -303,8 +303,17 @@ test("the native 계정 screen asks once before deleting", async () => {
   assert.match(screens, /testID="account-withdraw-confirm"/);
   assert.match(screens, /testID="account-withdraw-cancel"/);
   const account = screens.slice(screens.indexOf("export function AccountScreen"), screens.indexOf("export function UnlockRestScreen"));
-  // the entry row only opens the confirm block; onWithdraw is reachable from the confirm block only
-  assert.equal(account.indexOf("setConfirmingWithdraw(true)") < account.indexOf("onWithdraw?.()"), true);
+  // the entry row only opens the confirm block; deletion is reachable from the confirm block only
+  const entryLine = account.split("\n").find((line) => line.includes('testID="account-withdraw"'));
+  assert.match(entryLine, /setConfirmingWithdraw\(true\)/);
+  assert.equal(entryLine.includes("onWithdraw"), false);
+  const confirmBlock = account.slice(
+    account.indexOf('testID="account-withdraw-confirm"'),
+    account.indexOf('testID="account-withdraw"')
+  );
+  assert.match(confirmBlock, /testID="account-withdraw-yes"/);
+  assert.match(confirmBlock, /testID="account-withdraw-cancel"/);
+  assert.match(confirmBlock, /onWithdraw\?\.\(\)/);
   assert.equal(account.split("onWithdraw?.()").length - 1, 1);
 });
 
@@ -312,6 +321,9 @@ test("withdrawal copy is plain Korean and states that it cannot be undone", () =
   assert.equal(WITHDRAW_COPY.entry, "탈퇴하기");
   assert.equal(WITHDRAW_COPY.cancel, "돌아가기");
   assert.match(WITHDRAW_COPY.body, /되돌릴 수 없어요/);
+  // the confirm screen must not promise the partner more than deletion actually leaves them
+  assert.match(WITHDRAW_COPY.partnerLine, /상대의 계정은 그대로 남아요/);
+  assert.match(WITHDRAW_COPY.partnerLine, /새로 시작할 수 있어요/);
   assert.equal(Object.isFrozen(WITHDRAW_COPY), true);
   for (const line of Object.values(WITHDRAW_COPY)) {
     assert.equal(/영구|삭제됩니다|경고|주의하세요/.test(line), false);

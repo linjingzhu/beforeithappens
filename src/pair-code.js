@@ -48,7 +48,7 @@ export const WITHDRAW_COPY = Object.freeze({
   entry: "탈퇴하기",
   title: "탈퇴할까요?",
   body: "탈퇴하면 계정과 내가 쓴 비공개 메모, 내가 남긴 답변이 지워져요. 되돌릴 수 없어요.",
-  partnerLine: "상대의 기록은 상대에게 그대로 남아요.",
+  partnerLine: "상대의 계정은 그대로 남아요. 함께 보던 기록은 닫히고, 상대는 새로 시작할 수 있어요.",
   confirm: "탈퇴하기",
   cancel: "돌아가기",
   done: "탈퇴했어요. 함께해 주어 고마웠어요.",
