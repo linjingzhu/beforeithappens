@@ -17,6 +17,7 @@ import {
   existingQuestionsForPack,
   pickPackSample,
   SAMPLE_SIZE,
+  sampleCounterLabel,
   TOGETHER_CTA
 } from "../src/marriage-sample.js";
 import { debugLine, isStoreBuild, isVirtualDebug } from "../mobile/src/virtual.js";
@@ -55,7 +56,7 @@ test("NEXT home first-run is splash → magic-link login → 질문집, not spla
   assert.match(login, /LoveMe/);
   assert.match(login, /로그인 링크 보내기/);
   assert.match(login, /이메일 주소를 입력해주세요/);
-  assert.equal(login.includes("MaruBuri"), false);
+  assert.equal(login.includes("MaruBuri 🐾"), false);
   assert.equal(login.includes("cancel-login"), false);
   assert.equal(login.includes("알림을 허용하면"), false);
   const keepGate = renderS2SignupScreen({ firstRun: false });
@@ -118,6 +119,11 @@ test("marriage sample is 3 existing questions; coming-soon packs invent no 임�
   const marriage = openMarriageFromList(home, () => 0);
   assert.equal(marriage.screen, "sample-q");
   assert.equal(marriage.sampleQuestions.length, 3);
+  const q1 = renderNativeScreen(marriage);
+  assert.match(q1, /결혼 1\/3/);
+  assert.match(q1, /왜 그 선택인지 한 줄로 적어주세요/);
+  assert.match(q1, />다음</);
+  assert.equal(q1.includes("3/12"), false);
   const emptySoon = openComingSoonFromList(home, "pregnancy");
   assert.equal(emptySoon.screen, "sample-result");
   assert.equal(emptySoon.sampleQuestions.length, 0);
@@ -162,6 +168,26 @@ test("virtual debug is on; store builds hide [debug]; AUTH_FETCH_MS stays 55s", 
   assert.match(screens, /requestLoveMeNotificationPermission/);
   assert.match(s2Swift, /requestAuthorization\(options: \[\.alert, \.sound, \.badge\]\)/);
   assert.equal(s2Swift.includes("알림을 허용하면"), false);
-  assert.equal(screens.includes("MaruBuri"), false);
+  assert.equal(screens.includes("MaruBuri 🐾"), false);
+  assert.match(screens, /fontFamily: fonts\.titleStrong/);
+  assert.match(screens, /fonts\.body/);
   assert.equal(loggedOutHome().screen, "signup");
+});
+
+test("Designer font lock uses MaruBuri for titles/stems and Pretendard for body", async () => {
+  assert.equal(sampleCounterLabel("marriage", 0), "결혼 1/3");
+  assert.equal(sampleCounterLabel("marriage", 2), "결혼 3/3");
+  assert.deepEqual(PACK_LIST_ROWS.map((row) => row.label), ["연애", "결혼", "가정 경영", "임신", "출산", "육아"]);
+  const css = await readFile("mobile/s0-s2-s3-preview.css", "utf8");
+  assert.match(css, /font-family: "MaruBuri"/);
+  assert.match(css, /font-family: "Pretendard"/);
+  assert.match(css, /\.loveme-stem/);
+  assert.match(css, /\.loveme-soon[\s\S]*font-family: var\(--font-body\)/);
+  const fontMod = await readFile("mobile/src/fonts.js", "utf8");
+  assert.match(fontMod, /FONT_TITLE = "MaruBuri"/);
+  assert.match(fontMod, /FONT_BODY = "Pretendard"/);
+  assert.equal(fontMod.includes("MaruBuri 🐾"), false);
+  const screens = await readFile("mobile/src/screens.js", "utf8");
+  assert.match(screens, /styles\.sampleProgress/);
+  assert.match(screens, /reasonHeart/);
 });

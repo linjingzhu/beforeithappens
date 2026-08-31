@@ -63,6 +63,9 @@ import {
   tapUnlock
 } from "./s0-s2-s3-flow.js";
 import { packListLabel } from "./src/copy.js";
+import { sampleCounterLabel, SAMPLE_SIZE } from "../src/marriage-sample.js";
+import { FONT_ASSETS } from "./src/fonts.js";
+import * as Font from "expo-font";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
 import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.js";
@@ -93,6 +96,7 @@ export default function App() {
     let sub;
     (async () => {
       await SplashScreen.hideAsync().catch(() => {});
+      await Font.loadAsync(FONT_ASSETS).catch(() => {});
       if (cancelled) return;
       const opened = startHostFlow();
       const initialUrl = await Linking.getInitialURL().catch(() => null);
@@ -176,6 +180,7 @@ export default function App() {
           choiceId={state.sampleChoice}
           reason={state.sampleReason}
           error={state.error}
+          progressLabel={sampleCounterLabel(state.samplePackId, state.sampleIndex, SAMPLE_SIZE)}
           onChangeChoice={(id) => setState(setSampleChoice(state, id))}
           onChangeReason={(value) => setState(setSampleReason(state, value))}
           onSubmit={() => setState(submitSampleAnswer(state))}

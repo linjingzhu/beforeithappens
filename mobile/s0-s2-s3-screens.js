@@ -1,6 +1,6 @@
 import { ACCOUNT_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, FORBIDDEN_APP_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, packListLabel, S0_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY } from "./s0-s2-s3-copy.js";
 import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../src/hearts.js";
-import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_RESULT_EXAMPLE, TOGETHER_CTA } from "../src/marriage-sample.js";
+import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, SAMPLE_SIZE, sampleCounterLabel, TOGETHER_CTA } from "../src/marriage-sample.js";
 import { debugLine } from "./src/virtual.js";
 
 function escapeHtml(value = "") {
@@ -101,7 +101,8 @@ export function renderSampleQuestionScreen({
   question = { title: "", choices: [] },
   choiceId = "",
   reason = "",
-  error = ""
+  error = "",
+  progressLabel = "결혼 1/3"
 } = {}) {
   const choices = (question.choices || []).map((choice) => `
       <label class="loveme-choice${choiceId === choice.id ? " is-on" : ""}">
@@ -111,11 +112,12 @@ export function renderSampleQuestionScreen({
   return `
     <section class="loveme-screen loveme-sample" data-screen="sample-q">
       <button class="loveme-back" type="button" data-action="back-pack-detail" aria-label="back">‹</button>
-      <h1>${escapeHtml(question.title || "")}</h1>
+      <p class="loveme-sample-progress">${escapeHtml(progressLabel)}</p>
+      <h1 class="loveme-stem">${escapeHtml(question.title || "")}</h1>
       <fieldset>${choices}</fieldset>
-      <label class="loveme-reason-label" for="sample-reason">${escapeHtml(REASON_PROMPT)}</label>
+      <p class="loveme-reason-label"><span class="loveme-reason-heart" aria-hidden="true">♡</span> ${escapeHtml(REASON_PROMPT)}</p>
       <input id="sample-reason" name="sample-reason" type="text" required value="${escapeHtml(reason)}" placeholder="${escapeHtml(REASON_PROMPT)}">
-      <button class="loveme-primary" type="button" data-action="submit-sample" ${sampleAnswerReady(choiceId, reason) ? "" : "disabled"}>다음</button>
+      <button class="loveme-primary" type="button" data-action="submit-sample" ${sampleAnswerReady(choiceId, reason) ? "" : "disabled"}>${escapeHtml(SAMPLE_NEXT)}</button>
       ${error ? `<p class="loveme-error" role="alert">${escapeHtml(error)}</p>` : ""}
       ${debug()}
     </section>
@@ -165,14 +167,14 @@ export function renderTasteResultScreen({ packId = "home-mgmt" } = {}) {
 
 export function renderPackListScreen({ hearts = HEARTS.start, session = null } = {}) {
   const rows = PACK_LIST_ROWS.map((row) => row.open
-    ? `<button class="loveme-pack-row is-open" type="button" data-action="open-marriage"><span class="loveme-pack-mark">${escapeHtml(row.mark || "")}</span><span>${escapeHtml(row.label)}</span><span>›</span></button>`
-    : `<button class="loveme-pack-row" type="button" data-action="open-coming-soon" data-pack="${escapeHtml(row.id)}"><span class="loveme-pack-mark">${escapeHtml(row.mark || "")}</span><span>${escapeHtml(row.label)}</span><span class="loveme-soon">${escapeHtml(PACK_LIST_COPY.soon)}</span></button>`
+    ? `<button class="loveme-pack-row is-open" type="button" data-action="open-marriage"><span class="loveme-pack-mark">${escapeHtml(row.mark || "")}</span><span class="loveme-pack-name">${escapeHtml(row.label)}</span><span>›</span></button>`
+    : `<button class="loveme-pack-row" type="button" data-action="open-coming-soon" data-pack="${escapeHtml(row.id)}"><span class="loveme-pack-mark">${escapeHtml(row.mark || "")}</span><span class="loveme-pack-name">${escapeHtml(row.label)}</span><span class="loveme-soon">${escapeHtml(PACK_LIST_COPY.soon)}</span></button>`
   ).join("");
   const heartsHtml = showsHeartBalance(session) ? heartsChip(hearts) : "";
   return `
     <section class="loveme-screen loveme-pack-list" data-screen="pack-list">
       ${heartsHtml}
-      <h1>${escapeHtml(PACK_LIST_COPY.title)}</h1>
+      <h1 class="loveme-title">${escapeHtml(PACK_LIST_COPY.title)}</h1>
       <article class="loveme-pack-stack">${rows}</article>
       <button class="loveme-account-entry" type="button" data-action="open-account">${escapeHtml(ACCOUNT_COPY.title)}</button>
       ${debug()}
@@ -323,7 +325,8 @@ export function renderNativeScreen(state) {
       question: state.sampleQuestions?.[state.sampleIndex] || { title: "", choices: [] },
       choiceId: state.sampleChoice,
       reason: state.sampleReason,
-      error: state.error
+      error: state.error,
+      progressLabel: sampleCounterLabel(state.samplePackId, state.sampleIndex, SAMPLE_SIZE)
     });
   }
   if (state.screen === "sample-result") {

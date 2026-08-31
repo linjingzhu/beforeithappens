@@ -66,10 +66,10 @@ struct S2SignupScreen: View {
                     .multilineTextAlignment(.center)
             }
             Text("LoveMe")
-                .font(.largeTitle.weight(.bold))
+                .font(LoveMeFont.title(34))
                 .overlay {
                     LoveMeTheme.buttonGradient.mask(
-                        Text("LoveMe").font(.largeTitle.weight(.bold))
+                        Text("LoveMe").font(LoveMeFont.title(34))
                     )
                 }
             HStack(spacing: 10) {

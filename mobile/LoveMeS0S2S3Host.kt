@@ -147,11 +147,12 @@ fun LoveMeS0S2S3Host(
             question = comingSoonQuestion,
             onBackToList = { screen = LoveMeNativeScreen.PackList }
         )
-        LoveMeNativeScreen.SampleQ -> LoveMeSampleQuestionScreen(
+        LoveMeNativeScreen.SampleQ ->         LoveMeSampleQuestionScreen(
             title = LoveMeInvitePackCopy.sampleTitles.getOrElse(sampleIndex) { LoveMeInvitePackCopy.sampleTitles.last() },
             choices = LoveMeInvitePackCopy.sampleChoices.mapIndexed { index, label -> index.toString() to label },
             choiceId = sampleChoice,
             reason = sampleReason,
+            progressLabel = "$samplePackLabel ${sampleIndex + 1}/3",
             onChoose = { sampleChoice = it },
             onReason = { sampleReason = it },
             onSubmit = { submitSample() },

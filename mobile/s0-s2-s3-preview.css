@@ -13,6 +13,36 @@
   --gradient-h: linear-gradient(90deg, #F6C8D8 0%, #B7D9F0 100%);
   --safe-top: max(59px, env(safe-area-inset-top, 0px));
   --safe-bottom: max(34px, env(safe-area-inset-bottom, 0px));
+  --font-title: "MaruBuri", "Times New Roman", serif;
+  --font-body: "Pretendard", Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+@font-face {
+  font-family: "MaruBuri";
+  src: url("./assets/fonts/MaruBuri-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "MaruBuri";
+  src: url("./assets/fonts/MaruBuri-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("./assets/fonts/Pretendard-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("./assets/fonts/Pretendard-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-display: swap;
 }
 
 * { box-sizing: border-box; }
@@ -22,7 +52,7 @@ body {
   min-height: 100vh;
   background: var(--gradient);
   color: var(--charcoal);
-  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: var(--font-body);
 }
 
 .preview-frame {
@@ -85,10 +115,59 @@ body {
 }
 
 .loveme-splash h1,
+.loveme-login-mark,
+.loveme-title,
+.loveme-stem,
+.loveme-pack-list h1,
+.loveme-gate-card h1,
 .loveme-card h1 {
-  margin: 8px 0 0;
-  font: 500 34px/1.15 Georgia, serif;
-  letter-spacing: -.04em;
+  font-family: var(--font-title);
+}
+
+.loveme-pack-name {
+  font-family: var(--font-title);
+}
+
+.loveme-primary,
+.loveme-secondary,
+.loveme-soon,
+.loveme-choice,
+.loveme-sample-progress,
+.loveme-reason-label,
+.loveme-account-entry {
+  font-family: var(--font-body);
+}
+
+.loveme-sample-progress {
+  margin: 0 0 8px 36px;
+  font-size: 15px;
+}
+
+.loveme-reason-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.loveme-reason-heart {
+  color: var(--baby-pink);
+  font-size: 16px;
+}
+
+.loveme-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin: 8px 0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.loveme-choice input {
+  accent-color: var(--charcoal);
 }
 
 .loveme-splash p,
@@ -376,7 +455,7 @@ body {
 .loveme-login-mark {
   margin: 0 0 36px;
   text-align: center;
-  font: 700 44px/1.1 Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font: 700 44px/1.1 var(--font-title);
   letter-spacing: -0.04em;
   background: var(--gradient-h);
   -webkit-background-clip: text;
@@ -923,7 +1002,7 @@ body {
 .loveme-pack-list h1,
 .loveme-unlock h1,
 .loveme-coming-soon h1 {
-  font-family: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  font-family: var(--font-title);
   color: var(--charcoal);
 }
 

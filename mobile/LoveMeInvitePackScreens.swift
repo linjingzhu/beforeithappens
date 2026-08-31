@@ -1,6 +1,15 @@
 import SwiftUI
 import UserNotifications
 
+enum LoveMeFont {
+    static func title(_ size: CGFloat, weight: Font.Weight = .semibold) -> Font {
+        .custom(weight == .regular ? "MaruBuri-Regular" : "MaruBuri-SemiBold", size: size)
+    }
+    static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        .custom(weight == .regular ? "Pretendard-Regular" : "Pretendard-SemiBold", size: size)
+    }
+}
+
 enum LoveMeTheme {
     static let babyPink = Color(red: 0.965, green: 0.784, blue: 0.847)
     static let skyBlue = Color(red: 0.718, green: 0.851, blue: 0.941)
@@ -36,7 +45,8 @@ enum LoveMeInvitePackCopy {
         "우리에게 집은 어떤 의미에 가장 가까울까요?"
     ]
     static let backToList = "목록으로"
-    static let reason = "왜 그 선택인지 한 줄로"
+    static let reason = "왜 그 선택인지 한 줄로 적어주세요."
+    static let next = "다음"
     static let example = "예시입니다"
     static let together = "함께 풀어보기"
     static let aligned = "같음"
@@ -102,7 +112,7 @@ struct LoveMeGradientButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.body.weight(.bold))
+                .font(LoveMeFont.body(16, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(LoveMeTheme.buttonGradient)
@@ -123,16 +133,17 @@ struct LoveMePackListScreen: View {
         VStack(alignment: .leading, spacing: 0) {
             if showHearts { LoveMeHeartsChip(balance: hearts).frame(maxWidth: .infinity) }
             Text(LoveMeInvitePackCopy.packTitle)
-                .font(.largeTitle.weight(.bold))
+                .font(LoveMeFont.title(34))
                 .foregroundStyle(LoveMeTheme.charcoal)
                 .padding(.vertical, 16)
             ForEach(LoveMeInvitePackCopy.rows, id: \.id) { row in
                 Button(action: { row.open ? onOpenMarriage() : onOpenComingSoon(row.id) }) {
                     HStack {
                         Text(row.mark)
-                        Text(row.label)
+                        Text(row.label).font(LoveMeFont.title(17))
                         Spacer()
                         Text(row.open ? "›" : LoveMeInvitePackCopy.packSoon)
+                            .font(LoveMeFont.body(14))
                             .foregroundStyle(LoveMeTheme.muted)
                     }
                     .foregroundStyle(LoveMeTheme.charcoal)
@@ -212,6 +223,7 @@ struct LoveMeSampleQuestionScreen: View {
     var choices: [(id: String, label: String)]
     var choiceId: String
     var reason: String
+    var progressLabel: String = "결혼 1/3"
     var onChoose: (String) -> Void
     var onReason: (String) -> Void
     var onSubmit: () -> Void
@@ -219,23 +231,37 @@ struct LoveMeSampleQuestionScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Button("‹", action: onBack).font(.title).foregroundStyle(LoveMeTheme.charcoal)
-            Text(title).font(.title2.weight(.bold))
+            HStack {
+                Button("‹", action: onBack).font(LoveMeFont.body(28)).foregroundStyle(LoveMeTheme.charcoal)
+                Text(progressLabel).font(LoveMeFont.body(15))
+                Spacer()
+            }
+            Text(title).font(LoveMeFont.title(22))
             ForEach(choices, id: \.id) { choice in
                 Button(action: { onChoose(choice.id) }) {
-                    Text(choice.label)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(.white.opacity(0.72))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay(RoundedRectangle(cornerRadius: 14).stroke(choiceId == choice.id ? LoveMeTheme.charcoal : .clear, lineWidth: 1.5))
+                    HStack(alignment: .top, spacing: 12) {
+                        Text(choiceId == choice.id ? "●" : "○")
+                            .font(LoveMeFont.body(16))
+                            .foregroundStyle(LoveMeTheme.muted)
+                        Text(choice.label)
+                            .font(LoveMeFont.body(15))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding()
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(choiceId == choice.id ? LoveMeTheme.charcoal : .clear, lineWidth: 1.5))
                 }
                 .buttonStyle(.plain)
             }
-            Text(LoveMeInvitePackCopy.reason)
+            HStack(spacing: 8) {
+                Text("♡").foregroundStyle(LoveMeTheme.babyPink)
+                Text(LoveMeInvitePackCopy.reason).font(LoveMeFont.body(14)).foregroundStyle(LoveMeTheme.muted)
+            }
             TextField(LoveMeInvitePackCopy.reason, text: Binding(get: { reason }, set: onReason))
+                .font(LoveMeFont.body(16))
                 .textFieldStyle(.roundedBorder)
-            LoveMeGradientButton(title: "다음", action: onSubmit)
+            LoveMeGradientButton(title: LoveMeInvitePackCopy.next, action: onSubmit)
             LoveMeDebugLine()
         }
         .foregroundStyle(LoveMeTheme.charcoal)

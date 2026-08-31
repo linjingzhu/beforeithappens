@@ -11,7 +11,7 @@
 - Label private and shared writing areas with text, not color alone.
 - A shared agreement requires the partner's approval; edits require reapproval.
 - Summaries show conversations, agreements, deferrals, and revisit items—not a relationship score.
-- LoveMe NEXT home (this PR; live `d3be894e` stays splash→`질문집`): splash → magic-link login (`로그인 링크 보내기`, iOS system notification permission, virtual `[debug]` send) → `질문집` with hearts from 0. Coming-soon packs keep `곧 열려요` and use the marriage sample engine on existing questions only (no invented `임신`/`출산`/`육아` copy). Shop SKU `29,000원에 | ♡ 12`; `열기` costs 10 hearts; certificate `이수증` has no scores or faces.
+- LoveMe NEXT home (this PR; live `d3be894e` stays splash→`질문집`): splash → magic-link login (`로그인 링크 보내기`, iOS system notification permission, virtual `[debug]` send) → `질문집` with hearts from 0. Coming-soon packs keep `곧 열려요` and use the marriage sample engine on existing questions only (no invented `임신`/`출산`/`육아` copy). Shop SKU `29,000원에 | ♡ 12`; `열기` costs 10 hearts; certificate `이수증` has no scores or faces. Titles/stems: MaruBuri. Body/choices/buttons/`곧 열려요`: Pretendard. Sample header `결혼 1/3`. Prompt `왜 그 선택인지 한 줄로 적어주세요.` Do not show the font-name label `MaruBuri 🐾`.
 
 
 ## Foundation auth flow

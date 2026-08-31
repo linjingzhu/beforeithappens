@@ -44,7 +44,18 @@
           "resizeMode": "cover"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/MaruBuri-Regular.ttf",
+            "./assets/fonts/MaruBuri-SemiBold.ttf",
+            "./assets/fonts/Pretendard-Regular.otf",
+            "./assets/fonts/Pretendard-SemiBold.otf"
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {

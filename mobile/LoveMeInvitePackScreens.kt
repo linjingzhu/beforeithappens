@@ -24,7 +24,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import android.graphics.Typeface
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,7 +41,8 @@ object LoveMeInvitePackCopy {
     const val logout = "로그아웃"
     const val homeMgmtQuestion = "가사와 시간은 어떻게 나누고 싶나요?"
     const val backToList = "목록으로"
-    const val reason = "왜 그 선택인지 한 줄로"
+    const val reason = "왜 그 선택인지 한 줄로 적어주세요."
+    const val next = "다음"
     const val example = "예시입니다"
     const val together = "함께 풀어보기"
     const val tasteAligned = "같음"
@@ -83,6 +87,24 @@ private val BabyPink = Color(0xFFF6C8D8)
 private val SkyBlue = Color(0xFFB7D9F0)
 private val Card = Color(0xB8FFFFFF)
 
+@Composable
+fun rememberMaruBuri(): FontFamily {
+    val context = LocalContext.current
+    return remember {
+        runCatching { FontFamily(Typeface.createFromAsset(context.assets, "fonts/MaruBuri-Regular.ttf")) }
+            .getOrElse { FontFamily.Serif }
+    }
+}
+
+@Composable
+fun rememberPretendard(): FontFamily {
+    val context = LocalContext.current
+    return remember {
+        runCatching { FontFamily(Typeface.createFromAsset(context.assets, "fonts/Pretendard-Regular.otf")) }
+            .getOrElse { FontFamily.SansSerif }
+    }
+}
+
 fun Modifier.loveMeSafeChrome(): Modifier = this
     .fillMaxSize()
     .background(BabyPink)
@@ -96,13 +118,15 @@ fun LoveMePackListScreen(
     onOpenComingSoon: (String) -> Unit = {},
     onOpenAccount: () -> Unit = {}
 ) {
+    val titleFont = rememberMaruBuri()
+    val bodyFont = rememberPretendard()
     Column(
         modifier = Modifier
             .loveMeSafeChrome()
             .padding(28.dp)
     ) {
-        if (showHearts) Text("♡ $hearts", color = Charcoal, fontWeight = FontWeight.SemiBold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-        Text(LoveMeInvitePackCopy.packTitle, fontSize = 34.sp, fontWeight = FontWeight.SemiBold, color = Charcoal, modifier = Modifier.padding(top = 12.dp, bottom = 16.dp))
+        if (showHearts) Text("♡ $hearts", color = Charcoal, fontWeight = FontWeight.SemiBold, fontFamily = bodyFont, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Text(LoveMeInvitePackCopy.packTitle, fontSize = 34.sp, fontWeight = FontWeight.SemiBold, color = Charcoal, fontFamily = titleFont, modifier = Modifier.padding(top = 12.dp, bottom = 16.dp))
         listOf(
             Triple("dating", "연애", false),
             Triple("marriage", "결혼", true),
@@ -117,8 +141,8 @@ fun LoveMePackListScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(pack.second)
-                    Text(if (pack.third) "›" else LoveMeInvitePackCopy.packSoon, color = Muted)
+                    Text(pack.second, fontFamily = titleFont)
+                    Text(if (pack.third) "›" else LoveMeInvitePackCopy.packSoon, color = Muted, fontFamily = bodyFont)
                 }
             }
         }
@@ -252,31 +276,45 @@ fun LoveMeSampleQuestionScreen(
     choices: List<Pair<String, String>>,
     choiceId: String,
     reason: String,
+    progressLabel: String = "결혼 1/3",
     onChoose: (String) -> Unit,
     onReason: (String) -> Unit,
     onSubmit: () -> Unit,
     onBack: () -> Unit
 ) {
+    val titleFont = rememberMaruBuri()
+    val bodyFont = rememberPretendard()
     Column(
         modifier = Modifier.loveMeSafeChrome().padding(28.dp)
     ) {
-        TextButton(onClick = onBack) { Text("‹", fontSize = 28.sp, color = Charcoal) }
-        Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Charcoal)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onBack) { Text("‹", fontSize = 28.sp, color = Charcoal, fontFamily = bodyFont) }
+            Text(progressLabel, fontSize = 15.sp, color = Charcoal, fontFamily = bodyFont)
+        }
+        Text(title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Charcoal, fontFamily = titleFont)
         choices.forEach { choice ->
             Button(
                 onClick = { onChoose(choice.first) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Card,
+                    containerColor = Color.White,
                     contentColor = Charcoal
                 ),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            ) { Text(choice.second, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth()) }
+            ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(if (choiceId == choice.first) "●" else "○", color = Muted, fontFamily = bodyFont)
+                    Text(choice.second, textAlign = TextAlign.Start, modifier = Modifier.padding(start = 12.dp).fillMaxWidth(), fontFamily = bodyFont)
+                }
+            }
         }
-        Text(LoveMeInvitePackCopy.reason, color = Charcoal, modifier = Modifier.padding(top = 16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 16.dp)) {
+            Text("♡", color = BabyPink)
+            Text(LoveMeInvitePackCopy.reason, color = Muted, fontFamily = bodyFont, modifier = Modifier.padding(start = 8.dp))
+        }
         OutlinedTextField(
             value = reason,
             onValueChange = onReason,
-            placeholder = { Text(LoveMeInvitePackCopy.reason) },
+            placeholder = { Text(LoveMeInvitePackCopy.reason, fontFamily = bodyFont) },
             modifier = Modifier.fillMaxWidth()
         )
         Button(
@@ -284,7 +322,7 @@ fun LoveMeSampleQuestionScreen(
             enabled = choiceId.isNotEmpty() && reason.trim().isNotEmpty(),
             colors = ButtonDefaults.buttonColors(containerColor = SkyBlue, contentColor = Color.White),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(top = 12.dp)
-        ) { Text("다음") }
+        ) { Text(LoveMeInvitePackCopy.next, fontFamily = bodyFont) }
         Text(LoveMeInvitePackCopy.debug, color = Muted)
     }
 }

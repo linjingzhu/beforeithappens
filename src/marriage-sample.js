@@ -1,7 +1,9 @@
 import { questions } from "./questions.js";
+import { packListLabel } from "./pair-code.js";
 
 export const SAMPLE_SIZE = 3;
-export const REASON_PROMPT = "왜 그 선택인지 한 줄로";
+export const REASON_PROMPT = "왜 그 선택인지 한 줄로 적어주세요.";
+export const SAMPLE_NEXT = "다음";
 export const SAMPLE_RESULT_EXAMPLE = "예시입니다";
 export const TOGETHER_CTA = "함께 풀어보기";
 
@@ -69,6 +71,12 @@ export function pickPackSample(packId, source = questions, rng = Math.random) {
 
 export function pickMarriageSample(source = questions, rng = Math.random) {
   return pickPackSample("marriage", source, rng);
+}
+
+export function sampleCounterLabel(packId, index = 0, total = SAMPLE_SIZE) {
+  const name = packListLabel(packId) || "결혼";
+  const max = Number(total) > 0 ? Number(total) : SAMPLE_SIZE;
+  return `${name} ${Number(index) + 1}/${max}`;
 }
 
 export function pickPartnerChoice(question, myChoiceId, rng = Math.random) {

@@ -82,6 +82,7 @@ struct LoveMeS0S2S3Host: View {
                     choices: sampleChoices,
                     choiceId: sampleChoice,
                     reason: sampleReason,
+                    progressLabel: "\(samplePackLabel) \(sampleIndex + 1)/3",
                     onChoose: { sampleChoice = $0 },
                     onReason: { sampleReason = $0 },
                     onSubmit: submitSample,
