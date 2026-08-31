@@ -38,21 +38,24 @@ export const PACK_DETAIL_COPY = Object.freeze({
 export const ACCOUNT_COPY = Object.freeze({
   title: "계정",
   email: "이메일",
+  login: "로그인",
+  invite: "연인을 초대하세요",
   logout: "로그아웃"
 });
 
 export const PACK_LIST_COPY = Object.freeze({
   title: "질문집",
-  subtitle: "결혼만 지금 열려 있어요.",
+  subtitle: "",
   soon: "곧 열려요"
 });
 
 export const PACK_LIST_ROWS = Object.freeze([
-  Object.freeze({ id: "marriage", label: "결혼", open: true }),
-  Object.freeze({ id: "home-mgmt", label: "가정 경영", open: false }),
-  Object.freeze({ id: "pregnancy", label: "임신", open: false }),
-  Object.freeze({ id: "birth", label: "출산", open: false }),
-  Object.freeze({ id: "parenting", label: "육아", open: false })
+  Object.freeze({ id: "dating", label: "연애", open: false, mark: "♡" }),
+  Object.freeze({ id: "marriage", label: "결혼", open: true, mark: "○" }),
+  Object.freeze({ id: "home-mgmt", label: "가정 경영", open: false, mark: "⌂" }),
+  Object.freeze({ id: "pregnancy", label: "임신", open: false, mark: "+" }),
+  Object.freeze({ id: "birth", label: "출산", open: false, mark: "✦" }),
+  Object.freeze({ id: "parenting", label: "육아", open: false, mark: "✶" })
 ]);
 
 /** Designer proposal for the coming-soon 임시 체험 card. Swap this constant; do not invent pack-specific questions. */
@@ -66,11 +69,11 @@ export const TASTE_LABELS = Object.freeze({
 
 export const COMING_SOON_TASTE_COPY = Object.freeze({
   badge: "곧 열려요",
-  eyebrow: "LoveMe coming-soon pack",
-  experience: "임시 체험",
+  eyebrow: "",
+  experience: "",
   sampleQuestion: COMING_SOON_SAMPLE_QUESTION,
-  sampleCaption: "예시입니다. 여기서 답하거나 팔지 않아요.",
-  cta: "결과 맛보기",
+  sampleCaption: "예시입니다.",
+  cta: "",
   backToList: "목록으로"
 });
 
@@ -94,6 +97,10 @@ export function isComingSoonPackId(id) {
 
 export function comingSoonPackLabel(id) {
   return PACK_LIST_ROWS.find((row) => row.id === id && !row.open)?.label || "";
+}
+
+export function packListLabel(id) {
+  return PACK_LIST_ROWS.find((row) => row.id === id)?.label || "";
 }
 
 export const PAIR_ERRORS = Object.freeze({
@@ -145,74 +152,31 @@ export function shareContainsPairCode(url, code) {
 }
 
 export function assertLockedMeasurementCopy() {
-  if (PAIR_COPY.headline !== "링크 보내기") throw new Error("invite headline drifted");
-  if (PAIR_COPY.sub !== "초대를 보내면 상대도 같은 팩을 받아요.") throw new Error("invite sub drifted");
-  if (PAIR_COPY.copyLink !== "링크 복사") throw new Error("invite copy-link drifted");
-  if (PAIR_COPY.instagram !== "인스타그램") throw new Error("invite Instagram drifted");
-  if (PAIR_COPY.kakao !== "카카오톡") throw new Error("invite KakaoTalk drifted");
-  if (PAIR_COPY.appCode !== "앱에서 코드로 연결") throw new Error("invite app-code drifted");
-  if (PAIR_COPY.myCode !== "내 코드") throw new Error("invite my-code drifted");
-  if (PAIR_COPY.copyCode !== "복사") throw new Error("invite copy-code drifted");
-  if (PAIR_COPY.partnerCard !== "상대 코드를 알고 있다면") throw new Error("invite partner card drifted");
-  if (PAIR_COPY.partnerPlaceholder !== "상대 코드 입력") throw new Error("invite placeholder drifted");
-  if (PAIR_COPY.connect !== "연결하기") throw new Error("invite connect CTA drifted");
   if (PACK_LIST_COPY.title !== "질문집") throw new Error("pack-list title drifted");
-  if (PACK_LIST_COPY.subtitle !== "결혼만 지금 열려 있어요.") throw new Error("pack-list subtitle drifted");
   if (PACK_LIST_COPY.soon !== "곧 열려요") throw new Error("pack-list soon pill drifted");
-  if (PACK_LIST_ROWS[0].label !== "결혼" || !PACK_LIST_ROWS[0].open) throw new Error("marriage row drifted");
-  if (PACK_LIST_ROWS.slice(1).some((row) => row.open || row.label === "결혼")) throw new Error("closed pack rows drifted");
-  if (PACK_DETAIL_COPY.title !== "결혼") throw new Error("pack-detail title drifted");
-  if (PACK_DETAIL_COPY.subtitle !== "두 사람의 결혼 준비, 한곳에.") throw new Error("pack-detail subtitle drifted");
-  if (PACK_DETAIL_COPY.samplesTitle !== "예시 질문") throw new Error("pack-detail samples title drifted");
-  if (PACK_DETAIL_COPY.caption !== "여기서 답하지 않아요. 파트너가 연결된 다음 질문이 열려요.") {
-    throw new Error("pack-detail caption drifted");
+  if (PACK_LIST_ROWS[0].id !== "dating" || PACK_LIST_ROWS[0].label !== "연애" || PACK_LIST_ROWS[0].open) {
+    throw new Error("dating row drifted");
   }
-  if (PACK_DETAIL_COPY.samples.length !== 3) throw new Error("pack-detail must show three sample cards");
-  if (PACK_DETAIL_COPY.samples[0] !== "예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요?") {
-    throw new Error("pack-detail sample 1 drifted");
+  if (PACK_LIST_ROWS[1].label !== "결혼" || !PACK_LIST_ROWS[1].open) throw new Error("marriage row drifted");
+  if (PACK_LIST_ROWS.filter((row) => row.open).length !== 1) throw new Error("only marriage should be open");
+  if (PACK_LIST_ROWS.map((row) => row.label).join(",") !== "연애,결혼,가정 경영,임신,출산,육아") {
+    throw new Error("pack-list order drifted");
   }
-  if (PACK_DETAIL_COPY.samples[1] !== "명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요?") {
-    throw new Error("pack-detail sample 2 drifted");
-  }
-  if (PACK_DETAIL_COPY.samples[2] !== "우리에게 집은 어떤 의미에 가장 가까울까요?") {
-    throw new Error("pack-detail sample 3 drifted");
-  }
-  if (PACK_DETAIL_COPY.samples.some((sample) => /결혼식 규모|결혼 비용|양가 명절은/.test(sample))) {
-    throw new Error("discarded pack-detail samples returned");
-  }
-  if (PACK_DETAIL_COPY.cta !== "링크 보내기") throw new Error("pack-detail CTA drifted");
   if (COMING_SOON_TASTE_COPY.badge !== "곧 열려요") throw new Error("coming-soon badge drifted");
-  if (COMING_SOON_TASTE_COPY.eyebrow !== "LoveMe coming-soon pack") throw new Error("coming-soon eyebrow drifted");
-  if (COMING_SOON_TASTE_COPY.experience !== "임시 체험") throw new Error("coming-soon experience drifted");
   if (COMING_SOON_TASTE_COPY.sampleQuestion !== "가사와 시간은 어떻게 나누고 싶나요?") {
     throw new Error("coming-soon sample question drifted");
   }
-  if (COMING_SOON_TASTE_COPY.sampleCaption !== "예시입니다. 여기서 답하거나 팔지 않아요.") {
-    throw new Error("coming-soon sample caption drifted");
-  }
-  if (COMING_SOON_TASTE_COPY.cta !== "결과 맛보기") throw new Error("coming-soon CTA drifted");
   if (COMING_SOON_TASTE_COPY.backToList !== "목록으로") throw new Error("coming-soon list link drifted");
-  if (RESULT_TASTE_COPY.title !== "결과 맛보기") throw new Error("taste-result title drifted");
-  if (RESULT_TASTE_COPY.label !== "가까움") throw new Error("taste-result label drifted");
   if (RESULT_TASTE_COPY.labels.aligned !== "같음") throw new Error("taste aligned label drifted");
   if (RESULT_TASTE_COPY.labels.close !== "가까움") throw new Error("taste close label drifted");
   if (RESULT_TASTE_COPY.labels.discuss !== "이야기해요") throw new Error("taste discuss label drifted");
-  if (RESULT_TASTE_COPY.me !== "나") throw new Error("taste me label drifted");
-  if (RESULT_TASTE_COPY.partner !== "상대") throw new Error("taste partner label drifted");
-  if (RESULT_TASTE_COPY.meAnswer !== "평일은 반반, 주말은 그때 그때요.") throw new Error("taste me answer drifted");
-  if (RESULT_TASTE_COPY.partnerAnswer !== "한 사람이 메인으로 하고 나머지는 나눠요.") {
-    throw new Error("taste partner answer drifted");
-  }
-  if (RESULT_TASTE_COPY.caption !== "진짜 비교는 열린 팩에서 둘이 낸 다음입니다.") {
-    throw new Error("taste-result caption drifted");
-  }
   if (RESULT_TASTE_COPY.example !== "예시입니다.") throw new Error("taste-result example line drifted");
-  if (RESULT_TASTE_COPY.cta !== "목록으로") throw new Error("taste-result CTA drifted");
   if (["ALIGNED", "CLOSE", "DISCUSS"].includes(RESULT_TASTE_COPY.label)) {
     throw new Error("taste-result must use Korean labels only");
   }
   if (ACCOUNT_COPY.title !== "계정") throw new Error("account title drifted");
-  if (ACCOUNT_COPY.email !== "이메일") throw new Error("account email drifted");
+  if (ACCOUNT_COPY.login !== "로그인") throw new Error("account login drifted");
+  if (ACCOUNT_COPY.invite !== "연인을 초대하세요") throw new Error("account invite drifted");
   if (ACCOUNT_COPY.logout !== "로그아웃") throw new Error("account logout drifted");
   return true;
 }

@@ -33,7 +33,8 @@ test("logged-out splash routes to 질문집, then login only at keep-gates", asy
   const app = await readFile("mobile/App.js", "utf8");
   const session = await readFile("mobile/src/session.js", "utf8");
   const screens = await readFile("mobile/src/screens.js", "utf8");
-  assert.match(session, /return "pack-list"/);
+  assert.match(session, /pack-list/);
+  assert.match(session, /signup/);
   assert.match(app, /finishHostSplash/);
   assert.match(app, /SPLASH_MS/);
   assert.match(app, /SignupScreen/);

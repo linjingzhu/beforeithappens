@@ -1,5 +1,3 @@
-import { PACK_DETAIL_COPY } from "../src/pair-code.js";
-
 export {
   ACCOUNT_COPY,
   COMING_SOON_SAMPLE_QUESTION,
@@ -13,7 +11,8 @@ export {
   RESULT_TASTE_COPY,
   TASTE_LABELS,
   comingSoonPackLabel,
-  isComingSoonPackId
+  isComingSoonPackId,
+  packListLabel
 } from "../src/pair-code.js";
 
 export const MAGIC_LINK_TTL_MS = 10 * 60 * 1000;
@@ -30,7 +29,8 @@ export const S2_COPY = {
   cta: "로그인 링크 보내기",
   sent: "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.",
   afterLogin: "이 기기 임시 답은 이어지지 않아요.",
-  emailLabel: "이메일",
+  emailLabel: "이메일 주소",
+  emailPlaceholder: "이메일 주소를 입력해주세요",
   ack: "확인",
   otherEmail: "다른 이메일로 요청"
 };
@@ -64,7 +64,6 @@ export function assertLockedS2SocialCopy() {
   if (S2_COPY.cta !== "로그인 링크 보내기") throw new Error("S2 magic-link CTA drifted");
   if (S2_COPY.sent !== "메일을 확인해 주세요. 링크는 10분 동안만 유효해요.") throw new Error("S2 magic-link sent copy drifted");
   if (S2_SOCIAL_COPY.kakao === "카카오톡") throw new Error("S2 Kakao start collided with S4 KakaoTalk share");
-  if (PACK_DETAIL_COPY.subtitle !== "두 사람의 결혼 준비, 한곳에.") throw new Error("pack-detail subtitle drifted");
   return true;
 }
 

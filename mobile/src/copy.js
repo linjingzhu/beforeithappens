@@ -13,6 +13,7 @@ export {
   TASTE_LABELS,
   comingSoonPackLabel,
   isComingSoonPackId,
+  packListLabel,
   S2_COPY,
   S2_EMAIL_BIND_COPY,
   S2_ERRORS,

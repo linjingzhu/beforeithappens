@@ -1,15 +1,13 @@
 export const colors = {
-  ink: "#2b2521",
-  muted: "#81756e",
-  paper: "#f8f3ed",
-  card: "#fffdfa",
-  line: "#e7ddd5",
-  coral: "#ee775f",
-  soft: "#fce8e1",
-  cream: "#f7f0e4",
-  stitch: "#d7c4ae",
-  gold: "#c6a15b",
-  coverPaper: "#fdfbf7",
-  gateCard: "#ffffff",
-  logout: "#c45c4e"
+  babyPink: "#F6C8D8",
+  skyBlue: "#B7D9F0",
+  charcoal: "#3A3338",
+  muted: "#7A7278",
+  white: "#FFFFFF",
+  line: "rgba(58, 51, 56, 0.14)",
+  card: "rgba(255, 255, 255, 0.72)",
+  error: "#8C3A44"
 };
+
+export const gradientVertical = "linear-gradient(180deg, #F6C8D8 0%, #B7D9F0 100%)";
+export const gradientHorizontal = "linear-gradient(90deg, #F6C8D8 0%, #B7D9F0 100%)";

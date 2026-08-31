@@ -2,13 +2,16 @@ import { isComingSoonPackId, PAIR_ERRORS, S2_ERRORS } from "./s0-s2-s3-copy.js";
 import { SESSION_FETCH_MS, withTimeout } from "./s0-s2-s3-api.js";
 import { shareInviteChannel } from "../src/auth.js";
 import { shareContainsPairCode } from "../src/pair-code.js";
+import { canUnlockRest, grantShopHearts, HEARTS, spendUnlockHearts, startingHearts } from "../src/hearts.js";
+import { comingSoonExistingQuestion, pickPackSample, pickPartnerChoice, sampleAnswerComplete } from "../src/marriage-sample.js";
+import { fakeSession, isVirtualDebug } from "./src/virtual.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const LOGIN_GATES = Object.freeze(["invite", "connect", "paywall", "account"]);
+export const LOGIN_GATES = Object.freeze(["invite", "connect", "paywall", "account", "home"]);
 
 export function emptyNativeSession() {
-  return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false } };
+  return { user: null, notice: null, workspace: { id: null, role: null, acceptedPartner: false, partnerEmail: "" } };
 }
 
 export function createNativeFlow(session = emptyNativeSession(), {
@@ -18,7 +21,15 @@ export function createNativeFlow(session = emptyNativeSession(), {
   comingSoonId = "",
   tasteResultOpen = false,
   signupOpen = false,
-  pendingGate = ""
+  pendingGate = "",
+  sampleOpen = false,
+  sampleResultOpen = false,
+  unlockOpen = false,
+  shopOpen = false,
+  certificateOpen = false,
+  samplePackId = "",
+  hearts = startingHearts(),
+  entitled = false
 } = {}) {
   return {
     screen: "splash",
@@ -42,7 +53,21 @@ export function createNativeFlow(session = emptyNativeSession(), {
     inviteUrl: "",
     partnerCode: "",
     copied: false,
-    codeCopied: false
+    codeCopied: false,
+    sampleOpen: Boolean(sampleOpen),
+    sampleResultOpen: Boolean(sampleResultOpen),
+    unlockOpen: Boolean(unlockOpen),
+    shopOpen: Boolean(shopOpen),
+    certificateOpen: Boolean(certificateOpen),
+    samplePackId: samplePackId || (comingSoonId === "marriage" ? "marriage" : comingSoonId) || "",
+    sampleQuestions: [],
+    sampleIndex: 0,
+    sampleAnswers: [],
+    sampleChoice: "",
+    sampleReason: "",
+    samplePartner: null,
+    hearts: Number.isFinite(hearts) ? hearts : startingHearts(),
+    entitled: Boolean(entitled)
   };
 }
 
@@ -62,6 +87,14 @@ export function userNeedsEmail(user) {
   return Boolean(user) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(user.email || "").trim());
 }
 
+export function isPartnerRole(session) {
+  return session?.workspace?.role === "partner";
+}
+
+export function isFirstRunLogin(state) {
+  return !state?.session?.user && (state?.pendingGate === "home" || !state?.pendingGate);
+}
+
 export function resolveNativeScreen(state) {
   if (!state?.splashDone) return "splash";
   if (state.session?.user) {
@@ -70,17 +103,22 @@ export function resolveNativeScreen(state) {
     if (state.inviteOpen) return "invite";
     if (state.accountOpen) return "account";
     if (state.session.notice && !state.noticeDismissed) return "notice";
-    if (state.tasteResultOpen && isComingSoonPackId(state.comingSoonId)) return "taste-result";
-    if (isComingSoonPackId(state.comingSoonId)) return "coming-soon";
-    if (state.packDetailOpen) return "pack-detail";
+    if (state.certificateOpen) return "certificate";
+    if (state.unlockOpen && isPartnerRole(state.session)) return "partner-wait";
+    if (state.unlockOpen) return "unlock";
+    if (state.sampleResultOpen) return "sample-result";
+    if (state.sampleOpen) return "sample-q";
+    if (state.packDetailOpen) return "sample-q";
     return "pack-list";
   }
   if (state.sentEmail) return "sent";
   if (state.signupOpen) return "signup";
-  if (state.tasteResultOpen && isComingSoonPackId(state.comingSoonId)) return "taste-result";
-  if (isComingSoonPackId(state.comingSoonId)) return "coming-soon";
-  if (state.packDetailOpen) return "pack-detail";
-  return "pack-list";
+  if (state.certificateOpen) return "certificate";
+  if (state.unlockOpen && isPartnerRole(state.session)) return "partner-wait";
+  if (state.unlockOpen) return "unlock";
+  if (state.sampleResultOpen) return "sample-result";
+  if (state.sampleOpen) return "sample-q";
+  return "signup";
 }
 
 export function applyScreen(state) {
@@ -88,45 +126,52 @@ export function applyScreen(state) {
 }
 
 export function finishSplash(state) {
-  return applyScreen({ ...state, splashDone: true });
+  if (state?.session?.user) {
+    return applyScreen({ ...state, splashDone: true, signupOpen: false });
+  }
+  return applyScreen({
+    ...state,
+    splashDone: true,
+    signupOpen: true,
+    pendingGate: isLoginGate(state?.pendingGate) ? state.pendingGate : "home"
+  });
+}
+
+function clearJourney(state, extras = {}) {
+  return {
+    ...state,
+    packDetailOpen: false,
+    accountOpen: false,
+    inviteOpen: false,
+    comingSoonId: "",
+    tasteResultOpen: false,
+    signupOpen: false,
+    sampleOpen: false,
+    sampleResultOpen: false,
+    unlockOpen: false,
+    shopOpen: false,
+    certificateOpen: false,
+    ...extras
+  };
 }
 
 export function resumePendingGate(state, gate = state.pendingGate) {
   const pending = isLoginGate(gate) ? gate : "";
   if (pending === "invite" || pending === "connect") {
-    return applyScreen({
-      ...state,
-      signupOpen: false,
-      pendingGate: "",
-      inviteOpen: true,
-      accountOpen: false,
-      packDetailOpen: false,
-      comingSoonId: "",
-      tasteResultOpen: false
-    });
+    return applyScreen(clearJourney(state, { signupOpen: false, pendingGate: "", inviteOpen: true }));
   }
   if (pending === "account") {
-    return applyScreen({
-      ...state,
+    return applyScreen(clearJourney(state, { signupOpen: false, pendingGate: "", accountOpen: true }));
+  }
+  if (pending === "paywall") {
+    return applyScreen(clearJourney(state, {
       signupOpen: false,
       pendingGate: "",
-      accountOpen: true,
-      inviteOpen: false,
-      packDetailOpen: false,
-      comingSoonId: "",
-      tasteResultOpen: false
-    });
+      unlockOpen: true,
+      sampleResultOpen: false
+    }));
   }
-  return applyScreen({
-    ...state,
-    signupOpen: false,
-    pendingGate: "",
-    inviteOpen: false,
-    accountOpen: false,
-    packDetailOpen: pending === "paywall" ? Boolean(state.packDetailOpen) : false,
-    comingSoonId: pending === "paywall" && isComingSoonPackId(state.comingSoonId) ? state.comingSoonId : "",
-    tasteResultOpen: pending === "paywall" ? Boolean(state.tasteResultOpen) : false
-  });
+  return applyScreen(clearJourney(state, { signupOpen: false, pendingGate: "" }));
 }
 
 export function requireLogin(state, gate) {
@@ -150,6 +195,19 @@ export function requireLoginForPay(state) {
 }
 
 export function cancelLogin(state) {
+  if (state.pendingGate === "home" || !state.session?.user && !state.pendingGate) {
+    return applyScreen({
+      ...state,
+      splashDone: true,
+      signupOpen: true,
+      pendingGate: "home",
+      sentEmail: "",
+      error: "",
+      busy: false,
+      inviteOpen: false,
+      accountOpen: false
+    });
+  }
   return applyScreen({
     ...state,
     signupOpen: false,
@@ -236,99 +294,177 @@ export function noticeAcknowledged(state, session) {
 }
 
 export function invitePartner(state) {
-  if (state.screen !== "workspace" && state.screen !== "pack-list") return { ...state, action: "" };
+  if (state.screen !== "workspace" && state.screen !== "pack-list" && state.screen !== "account") {
+    return { ...state, action: "" };
+  }
   return { ...state, action: "invite-partner" };
 }
 
-export function openMarriageFromList(state) {
+export function openPackSample(state, packId = "marriage", rng = Math.random) {
+  const sampleQuestions = pickPackSample(packId, undefined, rng);
+  if (!sampleQuestions.length) {
+    return applyScreen(clearJourney(state, {
+      splashDone: true,
+      samplePackId: packId,
+      sampleResultOpen: true,
+      sampleQuestions: [],
+      sampleIndex: 0,
+      sampleAnswers: [],
+      sampleChoice: "",
+      sampleReason: "",
+      samplePartner: null,
+      error: ""
+    }));
+  }
+  return applyScreen(clearJourney(state, {
+    splashDone: true,
+    samplePackId: packId,
+    sampleOpen: true,
+    sampleQuestions,
+    sampleIndex: 0,
+    sampleAnswers: [],
+    sampleChoice: "",
+    sampleReason: "",
+    samplePartner: null,
+    error: ""
+  }));
+}
+
+export function openMarriageFromList(state, rng = Math.random) {
+  return openPackSample(state, "marriage", rng);
+}
+
+export function currentSampleQuestion(state) {
+  return state.sampleQuestions?.[state.sampleIndex] || null;
+}
+
+export function setSampleChoice(state, choiceId) {
+  return { ...state, sampleChoice: String(choiceId || ""), error: "" };
+}
+
+export function setSampleReason(state, reason) {
+  return { ...state, sampleReason: String(reason || ""), error: "" };
+}
+
+export function submitSampleAnswer(state, rng = Math.random) {
+  const question = currentSampleQuestion(state);
+  if (!question || !sampleAnswerComplete(state.sampleChoice, state.sampleReason)) {
+    return applyScreen({ ...state, sampleOpen: true, error: "choice-and-reason-required" });
+  }
+  const answers = [...state.sampleAnswers, {
+    questionId: question.id,
+    choiceId: state.sampleChoice,
+    reason: String(state.sampleReason).trim()
+  }];
+  if (answers.length < state.sampleQuestions.length) {
+    return applyScreen({
+      ...state,
+      sampleOpen: true,
+      sampleIndex: state.sampleIndex + 1,
+      sampleAnswers: answers,
+      sampleChoice: "",
+      sampleReason: "",
+      error: ""
+    });
+  }
+  const last = question;
+  const partner = pickPartnerChoice(last, state.sampleChoice, rng);
   return applyScreen({
     ...state,
-    splashDone: true,
-    packDetailOpen: true,
-    accountOpen: false,
-    inviteOpen: false,
-    comingSoonId: "",
-    tasteResultOpen: false,
-    signupOpen: false
+    sampleOpen: false,
+    sampleResultOpen: true,
+    sampleAnswers: answers,
+    samplePartner: partner,
+    error: ""
   });
+}
+
+export function openTogetherFromSample(state) {
+  const connected = {
+    ...state.session,
+    workspace: {
+      ...(state.session?.workspace || {}),
+      acceptedPartner: true,
+      role: state.session?.workspace?.role || "buyer",
+      partnerEmail: state.session?.workspace?.partnerEmail || "partner@email.com"
+    }
+  };
+  return applyScreen(clearJourney(state, {
+    splashDone: true,
+    unlockOpen: true,
+    samplePackId: state.samplePackId || "marriage",
+    session: connected
+  }));
+}
+
+export function tapUnlock(state) {
+  if (isPartnerRole(state.session)) {
+    return applyScreen({ ...state, unlockOpen: true, shopOpen: false });
+  }
+  if (!canUnlockRest(state.hearts)) {
+    return applyScreen({ ...state, unlockOpen: true, shopOpen: true });
+  }
+  const spent = spendUnlockHearts(state.hearts);
+  return applyScreen(clearJourney(state, {
+    hearts: spent.balance,
+    entitled: true,
+    unlockOpen: false,
+    shopOpen: false,
+    certificateOpen: true,
+    samplePackId: state.samplePackId || "marriage"
+  }));
+}
+
+export function purchaseShopHearts(state) {
+  return applyScreen({
+    ...state,
+    unlockOpen: true,
+    shopOpen: false,
+    hearts: grantShopHearts(state.hearts)
+  });
+}
+
+export function dismissShop(state) {
+  return applyScreen({ ...state, unlockOpen: true, shopOpen: false });
 }
 
 export function openComingSoonFromList(state, packId) {
   if (!isComingSoonPackId(packId)) return applyScreen(state);
-  return applyScreen({
-    ...state,
-    splashDone: true,
-    packDetailOpen: false,
-    accountOpen: false,
-    inviteOpen: false,
-    comingSoonId: packId,
-    tasteResultOpen: false,
-    signupOpen: false
-  });
+  return openPackSample(state, packId);
 }
 
 export function openTasteResult(state) {
-  if (!isComingSoonPackId(state.comingSoonId)) return applyScreen(state);
-  return applyScreen({
-    ...state,
-    splashDone: true,
-    packDetailOpen: false,
-    accountOpen: false,
-    inviteOpen: false,
-    tasteResultOpen: true,
-    signupOpen: false
-  });
+  return backFromComingSoon(state);
 }
 
 export function backFromComingSoon(state) {
-  return applyScreen({ ...state, comingSoonId: "", tasteResultOpen: false });
+  return applyScreen(clearJourney(state));
 }
 
 export function backFromTasteResult(state) {
   return applyScreen({ ...state, tasteResultOpen: false });
 }
 
+export function backFromCertificate(state) {
+  return applyScreen(clearJourney(state));
+}
+
 export function backToPackList(state) {
-  return applyScreen({
-    ...state,
-    packDetailOpen: false,
-    accountOpen: false,
-    inviteOpen: false,
-    comingSoonId: "",
-    tasteResultOpen: false
-  });
+  return applyScreen(clearJourney(state));
 }
 
 export function openSendLink(state) {
   if (!state.session?.user) {
-    return requireLogin({ ...state, packDetailOpen: true }, "invite");
+    return requireLogin({ ...state, unlockOpen: false }, "invite");
   }
-  return applyScreen({
-    ...state,
-    splashDone: true,
-    packDetailOpen: false,
-    accountOpen: false,
-    inviteOpen: true,
-    comingSoonId: "",
-    tasteResultOpen: false,
-    signupOpen: false
-  });
+  return applyScreen(clearJourney(state, { splashDone: true, inviteOpen: true }));
 }
 
 export function openAccount(state) {
   if (!state.session?.user) {
-    return requireLogin({ ...state, packDetailOpen: false }, "account");
+    return requireLogin(clearJourney(state), "account");
   }
-  return applyScreen({
-    ...state,
-    splashDone: true,
-    accountOpen: true,
-    packDetailOpen: false,
-    inviteOpen: false,
-    comingSoonId: "",
-    tasteResultOpen: false,
-    signupOpen: false
-  });
+  return applyScreen(clearJourney(state, { splashDone: true, accountOpen: true }));
 }
 
 export function backFromAccount(state) {
@@ -336,23 +472,21 @@ export function backFromAccount(state) {
 }
 
 export function backFromPackDetail(state) {
-  return applyScreen({ ...state, packDetailOpen: false, inviteOpen: false });
+  return applyScreen(clearJourney(state));
 }
 
 export function backFromInvite(state) {
-  return applyScreen({
-    ...state,
-    inviteOpen: false,
-    packDetailOpen: Boolean(state.session?.user),
-    accountOpen: false
-  });
+  return applyScreen(clearJourney(state, { accountOpen: Boolean(state.session?.user) }));
 }
 
 export function loggedOutHome(state = createNativeFlow()) {
   return applyScreen({
     ...createNativeFlow(),
     splashDone: true,
-    error: state.error || ""
+    signupOpen: true,
+    pendingGate: "home",
+    error: state.error || "",
+    hearts: startingHearts()
   });
 }
 
@@ -388,9 +522,23 @@ export function s0ShowsInstallLanding() {
   return false;
 }
 
-export async function submitMagicLink(state, api) {
+export function comingSoonQuestionFor(packId) {
+  return comingSoonExistingQuestion(packId);
+}
+
+export const HEART_UNLOCK_COST = HEARTS.unlockCost;
+
+export async function submitMagicLink(state, api, env = globalThis.process?.env || {}) {
   const started = requestLinkStarted(state);
   if (started.error) return started;
+  if (isVirtualDebug(env)) {
+    const pending = isLoginGate(started.pendingGate) ? started.pendingGate : "home";
+    return consumeSucceeded({
+      ...started,
+      busy: false,
+      pendingGate: pending
+    }, fakeSession(started.email));
+  }
   try {
     const result = await api.requestMagicLink(started.email);
     if (!result.ok) return requestLinkFailed(started, result.error);
@@ -421,11 +569,18 @@ export async function restoreSessionAfterSplash(state, api, { timeoutMs = SESSIO
     return applyScreen({
       ...next,
       session,
+      signupOpen: false,
+      pendingGate: "",
       inviteOpen: false,
       packDetailOpen: false,
       accountOpen: false,
       comingSoonId: "",
       tasteResultOpen: false,
+      sampleOpen: false,
+      sampleResultOpen: false,
+      unlockOpen: false,
+      shopOpen: false,
+      certificateOpen: false,
       noticeDismissed: !session.notice,
       error: ""
     });
@@ -482,7 +637,17 @@ export async function logoutAccount(state, api) {
   return loggedOutHome(state);
 }
 
-export async function loadInvitePairCode(state, api) {
+export async function loadInvitePairCode(state, api, env = globalThis.process?.env || {}) {
+  if (isVirtualDebug(env)) {
+    return applyScreen({
+      ...state,
+      inviteOpen: true,
+      pairCode: "VIRTUAL1",
+      pairCodeDisplay: "VIRT UAL1",
+      inviteUrl: "https://example.test/invite/open",
+      error: ""
+    });
+  }
   try {
     const result = await api.myPairCode();
     if (!result.ok) {
@@ -505,8 +670,17 @@ export function setPartnerCode(state, code) {
   return { ...state, partnerCode: String(code || ""), error: "" };
 }
 
-export async function connectPartnerCode(state, api) {
+export async function connectPartnerCode(state, api, env = globalThis.process?.env || {}) {
   if (!state.session?.user) return requireLogin(state, "connect");
+  if (isVirtualDebug(env)) {
+    return applyScreen(clearJourney(state, {
+      busy: false,
+      session: {
+        ...state.session,
+        workspace: { ...state.session.workspace, acceptedPartner: true, partnerEmail: "partner@email.com" }
+      }
+    }));
+  }
   const pending = { ...state, inviteOpen: true, busy: true, error: "" };
   try {
     const result = await api.connectPairCode(state.partnerCode);
@@ -517,23 +691,17 @@ export async function connectPartnerCode(state, api) {
         error: PAIR_ERRORS[result.error] || PAIR_ERRORS.failed
       });
     }
-    return applyScreen({
-      ...pending,
+    return applyScreen(clearJourney(pending, {
       busy: false,
       error: "",
-      inviteOpen: false,
-      packDetailOpen: false,
-      accountOpen: false,
-      comingSoonId: "",
-      tasteResultOpen: false,
       session: result.session || state.session
-    });
+    }));
   } catch {
     return applyScreen({ ...pending, busy: false, error: PAIR_ERRORS.failed });
   }
 }
 
-export async function shareMeasurementInvite(state, channel, io = {}) {
+export async function shareMeasurementInvite(state, channel, io = {}, env = globalThis.process?.env || {}) {
   const url = String(state.inviteUrl || "");
   if (!url || shareContainsPairCode(url, state.pairCode)) {
     return { ...state, inviteOpen: true, copied: false };
@@ -542,7 +710,10 @@ export async function shareMeasurementInvite(state, channel, io = {}) {
   return { ...state, inviteOpen: true, copied: result === "copied", codeCopied: false };
 }
 
-export async function copyMyPairCode(state, io = {}) {
+export async function copyMyPairCode(state, io = {}, env = globalThis.process?.env || {}) {
+  if (isVirtualDebug(env)) {
+    return { ...state, inviteOpen: true, codeCopied: true, copied: false };
+  }
   const code = String(state.pairCodeDisplay || state.pairCode || "");
   if (!code) return { ...state, inviteOpen: true, codeCopied: false };
   const copied = await (io.clipboard?.writeText

@@ -11,13 +11,14 @@
 - Label private and shared writing areas with text, not color alone.
 - A shared agreement requires the partner's approval; edits require reapproval.
 - Summaries show conversations, agreements, deferrals, and revisit items—not a relationship score.
-- Device handoff is logout, then handing the phone. The UI never offers a same-device role switch as the product path.
+- LoveMe NEXT home (this PR; live `d3be894e` stays splash→`질문집`): splash → magic-link login (`로그인 링크 보내기`, iOS system notification permission, virtual `[debug]` send) → `질문집` with hearts from 0. Coming-soon packs keep `곧 열려요` and use the marriage sample engine on existing questions only (no invented `임신`/`출산`/`육아` copy). Shop SKU `29,000원에 | ♡ 12`; `열기` costs 10 hearts; certificate `이수증` has no scores or faces.
+
 
 ## Foundation auth flow
 
 ### Entry point
 
-Signed-out `/` on web: request a login link. iOS measurement first run: splash then `질문집` home. Login is a keep-gate, not the first screen.
+Signed-out `/` on web: request a login link. iOS measurement first run: splash then `질문집` home. Login is a keep-gate, not the first screen. LoveMe NEXT home on this PR is splash then magic-link login then `질문집`.
 
 ### Required copy
 

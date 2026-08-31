@@ -23,7 +23,7 @@ Core:
 
 UI:
 - Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open) then `질문집` home without a login gate. Marriage pack detail (three CPO-locked read-only sample cards) and coming-soon taste (`가정 경영` `임신` `출산` `육아`) are readable logged out. Magic-link login (no Kakao/Naver/Google CTAs) opens only for `링크 보내기`, in-app pair connect, 결제, or `계정`, then returns to that destination. Logged-in chrome uses Safe Area so top titles/`계정` sit below the Dynamic Island and bottom CTAs sit above the home indicator. Questions stay closed until a partner is connected. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`).
+- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open). **This PR (LoveMe NEXT home):** splash → magic-link login (iOS system notification permission; virtual send + `[debug]`) → `질문집` home with heart balance from 0. Unsold packs show `곧 열려요` and use the marriage 3-question sample engine on existing questions only. Shop SKU 29,000 KRW → 12 hearts; `열기` costs 10; then certificate. Partner has no hearts/shop. Live preview `d3be894e` stays splash→home without this login. Login keep-gates (`링크 보내기`, in-app pair connect, `계정`) remain. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`).
 - Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
 
 Persistence/Data:
@@ -56,7 +56,7 @@ Targeted tests:
 - `src/auth.js` / `src/auth-ui.js` — magic-link copy, Kakao/Naver/Google start, email-bind gate, pack gate, invite-waiting share, email-typo resend, same-session accept block
 - `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
 - `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
-- `mobile/` — Expo LoveMe host (`ios/` + `android/`). S0 LoveMe splash (1.2s) → `질문집` home (browse without login). Login is a keep-gate, not first-run. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`). Metro project root is `mobile/`; `mobile/metro.config.js` watchFolders repo-root `src/` so S4 can import `../../src/auth.js`.
+- `mobile/` — Expo LoveMe host (`ios/` + `android/`). **This PR:** S0 splash (1.2s) → magic-link login → `질문집`. Live preview `d3be894e` stays splash → home. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`). Metro project root is `mobile/`; `mobile/metro.config.js` watchFolders repo-root `src/` so S4 can import `../../src/auth.js`.
 - `mobile/s0-s2-s3-api.js` — native/Expo auth client; `AUTH_FETCH_MS` 55s for magic-link, `OAUTH_FETCH_MS` 5s fail-fast
 - `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
 - `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout

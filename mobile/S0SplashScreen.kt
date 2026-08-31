@@ -30,12 +30,12 @@ fun S0SplashScreen(onFinished: () -> Void = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8F3ED))
+            .background(Color(0xFFF6C8D8))
             .padding(28.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = LoveMeS0Copy.brand, fontSize = 44.sp, color = Color(0xFF2B2521))
-        Text(text = LoveMeS0Copy.title, color = Color(0xFF2B2521), modifier = Modifier.padding(top = 16.dp))
+        Text(text = LoveMeS0Copy.brand, fontSize = 44.sp, color = Color(0xFF3A3338))
+        Text("[debug]", color = Color(0xFF7A7278), modifier = Modifier.padding(top = 16.dp))
     }
 }

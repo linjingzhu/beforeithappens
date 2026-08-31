@@ -12,14 +12,15 @@ struct S0SplashScreen: View {
     var body: some View {
         VStack(spacing: 16) {
             Text(LoveMeS0Copy.brand)
-                .font(.largeTitle.weight(.medium))
-            Text(LoveMeS0Copy.title)
-                .font(.body)
-                .multilineTextAlignment(.center)
+                .font(.largeTitle.weight(.semibold))
+                .foregroundStyle(LoveMeTheme.charcoal)
+            Text(LoveMeInvitePackCopy.debug)
+                .font(.caption)
+                .foregroundStyle(LoveMeTheme.muted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(28)
-        .background(Color(red: 0.97, green: 0.95, blue: 0.93))
+        .background(LoveMeTheme.screenGradient)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + LoveMeS0Copy.holdSeconds) {
                 onFinished()

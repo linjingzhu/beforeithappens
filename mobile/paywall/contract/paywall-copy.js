@@ -1,14 +1,17 @@
-/** Locked LoveMe paywall copy. Do not invent card-form, subscription, or other prices. */
+/** Locked LoveMe NEXT hearts paywall copy. Unlock uses 열기; 29,000 lives on the shop SKU only. */
 export const PAYWALL_COPY = Object.freeze({
-  buyerTitle: "결혼 팩 나머지 열기",
-  buyerBody: "두 사람 답을 비교했어요. 나머지 문항을 이어서 열 수 있어요.",
-  buyerCta: "29,000원에 나머지 열기",
+  buyerTitle: "두 사람 답을 비교했어요.",
+  buyerBody: "나머지 문항을 이어서 열 수 있어요.",
+  buyerCta: "열기",
+  needHearts: "♡ 하트 10이 필요해요.",
+  shopTitle: "상점",
+  shopCta: "29,000원에 | ♡ 12",
   later: "나중에",
-  partnerTitle: "상대가 팩을 열고 있어요",
-  partnerBody: "샘플에서 본 비교는 그대로 남아 있어요. 결제는 구매자만 합니다.",
-  aligned: "ALIGNED",
-  close: "CLOSE",
-  discuss: "DISCUSS"
+  partnerTitle: "상대가 열면 이어집니다.",
+  partnerBody: "",
+  aligned: "같음",
+  close: "가까움",
+  discuss: "이야기해요"
 });
 
 export const PAYWALL_FORBIDDEN = Object.freeze([
@@ -25,5 +28,7 @@ export const PAYWALL_FORBIDDEN = Object.freeze([
   "100-question",
   "관계가 틀렸다",
   "궁합",
-  "compatib"
+  "compatib",
+  "1000원",
+  "29,000원에 나머지 열기"
 ]);

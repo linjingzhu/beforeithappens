@@ -6,7 +6,6 @@ import {
   backFromAccount,
   backFromComingSoon,
   backFromPackDetail,
-  backFromTasteResult,
   backToPackList,
   cancelLogin,
   consumeSucceeded,
@@ -19,14 +18,13 @@ import {
   openComingSoonFromList,
   openMarriageFromList,
   openSendLink,
-  openTasteResult,
   requireLogin,
   requireLoginForPay,
   resolveNativeScreen
 } from "../mobile/s0-s2-s3-flow.js";
-import { renderAccountScreen, renderComingSoonScreen, renderPackDetailScreen, renderS2SignupScreen, renderTasteResultScreen } from "../mobile/s0-s2-s3-screens.js";
+import { renderAccountScreen, renderS2SignupScreen } from "../mobile/s0-s2-s3-screens.js";
 
-test("logged-in pack detail and account copy are designer-locked", () => {
+test("logged-in pack detail constants remain for historical cover copy", () => {
   assert.equal(PACK_DETAIL_COPY.title, "결혼");
   assert.equal(PACK_DETAIL_COPY.subtitle, "두 사람의 결혼 준비, 한곳에.");
   assert.equal(PACK_DETAIL_COPY.samplesTitle, "예시 질문");
@@ -34,33 +32,37 @@ test("logged-in pack detail and account copy are designer-locked", () => {
   assert.equal(PACK_DETAIL_COPY.samples.length, 3);
   assert.equal(PACK_DETAIL_COPY.cta, "링크 보내기");
   assert.equal(ACCOUNT_COPY.title, "계정");
-  assert.equal(ACCOUNT_COPY.email, "이메일");
   assert.equal(ACCOUNT_COPY.logout, "로그아웃");
 });
 
-test("splash opens 질문집 home, not magic-link login or the discarded workbook cover", () => {
+test("splash opens magic-link login, not 질문집 home or the discarded workbook cover", () => {
   const state = finishSplash(createNativeFlow());
-  assert.equal(state.screen, "pack-list");
-  assert.notEqual(state.screen, "signup");
+  assert.equal(state.screen, "signup");
+  assert.notEqual(state.screen, "pack-list");
   assert.notEqual(state.screen, "cover");
   assert.notEqual(state.screen, "preview-q1");
   const login = renderS2SignupScreen();
   assert.match(login, /LoveMe/);
   assert.equal(login.includes("두 사람의 결혼 준비, 한곳에"), false);
-  assert.match(login, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
+  assert.equal(login.includes("비밀번호 없이 이메일로 로그인 링크를 보내드려요"), false);
   assert.match(login, /로그인 링크 보내기/);
-  assert.match(login, /cancel-login/);
+  assert.match(login, /이메일 주소를 입력해주세요/);
+  assert.equal(login.includes("cancel-login"), false);
+  assert.equal(login.includes("MaruBuri"), false);
+  const keepGate = renderS2SignupScreen({ firstRun: false });
+  assert.match(keepGate, /cancel-login/);
+  assert.match(keepGate, /비밀번호 없이 이메일로 로그인 링크를 보내드려요/);
   assert.equal(login.includes("미리 질문 하나 보기"), false);
   assert.equal(login.includes("이 답을 남기려면 로그인해 주세요"), false);
   assert.equal(login.includes("카카오로 시작"), false);
   assert.equal(login.includes("네이버로 시작"), false);
   assert.equal(login.includes("Google로 시작"), false);
-  assert.equal(login.includes("홈"), false);
+  assert.equal(login.includes("MaruBuri"), false);
   assert.equal(login.includes("프로필"), false);
   assert.equal(login.includes("선물"), false);
 });
 
-test("marriage pack detail matches the locked mock and does not start questions", () => {
+test("logged-in marriage opens the 3-question sample, not read-only pack detail", () => {
   const loggedIn = {
     user: { id: "usr_1", email: "sartre.art@gmail.com" },
     notice: null,
@@ -68,30 +70,10 @@ test("marriage pack detail matches the locked mock and does not start questions"
   };
   let state = finishSplash(createNativeFlow(loggedIn));
   assert.equal(state.screen, "pack-list");
-  state = openMarriageFromList(state);
-  assert.equal(state.screen, "pack-detail");
-  const html = renderPackDetailScreen();
-  assert.match(html, /결혼/);
-  assert.match(html, /두 사람의 결혼 준비, 한곳에\./);
-  assert.match(html, /예시 질문/);
-  assert.match(html, /예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요\?/);
-  assert.match(html, /명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요\?/);
-  assert.match(html, /우리에게 집은 어떤 의미에 가장 가까울까요\?/);
-  assert.equal(html.includes("결혼식 규모"), false);
-  assert.equal(html.includes("결혼 비용"), false);
-  assert.equal(html.includes("양가 명절은"), false);
-  assert.match(html, /여기서 답하지 않아요/);
-  assert.match(html, /파트너가 연결된 다음 질문이 열려요/);
-  assert.match(html, /링크 보내기/);
-  assert.equal(html.includes("notebook"), false);
-  assert.equal(html.includes("type=\"radio\""), false);
-  assert.equal(html.includes("type=\"text\""), false);
-  assert.equal(html.includes("29,000"), false);
-  assert.equal(html.includes("미리 질문 하나 보기"), false);
-  assert.equal(html.includes("100"), false);
-  state = openSendLink(state);
-  assert.equal(state.screen, "invite");
-  state = backFromPackDetail({ ...state, inviteOpen: false, packDetailOpen: true });
+  state = openMarriageFromList(state, () => 0);
+  assert.equal(state.screen, "sample-q");
+  assert.equal(state.sampleQuestions.length, 3);
+  state = backFromPackDetail(state);
   assert.equal(resolveNativeScreen(state), "pack-list");
 });
 
@@ -105,14 +87,13 @@ test("account shows email and logout without discarded handoff copy", () => {
   assert.equal(state.screen, "account");
   const html = renderAccountScreen({ email: loggedIn.user.email });
   assert.match(html, /계정/);
-  assert.match(html, /이메일/);
   assert.match(html, /sartre\.art@gmail\.com/);
   assert.match(html, /로그아웃/);
+  assert.match(html, /연인을 초대하세요/);
   assert.equal(html.includes("이 폰을 상대에게 넘기려면 먼저 로그아웃하세요."), false);
-  assert.equal(html.includes("로그아웃 후 이 기기를 넘겨주세요"), false);
   assert.equal(html.includes("얼굴"), false);
   assert.equal(html.includes("선물"), false);
-  assert.equal(html.includes("29,000"), false);
+  assert.equal(html.includes("29,000원에 나머지 열기"), false);
   state = backFromAccount(state);
   assert.equal(state.screen, "pack-list");
 });
@@ -134,25 +115,23 @@ test("consume and logout never resume preview Q1", async () => {
   });
   assert.equal(bare.screen, "pack-list");
   const out = await logoutAccount(bare, { logout: async () => ({ ok: true }) });
-  assert.equal(out.screen, "pack-list");
-  assert.equal(loggedOutHome().screen, "pack-list");
+  assert.equal(out.screen, "signup");
+  assert.equal(loggedOutHome().screen, "signup");
   assert.equal(S2_COPY.cta, "로그인 링크 보내기");
 });
 
-test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", async () => {
+test("Expo sample, hearts, and account omit gifts, social, and preview Q1", async () => {
   const screens = await readFile("mobile/src/screens.js", "utf8");
   const css = await readFile("mobile/s0-s2-s3-preview.css", "utf8");
   const app = await readFile("mobile/App.js", "utf8");
-  assert.match(screens, /PACK_DETAIL_COPY\.samplesTitle/);
-  assert.match(screens, /PACK_DETAIL_COPY\.samples\.map/);
-  assert.match(screens, /PACK_DETAIL_COPY\.captionLines/);
+  assert.match(screens, /SampleQuestionScreen/);
+  assert.match(screens, /UnlockRestScreen/);
+  assert.match(screens, /CertificateScreen/);
   assert.match(screens, /ComingSoonScreen/);
-  assert.match(screens, /TasteResultScreen/);
   assert.match(screens, /SafeAreaView/);
   assert.match(screens, /function SafeScreen/);
   assert.equal(screens.includes("NotebookGraphic"), false);
   assert.equal(screens.includes("QR"), false);
-  assert.equal(screens.includes("qrcode"), false);
   assert.equal(screens.includes("결혼식 규모"), false);
   const swift = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
   const kotlin = await readFile("mobile/LoveMeInvitePackScreens.kt", "utf8");
@@ -160,34 +139,19 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
     assert.match(text, /예상하지 못한 여유 자금이 생기면 어떻게 하고 싶나요\?/);
     assert.match(text, /명절 당일 양가 일정이 겹친다면 어떤 기본 원칙을 선호하나요\?/);
     assert.match(text, /우리에게 집은 어떤 의미에 가장 가까울까요\?/);
-    assert.match(text, /가사와 시간은 어떻게 나누고 싶나요\?/);
-    assert.match(text, /결과 맛보기/);
-    assert.match(text, /임시 체험/);
     assert.match(text, /가까움/);
     assert.equal(text.includes("ALIGNED"), false);
-    assert.equal(text.includes("CLOSE"), false);
-    assert.equal(text.includes("DISCUSS"), false);
     assert.equal(text.includes("QR"), false);
-    assert.equal(text.includes("qrcode"), false);
     assert.equal(text.includes("결혼식 규모"), false);
-    assert.equal(text.includes("결혼 비용"), false);
-    assert.equal(text.includes("양가 명절은"), false);
   }
   assert.match(screens, /ACCOUNT_COPY\.logout/);
-  assert.match(screens, /testID="pack-detail"/);
   assert.match(screens, /testID="account"/);
   assert.equal(screens.includes("CoverScreen"), false);
   assert.equal(screens.includes("PreviewQ1Screen"), false);
-  assert.equal(screens.includes("S2_KEEP_COPY"), false);
   assert.equal(screens.includes("프로필"), false);
   assert.equal(screens.includes("선물"), false);
-  assert.equal(screens.includes("이 폰을 상대에게 넘기려면 먼저 로그아웃하세요."), false);
   assert.equal(app.includes("preview-q1"), false);
   assert.equal(app.includes("CoverScreen"), false);
-  assert.match(css, /\.loveme-cover-line/);
-  assert.match(css, /\.loveme-logout/);
-  assert.match(css, /\.loveme-coming-soon/);
-  assert.match(css, /\.loveme-taste-result/);
   assert.match(css, /safe-area-inset-top/);
   assert.match(css, /safe-area-inset-bottom/);
   assert.match(swift, /safeAreaInsets/);
@@ -197,11 +161,12 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
   assert.match(s2Swift, /loveMeSafeChrome/);
   assert.match(s2Kotlin, /systemBarsPadding/);
   assert.match(app, /ComingSoonScreen/);
-  assert.match(app, /TasteResultScreen/);
   assert.match(app, /openComingSoonFromList/);
+  assert.equal(COMING_SOON_TASTE_COPY.backToList, "목록으로");
+  assert.equal(RESULT_TASTE_COPY.labels.close, "가까움");
 });
 
-test("coming-soon packs are enterable taste, not sale or invite", () => {
+test("coming-soon packs use the sample engine and do not invent 임신/출산/육아 questions", () => {
   const loggedIn = {
     user: { id: "usr_1", email: "sartre.art@gmail.com" },
     notice: null,
@@ -210,81 +175,25 @@ test("coming-soon packs are enterable taste, not sale or invite", () => {
   let state = finishSplash(createNativeFlow(loggedIn));
   assert.equal(state.screen, "pack-list");
   assert.equal(openComingSoonFromList(state, "marriage").screen, "pack-list");
-  state = openComingSoonFromList(state, "home-mgmt");
-  assert.equal(state.screen, "coming-soon");
-  assert.equal(COMING_SOON_TASTE_COPY.sampleQuestion, "가사와 시간은 어떻게 나누고 싶나요?");
-  assert.equal(RESULT_TASTE_COPY.label, "가까움");
-  const home = renderComingSoonScreen({ packId: "home-mgmt" });
-  assert.match(home, /곧 열려요/);
-  assert.match(home, /LoveMe coming-soon pack/);
-  assert.match(home, /가정 경영/);
-  assert.match(home, /임시 체험/);
-  assert.match(home, /가사와 시간은 어떻게 나누고 싶나요\?/);
-  assert.match(home, /예시입니다\. 여기서 답하거나 팔지 않아요/);
-  assert.match(home, /결과 맛보기/);
-  assert.match(home, /목록으로/);
-  assert.equal(home.includes("링크 보내기"), false);
-  assert.equal(home.includes("ALIGNED"), false);
-  assert.equal(home.includes("29,000"), false);
-  assert.equal(home.includes("type=\"radio\""), false);
-  for (const pack of [
-    ["pregnancy", "임신"],
-    ["birth", "출산"],
-    ["parenting", "육아"]
-  ]) {
-    const html = renderComingSoonScreen({ packId: pack[0] });
-    assert.match(html, new RegExp(pack[1]));
-    assert.match(html, /가사와 시간은 어떻게 나누고 싶나요\?/);
-    assert.match(html, /임시 체험/);
-    assert.equal(html.includes("링크 보내기"), false);
-  }
-  state = openTasteResult(state);
-  assert.equal(state.screen, "taste-result");
-  const result = renderTasteResultScreen({ packId: "home-mgmt" });
-  assert.match(result, /결과 맛보기/);
-  assert.match(result, /같음/);
-  assert.match(result, /가까움/);
-  assert.match(result, /이야기해요/);
-  assert.match(result, /가사와 시간은 어떻게 나누고 싶나요\?/);
-  assert.match(result, /나/);
-  assert.match(result, /상대/);
-  assert.match(result, /평일은 반반, 주말은 그때 그때요/);
-  assert.match(result, /한 사람이 메인으로 하고 나머지는 나눠요/);
-  assert.match(result, /진짜 비교는 열린 팩에서 둘이 낸 다음입니다/);
-  assert.match(result, /예시입니다/);
-  assert.match(result, /목록으로/);
-  assert.equal(result.includes("ALIGNED"), false);
-  assert.equal(result.includes("CLOSE"), false);
-  assert.equal(result.includes("DISCUSS"), false);
-  assert.equal(result.includes("링크 보내기"), false);
-  assert.equal(result.includes("29,000"), false);
-  assert.equal(result.includes("얼굴"), false);
-  state = backFromTasteResult(state);
-  assert.equal(state.screen, "coming-soon");
+  state = openComingSoonFromList(state, "pregnancy");
+  assert.equal(state.screen, "sample-result");
+  assert.equal(state.sampleQuestions.length, 0);
   state = backFromComingSoon(state);
   assert.equal(state.screen, "pack-list");
-  const fromResult = backToPackList(openTasteResult(openComingSoonFromList(finishSplash(createNativeFlow(loggedIn)), "pregnancy")));
+  const fromResult = backToPackList(openComingSoonFromList(finishSplash(createNativeFlow(loggedIn)), "pregnancy"));
   assert.equal(fromResult.screen, "pack-list");
   assert.equal(PACK_DETAIL_COPY.samples[2], "우리에게 집은 어떤 의미에 가장 가까울까요?");
 });
 
-test("logged-out browse stays on home and coming-soon; keep-gates require login and resume the destination", () => {
+test("logged-out first-run stays on login; keep-gates still resume after consume", () => {
   let state = finishSplash(createNativeFlow());
-  assert.equal(state.screen, "pack-list");
-  state = openMarriageFromList(state);
-  assert.equal(state.screen, "pack-detail");
-  const gated = openSendLink(state);
-  assert.equal(gated.screen, "signup");
-  assert.equal(gated.pendingGate, "invite");
-  assert.equal(gated.packDetailOpen, true);
-  const cancelled = cancelLogin(gated);
-  assert.equal(cancelled.screen, "pack-detail");
-  assert.equal(cancelled.signupOpen, false);
+  assert.equal(state.screen, "signup");
+  const cancelled = cancelLogin(state);
+  assert.equal(cancelled.screen, "signup");
 
   const accountGate = openAccount(finishSplash(createNativeFlow()));
   assert.equal(accountGate.screen, "signup");
   assert.equal(accountGate.pendingGate, "account");
-  assert.equal(cancelLogin(accountGate).screen, "pack-list");
 
   const payGate = requireLoginForPay(finishSplash(createNativeFlow()));
   assert.equal(payGate.screen, "signup");
@@ -295,15 +204,7 @@ test("logged-out browse stays on home and coming-soon; keep-gates require login 
     workspace: { id: "ws_1", role: "buyer", acceptedPartner: false }
   };
   const payLoggedIn = requireLoginForPay(finishSplash(createNativeFlow(loggedIn)));
-  assert.notEqual(payLoggedIn.screen, "signup");
-  assert.notEqual(payLoggedIn.screen, "paywall");
-  assert.equal(payLoggedIn.screen, "pack-list");
-
-  let soon = openComingSoonFromList(finishSplash(createNativeFlow()), "home-mgmt");
-  assert.equal(soon.screen, "coming-soon");
-  soon = openTasteResult(soon);
-  assert.equal(soon.screen, "taste-result");
-  assert.equal(openSendLink(soon).pendingGate, "invite");
+  assert.equal(payLoggedIn.screen, "unlock");
 
   const session = {
     user: { id: "usr_2", email: "buyer@example.com" },

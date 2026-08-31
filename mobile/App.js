@@ -3,18 +3,22 @@ import { Linking, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
+import { colors } from "./src/theme.js";
 import {
   AccountScreen,
+  CertificateScreen,
   ComingSoonScreen,
   EmailBindScreen,
   InviteScreen,
   NoticeScreen,
-  PackDetailScreen,
   PackListScreen,
+  PartnerWaitScreen,
+  SampleQuestionScreen,
+  SampleResultScreen,
   SentScreen,
   SignupScreen,
   SplashScreenView,
-  TasteResultScreen,
+  UnlockRestScreen,
   WorkspaceScreen
 } from "./src/screens.js";
 import {
@@ -30,31 +34,38 @@ import {
 } from "./src/session.js";
 import {
   backFromAccount,
+  backFromCertificate,
   backFromComingSoon,
   backFromInvite,
   backFromPackDetail,
-  backToPackList,
   cancelLogin,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
+  currentSampleQuestion,
+  dismissShop,
   finishSplash,
+  isFirstRunLogin,
   loadInvitePairCode,
   openAccount,
   openComingSoonFromList,
   openMarriageFromList,
   openSendLink,
-  openTasteResult,
+  openTogetherFromSample,
+  purchaseShopHearts,
   requestLinkStarted,
   setEmail,
   setPartnerCode,
-  shareMeasurementInvite
+  setSampleChoice,
+  setSampleReason,
+  shareMeasurementInvite,
+  submitSampleAnswer,
+  tapUnlock
 } from "./s0-s2-s3-flow.js";
-import { colors } from "./src/theme.js";
+import { packListLabel } from "./src/copy.js";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
 import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.js";
-import { PaywallBuyerScreen, PaywallPartnerScreen } from "./paywall/screens.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -122,18 +133,32 @@ export default function App() {
   if (paywallPreview === "buyer" || paywallPreview === "partner") {
     return (
       <>
-        <StatusBar style="dark" backgroundColor={colors.paper} />
-        {paywallPreview === "partner" ? <PaywallPartnerScreen /> : <PaywallBuyerScreen />}
+        <StatusBar style="dark" backgroundColor={colors.babyPink} />
+        {paywallPreview === "partner"
+          ? <PartnerWaitScreen />
+          : (
+            <UnlockRestScreen
+              hearts={0}
+              shopOpen={paywallPreview === "shop"}
+              onUnlock={() => {}}
+              onBuy={() => {}}
+              onLater={() => {}}
+            />
+          )}
       </>
     );
   }
 
+  const sampleQuestion = currentSampleQuestion(state);
+
   return (
     <>
-      <StatusBar style="dark" backgroundColor={colors.paper} />
+      <StatusBar style="dark" backgroundColor={colors.babyPink} />
       {state.screen === "splash" ? <SplashScreenView /> : null}
       {state.screen === "pack-list" ? (
         <PackListScreen
+          hearts={state.hearts}
+          session={state.session}
           onOpenMarriage={() => setState(openMarriageFromList(state))}
           onOpenComingSoon={(packId) => setState(openComingSoonFromList(state, packId))}
           onOpenAccount={() => setState(openAccount(state))}
@@ -142,25 +167,56 @@ export default function App() {
       {state.screen === "coming-soon" ? (
         <ComingSoonScreen
           packId={state.comingSoonId}
-          onTasteResult={() => setState(openTasteResult(state))}
           onBackToList={() => setState(backFromComingSoon(state))}
         />
       ) : null}
-      {state.screen === "taste-result" ? (
-        <TasteResultScreen onBackToList={() => setState(backToPackList(state))} />
-      ) : null}
-      {state.screen === "pack-detail" ? (
-        <PackDetailScreen
+      {state.screen === "sample-q" ? (
+        <SampleQuestionScreen
+          question={sampleQuestion}
+          choiceId={state.sampleChoice}
+          reason={state.sampleReason}
+          error={state.error}
+          onChangeChoice={(id) => setState(setSampleChoice(state, id))}
+          onChangeReason={(value) => setState(setSampleReason(state, value))}
+          onSubmit={() => setState(submitSampleAnswer(state))}
           onBack={() => setState(backFromPackDetail(state))}
-          onSendLink={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
+        />
+      ) : null}
+      {state.screen === "sample-result" ? (
+        <SampleResultScreen
+          question={state.sampleQuestions?.[state.sampleQuestions.length - 1]}
+          myChoice={state.sampleQuestions?.[state.sampleQuestions.length - 1]?.choices?.find((choice) => choice.id === state.sampleAnswers?.at?.(-1)?.choiceId)}
+          partnerChoice={state.samplePartner}
+          onTogether={() => setState(openTogetherFromSample(state))}
+        />
+      ) : null}
+      {state.screen === "unlock" ? (
+        <UnlockRestScreen
+          hearts={state.hearts}
+          shopOpen={state.shopOpen}
+          onUnlock={() => setState(tapUnlock(state))}
+          onBuy={() => setState(purchaseShopHearts(state))}
+          onLater={() => setState(dismissShop(state))}
+        />
+      ) : null}
+      {state.screen === "partner-wait" ? <PartnerWaitScreen /> : null}
+      {state.screen === "certificate" ? (
+        <CertificateScreen
+          packLabel={packListLabel(state.samplePackId) || "결혼"}
+          onBackToList={() => setState(backFromCertificate(state))}
         />
       ) : null}
       {state.screen === "account" ? (
         <AccountScreen
           email={state.session?.user?.email || ""}
+          partnerEmail={state.session?.workspace?.partnerEmail || ""}
+          acceptedPartner={Boolean(state.session?.workspace?.acceptedPartner)}
+          guest={!state.session?.user}
           busy={state.busy}
           onBack={() => setState(backFromAccount(state))}
           onLogout={async () => setState(await logoutHost(state, api))}
+          onLogin={() => setState(openAccount(state))}
+          onInvite={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
         />
       ) : null}
       {state.screen === "signup" ? (
@@ -168,6 +224,7 @@ export default function App() {
           email={state.email}
           error={state.error}
           busy={state.busy}
+          firstRun={isFirstRunLogin(state)}
           onBack={() => setState(cancelLogin(state))}
           onSubmitEmail={async (email) => {
             const started = requestLinkStarted(setEmail(state, email));
