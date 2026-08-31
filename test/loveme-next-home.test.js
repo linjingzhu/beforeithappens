@@ -218,9 +218,16 @@ test("native certificate copy is pack counts heart stamp 홈으로 and debug 수
   const swift = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
   const kotlin = await readFile("mobile/LoveMeInvitePackScreens.kt", "utf8");
   const expo = await readFile("mobile/src/screens.js", "utf8");
-  for (const text of [swift, kotlin, expo]) {
+  assert.equal(CERTIFICATE_COPY.body, "두 사람이 이 질문집을 마쳤어요");
+  assert.equal(CERTIFICATE_COPY.cta, "홈으로");
+  for (const text of [swift, kotlin]) {
     assert.match(text, /두 사람이 이 질문집을 마쳤어요/);
     assert.match(text, /홈으로/);
+  }
+  // The Expo screen renders the shared constants rather than repeating the literals.
+  assert.match(expo, /CERTIFICATE_COPY\.body/);
+  assert.match(expo, /CERTIFICATE_COPY\.cta/);
+  for (const text of [swift, kotlin, expo]) {
     assert.equal(text.includes("이수증"), false);
     assert.equal(text.includes("점수"), false);
   }

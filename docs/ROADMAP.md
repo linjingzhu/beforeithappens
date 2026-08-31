@@ -25,7 +25,6 @@ Not present yet, in the order it starts to hurt:
 
 | Gap | Evidence |
 |---|---|
-| One test fails on `stable` | `test/loveme-next-home.test.js:217` greps a literal that `mobile/src/screens.js:365` renders through `CERTIFICATE_COPY.body` |
 | Nothing deploys | no Dockerfile / host config / deploy workflow; `scripts/server.mjs` only binds `PORT \|\| 4173` |
 | Storage is one JSON file | `server/store.mjs` re-serializes whole state per mutation, no locking, single process |
 | Payment is not real | `POST /api/purchase` mints the order server-side (`server/app.mjs:414`); the mobile purchase is virtual hearts |
@@ -42,7 +41,7 @@ Not present yet, in the order it starts to hurt:
 ## Sequence
 
 ```text
-M0 green CI
+M0 green CI                (done)
   └─ M1 deployable service
        └─ M2 durable storage
             └─ M3 two-device loop proof
@@ -56,18 +55,17 @@ M9 social login            (deferred)
 
 ---
 
-## M0 — Green CI
+## M0 — Green CI — **DONE**
 
 **Goal** The build gate tells the truth again.
 
-`test/loveme-next-home.test.js:217` asserts the certificate body literal in the Swift, Kotlin and
-Expo sources. Swift and Kotlin carry the literal; the Expo screen renders the shared constant
-instead, which is the better structure. The same test already asserts the stamp through
-`CERTIFICATE_COPY.stamp`, so assert the body the same way.
+The certificate test asserted the body literal in the Swift, Kotlin and Expo sources. Swift and
+Kotlin carry the literal; the Expo screen renders the shared constant instead, which is the better
+structure, so the assertion failed on correct code. It now pins `CERTIFICATE_COPY.body` and `.cta`
+to their Korean strings and checks that the Expo screen references those constants — the same shape
+the stamp assertion already used — while Swift and Kotlin keep their literal checks.
 
-**Exit gate** `npm run lint && npm test && npm run build` clean.
-
-**Cost** Under an hour. No dependencies.
+**Exit gate met** `npm run lint && npm test && npm run build` clean; 164/164.
 
 ## M1 — A service that runs somewhere
 
