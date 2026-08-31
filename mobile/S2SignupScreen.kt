@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -67,6 +68,7 @@ fun S2SignupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(cream)
+                .systemBarsPadding()
                 .padding(24.dp)
         ) {
             Text("LoveMe", color = coral, fontSize = 22.sp, fontWeight = FontWeight.Medium)

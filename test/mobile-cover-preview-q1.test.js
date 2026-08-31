@@ -142,7 +142,11 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
   assert.match(screens, /PACK_DETAIL_COPY\.captionLines/);
   assert.match(screens, /ComingSoonScreen/);
   assert.match(screens, /TasteResultScreen/);
+  assert.match(screens, /SafeAreaView/);
+  assert.match(screens, /function SafeScreen/);
   assert.equal(screens.includes("NotebookGraphic"), false);
+  assert.equal(screens.includes("QR"), false);
+  assert.equal(screens.includes("qrcode"), false);
   assert.equal(screens.includes("결혼식 규모"), false);
   const swift = await readFile("mobile/LoveMeInvitePackScreens.swift", "utf8");
   const kotlin = await readFile("mobile/LoveMeInvitePackScreens.kt", "utf8");
@@ -157,6 +161,8 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
     assert.equal(text.includes("ALIGNED"), false);
     assert.equal(text.includes("CLOSE"), false);
     assert.equal(text.includes("DISCUSS"), false);
+    assert.equal(text.includes("QR"), false);
+    assert.equal(text.includes("qrcode"), false);
     assert.equal(text.includes("결혼식 규모"), false);
     assert.equal(text.includes("결혼 비용"), false);
     assert.equal(text.includes("양가 명절은"), false);
@@ -176,6 +182,14 @@ test("Expo pack-detail and account omit prices, gifts, social, and preview Q1", 
   assert.match(css, /\.loveme-logout/);
   assert.match(css, /\.loveme-coming-soon/);
   assert.match(css, /\.loveme-taste-result/);
+  assert.match(css, /safe-area-inset-top/);
+  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(swift, /safeAreaInsets/);
+  assert.match(kotlin, /systemBarsPadding/);
+  const s2Swift = await readFile("mobile/S2SignupScreen.swift", "utf8");
+  const s2Kotlin = await readFile("mobile/S2SignupScreen.kt", "utf8");
+  assert.match(s2Swift, /loveMeSafeChrome/);
+  assert.match(s2Kotlin, /systemBarsPadding/);
   assert.match(app, /ComingSoonScreen/);
   assert.match(app, /TasteResultScreen/);
   assert.match(app, /openComingSoonFromList/);

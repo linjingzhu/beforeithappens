@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,6 +79,11 @@ object LoveMeInvitePackCopy {
     const val tasteExample = "예시입니다."
 }
 
+fun Modifier.loveMeSafeChrome(): Modifier = this
+    .fillMaxSize()
+    .background(Color(0xFFFDFBF7))
+    .systemBarsPadding()
+
 @Composable
 fun LoveMePackListScreen(
     onOpenMarriage: () -> Unit = {},
@@ -87,8 +93,7 @@ fun LoveMePackListScreen(
     val cream = Color(0xFFFDFBF7)
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(cream)
+            .loveMeSafeChrome()
             .padding(28.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -123,8 +128,7 @@ fun LoveMePackDetailScreen(onBack: () -> Unit = {}, onSendLink: () -> Unit = {})
     val coral = Color(0xFFEE775F)
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(cream)
+            .loveMeSafeChrome()
             .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -168,8 +172,7 @@ fun LoveMeAccountScreen(email: String = "", onBack: () -> Unit = {}, onLogout: (
     val cream = Color(0xFFFDFBF7)
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(cream)
+            .loveMeSafeChrome()
             .padding(24.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -212,8 +215,7 @@ fun LoveMeInviteScreen(
     val cream = Color(0xFFFDFBF7)
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .background(cream)
+            .loveMeSafeChrome()
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -272,7 +274,7 @@ fun LoveMeComingSoonScreen(
     val cream = Color(0xFFFDFBF7)
     val coral = Color(0xFFEE775F)
     Column(
-        modifier = Modifier.fillMaxSize().background(cream).padding(28.dp),
+        modifier = Modifier.loveMeSafeChrome().padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -318,7 +320,7 @@ fun LoveMeComingSoonScreen(
 fun LoveMeTasteResultScreen(onBackToList: () -> Unit = {}) {
     val cream = Color(0xFFFDFBF7)
     Column(
-        modifier = Modifier.fillMaxSize().background(cream).padding(28.dp),
+        modifier = Modifier.loveMeSafeChrome().padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(LoveMeInvitePackCopy.tasteResultTitle, fontSize = 32.sp, fontWeight = FontWeight.Bold)

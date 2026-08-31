@@ -83,9 +83,7 @@ struct S2SignupScreen: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             Spacer()
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome(24)
         .onAppear { emailDraft = email }
     }
 

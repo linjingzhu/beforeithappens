@@ -6,6 +6,8 @@
   --line: #e7ddd5;
   --coral: #ee775f;
   --soft: #fce8e1;
+  --safe-top: max(59px, env(safe-area-inset-top, 0px));
+  --safe-bottom: max(34px, env(safe-area-inset-bottom, 0px));
 }
 
 * { box-sizing: border-box; }
@@ -21,10 +23,15 @@ body {
 .preview-frame {
   width: min(420px, 100%);
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   background: #fdfbf7;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  box-sizing: border-box;
 }
 
 .loveme-topbar {
@@ -58,7 +65,8 @@ body {
 
 .loveme-screen {
   flex: 1;
-  padding: 28px 22px 40px;
+  min-height: 0;
+  padding: 28px 22px 32px;
 }
 
 .loveme-splash {
@@ -189,7 +197,7 @@ body {
 }
 
 .loveme-cover {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -223,7 +231,7 @@ body {
 .loveme-pack-detail {
   align-items: stretch;
   text-align: left;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -345,11 +353,11 @@ body {
 }
 
 .loveme-gate {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   background: #fdfbf7;
-  padding: 28px 20px 40px;
+  padding: 28px 20px 32px;
 }
 
 .loveme-gate-brand {
@@ -549,7 +557,7 @@ body {
 }
 
 .loveme-account {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -580,7 +588,7 @@ body {
 .loveme-taste-result {
   align-items: center;
   text-align: center;
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }

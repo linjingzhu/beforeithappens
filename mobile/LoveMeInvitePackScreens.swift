@@ -49,6 +49,21 @@ enum LoveMeInvitePackCopy {
     static let tasteExample = "예시입니다."
 }
 
+extension View {
+    func loveMeSafeChrome(_ padding: CGFloat = 28, alignment: Alignment = .topLeading) -> some View {
+        GeometryReader { proxy in
+            self
+                .padding(padding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+                .padding(.top, proxy.safeAreaInsets.top)
+                .padding(.bottom, proxy.safeAreaInsets.bottom)
+                .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        }
+        .ignoresSafeArea()
+        .background(Color(red: 0.99, green: 0.98, blue: 0.97).ignoresSafeArea())
+    }
+}
+
 struct LoveMePackListScreen: View {
     var onOpenMarriage: () -> Void = {}
     var onOpenComingSoon: (String) -> Void = { _ in }
@@ -96,9 +111,7 @@ struct LoveMePackListScreen: View {
             }
             Spacer()
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome()
     }
 }
 
@@ -146,9 +159,7 @@ struct LoveMePackDetailScreen: View {
             }
             .buttonStyle(LoveMePrimaryButtonStyle())
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome()
     }
 }
 
@@ -185,9 +196,7 @@ struct LoveMeAccountScreen: View {
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(red: 0.77, green: 0.36, blue: 0.31)))
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome(24)
     }
 }
 
@@ -254,9 +263,7 @@ struct LoveMeInviteScreen: View {
             .clipShape(RoundedRectangle(cornerRadius: 20))
             Spacer()
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome(24)
     }
 }
 
@@ -308,9 +315,7 @@ struct LoveMeComingSoonScreen: View {
             Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
                 .foregroundStyle(Color(red: 0.17, green: 0.15, blue: 0.13))
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome(alignment: .center)
     }
 }
 
@@ -359,8 +364,6 @@ struct LoveMeTasteResultScreen: View {
             Button(LoveMeInvitePackCopy.backToList, action: onBackToList)
                 .buttonStyle(LoveMePrimaryButtonStyle())
         }
-        .padding(28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(red: 0.99, green: 0.98, blue: 0.97))
+        .loveMeSafeChrome(alignment: .center)
     }
 }

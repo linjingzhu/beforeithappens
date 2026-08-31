@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { ACCOUNT_COPY, AUTH_COPY, COMING_SOON_TASTE_COPY, comingSoonPackLabel, LINE, PACK_DETAIL_COPY, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, RESULT_TASTE_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
 
@@ -10,18 +10,26 @@ function pressableStyle(...parts) {
   };
 }
 
+function SafeScreen({ style, children, testID }) {
+  return (
+    <SafeAreaView style={[styles.safeFill, style]} testID={testID} accessibilityLabel={testID}>
+      {children}
+    </SafeAreaView>
+  );
+}
+
 function AuthKeyboardShell({ testID, children }) {
   return (
-    <KeyboardAvoidingView
-      style={styles.shell}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      testID={testID}
-      accessibilityLabel={testID}
-    >
-      <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.card}>{children}</View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <SafeScreen testID={testID} style={styles.shell}>
+      <KeyboardAvoidingView
+        style={styles.flexFill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.card}>{children}</View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeScreen>
   );
 }
 
@@ -41,22 +49,21 @@ function BackButton({ onPress, testID = "back" }) {
 
 export function SplashScreenView() {
   return (
-    <View style={styles.shell} testID="splash" accessibilityLabel="splash">
+    <SafeScreen style={styles.shell} testID="splash">
       <Text style={styles.wordmark}>{WORDMARK}</Text>
       <Text style={styles.line}>{LINE}</Text>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function SignupScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
   const [draft, setDraft] = useState(email);
   return (
-    <KeyboardAvoidingView
-      style={styles.coverShell}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      testID="signup"
-      accessibilityLabel="signup"
-    >
+    <SafeScreen style={styles.coverShell} testID="signup">
+      <KeyboardAvoidingView
+        style={styles.flexFill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <Text style={styles.gateBrand}>{WORDMARK}</Text>
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.gateScroll}>
         <View style={styles.gateCard}>
@@ -87,7 +94,8 @@ export function SignupScreen({ email = "", error = "", busy = false, onSubmitEma
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeScreen>
   );
 }
 
@@ -125,7 +133,7 @@ export function EmailBindScreen({ email = "", error = "", busy = false, onSubmit
 
 export function SentScreen({ email = "", onUseOtherEmail }) {
   return (
-    <View style={styles.shell} testID="sent" accessibilityLabel="sent">
+    <SafeScreen style={styles.shell} testID="sent">
       <View style={styles.card}>
         <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
         <Text style={styles.title}>{AUTH_COPY.title}</Text>
@@ -135,13 +143,13 @@ export function SentScreen({ email = "", onUseOtherEmail }) {
           <Text style={styles.secondaryLabel}>다른 이메일로 요청</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function NoticeScreen({ email = "", error = "", busy = false, onAcknowledgeNotice }) {
   return (
-    <View style={styles.shell} testID="notice" accessibilityLabel="notice">
+    <SafeScreen style={styles.shell} testID="notice">
       <View style={styles.card}>
         <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
         <Text style={styles.title}>{AUTH_COPY.title}</Text>
@@ -158,13 +166,13 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
         </Pressable>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount }) {
   return (
-    <View style={styles.packShell} testID="pack-list" accessibilityLabel="pack-list">
+    <SafeScreen style={styles.packShell} testID="pack-list">
       <View style={styles.packTop}>
         <Text style={styles.coverBrand}>{WORDMARK}</Text>
         <Pressable testID="pack-account" accessibilityRole="button" onPress={onOpenAccount} style={pressableStyle(styles.accountEntry)}>
@@ -200,13 +208,13 @@ export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount
           )
         ))}
       </View>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function PackDetailScreen({ onBack, onSendLink }) {
   return (
-    <View style={styles.detailShell} testID="pack-detail" accessibilityLabel="pack-detail">
+    <SafeScreen style={styles.detailShell} testID="pack-detail">
       <View style={styles.navRow}>
         <BackButton onPress={onBack} testID="pack-detail-back" />
       </View>
@@ -237,13 +245,13 @@ export function PackDetailScreen({ onBack, onSendLink }) {
       >
         <Text style={styles.primaryLabel}>🔗  {PACK_DETAIL_COPY.cta}</Text>
       </Pressable>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function ComingSoonScreen({ packId = "home-mgmt", onTasteResult, onBackToList }) {
   return (
-    <View style={styles.tasteShell} testID="coming-soon" accessibilityLabel="coming-soon">
+    <SafeScreen style={styles.tasteShell} testID="coming-soon">
       <View style={styles.soonBadge}>
         <Text style={styles.soonBadgeLabel}>{COMING_SOON_TASTE_COPY.badge}</Text>
       </View>
@@ -269,13 +277,13 @@ export function ComingSoonScreen({ packId = "home-mgmt", onTasteResult, onBackTo
       <Pressable testID="coming-soon-list" accessibilityRole="button" onPress={onBackToList} style={pressableStyle(styles.textLink)}>
         <Text style={styles.textLinkLabel}>{COMING_SOON_TASTE_COPY.backToList}</Text>
       </Pressable>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function TasteResultScreen({ onBackToList }) {
   return (
-    <View style={styles.tasteShell} testID="taste-result" accessibilityLabel="taste-result">
+    <SafeScreen style={styles.tasteShell} testID="taste-result">
       <Text style={styles.tasteResultTitle}>{RESULT_TASTE_COPY.title}</Text>
       <View style={styles.tasteLabelPill}>
         <Text style={styles.tasteLabelText}>{RESULT_TASTE_COPY.label}</Text>
@@ -299,13 +307,13 @@ export function TasteResultScreen({ onBackToList }) {
       >
         <Text style={styles.primaryLabel}>{RESULT_TASTE_COPY.cta}</Text>
       </Pressable>
-    </View>
+    </SafeScreen>
   );
 }
 
 export function AccountScreen({ email = "", busy = false, onBack, onLogout }) {
   return (
-    <View style={styles.accountShell} testID="account" accessibilityLabel="account">
+    <SafeScreen style={styles.accountShell} testID="account">
       <View style={styles.navRowCenter}>
         <BackButton onPress={onBack} testID="account-back" />
         <Text style={styles.navTitle}>{ACCOUNT_COPY.title}</Text>
@@ -324,7 +332,7 @@ export function AccountScreen({ email = "", busy = false, onBack, onLogout }) {
       >
         <Text style={styles.logoutLabel}>{ACCOUNT_COPY.logout}</Text>
       </Pressable>
-    </View>
+    </SafeScreen>
   );
 }
 
@@ -344,11 +352,10 @@ export function InviteScreen({
   onConnect
 }) {
   return (
+    <SafeScreen style={styles.inviteShell} testID="invite">
     <KeyboardAvoidingView
-      style={styles.inviteShell}
+      style={styles.flexFill}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      testID="invite"
-      accessibilityLabel="invite"
     >
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={styles.inviteScroll}>
         <View style={styles.navRowCenter}>
@@ -409,12 +416,13 @@ export function InviteScreen({
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeScreen>
   );
 }
 
 export function WorkspaceScreen({ email = "", onInvitePartner }) {
   return (
-    <View style={styles.shell} testID="workspace" accessibilityLabel="workspace">
+    <SafeScreen style={styles.shell} testID="workspace">
       <View style={styles.card}>
         <Text style={styles.wordmarkSmall}>{WORDMARK}</Text>
         <Text style={styles.title}>{S3_COPY.created}</Text>
@@ -423,11 +431,15 @@ export function WorkspaceScreen({ email = "", onInvitePartner }) {
           <Text style={styles.primaryLabel}>{S3_COPY.inviteCta}</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  safeFill: {
+    flex: 1,
+    backgroundColor: colors.coverPaper
+  },
   shell: {
     flex: 1,
     backgroundColor: colors.paper,
