@@ -397,6 +397,172 @@ html { scroll-padding-top: 120px; }
 
 .q-intent { margin: 0 0 8px; }
 
+/*
+ * What a reader writes beside a question. Full-width controls in one column: on a phone a select
+ * and two textareas side by side would each be too narrow to write a sentence in, and this is the
+ * part of the card that asks for sentences.
+ */
+.q-depth {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.q-depth-lead {
+  font-weight: 600;
+}
+
+.q-depth select,
+.q-depth textarea,
+.q-talk textarea,
+.q-feedback textarea {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--ab-line);
+  border-radius: 12px;
+  background: var(--ab-surface);
+  color: var(--ab-ink);
+  font: inherit;
+}
+
+.q-depth textarea,
+.q-talk textarea,
+.q-feedback textarea {
+  resize: vertical;
+}
+
+.q-depth select:focus-visible,
+.q-depth textarea:focus-visible,
+.q-talk textarea:focus-visible,
+.q-feedback textarea:focus-visible {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: 1px;
+}
+
+/* The conversation for after both people have answered. Shut until then. */
+.q-talk {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--ab-line);
+}
+
+.q-talk > summary {
+  cursor: pointer;
+  color: var(--ab-accent);
+  font-weight: 600;
+}
+
+.q-talk p {
+  margin: 11px 0;
+}
+
+.q-rule-label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.q-talk-closing {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ab-paper);
+  color: var(--ab-muted);
+}
+
+/*
+ * The review block, and the export beside the questions. Both go with `SITE.debugFeedback`; the
+ * dashed amber frame is the point, so that nobody mistakes scaffolding for the finished page.
+ */
+.q-feedback {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px dashed #b58a76;
+  border-radius: 14px;
+  background: #fff8e8;
+}
+
+.q-feedback-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.q-feedback-head span {
+  padding: 3px 7px;
+  border-radius: 99px;
+  background: #f1dfca;
+  color: #8a5b47;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.q-feedback > p {
+  margin: 6px 0 9px;
+  color: var(--ab-muted);
+  font-size: 13px;
+}
+
+.q-stars {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.q-stars label {
+  cursor: pointer;
+  line-height: 1;
+}
+
+.q-stars input {
+  position: absolute;
+  opacity: 0;
+}
+
+.q-stars span {
+  font-size: 28px;
+  color: #d8c9bd;
+}
+
+/* Filled up to the star chosen: every label at or before the checked one takes the lit colour. */
+.q-stars:has(input[value="1"]:checked) label:nth-child(1) span,
+.q-stars:has(input[value="2"]:checked) label:nth-child(-n + 2) span,
+.q-stars:has(input[value="3"]:checked) label:nth-child(-n + 3) span,
+.q-stars:has(input[value="4"]:checked) label:nth-child(-n + 4) span,
+.q-stars:has(input[value="5"]:checked) label:nth-child(-n + 5) span {
+  color: #e3a52f;
+}
+
+.q-stars label:has(input:focus-visible) span {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: 2px;
+}
+
+.q-feedback-state {
+  margin: 3px 0 8px;
+  color: var(--ab-muted);
+  font-size: 12px;
+}
+
+.q-feedback-export {
+  margin: 0 0 24px;
+  text-align: right;
+}
+
+.q-feedback-export button {
+  padding: 8px 12px;
+  border: 1px dashed #b58a76;
+  border-radius: 10px;
+  background: #fff8e8;
+  color: #8a5b47;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* The Part's own line, once, under its title. */
 .part-blurb {
   color: var(--ab-muted);

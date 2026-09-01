@@ -37,6 +37,14 @@ export const SITE = Object.freeze({
    */
   contactEmail: "",
   locale: "ko-KR",
+  /**
+   * The question-review block under every question, and the switch that takes it away.
+   *
+   * It is scaffolding: the owner asked for it while the pack is being read through, and said it
+   * comes out afterwards. `false` removes it from every page on the next build — no other file
+   * needs editing — and `site/feedback.js` is then the only thing left to delete.
+   */
+  debugFeedback: true,
   /** Ten to a page, per the strategy. A hundred questions is ten pages. */
   pageSize: 10
 });

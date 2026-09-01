@@ -96,13 +96,15 @@ test("the pack is built and ready, and the site does not publish it today", asyn
   assert.equal(findPack("pregnancy-100")?.questions.length, 100);
 });
 
-test("the page shows the Part's line, the mood and the value names", () => {
+test("the page shows the Part's line, the scene and the value names, and no mood", () => {
   const model = pregnancyPage(1);
   const html = renderQuestionPage(model, undefined);
   assert.ok(html.includes(model.part.blurb), "the Part introduces itself, once");
   assert.equal((html.match(/class="part-blurb"/g) || []).length, 1);
   for (const question of model.questions) {
-    assert.ok(html.includes(`<span class="q-mood">${question.mood}</span>`), `${question.id} mood`);
+    // The mood is pack data the page deliberately does not print: beside the question it read as
+    // an instruction about how to feel, which is the one thing a question must not carry.
+    assert.equal(html.includes(`<span class="q-mood">${question.mood}</span>`), false);
     if (question.scene) {
       assert.ok(html.includes(`<p class="q-scene">${question.scene}</p>`), `${question.id} scene`);
     }

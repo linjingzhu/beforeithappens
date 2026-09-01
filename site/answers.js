@@ -12,7 +12,26 @@
  * A choice alone can only be aggregated, not reflected on. `notDiscussed` is the one extra fact
  * worth capturing: it is observable rather than a self-rating, and it is exactly what turns a list
  * of answers into "these are the ones to bring to the other person".
+ *
+ * A question also holds what the reader wrote beside it: how much the choice matters to them, why
+ * they chose it, what they think the other person will choose, and the working rule the two of them
+ * settled on. Those are notes, not data about a person: they never leave the browser either, and
+ * `importance` is the only one with fixed values, so it is the only one checked against a list.
+ * Notes can exist without a choice — someone may write before they decide — so an item is kept if
+ * it carries either. Each note is capped, because a runaway paste is the one way a page of
+ * textareas can fill a storage quota and lose the rest of the answers with it.
  */
+
+/** The named fields a question can carry beside its choice, and what each one may hold. */
+export const IMPORTANCE_VALUES = Object.freeze(["light", "hope", "need"]);
+export const NOTE_FIELDS = Object.freeze(["importance", "reason", "guess", "rule"]);
+const NOTE_MAX = 2000;
+
+function validNote(field, value) {
+  if (typeof value !== "string") return "";
+  if (field === "importance") return IMPORTANCE_VALUES.includes(value) ? value : "";
+  return value.slice(0, NOTE_MAX);
+}
 
 /** Bumped only if the stored shape changes incompatibly; an unknown version is discarded, not guessed at. */
 export const ANSWERS_VERSION = 1;
@@ -28,8 +47,16 @@ export function emptyAnswers(slug) {
 function validItem(value) {
   if (!value || typeof value !== "object") return null;
   const choiceId = typeof value.choiceId === "string" ? value.choiceId : "";
-  if (!choiceId) return null;
-  return { choiceId, notDiscussed: value.notDiscussed === true };
+  const item = { choiceId, notDiscussed: choiceId ? value.notDiscussed === true : false };
+  let written = false;
+  for (const field of NOTE_FIELDS) {
+    const note = validNote(field, value[field]);
+    if (note) {
+      item[field] = note;
+      written = true;
+    }
+  }
+  return choiceId || written ? item : null;
 }
 
 /**
@@ -75,11 +102,34 @@ export function withAnswer(answers, questionId, choiceId, notDiscussed = null) {
     items: {
       ...answers.items,
       [id]: {
+        // Whatever was written beside the question survives a change of mind about the answer.
+        ...previous,
         choiceId: String(choiceId),
         notDiscussed: notDiscussed === null ? Boolean(previous?.notDiscussed) : Boolean(notDiscussed)
       }
     }
   };
+}
+
+/**
+ * Records one note. Unlike a choice this may be the first thing a question holds, so it creates the
+ * item rather than refusing; clearing the field back to empty removes it, and an item left holding
+ * nothing at all is dropped rather than kept as a husk.
+ */
+export function withNote(answers, questionId, field, value) {
+  const id = String(questionId || "");
+  if (!id || !NOTE_FIELDS.includes(field)) return answers;
+  const note = validNote(field, typeof value === "string" ? value : "");
+  const previous = answers.items[id] || { choiceId: "", notDiscussed: false };
+  const next = { ...previous };
+  if (note) next[field] = note;
+  else delete next[field];
+
+  const items = { ...answers.items };
+  const empty = !next.choiceId && NOTE_FIELDS.every((name) => !next[name]);
+  if (empty) delete items[id];
+  else items[id] = next;
+  return { ...answers, items };
 }
 
 /** Marking a question undiscussed before answering it is meaningless, so it is refused. */
@@ -97,13 +147,14 @@ export function clearAnswers(slug) {
   return emptyAnswers(slug);
 }
 
+/** Answered means a choice was made. A question holding only notes is written on, not answered. */
 export function answeredCount(answers) {
-  return Object.keys(answers?.items || {}).length;
+  return Object.values(answers?.items || {}).filter((item) => Boolean(item?.choiceId)).length;
 }
 
 export function isComplete(answers, questions) {
   const items = answers?.items || {};
-  return (questions || []).every((question) => Boolean(items[question.id]));
+  return (questions || []).every((question) => Boolean(items[question.id]?.choiceId));
 }
 
 /**

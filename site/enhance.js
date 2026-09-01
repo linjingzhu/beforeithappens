@@ -1,4 +1,6 @@
-import { answeredCount, createAnswerStore, withAnswer, withDiscussionFlag } from "./answers.js";
+import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withDiscussionFlag, withNote } from "./answers.js";
+// Debug only, and self-contained so that removing the block is removing this line and its uses.
+import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
 import { reflect } from "./reflect.js";
 
@@ -19,29 +21,66 @@ function slugFromPath(pathname = globalThis.location?.pathname || "") {
   return match ? match[1] : "";
 }
 
+/*
+ * The review block sits *inside* the question's article, so its controls reach these handlers too.
+ * Without this guard a star — a radio like any other — was recorded as the reader's answer: rating
+ * a question four stars stored "4" as the chosen option and moved the progress bar. Caught in a
+ * browser, not by a test, which is why the check lives here rather than in the store: the store
+ * cannot tell one radio from another, and this is the layer that knows what the element is.
+ */
+function isFeedbackControl(target) {
+  return Boolean(target?.closest?.("[data-feedback]"));
+}
+
 function restoreQuestionPage(root, store) {
   const answers = store.read();
   for (const article of root.querySelectorAll("[data-question]")) {
     const id = article.getAttribute("data-question");
     const item = answers.items[id];
     if (!item) continue;
-    const radio = article.querySelector(`input[type="radio"][value="${CSS.escape(item.choiceId)}"]`);
+    const radio = article.querySelector(`.q-choices input[value="${CSS.escape(item.choiceId)}"]`);
     if (radio) radio.checked = true;
     const flag = article.querySelector("[data-undiscussed]");
     if (flag) flag.checked = item.notDiscussed === true;
   }
+  // Notes are restored for every question, answered or not: someone may have written before
+  // choosing, and losing that on a page reload is losing the part that took thought.
+  for (const article of root.querySelectorAll("[data-question]")) {
+    const item = answers.items[article.getAttribute("data-question")];
+    if (!item) continue;
+    for (const field of NOTE_FIELDS) {
+      const control = article.querySelector(`[data-note="${field}"]`);
+      if (control && item[field]) control.value = item[field];
+    }
+  }
 }
 
 function bindQuestionPage(root, store) {
+  // Typing is saved as it happens rather than on blur: a reader who closes the tab mid-sentence
+  // should still find the sentence. `change` alone would drop it.
+  root.addEventListener("input", (event) => {
+    const target = event.target;
+    if (isFeedbackControl(target)) return;
+    const note = target?.getAttribute?.("data-note");
+    const article = target?.closest?.("[data-question]");
+    if (!note || !article) return;
+    store.write(withNote(store.read(), article.getAttribute("data-question"), note, target.value));
+  });
+
   root.addEventListener("change", (event) => {
     const target = event.target;
-    if (!target) return;
+    if (!target || isFeedbackControl(target)) return;
     const article = target.closest?.("[data-question]");
     if (!article) return;
     const id = article.getAttribute("data-question");
 
     if (target.type === "radio") {
       store.write(withAnswer(store.read(), id, target.value));
+      return;
+    }
+    const note = target.getAttribute?.("data-note");
+    if (note) {
+      store.write(withNote(store.read(), id, note, target.value));
       return;
     }
     if (target.hasAttribute?.("data-undiscussed")) {
@@ -184,6 +223,80 @@ function pinCurrentTab() {
  * is a layout decision rather than a scripting one.
  */
 
+/*
+ * ---- the review block, debug only ------------------------------------------------------------
+ * Everything from here to the end of this section goes when `SITE.debugFeedback` does. It is kept
+ * in one place, reading and writing one store of its own, so that removing it cannot take a
+ * reader's answers with it.
+ */
+
+/** Reads a saved rating and comment back onto the page, and records what the reviewer changes. */
+function startFeedback(slug) {
+  const blocks = [...document.querySelectorAll("[data-feedback]")];
+  const exportButton = document.querySelector("[data-feedback-export]");
+  if (!blocks.length && !exportButton) return;
+  const store = createFeedbackStore(`${slug}`);
+
+  const saved = store.read();
+  for (const block of blocks) {
+    const entry = saved.items[block.getAttribute("data-feedback")];
+    if (!entry) continue;
+    if (entry.rating) {
+      const star = block.querySelector(`input[value="${entry.rating}"]`);
+      if (star) star.checked = true;
+    }
+    const comment = block.querySelector("[data-feedback-comment]");
+    if (comment && entry.comment) comment.value = entry.comment;
+    showRating(block, entry.rating);
+  }
+
+  const record = (event, patch) => {
+    const block = event.target?.closest?.("[data-feedback]");
+    if (!block) return;
+    const id = block.getAttribute("data-feedback");
+    store.write(withFeedback(store.read(), id, patch(event.target)));
+    const rated = block.querySelector("input:checked");
+    showRating(block, rated ? Number(rated.value) : 0);
+  };
+  document.addEventListener("change", (event) => {
+    if (event.target?.hasAttribute?.("data-feedback-score")) {
+      record(event, (target) => ({ rating: Number(target.value) }));
+    }
+  });
+  document.addEventListener("input", (event) => {
+    if (event.target?.hasAttribute?.("data-feedback-comment")) {
+      record(event, (target) => ({ comment: target.value }));
+    }
+  });
+
+  if (exportButton) exportButton.addEventListener("click", () => exportFeedback(store, slug));
+}
+
+function showRating(block, rating) {
+  const state = block.querySelector("[data-feedback-state]");
+  if (state) {
+    state.textContent = rating ? FEEDBACK_COPY.rated(rating) : FEEDBACK_COPY.unrated;
+  }
+  block.classList.toggle("is-rated", Boolean(rating));
+}
+
+/** Saves the whole pack's feedback as a file, since the site sends nothing anywhere. */
+function exportFeedback(store, slug) {
+  const feedback = store.read();
+  if (!feedbackCount(feedback)) {
+    globalThis.alert?.(FEEDBACK_COPY.exportEmpty);
+    return;
+  }
+  const blob = new Blob([JSON.stringify(feedback, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${slug}-feedback.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+}
+
+/* ---- end of the review block ----------------------------------------------------------------- */
+
 /** The bar under the tabs: answers recorded across the whole pack, as a width and an aria value. */
 function showProgress(store) {
   const bar = document.querySelector("[data-progress-total]");
@@ -217,6 +330,7 @@ function start() {
   showProgress(store);
   // Every recorded answer moves the bar, including one made on this page a moment ago.
   questions.addEventListener("change", () => showProgress(store));
+  startFeedback(slug);
 }
 
 if (typeof document !== "undefined") start();
