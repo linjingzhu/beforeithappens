@@ -64,12 +64,12 @@ test("소개 answers what a reader who just answered a hundred questions would a
     for (const paragraph of section.paragraphs) assert.ok(has(html, paragraph));
   }
 
-  // The three things that page has to be straight about, because the site's whole claim rests on
-  // them and a reviewer will look for them too.
+  // Not scoring anyone is the claim the site rests on, so the page has to be straight about it and
+  // a reviewer will look for it. Where the answers live was stated here too and the owner took the
+  // section out; the sheet still says it, in `RESULT_COPY.clearNote`, next to the button that acts
+  // on it — which is the place it is actually read.
   const prose = ABOUT_COPY.sections.flatMap((section) => section.paragraphs).join(" ");
-  assert.ok(prose.includes("브라우저 안에만"), "where the answers live");
   assert.ok(prose.includes("점수를 매기지 않고"), "that nothing is scored");
-  assert.ok(prose.includes("가입도, 로그인도 없습니다"), "that nothing is collected");
 });
 
 test("a standing page is prose, so it ships none of the answer machinery", () => {
