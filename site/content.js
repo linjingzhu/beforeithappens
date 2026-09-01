@@ -46,8 +46,10 @@ export function absoluteUrl(origin, path) {
  * Returns `null` for a slug that is not published or a page past the end — the generator and any
  * future server both need that to be a definite "no" rather than an empty page.
  */
-export function pageModel(slug, pageNumber, { site = SITE } = {}) {
-  const entry = publishedBySlug(slug);
+export function pageModel(slug, pageNumber, { site = SITE, published = null } = {}) {
+  // `published` is an override for callers holding their own list — `allPages` when it is given
+  // one, and tests that need to render a pack the site does not publish today.
+  const entry = published ? published.find((each) => each.slug === slug) || null : publishedBySlug(slug);
   if (!entry) return null;
 
   const questions = questionsFor(entry.packId);
@@ -101,7 +103,7 @@ export function allPages({ site = SITE, published = PUBLISHED } = {}) {
     const pages = partsOf(entry.packId).length;
     if (!pages) continue;
     for (let page = 1; page <= pages; page += 1) {
-      const model = pageModel(entry.slug, page, { site });
+      const model = pageModel(entry.slug, page, { site, published });
       if (model) out.push(model);
     }
   }

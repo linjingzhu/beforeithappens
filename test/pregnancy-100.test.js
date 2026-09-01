@@ -7,6 +7,15 @@ import { pageModel } from "../site/content.js";
 import { renderQuestionPage } from "../site/render.js";
 
 /**
+ * The pack is registered and built but not in `site/config.js` `PUBLISHED` — being in the registry
+ * is having content, being published is a decision, and today the site publishes 결혼 100제 alone.
+ * These tests render it through an explicit list so the pack stays covered while it waits, and so
+ * publishing it again is one entry rather than one entry plus a repair to this file.
+ */
+const AS_PUBLISHED = [{ packId: "pregnancy-100", slug: "pregnancy", title: "임신 100제", description: "", lead: "" }];
+const pregnancyPage = (n) => pageModel("pregnancy", n, { published: AS_PUBLISHED });
+
+/**
  * `src/questions-pregnancy-100.js` is generated from `question-packs/pregnancy.html`, and unlike the
  * marriage pack that source is a rendered document rather than a data array — the questions are read
  * out of markup. That makes this check do double duty: it catches the two files drifting apart, and
@@ -70,7 +79,7 @@ test("the emergency appendix is not published, and cannot be by accident", async
   for (const title of emergencyTitles) {
     assert.equal(published.has(title), false, `"${title.slice(0, 24)}…" is not in the pack`);
   }
-  const page = renderQuestionPage(pageModel("pregnancy", 1, {}), undefined);
+  const page = renderQuestionPage(pregnancyPage(1), undefined);
   for (const title of emergencyTitles) assert.equal(page.includes(title), false);
 
   // A quiz cannot live in a sheet that forbids scoring, which is the structural half of the reason.
@@ -78,8 +87,17 @@ test("the emergency appendix is not published, and cannot be by accident", async
   assert.ok(RESULT_FORBIDDEN.length > 0, "the sheet still forbids a verdict vocabulary");
 });
 
+test("the pack is built and ready, and the site does not publish it today", async () => {
+  const { PUBLISHED } = await import("../site/config.js");
+  assert.equal(PUBLISHED.some((entry) => entry.packId === "pregnancy-100"), false);
+  assert.equal(pageModel("pregnancy", 1, {}), null, "no page is emitted for it");
+  // Registered all the same, so publishing is adding one entry.
+  const { findPack } = await import("../src/packs.js");
+  assert.equal(findPack("pregnancy-100")?.questions.length, 100);
+});
+
 test("the page shows the Part's line, the mood and the value names", () => {
-  const model = pageModel("pregnancy", 1, {});
+  const model = pregnancyPage(1);
   const html = renderQuestionPage(model, undefined);
   assert.ok(html.includes(model.part.blurb), "the Part introduces itself, once");
   assert.equal((html.match(/class="part-blurb"/g) || []).length, 1);
