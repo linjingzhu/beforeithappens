@@ -79,7 +79,8 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X5 | 웹 | Site domain and hosting | ✅ | — | `lovemedialogue.com`, GitHub Pages. Build emits CNAME; deploy workflow on `stable` |
 | X5a | 웹 | **Point DNS at GitHub Pages** | 🟢 | X5 | **The last step.** The site is deployed and waiting; the apex still answers `118.67.131.217`, the registrar's parking page. Records, verification and the failure modes: `docs/DNS_SETUP.md` |
 | X5b | 웹 | ~~Turn Pages on~~ | ✅ | X5 | Done by the owner. The deploy then ran clean end to end: build, CNAME check, configure, upload, deploy |
-| X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5a | The build already writes `https://` canonicals; serving over http would contradict them. Usually tickable within an hour of DNS resolving |
+| X5d | 웹 | **Settings → Pages → Custom domain → type it and Save** | 🟢 | X5a | Not optional and not automatic. The `CNAME` in the artifact registered the domain under branch-based Pages; under Actions deployment it does not, and an unregistered domain 404s however green the deploy is |
+| X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5d | The build already writes `https://` canonicals; serving over http would contradict them. The certificate starts only after the domain is registered |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
 | X7 | 웹 | AdSense application | ⏳ | X5c, N5 | Ten pages of a hundred questions now exist. What is still missing is a **published** privacy policy (N5) and a live HTTPS site (X5c). In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |

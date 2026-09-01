@@ -120,8 +120,13 @@ a save is refused, try it the other way before assuming the value is wrong.
    dig +short lovemedialogue.com
    curl -sI https://lovemedialogue.com/ | head -1
    ```
-3. **Settings → Pages** re-runs its DNS check on its own. The Custom domain field is already filled
-   from the `CNAME` file the build writes, so there is nothing to type.
+3. **Settings → Pages → Custom domain: type `lovemedialogue.com` and Save.** This is not optional
+   and it is not filled in for you. The build writes a `CNAME` file into the artifact, and with the
+   *branch*-based Pages that file alone registered the domain — with **GitHub Actions** deployment
+   it does not. An unregistered domain means GitHub has no mapping from the hostname to this
+   repository, and every request to it gets *"There isn't a GitHub Pages site here"* even though the
+   deploy succeeded and the files are there. Saving the field runs the DNS check and starts the
+   certificate.
 4. **Enforce HTTPS** becomes tickable once the certificate is issued — usually within the hour after
    DNS resolves, occasionally longer. Tick it. The pages carry `https://` canonicals, so serving
    over `http` would contradict every one of them.
