@@ -144,25 +144,30 @@ function enhancement() {
  * a list of one costs nothing while a list grown out of a single hard-coded link costs a rewrite.
  */
 function rail(site, currentSlug) {
-  const items = indexModel({ site }).packs
-    .map((pack) => {
-      const current = pack.slug === currentSlug;
-      // `true`, not `page`: this links to the pack's first Part, and the reader may be on its
-      // seventh. The Part tab is the one that is genuinely the current page.
-      return `        <li><a class="rail-item${current ? " is-current" : ""}" href="${escapeHtml(pack.path)}"${current ? ' aria-current="true"' : ""}>${escapeHtml(pack.navTitle)}</a></li>`;
-    })
-    .join("\n");
+  const packs = indexModel({ site }).packs;
+  // A list of one is not a list: with a single pack published, the rail's nav names the page the
+  // reader is already on, under a heading for a category with one member. So the rail carries the
+  // mark alone until there is a second pack, and the nav comes back on its own when there is —
+  // which is the same list, appearing when it starts saying something.
+  const nav = packs.length < 2
+    ? ""
+    : `
+    <nav class="rail-nav" aria-label="${escapeHtml(SITE_COPY.packsLabel)}">
+      <p class="rail-label">${escapeHtml(SITE_COPY.packsLabel)}</p>
+      <ul>
+${packs.map((pack) => {
+  const current = pack.slug === currentSlug;
+  // `true`, not `page`: this links to the pack's first Part, and the reader may be on its
+  // seventh. The Part tab is the one that is genuinely the current page.
+  return `        <li><a class="rail-item${current ? " is-current" : ""}" href="${escapeHtml(pack.path)}"${current ? ' aria-current="true"' : ""}>${escapeHtml(pack.navTitle)}</a></li>`;
+}).join("\n")}
+      </ul>
+    </nav>`;
   return `  <aside class="rail">
     <a class="mark" href="/">
       <img class="mark-logo" src="/brand/logo.png" width="32" height="32" alt="" decoding="async">
       <span class="wordmark">${escapeHtml(SITE_COPY.wordmark)}</span>
-    </a>
-    <nav class="rail-nav" aria-label="${escapeHtml(SITE_COPY.packsLabel)}">
-      <p class="rail-label">${escapeHtml(SITE_COPY.packsLabel)}</p>
-      <ul>
-${items}
-      </ul>
-    </nav>
+    </a>${nav}
     <p class="rail-foot">${escapeHtml(site.tagline)}</p>
   </aside>`;
 }

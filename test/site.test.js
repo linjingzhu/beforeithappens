@@ -56,10 +56,14 @@ test("an unpublished pack, or a page past the end, is a definite no", () => {
 test("the site publishes only what it names, never whatever the registry happens to hold", () => {
   // The registry holds the app's content too. A site that published everything it found would put
   // a pack in front of the public the first time someone registered one.
-  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100", "pregnancy-100"]);
+  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100"]);
+  // Registered and built, and deliberately not published — the registry is content, this is a
+  // decision, and the two are not the same thing.
+  assert.equal(questionsFor("pregnancy-100").length, 100, "the pack exists");
+  assert.equal(pageModel("pregnancy", 1, { site }), null, "and the site emits no page for it");
   assert.equal(pageModel("marriage-preparation", 1, { site }), null, "the app's pack is not on the site");
   assert.equal(pageModel("dating", 1, { site }), null);
-  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage", "pregnancy"]);
+  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage"]);
 });
 
 test("the model knows where it is in the series", () => {
@@ -412,9 +416,8 @@ test("only the site is deployed to Pages, never the app", async () => {
   assert.ok(workflow.includes("npm test"), "a broken generator fails before it publishes");
 });
 
-test("the rail carries the mark and every published pack, on every kind of page", () => {
-  // Built from `indexModel`, the same list the index renders, so a pack cannot appear in one and
-  // not the other. Checked on all three page kinds because the shell is where that usually rots.
+test("the rail carries the mark on every kind of page, and no nav while there is one pack", () => {
+  // Checked on all three page kinds because the shell is where that usually rots.
   const pages = [
     renderQuestionPage(pageModel("marriage", 1, { site }), site),
     renderIndex(indexModel({ site }), site),
@@ -424,16 +427,17 @@ test("the rail carries the mark and every published pack, on every kind of page"
     assert.ok(has(html, 'class="rail"'), "the rail is on the page");
     assert.ok(has(html, SITE_COPY.wordmark), "and carries the wordmark");
     assert.ok(has(html, 'src="/brand/logo.png"'), "and the mark");
-    for (const pack of indexModel({ site }).packs) {
-      assert.ok(has(html, `href="${pack.path}"`), `${pack.slug} is reachable from the rail`);
-      assert.ok(has(html, pack.navTitle), `${pack.slug} is named by its short label`);
-    }
   }
-  // The rail says which pack you are in — but only where you are in one, and it says it as
-  // `aria-current="true"`, since the page itself is a Part and the tab owns `page`.
-  assert.ok(has(pages[0], 'class="rail-item is-current"'));
-  assert.ok(has(pages[0], 'aria-current="true"'));
-  assert.equal(has(pages[1], "is-current"), false, "the index is not inside a pack");
+
+  // With one pack published the nav would name the page the reader is already on, under a heading
+  // for a category with one member. So the rail carries the mark alone; the nav returns at two.
+  assert.equal(indexModel({ site }).packs.length, 1, "one pack today");
+  for (const html of pages) {
+    assert.equal(has(html, "rail-nav"), false, "no nav for a list of one");
+    assert.equal(has(html, "rail-item"), false);
+    // On the markup, not the word: "질문집" is also the label on the first page's back link.
+    assert.equal(has(html, "rail-label"), false, "and no heading for it either");
+  }
 });
 
 test("the Part tabs are links to real pages, one per Part, with exactly one marked current", () => {
