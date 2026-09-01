@@ -2,6 +2,7 @@ import { escapeHtml } from "../src/html.js";
 import { SITE } from "./config.js";
 import { absoluteUrl } from "./content.js";
 import { headTags, structuredData } from "./seo.js";
+import { RESULT_COPY } from "./result.js";
 
 /**
  * Whole documents, not fragments.
@@ -11,8 +12,10 @@ import { headTags, structuredData } from "./seo.js";
  * client-side route change is the impression-inflation shape. So every page is a real file, and
  * turning a page is a real navigation.
  *
- * There is no script tag. A page of questions needs no JavaScript to be read, and not shipping any
- * is the cheapest way to keep it that way.
+ * One script is shipped, and only as enhancement. Every question, every choice and every word of
+ * explanation is in the HTML: a crawler, or a reader with scripting off, loses the ability to
+ * *record* an answer, never the ability to read one. Answers live in that browser and nowhere else,
+ * so the page needs no session, no account, and no request.
  */
 export const SITE_COPY = Object.freeze({
   next: "다음 질문 열 개",
@@ -23,14 +26,20 @@ export const SITE_COPY = Object.freeze({
   ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
   ctaAction: "둘이 함께 해보기",
   choicesLabel: "네 가지 답",
-  whyLabel: "왜 묻는 질문인가요"
+  whyLabel: "왜 묻는 질문인가요",
+  notDiscussed: "아직 상대와 이야기해 본 적 없어요",
+  resultAction: "내가 답한 것 보기",
+  noScriptNote: "브라우저 저장이 꺼져 있으면 답이 기억되지 않아요. 질문은 그대로 읽으실 수 있습니다."
 });
 
 function questionArticle(question) {
   const choices = question.choices
-    .map((choice) => `        <li>${escapeHtml(choice.label)}</li>`)
+    .map((choice) => `          <li><label class="q-choice">
+            <input type="radio" name="q-${escapeHtml(question.id)}" value="${escapeHtml(choice.id)}">
+            <span>${escapeHtml(choice.label)}</span>
+          </label></li>`)
     .join("\n");
-  return `      <article class="q" id="q-${escapeHtml(question.id)}">
+  return `      <article class="q" id="q-${escapeHtml(question.id)}" data-question="${escapeHtml(question.id)}">
         <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>
         <p class="q-intent">${escapeHtml(question.intent)}</p>
         <p class="q-example">${escapeHtml(question.example)}</p>
@@ -38,6 +47,10 @@ function questionArticle(question) {
         <ul class="q-choices">
 ${choices}
         </ul>
+        <label class="q-undiscussed">
+          <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
+          <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
+        </label>
         <details class="q-why">
           <summary>${escapeHtml(SITE_COPY.whyLabel)}</summary>
           <p>${escapeHtml(question.whyItMatters)}</p>
@@ -61,7 +74,7 @@ function pager(model) {
     : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.backToIndex)}</a>`;
   const next = model.nextPath
     ? `<a class="pager-next" href="${escapeHtml(model.nextPath)}" rel="next">${escapeHtml(SITE_COPY.next)}</a>`
-    : "";
+    : `<a class="pager-next" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.resultAction)}</a>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
         <span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>
@@ -78,7 +91,11 @@ function callToAction(site) {
       </aside>`;
 }
 
-function document_({ site, head, body }) {
+function enhancement() {
+  return `  <script type="module" src="/enhance.js"></script>`;
+}
+
+function document_({ site, head, body, scripts = "" }) {
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -97,6 +114,7 @@ ${body}
   <footer class="foot">
     <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
   </footer>
+${scripts}
 </body>
 </html>
 `;
@@ -115,7 +133,49 @@ ${callToAction(site)}
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
-    body
+    body,
+    scripts: enhancement()
+  });
+}
+
+/**
+ * The sheet is a shell. Its content cannot be generated, because the answers are in the reader's
+ * browser and have never been anywhere else — which is the point. The script fills it from there.
+ *
+ * Without scripting the page states plainly that there is nothing to show and why, rather than
+ * rendering an empty frame that looks broken.
+ */
+export function renderResultPage(slug, questions, site = SITE) {
+  // A compact index so the script can name a chapter and a choice without loading the registry.
+  const index = questions.map((question) => ({
+    id: question.id,
+    n: question.number,
+    t: question.title,
+    c: question.chapter,
+    o: question.choices.map((choice) => ({ id: choice.id, l: choice.label }))
+  }));
+  const head = [
+    `  <title>${escapeHtml(RESULT_COPY.title)} · ${escapeHtml(site.name)}</title>`,
+    // The sheet is personal and has nothing to offer a search engine.
+    '  <meta name="robots" content="noindex">'
+  ].join("\n");
+  const data = JSON.stringify({ slug, questions: index }).replace(/</g, "\\u003c");
+  return document_({
+    site,
+    head,
+    body: `  <main class="page result" data-result-slug="${escapeHtml(slug)}">
+    <h1>${escapeHtml(RESULT_COPY.title)}</h1>
+    <p class="lead">${escapeHtml(RESULT_COPY.lead)}</p>
+    <div class="result-body" data-result-body>
+      <h2>${escapeHtml(RESULT_COPY.emptyTitle)}</h2>
+      <p>${escapeHtml(RESULT_COPY.emptyBody)}</p>
+    </div>
+    <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
+    <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
+${callToAction(site)}
+  </main>
+  <script type="application/json" data-question-index>${data}</script>`,
+    scripts: enhancement()
   });
 }
 

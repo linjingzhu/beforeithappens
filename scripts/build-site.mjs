@@ -2,7 +2,9 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { siteWith } from "../site/config.js";
 import { allPages, indexModel } from "../site/content.js";
-import { renderIndex, renderQuestionPage } from "../site/render.js";
+import { renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
+import { questionsFor } from "../src/packs.js";
+import { PUBLISHED } from "../site/config.js";
 import { robotsTxt, sitemapXml } from "../site/seo.js";
 
 /**
@@ -31,6 +33,11 @@ await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 
 await cp("site/site.css", join(OUT, "site.css"));
+// The enhancement module and what it imports, served as-is: there is no bundler and no need for
+// one — four small ES modules load natively.
+for (const module of ["enhance.js", "answers.js", "reflect.js", "result-copy.js"]) {
+  await cp(`site/${module}`, join(OUT, module));
+}
 await cp("src/tokens.css", join(OUT, "tokens.css"));
 
 await writeFile(join(OUT, "index.html"), renderIndex(indexModel({ site }), site));
@@ -43,6 +50,17 @@ for (const model of pages) {
   await writeFile(join(dir, "index.html"), renderQuestionPage(model, site));
 }
 
+// One sheet per published pack. It is a shell: the answers are in the reader's browser and have
+// never been anywhere else, so there is nothing here to prerender.
+for (const entry of PUBLISHED) {
+  const questions = questionsFor(entry.catalogId);
+  if (!questions.length) continue;
+  const dir = join(OUT, entry.slug, "result");
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "index.html"), renderResultPage(entry.slug, questions, site));
+}
+
+// The sheet is personal and carries noindex, so it is deliberately absent from the sitemap.
 await writeFile(join(OUT, "sitemap.xml"), sitemapXml(pages, site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
 

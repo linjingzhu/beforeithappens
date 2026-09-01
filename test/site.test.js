@@ -73,9 +73,14 @@ test("every page is emitted, in order, once", () => {
 test("the page is readable with no JavaScript at all", () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   // A crawler that runs nothing must still see the questions; the app's innerHTML approach would
-  // hand it an empty shell. The only script is the JSON-LD block, which is data, not behaviour.
+  // hand it an empty shell. One script ships, and only as enhancement — what it adds is memory, so
+  // scripting off costs the ability to record an answer, never the ability to read one.
   const scripts = html.match(/<script[^>]*>/g) || [];
-  assert.deepEqual(scripts, ['<script type="application/ld+json">'], "no behavioural script is shipped");
+  assert.deepEqual(
+    scripts,
+    ['<script type="application/ld+json">', '<script type="module" src="/enhance.js">'],
+    "exactly one behavioural script, and it is the enhancement module"
+  );
   for (const question of questionsFor("marriage").slice(0, 10)) {
     assert.ok(has(html, question.title), question.id);
     for (const choice of question.choices) assert.ok(has(html, choice.label), choice.id);
@@ -147,7 +152,8 @@ test("turning a page is a real navigation, not a script", () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.ok(has(html, `<a class="pager-next" href="/marriage/2/" rel="next">`));
   const last = renderQuestionPage(pageModel("marriage", 2, { site }), site);
-  assert.equal(has(last, 'class="pager-next"'), false);
+  assert.ok(has(last, 'class="pager-next" href="/marriage/result/"'), "the end leads to the sheet");
+  assert.equal(has(last, 'rel="next"'), false, "but it is not another page in the series");
   assert.ok(has(last, 'class="pager-prev" href="/marriage/"'));
 });
 
@@ -176,4 +182,160 @@ test("nothing rendered from content escapes into markup", () => {
   const html = renderQuestionPage(hostile, site);
   assert.equal(has(html, "<script>x</script>"), false);
   assert.equal(has(html, "<img onerror"), false);
+});
+
+// ── Answering and the result sheet ────────────────────────────────────────────────────────────
+
+test("answers are stored in a shape that refuses to be half-understood", async () => {
+  const { ANSWERS_VERSION, emptyAnswers, parseAnswers, serializeAnswers, withAnswer, withDiscussionFlag } =
+    await import("../site/answers.js");
+
+  const built = withAnswer(emptyAnswers("marriage"), "home-01", "home-rest");
+  assert.deepEqual(parseAnswers(serializeAnswers(built), "marriage"), built, "round trips");
+
+  // Anything unparseable, wrong-version, or for another pack is absent rather than repaired.
+  for (const bad of ["", "not json", "null", "[]", JSON.stringify({ version: 99, slug: "marriage", items: {} })]) {
+    assert.deepEqual(parseAnswers(bad, "marriage"), emptyAnswers("marriage"), JSON.stringify(bad).slice(0, 24));
+  }
+  assert.deepEqual(
+    parseAnswers(serializeAnswers(built), "dating"),
+    emptyAnswers("dating"),
+    "one pack's answers never leak into another's sheet"
+  );
+
+  // A stored item without a choice is dropped, not rendered as a blank answer.
+  const partial = JSON.stringify({ version: ANSWERS_VERSION, slug: "marriage", items: { "home-01": { notDiscussed: true } } });
+  assert.deepEqual(parseAnswers(partial, "marriage").items, {});
+
+  // Marking a question undiscussed before answering it is meaningless.
+  assert.deepEqual(withDiscussionFlag(emptyAnswers("marriage"), "home-01", true).items, {});
+  const flagged = withDiscussionFlag(built, "home-01", true);
+  assert.equal(flagged.items["home-01"].notDiscussed, true);
+  assert.equal(built.items["home-01"].notDiscussed, false, "the input is not mutated");
+});
+
+test("a browser that cannot store anything still reads every question", async () => {
+  const { createAnswerStore, emptyAnswers } = await import("../site/answers.js");
+  const throwing = {
+    getItem() { throw new Error("blocked"); },
+    setItem() { throw new Error("blocked"); },
+    removeItem() { throw new Error("blocked"); }
+  };
+  const store = createAnswerStore("marriage", throwing);
+  assert.deepEqual(store.read(), emptyAnswers("marriage"), "a private window reads as no answers, not a crash");
+  assert.equal(store.write(emptyAnswers("marriage")), false, "and a failed write says so");
+  assert.equal(store.clear(), false);
+});
+
+test("the sheet reflects what was said and never scores it", async () => {
+  const { emptyAnswers, withAnswer, withDiscussionFlag } = await import("../site/answers.js");
+  const { RESULT_COPY, RESULT_FORBIDDEN, resultModel } = await import("../site/result.js");
+
+  let answers = emptyAnswers("marriage");
+  answers = withAnswer(answers, "home-01", "home-rest");
+  answers = withAnswer(answers, "money-01", "money-save");
+  answers = withDiscussionFlag(answers, "money-01", true);
+
+  const model = resultModel("marriage", answers);
+  assert.equal(model.total, 12);
+  assert.equal(model.answered, 2);
+  assert.equal(model.complete, false);
+  assert.equal(model.empty, false);
+
+  // Grouped under the chapter, in pack order, with the person's own words given back.
+  assert.deepEqual(model.chapters.map((c) => c.chapter), ["함께 사는 집", "돈과 선택"]);
+  assert.equal(model.chapters[0].answers[0].choice, "외부의 피로를 회복하는 조용한 안식처");
+  assert.deepEqual(model.notDiscussed.map((r) => r.questionId), ["money-01"]);
+
+  // The pull toward a score is constant; this is what stops the computed sheet becoming a verdict.
+  // The check is on the model, not the copy: the lead promises "점수도, 판정도 없습니다", and a naive
+  // scan reads that disclaimer as the thing it disclaims.
+  const serialized = JSON.stringify(model);
+  for (const word of RESULT_FORBIDDEN) {
+    assert.equal(serialized.includes(word), false, `the sheet must not compute ${word}`);
+  }
+  assert.ok(RESULT_COPY.lead.includes("점수"), "the copy says out loud that there is no score");
+  assert.ok(RESULT_COPY.lead.includes("판정"));
+  for (const key of ["score", "rating", "grade", "verdict", "percent"]) {
+    assert.equal(Object.keys(model).includes(key), false, `no ${key} field`);
+  }
+});
+
+test("an empty or unknown sheet is a definite state, not a broken page", async () => {
+  const { emptyAnswers } = await import("../site/answers.js");
+  const { resultModel } = await import("../site/result.js");
+  const empty = resultModel("marriage", emptyAnswers("marriage"));
+  assert.equal(empty.empty, true);
+  assert.equal(empty.answered, 0);
+  assert.deepEqual(empty.chapters, []);
+  assert.equal(resultModel("dating", emptyAnswers("dating")), null, "an unpublished pack has no sheet");
+});
+
+test("a stored answer for a choice that no longer exists is dropped, not rendered blank", async () => {
+  const { emptyAnswers, withAnswer } = await import("../site/answers.js");
+  const { resultModel } = await import("../site/result.js");
+  const stale = withAnswer(emptyAnswers("marriage"), "home-01", "a-choice-that-was-removed");
+  const model = resultModel("marriage", stale);
+  assert.equal(model.answered, 0);
+  assert.equal(model.empty, true);
+});
+
+test("the build and the browser share one reflection rather than two that drift", async () => {
+  const { reflect, toQuestionIndex } = await import("../site/reflect.js");
+  const { emptyAnswers, withAnswer } = await import("../site/answers.js");
+  const { resultModel } = await import("../site/result.js");
+  const answers = withAnswer(emptyAnswers("marriage"), "home-01", "home-rest");
+
+  // `site/result.js` adapts registry questions into the index the page embeds, then calls the same
+  // function the browser calls. A second implementation is exactly what this prevents.
+  const direct = reflect(toQuestionIndex(questionsFor("marriage")), answers);
+  const viaModel = resultModel("marriage", answers);
+  assert.equal(direct.answered, viaModel.answered);
+  assert.deepEqual(direct.chapters.map((c) => c.chapter), viaModel.chapters.map((c) => c.chapter));
+  assert.deepEqual(direct.notDiscussed, viaModel.notDiscussed.map((r) => ({ ...r })));
+
+  assert.deepEqual(reflect([], answers).chapters, []);
+  assert.equal(reflect([], answers).complete, false, "no questions is not a completed set");
+});
+
+test("the questions are answerable, and readable without answering", async () => {
+  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  assert.ok(has(html, 'type="radio" name="q-home-01"'), "the choices are a real form control");
+  assert.ok(has(html, 'data-undiscussed="home-01"'));
+  // Enhancement, not requirement: every word is in the HTML whether or not the script runs.
+  assert.ok(has(html, '<script type="module" src="/enhance.js"></script>'));
+  for (const question of questionsFor("marriage").slice(0, 10)) {
+    assert.ok(has(html, question.whyItMatters), `${question.id} explanation is in the markup`);
+  }
+});
+
+test("the last page offers the sheet instead of a page that is not there", () => {
+  const last = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  assert.ok(has(last, 'href="/marriage/result/"'));
+  const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  assert.equal(has(first, 'href="/marriage/result/"'), false, "only at the end");
+});
+
+test("the sheet is a shell, is not indexed, and offers the way out", async () => {
+  const { renderResultPage } = await import("../site/render.js");
+  const { RESULT_COPY } = await import("../site/result.js");
+  const html = renderResultPage("marriage", questionsFor("marriage"), site);
+
+  assert.ok(has(html, '<meta name="robots" content="noindex">'), "a personal sheet is not for search");
+  assert.ok(has(html, RESULT_COPY.emptyTitle), "with no script it says there is nothing, and why");
+  assert.ok(has(html, RESULT_COPY.clearNote), "and that the answers are only in this browser");
+  assert.ok(has(html, "data-result-clear"), "the visible way to leave without a trace");
+
+  // The index the browser reflects over, embedded rather than fetched: no request, no server.
+  assert.ok(has(html, 'type="application/json" data-question-index'));
+  assert.equal(has(html, "fetch("), false, "the sheet asks nobody for anything");
+});
+
+test("nothing on the sheet can break out of the embedded JSON", async () => {
+  const { renderResultPage } = await import("../site/render.js");
+  const hostile = questionsFor("marriage").map((question, index) =>
+    index === 0 ? { ...question, title: "</script><script>alert(1)</script>" } : question);
+  const html = renderResultPage("marriage", hostile, site);
+  const closers = html.match(/<\/script>/g) || [];
+  assert.equal(closers.length, 2, "one for the JSON block, one for the module tag — none from data");
 });

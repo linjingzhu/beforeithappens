@@ -198,3 +198,65 @@ a { color: var(--ab-ink); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Answering. The choices are labels around real inputs, so the whole row is a target. */
+.q-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.q-choice input { margin-top: 6px; flex: none; }
+
+.q-undiscussed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ab-muted);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* The sheet. A reflection: no score, no verdict, nothing that ranks. */
+.result-count { font-weight: 600; margin: 24px 0 8px; }
+.result-note { color: var(--ab-muted); margin: 0 0 24px; }
+
+.result-undiscussed {
+  background: var(--ab-soft);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 0 0 32px;
+}
+
+.result-undiscussed h2 { margin: 0 0 4px; font-size: 18px; }
+.result-undiscussed p { margin: 0 0 12px; color: var(--ab-muted); }
+.result-undiscussed ul { margin: 0; padding-left: 20px; }
+
+.result-chapter { margin: 0 0 32px; }
+.result-chapter h2 { font-size: 18px; margin: 0 0 12px; }
+.result-chapter ul { list-style: none; margin: 0; padding: 0; }
+
+.result-chapter li {
+  border-left: 2px solid var(--ab-line);
+  padding: 0 0 0 16px;
+  margin: 0 0 16px;
+}
+
+.result-q { margin: 0 0 4px; color: var(--ab-muted); font-size: 15px; }
+.result-a { margin: 0; }
+
+.result-clear-note { color: var(--ab-muted); font-size: 14px; margin: 32px 0 8px; }
+
+.result-clear {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid var(--ab-line);
+  background: transparent;
+  color: var(--ab-ink);
+  font: inherit;
+  cursor: pointer;
+}
