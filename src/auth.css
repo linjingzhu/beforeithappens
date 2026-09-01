@@ -1,7 +1,7 @@
 .auth-shell {
   max-width: 720px;
   margin: 0 auto;
-  padding: 74px 26px 80px;
+  padding: var(--v-xxxl) var(--gutter-right) calc(var(--v-xxxl) + var(--v-xl) + var(--safe-bottom)) var(--gutter-left);
 }
 
 .auth-card {
@@ -161,7 +161,7 @@
 .install-banner {
   display: grid;
   gap: 12px;
-  max-width: 1180px;
+  max-width: var(--shell-max);
   margin: 0 auto 20px;
   padding: 16px 18px;
   border: 1px solid var(--line);
@@ -231,10 +231,6 @@
 }
 
 @media (max-width: 767.98px) {
-  .auth-shell {
-    padding: 42px 16px 64px;
-  }
-
   .auth-card {
     padding: 28px 18px 32px;
     border-radius: 18px;

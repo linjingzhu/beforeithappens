@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { AccessibilityInfo, Animated, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "react-native";
 import { ACCOUNT_COPY, AUTH_COPY, comingSoonPackLabel, PACK_LIST_COPY, PACK_LIST_ROWS, PAIR_COPY, S2_COPY, S2_EMAIL_BIND_COPY, S3_COPY, WITHDRAW_COPY, WORDMARK } from "./copy.js";
 import { colors } from "./theme.js";
+import { createStyles } from "./responsive.js";
 import { GradientButtonWrap, ScreenGradient } from "./gradient.js";
 import { debugLine } from "./virtual.js";
 import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../../src/hearts.js";
@@ -10,14 +11,21 @@ import { requestLoveMeNotificationPermission } from "./notifications.js";
 import { fonts } from "./fonts.js";
 import { PACK_INTRO_COPY, PACK_INTRO_MOTION, packIntroLines, packIntroTitle } from "../../src/pack-intro.js";
 
+/**
+ * Press and disabled feedback is opacity only: it does not change with the window, so it is
+ * built once here and handed to the per-window sheet as `styles.pressed` / `styles.disabled`.
+ */
+const FEEDBACK = { pressed: { opacity: 0.72 }, disabled: { opacity: 0.4 } };
+
 function pressableStyle(...parts) {
   return ({ pressed }) => {
-    const disabled = parts.includes(styles.disabled);
-    return [...parts, pressed && !disabled ? styles.pressed : null];
+    const disabled = parts.some((part) => part && part.opacity === FEEDBACK.disabled.opacity);
+    return [...parts, pressed && !disabled ? FEEDBACK.pressed : null];
   };
 }
 
 function SafeScreen({ style, children, testID }) {
+  const styles = useStyles();
   return (
     <ScreenGradient>
       <SafeAreaView style={[styles.safeFill, style]} testID={testID} accessibilityLabel={testID}>
@@ -28,16 +36,19 @@ function SafeScreen({ style, children, testID }) {
 }
 
 function DebugLine({ extra = "" }) {
+  const styles = useStyles();
   const line = debugLine(undefined, extra);
   if (!line) return null;
   return <Text style={styles.debug} testID="debug-line">{line}</Text>;
 }
 
 function HeartsChip({ balance }) {
+  const styles = useStyles();
   return <Text style={styles.hearts} testID="hearts-balance">{`♡ ${balance}`}</Text>;
 }
 
 function PrimaryButton({ testID, label, onPress, disabled }) {
+  const styles = useStyles();
   return (
     <Pressable testID={testID} accessibilityRole="button" disabled={disabled} onPress={onPress} style={pressableStyle(styles.primary, disabled ? styles.disabled : null)}>
       <GradientButtonWrap>
@@ -48,6 +59,7 @@ function PrimaryButton({ testID, label, onPress, disabled }) {
 }
 
 function AuthKeyboardShell({ testID, children, contentStyle }) {
+  const styles = useStyles();
   return (
     <KeyboardAvoidingView testID={testID} style={styles.flexFill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" style={styles.flexFill} contentContainerStyle={contentStyle || styles.gateScroll}>
@@ -58,6 +70,7 @@ function AuthKeyboardShell({ testID, children, contentStyle }) {
 }
 
 function BackButton({ onPress, testID = "back" }) {
+  const styles = useStyles();
   return (
     <Pressable testID={testID} accessibilityRole="button" accessibilityLabel="back" onPress={onPress} style={pressableStyle(styles.backBtn)}>
       <Text style={styles.backChevron}>‹</Text>
@@ -66,6 +79,7 @@ function BackButton({ onPress, testID = "back" }) {
 }
 
 export function SplashScreenView() {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="splash">
       <Text style={styles.wordmark}>{WORDMARK}</Text>
@@ -75,6 +89,7 @@ export function SplashScreenView() {
 }
 
 export function SignupScreen({ email = "", error = "", busy = false, firstRun = false, onSubmitEmail, onBack }) {
+  const styles = useStyles();
   const [draft, setDraft] = useState(email);
   useEffect(() => {
     requestLoveMeNotificationPermission();
@@ -115,6 +130,7 @@ export function SignupScreen({ email = "", error = "", busy = false, firstRun = 
 }
 
 export function EmailBindScreen({ email = "", error = "", busy = false, onSubmitEmail }) {
+  const styles = useStyles();
   const [draft, setDraft] = useState(email);
   return (
     <SafeScreen style={styles.centered}>
@@ -131,11 +147,12 @@ export function EmailBindScreen({ email = "", error = "", busy = false, onSubmit
 }
 
 export function SentScreen({ email = "", onUseOtherEmail }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="sent">
       <Text style={styles.body}>{AUTH_COPY.sent}</Text>
       {email ? <Text style={styles.email}>{email}</Text> : null}
-      <Pressable testID="sent-other-email" onPress={onUseOtherEmail} style={styles.secondary}>
+      <Pressable testID="sent-other-email" onPress={onUseOtherEmail} style={pressableStyle(styles.secondary)}>
         <Text style={styles.secondaryLabel}>다른 이메일로 요청</Text>
       </Pressable>
       <DebugLine />
@@ -144,6 +161,7 @@ export function SentScreen({ email = "", onUseOtherEmail }) {
 }
 
 export function NoticeScreen({ email = "", error = "", busy = false, onAcknowledgeNotice }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="notice">
       <Text style={styles.body}>{AUTH_COPY.afterLogin}</Text>
@@ -156,6 +174,7 @@ export function NoticeScreen({ email = "", error = "", busy = false, onAcknowled
 }
 
 export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount, hearts = HEARTS.start, session = null }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.packShell} testID="pack-list">
       {showsHeartBalance(session) ? <HeartsChip balance={hearts} /> : null}
@@ -188,6 +207,7 @@ export function PackListScreen({ onOpenMarriage, onOpenComingSoon, onOpenAccount
  * questions ahead are about. Lines rise in one after another; Reduce Motion shows them at rest.
  */
 export function PackIntroScreen({ packId = "marriage", onStart }) {
+  const styles = useStyles();
   const lines = useMemo(() => packIntroLines(packId), [packId]);
   const steps = useRef(lines.map(() => new Animated.Value(0))).current;
   const [stillMotion, setStillMotion] = useState(false);
@@ -245,6 +265,7 @@ export function PackIntroScreen({ packId = "marriage", onStart }) {
 }
 
 export function PackDetailScreen({ onBack }) {
+  const styles = useStyles();
   return (
     <SafeScreen testID="pack-detail">
       <BackButton onPress={onBack} testID="pack-detail-back" />
@@ -264,6 +285,7 @@ export function SampleQuestionScreen({
   onSubmit,
   onBack
 }) {
+  const styles = useStyles();
   return (
     <SafeScreen testID="sample-q" style={styles.detailShell}>
       <View style={styles.sampleTop}>
@@ -277,7 +299,7 @@ export function SampleQuestionScreen({
             key={choice.id}
             testID={`choice-${choice.id}`}
             onPress={() => onChangeChoice?.(choice.id)}
-            style={[styles.choice, choiceId === choice.id ? styles.choiceOn : null]}
+            style={({ pressed }) => [styles.choice, choiceId === choice.id ? styles.choiceOn : null, pressed ? styles.pressed : null]}
           >
             <Text style={styles.radio}>{choiceId === choice.id ? "●" : "○"}</Text>
             <Text style={styles.choiceLabel}>{choice.label}</Text>
@@ -304,6 +326,7 @@ export function SampleQuestionScreen({
 }
 
 export function SampleResultScreen({ question, myChoice, partnerChoice, onTogether }) {
+  const styles = useStyles();
   return (
     <SafeScreen testID="sample-result" style={styles.centered}>
       <Text style={styles.example}>{SAMPLE_RESULT_EXAMPLE}</Text>
@@ -322,6 +345,7 @@ export function SampleResultScreen({ question, myChoice, partnerChoice, onTogeth
 }
 
 export function ComingSoonScreen({ packId = "home-mgmt", onBackToList }) {
+  const styles = useStyles();
   const question = comingSoonExistingQuestion(packId);
   return (
     <SafeScreen style={styles.centered} testID="coming-soon">
@@ -352,6 +376,7 @@ export function AccountScreen({
   onInvite,
   onWithdraw
 }) {
+  const styles = useStyles();
   const [confirmingWithdraw, setConfirmingWithdraw] = useState(false);
   if (guest) {
     return (
@@ -411,6 +436,7 @@ export function AccountScreen({
 }
 
 export function UnlockRestScreen({ hearts = 0, shopOpen = false, onUnlock, onBuy, onLater }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="unlock">
       <HeartsChip balance={hearts} />
@@ -434,6 +460,7 @@ export function UnlockRestScreen({ hearts = 0, shopOpen = false, onUnlock, onBuy
 }
 
 export function PartnerWaitScreen() {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="partner-wait">
       <Text style={styles.body}>{HEART_COPY.partnerWait}</Text>
@@ -447,6 +474,7 @@ export function CertificateScreen({
   counts = { aligned: 0, close: 0, discuss: 0 },
   onHome
 }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.certificateShell} testID="certificate">
       <Text style={styles.certificateStamp} accessible={false}>{CERTIFICATE_COPY.stamp}</Text>
@@ -480,6 +508,7 @@ export function InviteScreen({
   onCopyCode,
   onConnect
 }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.inviteShell} testID="invite">
       <KeyboardAvoidingView style={styles.flexFill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -495,8 +524,8 @@ export function InviteScreen({
           {copied ? <Text style={styles.body}>링크를 복사했어요.</Text> : null}
           <Text style={styles.label}>{PAIR_COPY.appCode}</Text>
           <Text style={styles.label}>{PAIR_COPY.myCode}</Text>
-          <Text testID="invite-my-code">{pairCodeDisplay || "····"}</Text>
-          <Pressable testID="invite-copy-code" onPress={onCopyCode}><Text>{codeCopied ? "복사됨" : PAIR_COPY.copyCode}</Text></Pressable>
+          <Text testID="invite-my-code" style={styles.codeValue}>{pairCodeDisplay || "····"}</Text>
+          <Pressable testID="invite-copy-code" onPress={onCopyCode} style={pressableStyle(styles.textLink)}><Text style={styles.textLinkLabel}>{codeCopied ? "복사됨" : PAIR_COPY.copyCode}</Text></Pressable>
           <TextInput
             testID="invite-partner-code"
             value={partnerCode}
@@ -517,6 +546,7 @@ export function InviteScreen({
 }
 
 export function WorkspaceScreen({ email = "", onInvitePartner }) {
+  const styles = useStyles();
   return (
     <SafeScreen style={styles.centered} testID="workspace">
       <Text style={styles.title}>{S3_COPY.created}</Text>
@@ -527,97 +557,149 @@ export function WorkspaceScreen({ email = "", onInvitePartner }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeFill: { flex: 1 },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
-  flexFill: { flex: 1, width: "100%" },
-  wordmark: { color: colors.charcoal, fontSize: 44, fontWeight: "600", fontFamily: fonts.titleStrong },
-  debug: { position: "absolute", bottom: 12, alignSelf: "center", color: colors.muted, fontSize: 12, fontFamily: fonts.body },
-  hearts: { color: colors.charcoal, fontSize: 16, fontWeight: "600", textAlign: "center", marginTop: 8, fontFamily: fonts.bodyStrong },
-  primaryHit: { alignSelf: "stretch", marginTop: 12 },
-  primary: { alignSelf: "stretch", marginTop: 12 },
-  loginHero: { alignItems: "center", marginTop: 36, marginBottom: 36 },
-  loginScroll: { flexGrow: 1, justifyContent: "center", paddingBottom: 48 },
-  emailField: {
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: "#fff",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    gap: 10
-  },
-  mailIcon: { color: colors.muted, fontSize: 18, fontFamily: fonts.body },
-  emailInput: { flex: 1, minHeight: 52, color: colors.charcoal, fontSize: 16, padding: 0, fontFamily: fonts.body },
-  primaryLabel: { color: "#fff", fontSize: 16, fontWeight: "700", fontFamily: fonts.bodyStrong },
-  pressed: { opacity: 0.72 },
-  disabled: { opacity: 0.4 },
-  backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  backChevron: { color: colors.charcoal, fontSize: 32, lineHeight: 34, fontFamily: fonts.body },
-  coverShell: { flex: 1, paddingHorizontal: 24, paddingTop: 12 },
-  gateTop: { flexDirection: "row", alignItems: "center", gap: 8 },
-  gateBrand: { color: colors.charcoal, fontSize: 22, fontWeight: "600", fontFamily: fonts.titleStrong },
-  gateScroll: { flexGrow: 1, justifyContent: "center" },
-  gateCard: { backgroundColor: colors.card, borderRadius: 20, padding: 24 },
-  body: { color: colors.charcoal, fontSize: 16, lineHeight: 24, textAlign: "center", marginTop: 8, fontFamily: fonts.body },
-  label: { color: colors.charcoal, fontSize: 13, fontWeight: "700", marginTop: 16, marginBottom: 8, fontFamily: fonts.bodyStrong },
-  input: { minHeight: 48, borderWidth: 1, borderColor: colors.line, borderRadius: 12, paddingHorizontal: 14, backgroundColor: "#fff", color: colors.charcoal, fontSize: 16, fontFamily: fonts.body },
-  error: { color: colors.error, fontSize: 13, fontWeight: "700", marginTop: 12, fontFamily: fonts.bodyStrong },
-  title: { color: colors.charcoal, fontSize: 28, fontWeight: "700", textAlign: "center", fontFamily: fonts.titleStrong },
-  email: { color: colors.charcoal, marginTop: 8, fontFamily: fonts.body },
-  secondary: { minHeight: 48, marginTop: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center", alignSelf: "stretch", backgroundColor: colors.card },
-  secondaryLabel: { color: colors.charcoal, fontSize: 15, fontWeight: "700", fontFamily: fonts.bodyStrong },
-  packShell: { flex: 1, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24 },
-  packTitle: { color: colors.charcoal, fontSize: 34, fontWeight: "700", marginTop: 12, marginBottom: 16, fontFamily: fonts.titleStrong },
-  packStack: { gap: 0 },
-  packCardRow: { minHeight: 56, flexDirection: "row", alignItems: "center", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line, gap: 12 },
-  packMark: { color: colors.charcoal, width: 22, fontSize: 16, fontFamily: fonts.body },
-  packRowLabel: { flex: 1, color: colors.charcoal, fontSize: 17, fontWeight: "600", fontFamily: fonts.titleStrong },
-  packRowLabelMuted: { flex: 1, color: colors.charcoal, fontSize: 17, fontFamily: fonts.title },
-  packChevron: { color: colors.muted, fontSize: 22, fontFamily: fonts.body },
-  soonPlain: { color: colors.muted, fontSize: 14, fontFamily: fonts.body },
-  accountFooter: { marginTop: "auto", minHeight: 48, alignItems: "center", justifyContent: "center" },
-  accountEntryLabel: { color: colors.charcoal, fontSize: 16, fontWeight: "600", fontFamily: fonts.titleStrong },
-  detailShell: { flex: 1, paddingHorizontal: 24, paddingTop: 8 },
-  scrollPad: { paddingBottom: 32 },
-  sampleTop: { flexDirection: "row", alignItems: "center", gap: 4 },
-  sampleProgress: { color: colors.charcoal, fontSize: 15, fontFamily: fonts.body },
-  sampleTitle: { color: colors.charcoal, fontSize: 22, fontWeight: "700", marginVertical: 16, fontFamily: fonts.titleStrong },
-  choice: { minHeight: 52, borderRadius: 14, backgroundColor: colors.white, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
-  choiceOn: { borderWidth: 1.5, borderColor: colors.charcoal },
-  radio: { color: colors.muted, fontSize: 16, fontFamily: fonts.body },
-  choiceLabel: { flex: 1, color: colors.charcoal, fontSize: 15, lineHeight: 22, fontFamily: fonts.body },
-  reasonRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, marginBottom: 8 },
-  reasonHeart: { color: colors.babyPink, fontSize: 16 },
-  reasonPrompt: { flex: 1, color: colors.muted, fontSize: 14, fontFamily: fonts.body },
-  example: { color: colors.muted, fontSize: 14, marginBottom: 8, fontFamily: fonts.body },
-  labelsRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 12 },
-  labelChip: { color: colors.charcoal, backgroundColor: colors.card, overflow: "hidden", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, fontSize: 13, fontWeight: "700", fontFamily: fonts.bodyStrong },
-  answerCard: { alignSelf: "stretch", backgroundColor: colors.card, borderRadius: 16, padding: 14, marginBottom: 10 },
-  who: { color: colors.charcoal, fontSize: 12, fontWeight: "700", marginBottom: 6, fontFamily: fonts.bodyStrong },
-  introTitle: { color: colors.charcoal, fontSize: 30, marginBottom: 28, fontFamily: fonts.titleStrong },
-  introLines: { alignSelf: "stretch", paddingHorizontal: 12, marginBottom: 36 },
-  introLine: { color: colors.charcoal, fontSize: 17, lineHeight: 30, textAlign: "center", marginTop: 10, fontFamily: fonts.body },
-  soonBadge: { color: colors.muted, fontSize: 13, marginBottom: 8, fontFamily: fonts.body },
-  soonTitle: { color: colors.charcoal, fontSize: 32, fontWeight: "700", marginBottom: 16, fontFamily: fonts.titleStrong },
-  textLink: { minHeight: 40, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  textLinkLabel: { color: colors.charcoal, fontSize: 15, fontFamily: fonts.body },
-  accountShell: { flex: 1, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24 },
-  navRowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  navTitle: { color: colors.charcoal, fontSize: 22, fontWeight: "700", fontFamily: fonts.titleStrong },
-  accountEmailValue: { color: colors.charcoal, fontSize: 16, marginTop: 28, textAlign: "center", fontFamily: fonts.body },
-  logoutBtn: { minHeight: 48, marginTop: "auto", alignItems: "center", justifyContent: "center" },
-  logoutLabel: { color: colors.charcoal, fontSize: 16, textDecorationLine: "underline", fontFamily: fonts.body },
-  withdrawEntryLabel: { color: colors.charcoal, fontSize: 14, textDecorationLine: "underline", fontFamily: fonts.body, opacity: 0.7 },
-  withdrawConfirm: { marginTop: 20, paddingHorizontal: 24, alignItems: "center", gap: 10 },
-  withdrawTitle: { color: colors.charcoal, fontSize: 17, textAlign: "center", fontFamily: fonts.body },
-  withdrawBody: { color: colors.charcoal, fontSize: 14, lineHeight: 21, textAlign: "center", fontFamily: fonts.body },
-  need: { color: colors.muted, fontSize: 13, marginTop: 10, fontFamily: fonts.body },
-  shop: { alignSelf: "stretch", marginTop: 24, backgroundColor: colors.card, borderRadius: 20, padding: 20, alignItems: "center" },
-  shopTitle: { color: colors.charcoal, fontSize: 28, fontWeight: "700", marginVertical: 12, fontFamily: fonts.titleStrong },
-  certificateShell: { flex: 1, alignItems: "center", paddingHorizontal: 24, paddingBottom: 24 },
-  certificateStamp: { fontSize: 64, lineHeight: 72, marginTop: 48, marginBottom: 12, color: colors.charcoal },
-  certificateCta: { marginTop: "auto", alignSelf: "stretch", width: "100%" },
-  inviteShell: { flex: 1 },
-  inviteScroll: { paddingHorizontal: 24, paddingBottom: 32 }
-});
+/**
+ * The sheet as a function of the window. Every number comes from `src/design-tokens.js`:
+ * type through `font`/`lineHeight` (scaled by width, clamped), vertical rhythm through
+ * `space` (loosened on a tall phone, given back on a short one), horizontal gutters through
+ * `gutter`, corners through `radius`, and control heights built up from `hit` so nothing
+ * tappable can fall under the minimum target.
+ */
+export function buildStyles(t) {
+  const { colors, fonts, font, lineHeight, space, gutter, radius, hit, hairline, layout } = t;
+  return {
+    safeFill: { flex: 1, width: "100%", maxWidth: layout.maxContentWidth, alignSelf: "center" },
+    centered: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: gutter("xl") },
+    flexFill: { flex: 1, width: "100%" },
+    wordmark: { color: colors.charcoal, fontSize: font(44), fontWeight: "600", fontFamily: fonts.titleStrong },
+    debug: { position: "absolute", bottom: space("md"), alignSelf: "center", color: colors.muted, fontSize: font("caption"), fontFamily: fonts.body },
+    hearts: { color: colors.charcoal, fontSize: font("bodyLarge"), fontWeight: "600", textAlign: "center", marginTop: space("sm"), fontFamily: fonts.bodyStrong },
+    primaryHit: { alignSelf: "stretch", marginTop: space("md") },
+    primary: { alignSelf: "stretch", marginTop: space("md") },
+    loginHero: { alignItems: "center", marginTop: space("xxl"), marginBottom: space("xxl") },
+    loginScroll: { flexGrow: 1, justifyContent: "center", paddingBottom: space("xxxl") },
+    emailField: {
+      minHeight: hit + space("sm"),
+      borderRadius: radius.md,
+      backgroundColor: colors.white,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: gutter("lg"),
+      gap: gutter("sm")
+    },
+    mailIcon: { color: colors.muted, fontSize: font("bodyLarge"), fontFamily: fonts.body },
+    emailInput: { flex: 1, minHeight: hit + space("sm"), color: colors.charcoal, fontSize: font("bodyLarge"), padding: 0, fontFamily: fonts.body },
+    primaryLabel: { color: colors.white, fontSize: font("bodyLarge"), fontWeight: "700", fontFamily: fonts.bodyStrong },
+    pressed: FEEDBACK.pressed,
+    disabled: FEEDBACK.disabled,
+    backBtn: { width: hit, height: hit, alignItems: "center", justifyContent: "center" },
+    backChevron: { color: colors.charcoal, fontSize: font("hero"), lineHeight: lineHeight("hero", "tight"), fontFamily: fonts.body },
+    coverShell: { flex: 1, paddingHorizontal: gutter("xl"), paddingTop: space("md") },
+    gateTop: { flexDirection: "row", alignItems: "center", gap: gutter("sm") },
+    gateBrand: { color: colors.charcoal, fontSize: font("title"), fontWeight: "600", fontFamily: fonts.titleStrong },
+    gateScroll: { flexGrow: 1, justifyContent: "center" },
+    gateCard: { backgroundColor: colors.card, borderRadius: radius.lg, padding: gutter("xl") },
+    body: { color: colors.charcoal, fontSize: font("bodyLarge"), lineHeight: lineHeight("bodyLarge"), textAlign: "center", marginTop: space("sm"), fontFamily: fonts.body },
+    label: { color: colors.charcoal, fontSize: font("footnote"), fontWeight: "700", marginTop: space("lg"), marginBottom: space("sm"), fontFamily: fonts.bodyStrong },
+    input: {
+      minHeight: hit + space("xs"),
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.md,
+      paddingHorizontal: gutter("lg"),
+      backgroundColor: colors.white,
+      color: colors.charcoal,
+      fontSize: font("bodyLarge"),
+      fontFamily: fonts.body
+    },
+    error: { color: colors.error, fontSize: font("footnote"), fontWeight: "700", marginTop: space("md"), fontFamily: fonts.bodyStrong },
+    title: { color: colors.charcoal, fontSize: font("display"), fontWeight: "700", textAlign: "center", fontFamily: fonts.titleStrong },
+    email: { color: colors.charcoal, marginTop: space("sm"), fontFamily: fonts.body },
+    codeValue: { color: colors.charcoal, fontSize: font("bodyLarge"), marginTop: space("xs"), fontFamily: fonts.body },
+    secondary: {
+      minHeight: hit + space("xs"),
+      marginTop: space("md"),
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.line,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "stretch",
+      backgroundColor: colors.card
+    },
+    secondaryLabel: { color: colors.charcoal, fontSize: font("body"), fontWeight: "700", fontFamily: fonts.bodyStrong },
+    packShell: { flex: 1, paddingHorizontal: gutter("xl"), paddingTop: space("md"), paddingBottom: space("xl") },
+    packTitle: { color: colors.charcoal, fontSize: font("hero"), fontWeight: "700", marginTop: space("md"), marginBottom: space("lg"), fontFamily: fonts.titleStrong },
+    packStack: { gap: 0 },
+    packCardRow: { minHeight: hit + space("md"), flexDirection: "row", alignItems: "center", borderBottomWidth: hairline, borderBottomColor: colors.line, gap: gutter("md") },
+    packMark: { color: colors.charcoal, width: gutter("xl"), fontSize: font("bodyLarge"), fontFamily: fonts.body },
+    packRowLabel: { flex: 1, color: colors.charcoal, fontSize: font("bodyLarge"), fontWeight: "600", fontFamily: fonts.titleStrong },
+    packRowLabelMuted: { flex: 1, color: colors.charcoal, fontSize: font("bodyLarge"), fontFamily: fonts.title },
+    packChevron: { color: colors.muted, fontSize: font("title"), fontFamily: fonts.body },
+    soonPlain: { color: colors.muted, fontSize: font("footnote"), fontFamily: fonts.body },
+    accountFooter: { marginTop: "auto", minHeight: hit + space("xs"), alignItems: "center", justifyContent: "center" },
+    accountEntryLabel: { color: colors.charcoal, fontSize: font("bodyLarge"), fontWeight: "600", fontFamily: fonts.titleStrong },
+    detailShell: { flex: 1, paddingHorizontal: gutter("xl"), paddingTop: space("sm") },
+    scrollPad: { paddingBottom: space("xxl") },
+    sampleTop: { flexDirection: "row", alignItems: "center", gap: gutter("xs") },
+    sampleProgress: { color: colors.charcoal, fontSize: font("body"), fontFamily: fonts.body },
+    sampleTitle: { color: colors.charcoal, fontSize: font("title"), fontWeight: "700", marginVertical: space("lg"), fontFamily: fonts.titleStrong },
+    choice: {
+      minHeight: hit + space("sm"),
+      borderRadius: radius.md,
+      backgroundColor: colors.white,
+      paddingHorizontal: gutter("lg"),
+      flexDirection: "row",
+      alignItems: "center",
+      gap: gutter("md"),
+      marginBottom: space("sm")
+    },
+    choiceOn: { borderWidth: 1.5, borderColor: colors.charcoal },
+    radio: { color: colors.muted, fontSize: font("bodyLarge"), fontFamily: fonts.body },
+    choiceLabel: { flex: 1, color: colors.charcoal, fontSize: font("body"), lineHeight: lineHeight("body"), fontFamily: fonts.body },
+    reasonRow: { flexDirection: "row", alignItems: "center", gap: gutter("sm"), marginTop: space("lg"), marginBottom: space("sm") },
+    reasonHeart: { color: colors.babyPink, fontSize: font("bodyLarge") },
+    reasonPrompt: { flex: 1, color: colors.muted, fontSize: font("footnote"), fontFamily: fonts.body },
+    example: { color: colors.muted, fontSize: font("footnote"), marginBottom: space("sm"), fontFamily: fonts.body },
+    labelsRow: { flexDirection: "row", gap: gutter("sm"), flexWrap: "wrap", justifyContent: "center", marginBottom: space("md") },
+    labelChip: {
+      color: colors.charcoal,
+      backgroundColor: colors.card,
+      overflow: "hidden",
+      borderRadius: radius.pill,
+      paddingHorizontal: gutter("md"),
+      paddingVertical: space("xs"),
+      fontSize: font("footnote"),
+      fontWeight: "700",
+      fontFamily: fonts.bodyStrong
+    },
+    answerCard: { alignSelf: "stretch", backgroundColor: colors.card, borderRadius: radius.lg, padding: gutter("lg"), marginBottom: space("sm") },
+    who: { color: colors.charcoal, fontSize: font("caption"), fontWeight: "700", marginBottom: space("xs"), fontFamily: fonts.bodyStrong },
+    introTitle: { color: colors.charcoal, fontSize: font("display"), marginBottom: space("xl"), fontFamily: fonts.titleStrong },
+    introLines: { alignSelf: "stretch", paddingHorizontal: gutter("md"), marginBottom: space("xxl") },
+    introLine: { color: colors.charcoal, fontSize: font("bodyLarge"), lineHeight: lineHeight("bodyLarge", "relaxed"), textAlign: "center", marginTop: space("sm"), fontFamily: fonts.body },
+    soonBadge: { color: colors.muted, fontSize: font("footnote"), marginBottom: space("sm"), fontFamily: fonts.body },
+    soonTitle: { color: colors.charcoal, fontSize: font("hero"), fontWeight: "700", marginBottom: space("lg"), fontFamily: fonts.titleStrong },
+    textLink: { minHeight: hit, alignItems: "center", justifyContent: "center", marginTop: space("sm") },
+    textLinkLabel: { color: colors.charcoal, fontSize: font("body"), fontFamily: fonts.body },
+    accountShell: { flex: 1, paddingHorizontal: gutter("xl"), paddingTop: space("md"), paddingBottom: space("xl") },
+    navRowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    navTitle: { color: colors.charcoal, fontSize: font("title"), fontWeight: "700", fontFamily: fonts.titleStrong },
+    accountEmailValue: { color: colors.charcoal, fontSize: font("bodyLarge"), marginTop: space("xl"), textAlign: "center", fontFamily: fonts.body },
+    logoutBtn: { minHeight: hit + space("xs"), marginTop: "auto", alignItems: "center", justifyContent: "center" },
+    logoutLabel: { color: colors.charcoal, fontSize: font("bodyLarge"), textDecorationLine: "underline", fontFamily: fonts.body },
+    withdrawEntryLabel: { color: colors.charcoal, fontSize: font("footnote"), textDecorationLine: "underline", fontFamily: fonts.body, opacity: 0.7 },
+    withdrawConfirm: { marginTop: space("lg"), paddingHorizontal: gutter("xl"), alignItems: "center", gap: gutter("sm") },
+    withdrawTitle: { color: colors.charcoal, fontSize: font("bodyLarge"), textAlign: "center", fontFamily: fonts.body },
+    withdrawBody: { color: colors.charcoal, fontSize: font("footnote"), lineHeight: lineHeight("footnote", "relaxed"), textAlign: "center", fontFamily: fonts.body },
+    need: { color: colors.muted, fontSize: font("footnote"), marginTop: space("sm"), fontFamily: fonts.body },
+    shop: { alignSelf: "stretch", marginTop: space("xl"), backgroundColor: colors.card, borderRadius: radius.lg, padding: gutter("lg"), alignItems: "center" },
+    shopTitle: { color: colors.charcoal, fontSize: font("display"), fontWeight: "700", marginVertical: space("md"), fontFamily: fonts.titleStrong },
+    certificateShell: { flex: 1, alignItems: "center", paddingHorizontal: gutter("xl"), paddingBottom: space("xl") },
+    certificateStamp: { fontSize: font(64), lineHeight: lineHeight(64, "tight"), marginTop: space("xxxl"), marginBottom: space("md"), color: colors.charcoal },
+    certificateCta: { marginTop: "auto", alignSelf: "stretch", width: "100%" },
+    inviteShell: { flex: 1 },
+    inviteScroll: { paddingHorizontal: gutter("xl"), paddingBottom: space("xxl") }
+  };
+}
+
+const useStyles = createStyles(buildStyles);
