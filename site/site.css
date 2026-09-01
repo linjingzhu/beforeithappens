@@ -155,29 +155,36 @@ a { color: var(--ab-ink); }
  * The pack's name, at display size. It is the first thing on the page and the only thing on it that
  * is not a question, so it is allowed to be large; `clamp` keeps it from swallowing a phone.
  */
+/*
+ * Display size, and the proportions of the design: the name is about four times the text under it,
+ * so the page has one thing to look at and then something to read. `clamp` keeps it from
+ * overwhelming a phone, where 60px of MaruBuri would be most of a screen.
+ */
 .stage-head h1 {
   font-family: MaruBuri, Georgia, serif;
   max-width: 40rem;
-  margin: 0 auto 12px;
-  font-size: clamp(34px, 5.2vw, 54px);
+  margin: 0 auto 14px;
+  font-size: clamp(38px, 6vw, 60px);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
 }
 
 /* The question the hundred are for. The one question on the page nobody is asked to answer. */
 .stage-tagline {
   max-width: 40rem;
-  margin: 0 auto 8px;
+  margin: 0 auto 10px;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.5;
 }
 
 .stage-blurb {
   max-width: 40rem;
-  margin: 0 auto 24px;
+  margin: 0 auto 28px;
   color: var(--ab-muted);
   font-size: 15px;
+  line-height: 1.7;
 }
 
 /*
@@ -220,13 +227,22 @@ a { color: var(--ab-ink); }
     justify-content: flex-start;
     overflow-x: auto;
     scrollbar-width: none;
-    /*
-     * A screen's worth of room after the last tab, so that every tab can reach the left edge.
-     * Without it the final Parts run out of scroll and stop wherever they land, which is the
-     * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule
-     * that holds for seven of ten is not one.
-     */
-    padding-right: 100%;
+  }
+
+  /*
+   * A screen's worth of room after the last tab, so that every tab can reach the left edge.
+   * Without it the final Parts run out of scroll and stop wherever they land, which is the
+   * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule that
+   * holds for seven of ten is not one.
+   *
+   * A flex item rather than `padding-right`. Padding was the first attempt and it made the *page*
+   * scroll sideways: with `box-sizing: border-box`, padding wider than the element widens the
+   * element, so the strip became 406px inside a 390px screen and took the document with it. A
+   * child adds to the strip's scrollable content and nothing to its box.
+   */
+  .parts::after {
+    content: "";
+    flex: 0 0 100%;
   }
 
   .parts::-webkit-scrollbar { display: none; }
