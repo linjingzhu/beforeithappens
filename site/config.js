@@ -12,6 +12,13 @@ export const SITE = Object.freeze({
    * said one thing and the browser tab another. One name, one place.
    */
   name: "Love Me",
+  /**
+   * The second line of the mark. The domain is lovemedialogue.com and the full name is Love Me
+   * Dialogue; the mark says both, with the weight on the half people will say out loud. It is not
+   * folded into `name` because that one is a page title and a card title, where a two-word brand
+   * followed by a page name is already long enough.
+   */
+  nameSuffix: "Dialogue",
   tagline: "다가올 삶을, 함께 준비하다.",
   /**
    * The site's own origin. `https`, not `http`: GitHub Pages issues a certificate for a custom

@@ -229,7 +229,10 @@ ${packs.map((pack) => {
   return `  <aside class="rail">
     <a class="mark" href="/">
       <img class="mark-logo" src="/brand/logo.png" width="32" height="32" alt="" decoding="async">
-      <span class="wordmark">${escapeHtml(site.name)}</span>
+      <span class="wordmark">
+        <span class="wordmark-name">${escapeHtml(site.name)}</span>${site.nameSuffix ? `
+        <span class="wordmark-sub">${escapeHtml(site.nameSuffix)}</span>` : ""}
+      </span>
     </a>${nav}
     <p class="rail-foot">${escapeHtml(site.tagline)}</p>
   </aside>`;
