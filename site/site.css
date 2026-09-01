@@ -112,15 +112,23 @@ a { color: var(--ab-ink); }
 }
 
 /*
- * The quiet half of the name. Wide tracking rather than a larger size: it has to read as the same
- * mark's second line, not as a caption someone added underneath.
+ * The quiet half of the name, tracked out to exactly the width of the half above it.
+ *
+ * The number is measured, not guessed: "Love Me" sets 76.75px in MaruBuri 600 at 19px, "Dialogue"
+ * sets 39.09px in Pretendard 400 at 10px, and the difference spread across the seven gaps between
+ * its eight letters is 5.38px — 0.538em at this size. `letter-spacing` also adds a gap after the
+ * last letter, which would push the run 5.38px past the name, so the negative margin takes it back.
+ *
+ * Tuned to those two strings at those two sizes. Change either and re-measure; the arithmetic is
+ * (nameWidth - suffixWidth) / (letters - 1) / fontSize.
  */
 .wordmark-sub {
   color: var(--ab-muted);
   font-family: Pretendard, sans-serif;
   font-size: 10px;
   font-weight: 400;
-  letter-spacing: 0.34em;
+  letter-spacing: 0.538em;
+  margin-right: -0.538em;
   line-height: 1.2;
 }
 
