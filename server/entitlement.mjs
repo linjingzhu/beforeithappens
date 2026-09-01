@@ -29,7 +29,7 @@ export function isEntitled(state, workspaceId) {
   return rows(state, "entitlements").some((row) => row.workspaceId === workspaceId && row.status === "active");
 }
 
-export function createEntitlement({ store, now = Date.now, pack = {} } = {}) {
+export function createEntitlement({ store, now = Date.now, pack = {}, audit = null } = {}) {
   if (!store) throw new Error("store is required");
 
   function requireSession(sessionId) {
@@ -122,6 +122,13 @@ export function createEntitlement({ store, now = Date.now, pack = {} } = {}) {
       }
     });
 
+    audit?.recordEntitlementGranted({
+      workspaceId: purchase.workspaceId,
+      orderId,
+      source: String(eventId).startsWith("purchase:") ? "purchase" : "webhook",
+      amount: PACK_PRICE_KRW,
+      currency: PACK_CURRENCY
+    });
     return { ok: true, duplicate: false, entitled: true, eventId, orderId };
   }
 

@@ -104,7 +104,7 @@ export function workspaceView(state, userId, now = Date.now) {
   };
 }
 
-export function createCouple({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex") } = {}) {
+export function createCouple({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex"), audit = null } = {}) {
   if (!store) throw new Error("store is required");
 
   function ensureWorkspace(userId) {
@@ -162,6 +162,9 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
       if (hasAcceptedPartner(store.snapshot(), access.user.id)) return { ok: false, error: "already-paired" };
       if (acceptedCount(store.snapshot(), access.membership.workspaceId) >= 2) return { ok: false, error: "full" };
       const at = now();
+      const reissue = store.snapshot().invitations.some((item) =>
+        item.workspaceId === access.membership.workspaceId && !item.usedAt
+      );
       expireUnusedInvites(store, access.membership.workspaceId, at);
       const token = randomToken();
       const invite = {
@@ -177,6 +180,11 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
         usedAt: null
       };
       store.mutate((state) => state.invitations.push(invite));
+      audit?.recordInviteIssued({
+        userId: access.user.id,
+        workspaceId: access.membership.workspaceId,
+        reissue
+      });
       return {
         ok: true,
         email,
@@ -289,6 +297,7 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
           }
         }
       });
+      audit?.recordInviteAccepted({ userId: user.id, workspaceId: target.id, viaPairCode: true });
       return { ok: true, workspace: workspaceView(store.snapshot(), user.id, now) };
     },
 
@@ -327,6 +336,7 @@ export function createCouple({ store, now = Date.now, randomToken = () => random
           });
         }
       });
+      audit?.recordInviteAccepted({ userId: user.id, workspaceId: invite.workspaceId });
       return { ok: true, workspace: workspaceView(store.snapshot(), user.id, now) };
     }
   };

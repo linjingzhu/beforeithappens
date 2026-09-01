@@ -8,16 +8,18 @@ import { createEntitlement } from "../server/entitlement.mjs";
 import { createFileStore } from "../server/store.mjs";
 import { createCouple } from "../server/workspace.mjs";
 import { createAccount } from "../server/account.mjs";
+import { createAudit } from "../server/audit.mjs";
 import { createReport } from "../server/report.mjs";
 
 const root = process.cwd();
 const storePath = process.env.AB_STORE_PATH
   || fileURLToPath(new URL("../data/ab-store.json", import.meta.url));
 const store = await createFileStore(storePath);
-const couple = createCouple({ store });
-const account = createAccount({ store });
+const audit = createAudit({ store });
+const couple = createCouple({ store, audit });
+const account = createAccount({ store, audit });
 const pack = { id: marriagePack.id, version: marriagePack.version };
-const entitlement = createEntitlement({ store, pack });
+const entitlement = createEntitlement({ store, pack, audit });
 const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
 const answers = createAnswers({
   store,
@@ -28,6 +30,7 @@ const answers = createAnswers({
 });
 const auth = createAuth({
   store,
+  audit,
   onLogin: (userId) => couple.ensureWorkspace(userId),
   describeWorkspace: (userId) => couple.viewForUser(userId)
 });

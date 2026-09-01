@@ -68,7 +68,7 @@ M10 account deletion       (in progress; one product decision open)
 | M5 | iOS distribution | Blocked outside the repo | Apple Developer enrolment and `eas login` |
 | M6 | Content beyond marriage | Draft only (`docs/proposals/pack-home-mgmt.md`), deliberately not registered | A pack registry, real comparison rules, and a pack-scoped entitlement — a second pack cannot ship without them |
 | M7 | Tell the partner it is their turn | Not started; nothing is ever sent | M5 |
-| M8 | Reports and audit | **Report done** — routes wired, and its query window throws on private notes rather than trusting the caller. **Audit built but never called** | Call sites in four factories |
+| M8 | Reports and audit | **Done.** The report's query window throws on private notes rather than trusting the caller, and audit now records login, forced logout, invite issue and accept, entitlement grant and account deletion — with no email, token or resolvable id in any row | Nothing reads the log yet: there is deliberately no audit HTTP route |
 | M9 | Social login | Token exchange, profile read and a signed callback state, verified over HTTP against a stubbed provider | Client ids and secrets; see `docs/SOCIAL_LOGIN.md` |
 | M10 | Account deletion | **Done** across server, web and native, including report snapshots, which outlived deletion until this session | Decisions: grace period, and whether a survivor may read the archived record |
 | — | Privacy | Analysis and a Korean policy draft (`docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md`) | **Store blockers**: no policy URL, no in-app link, no consent step, no age gate, no 보호책임자. 39 placeholders for the owner |
