@@ -30,20 +30,26 @@ The domain is registered at 후이즈. Its domain menu has an item that *sounds*
 | **외부 서비스 도메인 연결** | A wizard for a fixed list of Korean services | **No.** GitHub Pages is not on it |
 | **네임서버 변경** | Which nameservers the domain delegates to | **Start here** — it decides where the records get edited |
 
-There is no record editor in that menu, and 네임서버 변경 has already been checked: the domain is on
-후이즈's own `whoisdomain.kr` nameservers. So the records are 후이즈's to edit, in the DNS 관리 /
-네임서버 호스팅 area — reachable from the 네임서버 호스팅 서비스 link in that warning, which is the
-registrar naming its own screen and therefore more reliable than any menu path written down here.
+네임서버 변경 has already been checked: the domain is on 후이즈's own `whoisdomain.kr` nameservers, so
+the records are 후이즈's to edit.
 
-**DNS 호스트 관리 cannot do it even if you try.** Its 호스트 추가 form fixes the name as
-`____.lovemedialogue.com`, so the apex is not expressible in it at all.
+**The screen is 부가서비스 → 네임서버 고급설정.** Pick the domain, then open **A 레코드 관리
+(네임서버 호스팅)**. CNAME has its own section on the same page. Confusingly this sits under the same
+네임서버 고급설정 heading as DNS 호스트 관리, which is the wrong one — and DNS 호스트 관리 could not do
+the job anyway: its 호스트 추가 form fixes the name as `____.lovemedialogue.com`, so the apex is not
+expressible in it at all.
 
-You are on a record editor when there is a **record-type dropdown (A / AAAA / CNAME / MX / TXT) and
-an add-record button**. A screen offering only a host name and an IP address is the wrong one.
+**The apex is a blank host name, not `@`.** The page states it: *"호스트명은 @, * 등의 특수문자를
+포함할 수 없습니다"*. Leave the field empty.
 
-**파킹 서비스 must be off.** It is what answers `118.67.131.217` today, and it can overwrite what you
-enter. Delete the parking A record; if the address survives propagation, turn the parking service
-itself off.
+**후이즈 has no AAAA.** The record types offered are MX, SPF(TXT), A, CNAME, PTR, SRV — that is the
+whole list. So the four AAAA rows in route B cannot be entered and are not a failure: the site serves
+correctly over IPv4 alone, and what is given up is reachability from IPv6-only networks, which some
+mobile carriers use. If that ever matters, moving the nameservers (below) buys IPv6 back; it is not
+worth doing for that reason alone today.
+
+**Delete the parking record, do not add beside it.** `118.67.131.217` is 후이즈's parking page. If the
+address survives propagation, the 파킹 서비스 itself is putting it back and has to be turned off.
 
 ### Or move the nameservers, and skip all of it
 
@@ -75,6 +81,9 @@ flattening) and is free if you move the nameservers there.
 | `AAAA` | `@` | `2606:50c0:8001::153` |
 | `AAAA` | `@` | `2606:50c0:8002::153` |
 | `AAAA` | `@` | `2606:50c0:8003::153` |
+
+At 후이즈 the host cell is **left empty** rather than `@`, and the AAAA rows are skipped — it offers no
+AAAA record type. See the section above.
 
 **Where these came from, and how to check them.** They are not quoted from memory: they are the
 live answer for `linjingzhu.github.io`, the host that serves this repository's Pages site, read on
