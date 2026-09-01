@@ -1,5 +1,5 @@
 import { escapeHtml } from "../src/html.js";
-import { SITE } from "./config.js";
+import { publishedBySlug, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
@@ -33,8 +33,8 @@ export const SITE_COPY = Object.freeze({
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
-  ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
-  ctaAction: "둘이 함께 해보기",
+  ctaBody: "상대에게 링크를 보내면 같은 질문에 답할 수 있어요. 두 사람 다 답한 질문만 나란히 열립니다.",
+  ctaAction: "상대 초대하기",
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
@@ -190,8 +190,38 @@ ${choices}
  * element exists so the position is fixed by the layout rather than chosen later under pressure —
  * after the questions, before the control that leaves the page.
  */
-function adSlot(model) {
-  return `      <div class="ad-slot" data-ad-slot="${escapeHtml(model.adSlot)}" aria-hidden="true"></div>`;
+/**
+ * Where an ad may go, and what goes there once the publisher ids are set.
+ *
+ * The box has always been on the page and empty; with `SITE.adsenseClient` and `SITE.adsenseSlot`
+ * filled in it carries a real unit. Nothing is `aria-hidden` any more once it holds an ad — a
+ * screen reader hiding an advertisement from its reader is not a courtesy, it is a surprise — but
+ * an empty box stays hidden, because an empty box is nothing to announce.
+ *
+ * One unit per page, after the questions and before the control that leaves the page. That
+ * position is the site's own rule, not the network's: an ad above the questions would sell the
+ * reader's attention before the page has given them anything.
+ */
+function adSlot(model, site = SITE) {
+  const name = escapeHtml(model.adSlot);
+  if (!site?.adsenseClient || !site?.adsenseSlot) {
+    return `      <div class="ad-slot" data-ad-slot="${name}" aria-hidden="true"></div>`;
+  }
+  return `      <div class="ad-slot" data-ad-slot="${name}">
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="${escapeHtml(site.adsenseClient)}"
+          data-ad-slot="${escapeHtml(site.adsenseSlot)}"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>`;
+}
+
+/** The network's own script, once, in the head — and only when there is a publisher to name. */
+function adsenseScript(site) {
+  if (!site?.adsenseClient) return "";
+  return `\n  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${escapeHtml(site.adsenseClient)}" crossorigin="anonymous"></script>`;
 }
 
 /**
@@ -291,12 +321,20 @@ function pager(model) {
       </nav>`;
 }
 
-function callToAction(site) {
-  const href = site.appOrigin || "/";
+/**
+ * The invitation, and the only thing on the page that asks for anything.
+ *
+ * It used to be a link into the app. There is no app: this site is the product, and what a reader
+ * hands the other person is a link to these same questions. So it is a button rather than an
+ * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
+ * own address, which is exactly what the invitation is anyway.
+ */
+function callToAction(model) {
+  const href = model?.slug ? `/${escapeHtml(model.slug)}/` : "/";
   return `      <aside class="cta">
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
         <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
-        <a class="cta-action" href="${escapeHtml(href)}">${escapeHtml(SITE_COPY.ctaAction)}</a>
+        <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
       </aside>`;
 }
 
@@ -376,7 +414,7 @@ ${head}
   <link rel="preload" href="/brand/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/brand/maruburi-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${adsenseScript(site)}
 </head>
 <body>
   <div class="shell">
@@ -403,9 +441,9 @@ export function renderQuestionPage(model, site = SITE) {
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
-${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model)}
+${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
 ${pager(model)}
-${callToAction(site)}
+${callToAction(model)}
       </main>`;
   return document_({
     site,
@@ -445,7 +483,10 @@ export function renderResultPage(slug, questions, site = SITE) {
     // The sheet is personal and has nothing to offer a search engine.
     '  <meta name="robots" content="noindex">'
   ].join("\n");
-  const data = JSON.stringify({ slug, questions: index }).replace(/</g, "\\u003c");
+  // The pack's own name travels with the index: the sheet's <title> is the sheet's, and a mail
+  // about 결혼 100제 should say so rather than "내가 답한 것들".
+  const packTitle = publishedBySlug(slug)?.title || site.name;
+  const data = JSON.stringify({ slug, title: packTitle, questions: index }).replace(/</g, "\\u003c");
   return document_({
     site,
     head,
@@ -466,9 +507,18 @@ export function renderResultPage(slug, questions, site = SITE) {
         <input type="text" readonly data-share-url>
       </label>
     </section>
+    <section class="result-mail" data-mail hidden>
+      <h2>${escapeHtml(RESULT_COPY.mailAction)}</h2>
+      <p>${escapeHtml(RESULT_COPY.mailNote)}</p>
+      <div class="result-mail-actions">
+        <a class="result-mail-action" href="#" data-mail-open>${escapeHtml(RESULT_COPY.mailAction)}</a>
+        <button class="result-mail-copy" type="button" data-mail-copy>${escapeHtml(RESULT_COPY.mailCopy)}</button>
+      </div>
+      <p class="result-mail-state" data-mail-state hidden></p>
+    </section>
     <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
     <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
-${callToAction(site)}
+${callToAction({ slug })}
   </main>
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
@@ -501,7 +551,7 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
     chrome: { title: page.title, description: page.description },
     body: `      <main class="page">
 ${sections}
-${contact}${callToAction(site)}
+${contact}${callToAction()}
       </main>`
   });
 }
@@ -526,7 +576,7 @@ export function renderIndex(model, site = SITE) {
     <ul class="cards">
 ${cards}
     </ul>
-${callToAction(site)}
+${callToAction()}
   </main>`
   });
 }

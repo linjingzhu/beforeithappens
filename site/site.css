@@ -622,6 +622,66 @@ html { scroll-padding-top: 120px; }
   font-size: 13px;
 }
 
+.result-mail {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--ab-card);
+  box-shadow: var(--lift-card);
+}
+
+.result-mail h2 {
+  margin: 0 0 6px;
+}
+
+.result-mail > p {
+  margin: 0 0 12px;
+  color: var(--ab-muted);
+}
+
+.result-mail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-mail-action,
+.result-mail-copy {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-card);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.result-mail-action:active,
+.result-mail-copy:active {
+  box-shadow: var(--press);
+}
+
+/* Nothing to send yet: the control stays visible and says so when it is pressed. */
+.result-mail-action[aria-disabled="true"] {
+  color: var(--ab-muted);
+}
+
+.result-mail-state {
+  margin: 10px 0 0;
+  color: var(--ab-muted);
+}
+
+/* The invitation, once a desktop has put it on the clipboard. */
+.cta-action[data-copied]::after {
+  content: " ✓";
+}
+
 .result-compare {
   margin-bottom: 32px;
   padding: 20px;

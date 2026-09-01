@@ -4,6 +4,7 @@ import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from 
 import { RESULT_COPY } from "./result-copy.js";
 import { reflect } from "./reflect.js";
 import { compareAnswers, decodeShare, encodeShare } from "./share.js";
+import { composeResultMail, mailtoHref } from "./mail.js";
 
 /**
  * The only script the site ships, and it is enhancement.
@@ -179,6 +180,98 @@ function startResultPage(root, store) {
 
   showShare(root, index, store);
   showComparison(root, index, store);
+  showMail(root, index, store);
+}
+
+/**
+ * The other person's link as it stands right now: absent, unreadable, or a comparison.
+ *
+ * One reader for both the panel and the letter. They used to compute it separately, and the letter
+ * computed it once — so a link pasted into an open page updated the panel and left the mail saying
+ * what the page had said a moment ago.
+ */
+function readComparison(index, store) {
+  const match = /(?:^|[#&])c=([^&]+)/.exec(location.hash || "");
+  if (!match) return { kind: "none" };
+  const theirs = decodeShare(decodeURIComponent(match[1]), index.slug, index.questions);
+  if (!theirs) return { kind: "unreadable" };
+  return { kind: "ok", model: compareAnswers(index.questions, store.read(), theirs) };
+}
+
+/**
+ * The letter, written from whatever the sheet is showing: the two people's differing answers when
+ * a comparison is open, the reader's own answers when it is not.
+ *
+ * The link goes in only when there is more than the mail can hold or a second person is in it —
+ * see `site/mail.js`. Rebuilt on every open, so it says what the page says.
+ */
+function showMail(root, index, store) {
+  const panel = root.querySelector("[data-mail]");
+  const open = root.querySelector("[data-mail-open]");
+  const copy = root.querySelector("[data-mail-copy]");
+  if (!panel || !open) return;
+
+  const compose = () => {
+    const answers = store.read();
+    const read = readComparison(index, store);
+    const comparison = read.kind === "ok" ? read.model : null;
+    const compared = Boolean(comparison && !comparison.empty);
+    const rows = compared
+      ? comparison.differing.concat(comparison.shared)
+      : index.questions
+          .map((question) => {
+            const choiceId = answers.items[question.id]?.choiceId;
+            const choice = (question.o || []).find((option) => option.id === choiceId);
+            return choice ? { number: question.n, title: question.t, choice: choice.l } : null;
+          })
+          .filter(Boolean);
+    return {
+      compared,
+      rows,
+      letter: composeResultMail({
+        title: index.title || "",
+        rows,
+        link: location.href,
+        compared
+      })
+    };
+  };
+
+  const state = root.querySelector("[data-mail-state]");
+  const refresh = () => {
+    const { rows, letter } = compose();
+    panel.hidden = false;
+    open.setAttribute("href", rows.length ? mailtoHref(letter) : "#");
+    open.setAttribute("aria-disabled", rows.length ? "false" : "true");
+    return { rows, letter };
+  };
+  refresh();
+  // A link pasted into an open page changes the hash without reloading, and the letter has to
+  // follow: otherwise the button still holds the mail the page had written a moment ago.
+  addEventListener("hashchange", refresh);
+
+  open.addEventListener("click", (event) => {
+    const { rows } = refresh();
+    if (rows.length) return;
+    // Nothing to send is not a mail app's problem to explain.
+    event.preventDefault();
+    say(state, RESULT_COPY.mailEmpty);
+  });
+
+  copy?.addEventListener("click", async () => {
+    const { rows, letter } = refresh();
+    if (!rows.length) {
+      say(state, RESULT_COPY.mailEmpty);
+      return;
+    }
+    const text = `${letter.subject}\n\n${letter.body}`;
+    try {
+      await navigator.clipboard?.writeText(text);
+      say(state, RESULT_COPY.mailCopied);
+    } catch {
+      say(state, RESULT_COPY.shareManual);
+    }
+  });
 }
 
 /** The link that carries this reader's choices to the other person, and nothing else. */
@@ -240,20 +333,19 @@ function showComparison(root, index, store) {
     addEventListener("hashchange", () => showComparison(root, index, store));
   }
 
-  const match = /(?:^|[#&])c=([^&]+)/.exec(location.hash || "");
-  if (!match) {
+  const read = readComparison(index, store);
+  if (read.kind === "none") {
     panel.hidden = true;
     panel.replaceChildren();
     return;
   }
 
   panel.hidden = false;
-  const theirs = decodeShare(decodeURIComponent(match[1]), index.slug, index.questions);
-  if (!theirs) {
+  if (read.kind === "unreadable") {
     panel.replaceChildren(element("p", "compare-note", RESULT_COPY.compareUnreadable));
     return;
   }
-  renderComparison(panel, compareAnswers(index.questions, store.read(), theirs));
+  renderComparison(panel, read.model);
 }
 
 function comparisonRows(rows, withAnswers) {
@@ -365,6 +457,40 @@ function pinCurrentTab() {
  * is a layout decision rather than a scripting one.
  */
 
+/**
+ * The invitation: the pack's own address, handed to the other person.
+ *
+ * It carries no answers — that is the whole difference between this and the link the result sheet
+ * makes — so it is safe anywhere, a message or a feed alike. `navigator.share` opens the phone's
+ * own sheet, which already has the messengers in it; a desktop copies instead. With no script at
+ * all the control is still an anchor to the same address, which is the invitation anyway.
+ */
+function bindInvite() {
+  for (const link of document.querySelectorAll("[data-invite]")) {
+    link.addEventListener("click", async (event) => {
+      const url = new URL(link.getAttribute("href"), location.origin).href;
+      if (navigator.share) {
+        event.preventDefault();
+        try {
+          await navigator.share({ title: document.title, url });
+        } catch {
+          /* dismissed; the anchor still works if they meant to open it */
+        }
+        return;
+      }
+      if (!navigator.clipboard) return;
+      event.preventDefault();
+      try {
+        await navigator.clipboard.writeText(url);
+        link.dataset.copied = "true";
+        setTimeout(() => delete link.dataset.copied, 2000);
+      } catch {
+        location.href = url;
+      }
+    });
+  }
+}
+
 /*
  * ---- the review block, debug only ------------------------------------------------------------
  * Everything from here to the end of this section goes when `SITE.debugFeedback` does. It is kept
@@ -470,6 +596,7 @@ function start() {
   restoreQuestionPage(questions, store);
   bindQuestionPage(questions, store);
   showProgress(store);
+  bindInvite();
   // Every recorded answer moves the bar, including one made on this page a moment ago.
   questions.addEventListener("change", () => showProgress(store));
   startFeedback(slug);

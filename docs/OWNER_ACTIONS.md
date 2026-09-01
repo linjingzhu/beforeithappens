@@ -62,8 +62,9 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N2 | 앱 | **Host environment variables** | 🟢 | `NODE_ENV=production` also closes the dev OAuth routes; without `AB_STORE_PATH` on a persistent disk every account is lost on redeploy | `docs/DEPLOY.md` §0 |
 | N3 | 앱 | **Kakao developer app** | 🟢 | Registration is immediate. Redirect URI must match exactly or it fails before reaching the server | `docs/SOCIAL_LOGIN.md` §3 |
 | N4 | 앱 | **Apple Developer: enrol as Individual** | 🟢 | The only wait nobody controls. Organization needs a D-U-N-S number and takes days to weeks | `docs/IOS_INSTALL.md` |
-| N5 | 공통 | **Business details for the privacy policy** | 🔄 | 상호 is **afterscent**, filled in. Still missing: 대표자, 주소, 사업자등록번호, 통신판매업 신고번호, 보호책임자 성명·연락처, 문의 이메일 | `docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md` |
+| N5 | 웹 | **Business details for the privacy policy** | 🔴 | 상호(afterscent)와 문의 메일은 채워짐. **AdSense가 여기서 막힙니다** — 구글은 처리방침 없는 사이트를 승인하지 않고, 광고 자체가 쿠키를 심으므로 그 사실을 적어야 합니다. 남은 것: 대표자, 주소, 사업자등록번호, 통신판매업 신고번호, 보호책임자 성명·연락처 | `docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md` |
 | N5a | 웹 | **A contact address** | ✅ | `loveme@afterscent.kr`, given 2026-09-01. The 문의 page, its footer link and its sitemap entry now build from it | `site/config.js` |
+| N5b | 웹 | **AdSense publisher id and ad unit id** | 🔴 | `SITE.adsenseClient` (`ca-pub-…`) and `SITE.adsenseSlot`. Set both and the script, the unit and `ads.txt` all appear; empty, the site builds exactly as it does now. Google reviews the site first, and the review needs N5 | `site/config.js` |
 | N6 | 공통 | **Resend domain verification** | 🟢 | Until then `onboarding@resend.dev` reaches only the Resend account owner. Needed for login mail and later for the result sheet | `docs/DEPLOY.md` §4 |
 | N7 | 웹 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
 

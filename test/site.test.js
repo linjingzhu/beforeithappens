@@ -165,14 +165,15 @@ test("the ad slot is present, positioned, and empty", () => {
   assert.ok(slotAt < html.indexOf('class="pager"'), "and before the control that leaves the page");
 });
 
-test("every page offers the way into the two-person version", () => {
+test("every page offers the invitation, and it goes to these questions rather than to an app", () => {
+  // There is no app. What a reader hands the other person is a link to the same questions, so the
+  // control points at the pack — and with no script that address is the whole invitation anyway.
   for (const page of [1, LAST_PAGE]) {
     const html = renderQuestionPage(pageModel("marriage", page, { site }), site);
     assert.ok(has(html, SITE_COPY.ctaAction));
-    assert.ok(has(html, 'href="https://app.example"'), "the CTA points at the app when an origin is set");
+    assert.ok(has(html, 'class="cta-action" href="/marriage/" data-invite'), "it points at the pack");
+    assert.equal(has(html, "app.example"), false, "and never at an app origin");
   }
-  const noOrigin = renderQuestionPage(pageModel("marriage", 1, {}), SITE);
-  assert.ok(has(noOrigin, 'class="cta-action" href="/"'), "and degrades to / rather than to nothing");
 });
 
 test("turning a page is a real navigation, not a script", () => {
@@ -869,4 +870,74 @@ test("the result page offers the link, and the build ships the module that makes
   // The payload rides in the fragment, which is the whole reason this can exist on a static site:
   // everything after `#` stays in the browser and reaches no server.
   assert.match(readFileSync("site/enhance.js", "utf8"), /#c=\$\{payload\}/);
+});
+
+test("a result can be mailed from the sheet, and the site still sends nothing", async () => {
+  const { composeResultMail, mailtoHref, MAIL_BODY_LIMIT } = await import("../site/mail.js");
+  const { RESULT_COPY } = await import("../site/result-copy.js");
+
+  const rows = Array.from({ length: 40 }, (_, i) => ({
+    number: i + 1,
+    title: `질문 ${i + 1} — 이 문장은 한 줄을 채울 만큼 깁니다.`,
+    mine: "내가 고른 답",
+    theirs: "상대가 고른 답"
+  }));
+
+  const letter = composeResultMail({ title: "결혼 100제", rows, link: "https://ab.example/x#c=v1", compared: true });
+  assert.equal(letter.subject, RESULT_COPY.mailSubjectCompared("결혼 100제"));
+  assert.ok(letter.body.startsWith(RESULT_COPY.mailBothWarning), "it says whose answers are in it");
+  // A mailto is a URL and a URL has a limit, so the letter carries what fits and links to the rest
+  // rather than being silently cut by whichever program opens it.
+  assert.ok(letter.body.length <= MAIL_BODY_LIMIT, `${letter.body.length} within ${MAIL_BODY_LIMIT}`);
+  assert.ok(letter.written > 0 && letter.left === rows.length - letter.written);
+  assert.ok(letter.body.includes(RESULT_COPY.mailMore(letter.left)));
+  assert.ok(letter.body.includes("https://ab.example/x#c=v1"));
+
+  // One person's own answers: no warning, and no link, because everything fits and a link that
+  // carries answers has no business in a mail that did not need one.
+  const alone = composeResultMail({
+    title: "결혼 100제",
+    rows: [{ number: 1, title: "질문", choice: "고른 답" }],
+    link: "https://ab.example/x",
+    compared: false
+  });
+  assert.equal(alone.subject, RESULT_COPY.mailSubject("결혼 100제"));
+  assert.equal(alone.body.includes("https://"), false);
+  assert.equal(alone.left, 0);
+
+  // The recipient is left for the reader to choose, so no address is ever the site's.
+  const href = mailtoHref(alone);
+  assert.ok(href.startsWith("mailto:?"), href.slice(0, 20));
+  assert.equal(decodeURIComponent(href).includes(alone.body), true);
+
+  // And the sheet offers it.
+  const html = renderResultPage(PUBLISHED[0].slug, published, site);
+  assert.match(html, /data-mail-open/);
+  assert.match(html, /data-mail-copy/);
+  assert.ok(html.includes(RESULT_COPY.mailNote));
+  // The pack's own name travels with the index, so the subject is not the sheet's title.
+  assert.match(html, new RegExp(`"title":"${PUBLISHED[0].title}"`));
+});
+
+test("AdSense is two ids away, and absent until they are set", () => {
+  const withAds = siteWith({ ...site, adsenseClient: "ca-pub-1234567890123456", adsenseSlot: "9876543210" });
+  const on = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site: withAds }), withAds);
+  assert.match(on, /pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-1234567890123456/);
+  assert.equal((on.match(/class="adsbygoogle"/g) || []).length, 1, "one unit a page");
+  // An ad is not hidden from a screen reader once it is really there.
+  assert.equal(on.includes('data-ad-slot="after-questions" aria-hidden'), false);
+  // The site's own rule about where: after the questions, before the control that leaves the page.
+  assert.ok(on.indexOf('class="adsbygoogle"') > on.indexOf('class="questions"'));
+  assert.ok(on.indexOf('class="adsbygoogle"') < on.indexOf('class="pager"'));
+
+  // Nothing at all until a publisher is named — no script, no unit, and the empty box stays hidden.
+  const off = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+  assert.equal(off.includes("adsbygoogle"), false);
+  assert.equal(off.includes("googlesyndication"), false);
+  assert.match(off, /<div class="ad-slot" data-ad-slot="after-questions" aria-hidden="true">/);
+
+  // ads.txt names the publisher, so it is written only when there is one.
+  const build = readFileSync("scripts/build-site.mjs", "utf8");
+  assert.match(build, /if \(site\.adsenseClient\)/);
+  assert.match(build, /google\.com, \$\{publisher\}, DIRECT, f08c47fec0942fa0/);
 });

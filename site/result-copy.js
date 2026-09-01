@@ -43,7 +43,24 @@ export const RESULT_COPY = Object.freeze({
   compareMine: "나",
   compareTheirs: "상대",
   compareUnreadable: "링크를 읽을 수 없어요. 같은 질문집의 링크인지 확인해 주세요.",
-  compareCount: (n, total) => `두 사람 모두 답한 질문 ${n} / ${total}`
+  compareCount: (n, total) => `두 사람 모두 답한 질문 ${n} / ${total}`,
+  /*
+   * Mailing a result. The site has no server and sends nothing: this opens the reader's own mail
+   * app with the text already written, the recipient blank so no address is ever ours, and a copy
+   * button beside it for the machines where `mailto:` does nothing at all.
+   */
+  mailAction: "메일로 보내기",
+  mailCopy: "본문 복사",
+  mailNote: "메일 앱이 열립니다. 받는 사람은 직접 고르세요. 이 사이트는 아무것도 전송하지 않아요.",
+  mailCopied: "본문을 복사했어요.",
+  mailEmpty: "먼저 질문에 답해야 보낼 내용이 생겨요.",
+  mailSubject: (title) => `${title} · 내가 고른 답`,
+  mailSubjectCompared: (title) => `${title} · 우리가 다르게 고른 질문`,
+  mailMine: "나",
+  mailTheirs: "상대",
+  mailBothWarning: "이 메일에는 두 사람의 답이 들어 있어요.",
+  mailMore: (n) => `그 밖에 ${n}개가 더 있어요. 전체는 아래 링크에서 볼 수 있어요.`,
+  mailLinkLabel: "전체 보기"
 });
 
 /**
