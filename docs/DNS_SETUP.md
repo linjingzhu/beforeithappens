@@ -5,12 +5,19 @@ once, at the registrar, and never again.
 
 ## What is there now
 
+Asked directly, the authoritative nameservers hold exactly one address record:
+
 ```
-lovemedialogue.com  A  118.67.131.217
+lovemedialogue.com.  3600  IN  A   118.67.131.217          # the parking page, not GitHub
+lovemedialogue.com.  3600  IN  NS  ns1..ns4.whoisdomain.kr.
+                     no AAAA, no CNAME, no TXT
 ```
 
-That is the registrar's parking page, not GitHub. **It has to go** — an apex name cannot point at
-two places, and leaving it means the site loads intermittently or not at all.
+Two things follow. **The nameservers are already correct** — `whoisdomain.kr` is 후이즈's own DNS, and
+네임서버 변경 rejects the same values with *"변경 전 네임서버와 동일한 네임서버"*, which is the
+registrar saying there is nothing to change. And **that one A record is the whole problem**: an apex
+cannot point at two places, so it has to be replaced rather than added to. TTL 3600 means the change
+is visible within the hour.
 
 ## Two ways, pick by what the registrar offers
 ### Whois.co.kr: which screen
@@ -23,11 +30,13 @@ The domain is registered at 후이즈. Its domain menu has an item that *sounds*
 | **외부 서비스 도메인 연결** | A wizard for a fixed list of Korean services | **No.** GitHub Pages is not on it |
 | **네임서버 변경** | Which nameservers the domain delegates to | **Start here** — it decides where the records get edited |
 
-There is no record editor in that menu. Where the records live depends on what 네임서버 변경 shows:
+There is no record editor in that menu, and 네임서버 변경 has already been checked: the domain is on
+후이즈's own `whoisdomain.kr` nameservers. So the records are 후이즈's to edit, in the DNS 관리 /
+네임서버 호스팅 area — reachable from the 네임서버 호스팅 서비스 link in that warning, which is the
+registrar naming its own screen and therefore more reliable than any menu path written down here.
 
-- 후이즈's own nameservers (`ns1.whois.co.kr`, `ns2.whois.co.kr`) → edit in 후이즈's DNS 관리 /
-  네임서버 호스팅 area, reachable from the 네임서버 호스팅 서비스 link in that warning.
-- Anything else → whoever runs those nameservers is holding the records.
+**DNS 호스트 관리 cannot do it even if you try.** Its 호스트 추가 form fixes the name as
+`____.lovemedialogue.com`, so the apex is not expressible in it at all.
 
 You are on a record editor when there is a **record-type dropdown (A / AAAA / CNAME / MX / TXT) and
 an add-record button**. A screen offering only a host name and an IP address is the wrong one.
