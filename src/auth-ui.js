@@ -177,7 +177,7 @@ export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite 
           <p>${escapeHtml(INVITE_COPY.deviceRule)}</p>
           <p>${escapeHtml(INVITE_COPY.emailCheck)}</p>
         ` : `
-          <p>파트너 이메일로 초대를 보내면, 상대가 수락한 뒤에만 결혼 준비 팩이 열려요.</p>
+          <p>파트너 이메일을 적으면 그 주소로만 수락할 수 있는 초대 링크가 만들어져요. 링크는 직접 보내주세요.</p>
           <p>${escapeHtml(INVITE_COPY.rule)}</p>
         `;
   return `

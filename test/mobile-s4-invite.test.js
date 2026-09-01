@@ -103,8 +103,8 @@ test("S4 copy is exact and locked to the web invite strings", () => {
   assert.deepEqual(s4ShareButtons(), ["링크 복사", "인스타그램", "카카오톡"]);
   assert.equal(S4_COPY.copied, "링크를 복사했어요.");
   assert.equal(S4_COPY.deviceRule, "같은 폰에서 두 계정을 동시에 쓸 수는 없어요.");
-  assert.equal(S4_COPY.emailCheck, "초대 메일이 맞는지 다시 확인해 주세요.");
-  assert.equal(S4_COPY.editResend, "이메일 수정하고 다시 보내기");
+  assert.equal(S4_COPY.emailCheck, "상대 이메일이 맞는지 다시 확인해 주세요.");
+  assert.equal(S4_COPY.editResend, "이메일 고치고 링크 다시 만들기");
   assert.equal(S4_COPY.logoutHandoff, "로그아웃 후 이 기기를 넘겨주세요.");
   assert.equal(SAME_SESSION_COPY.message, "이 기기에 다른 계정으로 로그인되어 있어요.");
   assert.equal(SAME_SESSION_COPY.cta, "로그아웃하고 넘기기");
@@ -140,8 +140,8 @@ test("S4 buyer home is invite-waiting with no pack CTA, payment, or role switch"
   assert.match(html, /카카오톡/);
   assert.match(html, /링크를 복사했어요\./);
   assert.match(html, /같은 폰에서 두 계정을 동시에 쓸 수는 없어요\./);
-  assert.match(html, /초대 메일이 맞는지 다시 확인해 주세요\./);
-  assert.match(html, /이메일 수정하고 다시 보내기/);
+  assert.match(html, /상대 이메일이 맞는지 다시 확인해 주세요\./);
+  assert.match(html, /이메일 고치고 링크 다시 만들기/);
   assert.match(html, /로그아웃 후 이 기기를 넘겨주세요\./);
   assert.equal(html.includes("결혼 팩 시작하기"), false);
   assert.equal(html.includes("이 워크스페이스에 합류할까요?"), false);
@@ -186,9 +186,9 @@ test("same-session failure is an independent screen and not a role switch", () =
 
 test("expired and mismatch copies stay the product strings", () => {
   assert.equal(inviteBlockingCopy("expired"), "초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.");
-  assert.equal(inviteBlockingCopy("mismatch"), "이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요.");
+  assert.equal(inviteBlockingCopy("mismatch"), "이 초대는 다른 이메일로 만들어졌어요. 초대받은 메일로 로그인해야 해요.");
   assert.match(renderInviteBlock("expired"), /초대가 만료됐어요/);
-  assert.match(renderInviteBlock("mismatch"), /이 초대는 다른 이메일로 보내졌어요/);
+  assert.match(renderInviteBlock("mismatch"), /이 초대는 다른 이메일로 만들어졌어요/);
 });
 
 test("S4 share reuses the web share helper for the existing invite link", async () => {
@@ -216,8 +216,8 @@ test("iOS and Android screens carry the exact copy and omit store/join/deferred 
     "카카오톡",
     "링크를 복사했어요.",
     "같은 폰에서 두 계정을 동시에 쓸 수는 없어요.",
-    "초대 메일이 맞는지 다시 확인해 주세요.",
-    "이메일 수정하고 다시 보내기",
+    "상대 이메일이 맞는지 다시 확인해 주세요.",
+    "이메일 고치고 링크 다시 만들기",
     "이 기기에 다른 계정으로 로그인되어 있어요.",
     "로그아웃하고 넘기기",
     "로그아웃 후 이 기기를 넘겨주세요."

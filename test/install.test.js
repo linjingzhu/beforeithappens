@@ -29,9 +29,9 @@ test("install copies are exact and locked invite strings stay unchanged", () => 
   assert.equal(INSTALL_COPY.inAppHint, "바로 설치가 안 될 수 있어요. Safari 또는 Chrome에서 열어 주세요.");
   assert.equal(INSTALL_COPY.openBrowser, "브라우저에서 열기");
   assert.equal(INVITE_COPY.expired, "초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.");
-  assert.equal(INVITE_COPY.mismatch, "이 초대는 다른 이메일로 보내졌어요. 초대받은 메일로 로그인해야 해요.");
+  assert.equal(INVITE_COPY.mismatch, "이 초대는 다른 이메일로 만들어졌어요. 초대받은 메일로 로그인해야 해요.");
   assert.equal(INVITE_COPY.otherSession, "이 기기에 다른 계정으로 로그인되어 있어요.");
-  assert.equal(INVITE_COPY.emailCheck, "초대 메일이 맞는지 다시 확인해 주세요.");
+  assert.equal(INVITE_COPY.emailCheck, "상대 이메일이 맞는지 다시 확인해 주세요.");
   const screens = [
     renderInviteWaitingHome({ invite: { status: "waiting", remainingMs: 60000, lastSentAt: "2026-08-23T00:00:00.000Z", url: "/invite/accept?token=a" } }),
     renderInviteAccept({ error: "expired" }),

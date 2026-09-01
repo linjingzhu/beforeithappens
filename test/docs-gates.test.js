@@ -49,12 +49,12 @@ test("locked product gates are written into the three product docs", async () =>
   assert.match(ux, /카카오톡/);
   assert.match(ux, /링크를 복사했어요/);
   assert.match(ux, /같은 폰에서 두 계정을 동시에 쓸 수는 없어요/);
-  assert.match(ux, /초대 메일이 맞는지 다시 확인해 주세요/);
-  assert.match(ux, /이메일 수정하고 다시 보내기/);
+  assert.match(ux, /상대 이메일이 맞는지 다시 확인해 주세요/);
+  assert.match(ux, /이메일 고치고 링크 다시 만들기/);
   assert.match(ux, /이 기기에 다른 계정으로 로그인되어 있어요/);
   assert.match(ux, /로그아웃하고 넘기기/);
   assert.match(spec, /링크를 보내 파트너를 초대하세요/);
-  assert.match(spec, /초대 메일이 맞는지 다시 확인해 주세요/);
+  assert.match(spec, /상대 이메일이 맞는지 다시 확인해 주세요/);
   assert.match(spec, /이 기기에 다른 계정으로 로그인되어 있어요/);
   assert.match(spec, /Do not replace KakaoTalk share/);
   assert.match(spec, /이메일을 연결해 주세요/);
