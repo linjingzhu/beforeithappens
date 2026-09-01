@@ -146,62 +146,97 @@ a { color: var(--ab-ink); }
 
 .stage { display: flex; flex-direction: column; min-width: 0; }
 
-.stage-head { padding: 24px 16px 0; }
-
-.stage-head h1 {
-  font-family: MaruBuri, Georgia, serif;
-  max-width: 40rem;
-  margin: 0 auto 16px;
-  font-size: 24px;
-  line-height: 1.3;
+.stage-head {
+  padding: 40px 16px 0;
+  text-align: center;
 }
 
 /*
- * The tab strip stays while the questions move past it: on a page of ten, knowing which Part you
- * are in — and being able to leave for another — should not require scrolling back up. The title
- * above it does scroll away; it says the same thing on all ten pages and the tab says the part.
- *
- * Opaque, because it now passes over cards. Sideways-scrolling rather than wrapping on a phone,
- * with `scroll-snap` so the movement lands on a tab instead of halfway through one.
+ * The pack's name, at display size. It is the first thing on the page and the only thing on it that
+ * is not a question, so it is allowed to be large; `clamp` keeps it from swallowing a phone.
  */
-.parts {
+.stage-head h1 {
+  font-family: MaruBuri, Georgia, serif;
+  max-width: 40rem;
+  margin: 0 auto 12px;
+  font-size: clamp(34px, 5.2vw, 54px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+/* The question the hundred are for. The one question on the page nobody is asked to answer. */
+.stage-tagline {
+  max-width: 40rem;
+  margin: 0 auto 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stage-blurb {
+  max-width: 40rem;
+  margin: 0 auto 24px;
+  color: var(--ab-muted);
+  font-size: 15px;
+}
+
+/*
+ * The bar that stays while the questions move past it: the Parts, and how far through them the
+ * reader has got. On a page of ten, knowing where you are — and being able to leave for another
+ * Part — should not require scrolling back up. The title above it does scroll away; it says the
+ * same thing on all ten pages, and the tab says the Part.
+ *
+ * Tabs and progress stick as one unit, so the progress bar is always the line under the tabs
+ * rather than something that catches up with them.
+ */
+.tabbar {
   position: sticky;
   top: 0;
   z-index: 20;
-  display: flex;
-  /*
-   * `safe center` rather than plain `center`: centred while the tabs fit, and start-aligned the
-   * moment they do not. Plain `center` on a scrolling row pushes the overflow off *both* ends and
-   * makes the first tabs unreachable — you cannot scroll to something that starts before the
-   * scroll origin. On a phone ten tabs never fit, so that is the case, not the edge case.
-   */
-  justify-content: safe center;
-  gap: 4px;
-  padding: 4px 16px 0;
   background: var(--ab-paper);
   border-bottom: 1px solid var(--ab-line);
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
 }
 
-/* Wide enough to hold them all: wrap instead of scroll, so ten Parts are ten visible Parts. */
-@media (min-width: 900px) {
+.parts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 16px 0;
+}
+
+/*
+ * Narrow: one row that scrolls, with the current tab pinned to the left edge by `enhance.js`.
+ *
+ * Wrapping ten titles into four rows would make the sticky bar taller than the question under it,
+ * and centring a row that scrolls is worse than useless — what runs off the left of a scroll
+ * container cannot be scrolled back to. Left is also the one position that does not move: the
+ * highlighted tab lands in the same place on all ten Parts, which is what makes the bar feel fixed
+ * rather than shuffled.
+ */
+@media (max-width: 899px) {
   .parts {
-    flex-wrap: wrap;
-    overflow-x: visible;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /*
+     * A screen's worth of room after the last tab, so that every tab can reach the left edge.
+     * Without it the final Parts run out of scroll and stop wherever they land, which is the
+     * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule
+     * that holds for seven of ten is not one.
+     */
+    padding-right: 100%;
   }
-}
 
-/* So an in-page link does not land a question underneath the strip that is now covering the top. */
-html { scroll-padding-top: 120px; }
+  .parts::-webkit-scrollbar { display: none; }
+}
 
 .part-tab {
   display: flex;
   flex-direction: column;
   justify-content: center;
   flex: none;
-  scroll-snap-align: start;
   min-height: 52px;
   padding: 6px 14px;
   border-bottom: 2px solid transparent;
@@ -220,7 +255,26 @@ html { scroll-padding-top: 120px; }
   font-variant-numeric: tabular-nums;
 }
 
+.part-tab-n::before { content: "Part "; }
+
 .part-tab-title { font-size: 14px; font-weight: 600; white-space: nowrap; }
+
+/* The progress bar. A line, not a widget: no text, no number, no percentage on the screen. */
+.progress {
+  height: 3px;
+  background: var(--ab-line);
+}
+
+.progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--ab-accent);
+  transition: width 0.25s ease;
+}
+
+/* So an in-page link does not land a question underneath the strip that is now covering the top. */
+html { scroll-padding-top: 120px; }
 
 /* One column, capped at a comfortable measure. Long lines are the main way a reading page fails. */
 .page {

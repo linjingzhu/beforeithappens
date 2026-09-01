@@ -23,10 +23,12 @@ export const SITE_COPY = Object.freeze({
   previous: "이전",
   backToIndex: "질문집 목록",
   partsLabel: "파트",
+  progressLabel: "답한 질문",
+  /** Spelled out where there is room to spell it: the page's own heading. */
+  partOrdinal: (n) => `Part ${n}`,
   partsUnit: "개 파트",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
-  partWord: (n) => `Part ${n}`,
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
   ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
@@ -99,13 +101,33 @@ function adSlot(model) {
 function partTabs(parts) {
   const tabs = parts
     .map((part) => `          <a class="part-tab${part.current ? " is-current" : ""}" href="${escapeHtml(part.path)}"${part.current ? ' aria-current="page"' : ""}>
-            <span class="part-tab-n">${escapeHtml(SITE_COPY.partWord(part.number))}</span>
+            <span class="part-tab-n">${part.number}</span>
             <span class="part-tab-title">${escapeHtml(part.title)}</span>
           </a>`)
     .join("\n");
   return `        <nav class="parts" aria-label="${escapeHtml(SITE_COPY.partsLabel)}">
 ${tabs}
         </nav>`;
+}
+
+/**
+ * How far through the pack's questions the reader has got, as a bar and nothing else.
+ *
+ * No text: a number beside it would be a second thing to read on a bar that is already the message,
+ * and "12 / 100" so early reads as a rebuke. The value is still announced — `role="progressbar"`
+ * with `aria-valuenow` says it to a screen reader without putting it on the screen.
+ *
+ * It starts empty and fills in as answers are recorded, which means it stays empty without
+ * scripting. That is accurate rather than broken: answers live in `localStorage`, so with scripting
+ * off nothing has been recorded and there is nothing to show.
+ */
+function progressBar(total) {
+  const max = Number(total) || 0;
+  if (!max) return "";
+  return `        <div class="progress" role="progressbar" aria-label="${escapeHtml(SITE_COPY.progressLabel)}"
+          aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="0" data-progress-total="${max}">
+          <span class="progress-fill" data-progress-fill></span>
+        </div>`;
 }
 
 /**
@@ -121,10 +143,22 @@ function stageHead(chrome) {
   // The strip is a sibling of the header, not a child of it. A sticky element can only stay while
   // its own parent is on screen, so nesting it in a header that scrolls away would take it along
   // after one screenful. Out here its parent is the whole stage, which is what "stays" means.
-  const tabs = chrome.parts?.length ? `\n${partTabs(chrome.parts)}` : "";
+  const bar = chrome.parts?.length
+    ? `\n      <div class="tabbar">
+${partTabs(chrome.parts)}
+${progressBar(chrome.total)}
+      </div>`
+    : "";
+  // The full opening — the question the hundred are for, and what they cover — belongs on the way
+  // in. Repeating it above all ten Parts would push the questions off the screen nine times to say
+  // something the reader has already read.
+  const opening = chrome.first && chrome.tagline
+    ? `\n        <p class="stage-tagline">${escapeHtml(chrome.tagline)}</p>
+        <p class="stage-blurb">${escapeHtml(chrome.description)}</p>`
+    : "";
   return `      <header class="stage-head">
-        <h1>${escapeHtml(chrome.title)}</h1>
-      </header>${tabs}
+        <h1>${escapeHtml(chrome.title)}</h1>${opening}
+      </header>${bar}
 `;
 }
 
@@ -251,7 +285,7 @@ export function renderQuestionPage(model, site = SITE) {
   // Only the Part's own content. Its name and its siblings' tabs are the shell's, because they are
   // the same on every Part of the pack.
   const body = `      <main class="page">
-        <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partWord(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
+        <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partOrdinal(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map(questionArticle).join("\n")}
         </section>
@@ -266,7 +300,14 @@ ${callToAction(site)}
     scripts: enhancement(),
     currentSlug: model.slug,
     // The pack's title, and its Parts' own labels — both straight from the pack.
-    chrome: { title: model.title, parts: model.parts }
+    chrome: {
+      title: model.title,
+      tagline: model.tagline,
+      description: model.description,
+      first: model.first,
+      parts: model.parts,
+      total: model.total
+    }
   });
 }
 

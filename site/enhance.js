@@ -1,4 +1,4 @@
-import { createAnswerStore, withAnswer, withDiscussionFlag } from "./answers.js";
+import { answeredCount, createAnswerStore, withAnswer, withDiscussionFlag } from "./answers.js";
 import { RESULT_COPY } from "./result-copy.js";
 import { reflect } from "./reflect.js";
 
@@ -138,26 +138,50 @@ function startResultPage(root, store) {
 }
 
 /**
- * Bring the current Part's tab into view inside the strip.
+ * Pin the current Part's tab to the left edge of the strip.
  *
- * On a phone the strip scrolls sideways and ten tabs do not fit, so landing on Part 7 puts the tab
- * that says where you are off the left edge. `scrollLeft` rather than `scrollIntoView`: the latter
- * can scroll the page as well as the strip, and the page is exactly where the reader already is.
+ * On a phone the strip is one scrolling row and ten tabs do not fit, so without this the tab that
+ * says where you are can be off-screen. Left rather than centred because left is the one position
+ * that is the same on every Part — the highlighted tab lands in the same place each time, which is
+ * what stops the bar looking reshuffled on every page turn.
  *
- * Enhancement, like the rest of this module. Without it the strip simply starts at Part 1, which is
- * a worse first glance and not a broken page.
+ * `scrollLeft` rather than `scrollIntoView`: the latter can scroll the page as well as the strip,
+ * and the page is exactly where the reader already is.
+ *
+ * Run twice, once now and once when the webfonts have loaded. The first pass uses fallback metrics
+ * and every tab changes width when MaruBuri and Pretendard arrive, so a single early pass leaves the
+ * tab a little further off with each Part — which is exactly the drift this is here to remove.
  */
-function revealCurrentTab() {
+function pinCurrentTab() {
   const strip = document.querySelector(".parts");
   const current = strip?.querySelector(".part-tab.is-current");
   if (!strip || !current) return;
-  // Nothing to do when they all fit, which is the desktop case where the strip wraps instead.
-  if (strip.scrollWidth <= strip.clientWidth) return;
-  strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
+  if (strip.scrollWidth <= strip.clientWidth) {
+    strip.scrollLeft = 0;
+    return;
+  }
+  // Measured against the strip itself rather than an offsetParent that may be an ancestor, and
+  // past its own left padding, so the tab's edge lands on the strip's visible edge.
+  const left = current.getBoundingClientRect().left - strip.getBoundingClientRect().left;
+  const padding = parseFloat(getComputedStyle(strip).paddingLeft) || 0;
+  strip.scrollLeft += left - padding;
+}
+
+/** The bar under the tabs: answers recorded across the whole pack, as a width and an aria value. */
+function showProgress(store) {
+  const bar = document.querySelector("[data-progress-total]");
+  const fill = bar?.querySelector("[data-progress-fill]");
+  if (!bar || !fill) return;
+  const total = Number(bar.getAttribute("data-progress-total")) || 0;
+  if (!total) return;
+  const answered = Math.min(answeredCount(store.read()), total);
+  fill.style.width = `${(answered / total) * 100}%`;
+  bar.setAttribute("aria-valuenow", String(answered));
 }
 
 function start() {
-  revealCurrentTab();
+  pinCurrentTab();
+  document.fonts?.ready?.then(pinCurrentTab).catch(() => {});
 
   const slug = slugFromPath();
   if (!slug) return;
@@ -173,6 +197,9 @@ function start() {
   if (!questions) return;
   restoreQuestionPage(questions, store);
   bindQuestionPage(questions, store);
+  showProgress(store);
+  // Every recorded answer moves the bar, including one made on this page a moment ago.
+  questions.addEventListener("change", () => showProgress(store));
 }
 
 if (typeof document !== "undefined") start();
