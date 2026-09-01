@@ -59,6 +59,35 @@ The current slice persists `User`, OAuth identities, magic-link tokens, sessions
 - Private notes have a separate authorization path and never join report queries.
 - Database timestamps use UTC; presentation uses the user's locale.
 
+## Account deletion (탈퇴)
+
+Deletion is by session (`POST /api/account/delete`), needs an explicit confirmation, and is irreversible. The session is invalidated by the same write, so a repeat call is simply unauthenticated and changes nothing.
+
+Erased outright, because it is identifying or author-only:
+
+- the `User` row (email), all OAuth identities, all magic links for that user and for that email, and all sessions;
+- every `PrivateNote`, every `Answer` (draft and submitted) and every progress row the user authored;
+- every `CoupleMember` row of the user, and every invitation the user issued;
+- any workspace where the user was the only accepted member, with all of its content.
+
+Kept and never rewritten:
+
+- `PublicLock` rows of a shared workspace. A lock is an immutable snapshot of a completed round and belongs to both members, so deletion neither mutates nor removes it. Its `submissions.*.userId` becomes an opaque id with no `User`, identity or membership behind it, so it resurrects nobody and joins to nothing.
+
+Kept with the identity pointer scrubbed:
+
+- `Agreement`: the shared text and status stay; `proposedByUserId` and `approvedByUserId` are set to null where they named the departed user.
+- `Purchase`: the order record stays for accounting; `buyerUserId` is set to null.
+
+The member left behind:
+
+- the shared `CoupleWorkspace` is archived, not deleted (`status = "archived"`, `pairCode` cleared, `ownerUserId` nulled), so no future partner is ever shown the departed couple's locks;
+- a fresh active workspace is created with the surviving member as buyer, so they can invite again — the ordinary rule still holds, and the pack stays locked until a new partner accepts;
+- an active `Entitlement` moves to that fresh workspace, so a paid pack is not lost because the other person left;
+- unused invitations of the closed workspace are expired.
+
+Private notes are never handed to the partner, in life or in deletion: they are deleted with their author and are not part of any archived record anyone can read.
+
 ## Reveal transaction
 
 When the second member submits, the server locks the answer round, verifies two valid submissions, marks it revealed exactly once, and returns the comparison result. Frontend hiding is never used as the security boundary.

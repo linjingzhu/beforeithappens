@@ -1,6 +1,4 @@
-import { writeFileSync } from "node:fs";
-import { mkdir, readFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import { createSqliteStore, resolveStorePaths } from "./store-sqlite.mjs";
 
 export function emptyState() {
   return {
@@ -19,7 +17,9 @@ export function emptyState() {
     progress: [],
     purchases: [],
     entitlements: [],
-    webhookEvents: []
+    webhookEvents: [],
+    auditEvents: [],
+    reportSnapshots: []
   };
 }
 
@@ -35,23 +35,18 @@ export function createMemoryStore(initial = emptyState()) {
   };
 }
 
+/**
+ * The durable store. Same two methods as the memory store, but every mutation is one
+ * SQLite transaction: a crash cannot leave a half-written state, two processes writing
+ * at the same moment cannot lose each other's rows, and the uniqueness documented in
+ * docs/DATA_MODEL.md is enforced by the database.
+ *
+ * A `.json` path keeps working: the database lives beside it as `.sqlite` and the old
+ * JSON file is imported once, then left untouched as a cold backup.
+ */
 export async function createFileStore(filePath) {
-  await mkdir(dirname(filePath), { recursive: true });
-  let state = emptyState();
-  try {
-    state = { ...emptyState(), ...JSON.parse(await readFile(filePath, "utf8")) };
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  const persist = () => writeFileSync(filePath, `${JSON.stringify(state, null, 2)}\n`);
-  persist();
-  return {
-    snapshot() {
-      return structuredClone(state);
-    },
-    mutate(writer) {
-      writer(state);
-      persist();
-    }
-  };
+  const { dbPath, jsonPath } = resolveStorePaths(filePath);
+  return createSqliteStore(dbPath, { importJsonFrom: jsonPath });
 }
+
+export { createSqliteStore, resolveStorePaths };

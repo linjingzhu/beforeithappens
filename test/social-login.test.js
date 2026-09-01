@@ -70,7 +70,10 @@ test("OAuth without client ids stays stubbed behind env flags", () => {
   assert.equal(isOAuthConfigured("google", env), false);
   assert.deepEqual(oauthEnvFlags(env), { kakao: false, naver: false, google: false });
   assert.equal(oauthAuthorizeUrl("kakao", { origin: "https://ab.example", env }), "");
-  const wired = { AB_OAUTH_GOOGLE_CLIENT_ID: "google-client" };
+  const idOnly = { AB_OAUTH_GOOGLE_CLIENT_ID: "google-client" };
+  assert.equal(isOAuthConfigured("google", idOnly), false);
+  assert.equal(oauthAuthorizeUrl("google", { origin: "https://ab.example", env: idOnly }), "");
+  const wired = { AB_OAUTH_GOOGLE_CLIENT_ID: "google-client", AB_OAUTH_GOOGLE_CLIENT_SECRET: "google-secret" };
   assert.equal(isOAuthConfigured("google", wired), true);
   assert.match(oauthAuthorizeUrl("google", { origin: "https://ab.example", env: wired }), /accounts\.google\.com/);
 });

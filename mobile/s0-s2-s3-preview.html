@@ -40,6 +40,7 @@
       setEmail,
       requestLinkStarted,
       submitMagicLink,
+      startPackFromIntro,
       submitSampleAnswer,
       tapUnlock
     } from "./s0-s2-s3-flow.js";
@@ -77,6 +78,11 @@
     if (start === "invite") {
       state = openSendLink(noticeAcknowledged(consumeSucceeded(finishSplash(state), { ...loggedIn, notice: "no-local-draft" }), loggedIn));
       state = { ...state, pairCodeDisplay: "4K7M", inviteUrl: "https://example.test/invite/open" };
+    }
+    if (start === "pack-intro") {
+      const pack = params.get("pack") || "marriage";
+      const introHome = finishSplash(createNativeFlow(loggedIn));
+      state = pack === "marriage" ? openMarriageFromList(introHome) : openComingSoonFromList(introHome, pack);
     }
     if (start === "coming-soon") {
       const pack = params.get("pack") || "home-mgmt";
@@ -131,6 +137,7 @@
           ? noticeAcknowledged(state, { ...state.session, notice: null })
           : await acknowledgeLoginNotice(state, api);
       }       else if (action === "open-marriage") state = openMarriageFromList(state);
+      else if (action === "start-pack") state = startPackFromIntro(state);
       else if (action === "submit-sample") {
         const choice = root.querySelector("input[name='sample-choice']:checked")?.value || state.sampleChoice;
         const reason = root.querySelector("#sample-reason")?.value || state.sampleReason;

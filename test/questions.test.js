@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { marriagePack, questions } from "../src/questions.js";
+import { SAMPLE_LOCK_COUNT } from "../server/answers.mjs";
 
 test("question IDs are unique", () => {
   assert.equal(new Set(questions.map((question) => question.id)).size, questions.length);
@@ -27,7 +28,8 @@ test("published pack metadata and content IDs are stable and unique", () => {
   assert.equal(marriagePack.id, "marriage-preparation");
   assert.match(marriagePack.version, /^2026\.08-preview\.2$/);
   assert.equal(marriagePack.locale, "ko-KR");
-  assert.equal(marriagePack.freeQuestionCount, 12);
+  assert.equal(marriagePack.freeQuestionCount, SAMPLE_LOCK_COUNT);
+  assert.ok(marriagePack.freeQuestionCount < marriagePack.questions.length);
   assert.equal(marriagePack.questions.length, 12);
   assert.equal(new Set(marriagePack.sections.map((section) => section.id)).size, marriagePack.sections.length);
   for (const section of marriagePack.sections) assert.equal(questions.filter((question) => question.sectionId === section.id).length, 2);

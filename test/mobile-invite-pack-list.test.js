@@ -18,6 +18,7 @@ import {
   noticeAcknowledged,
   openAccount,
   openMarriageFromList,
+  startPackFromIntro,
   openSendLink,
   restoreSessionAfterSplash,
   shareMeasurementInvite
@@ -169,7 +170,7 @@ test("consume lands on notice or 질문집; marriage opens pack detail then 링�
   );
   assert.equal(cold.screen, "pack-list");
   assert.equal(renderPackListScreen().includes("프로필"), false);
-  const opened = openMarriageFromList(cold);
+  const opened = startPackFromIntro(openMarriageFromList(cold), () => 0);
   assert.equal(opened.screen, "sample-q");
   const invite = openSendLink(opened);
   assert.equal(invite.screen, "invite");

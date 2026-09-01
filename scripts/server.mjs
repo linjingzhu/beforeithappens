@@ -7,12 +7,18 @@ import { createListener } from "../server/app.mjs";
 import { createEntitlement } from "../server/entitlement.mjs";
 import { createFileStore } from "../server/store.mjs";
 import { createCouple } from "../server/workspace.mjs";
+import { createAccount } from "../server/account.mjs";
+import { createReport } from "../server/report.mjs";
 
 const root = process.cwd();
-const store = await createFileStore(fileURLToPath(new URL("../data/ab-store.json", import.meta.url)));
+const storePath = process.env.AB_STORE_PATH
+  || fileURLToPath(new URL("../data/ab-store.json", import.meta.url));
+const store = await createFileStore(storePath);
 const couple = createCouple({ store });
+const account = createAccount({ store });
 const pack = { id: marriagePack.id, version: marriagePack.version };
 const entitlement = createEntitlement({ store, pack });
+const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
 const answers = createAnswers({
   store,
   questionIds: questions.map((question) => question.id),
@@ -27,6 +33,6 @@ const auth = createAuth({
 });
 const allowDevOutbox = process.env.AB_DEV_OUTBOX === "1" && process.env.NODE_ENV !== "production";
 const allowDevOAuth = process.env.AB_DEV_OAUTH === "1" && process.env.NODE_ENV !== "production";
-const server = createServer(createListener({ auth, couple, answers, entitlement, root, allowDevOutbox, allowDevOAuth }));
+const server = createServer(createListener({ auth, couple, answers, entitlement, account, report, root, allowDevOutbox, allowDevOAuth }));
 const port = Number(process.env.PORT) || 4173;
-server.listen(port, "0.0.0.0", () => console.log(`AB running at http://localhost:${port}`));
+server.listen(port, "0.0.0.0", () => console.log(`AB running at http://localhost:${port} (store: ${storePath})`));

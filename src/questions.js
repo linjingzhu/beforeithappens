@@ -1,5 +1,5 @@
 export const marriagePack = {
-  id: "marriage-preparation", version: "2026.08-preview.2", locale: "ko-KR", title: "Marriage Preparation Pack", estimatedMinutes: 25, freeQuestionCount: 12,
+  id: "marriage-preparation", version: "2026.08-preview.2", locale: "ko-KR", title: "Marriage Preparation Pack", estimatedMinutes: 25, freeQuestionCount: 3,
   sections: [
     { id: "home", title: "함께 사는 집", description: "생활 공간과 역할에 대한 서로의 기대를 발견합니다." },
     { id: "connection", title: "친밀감과 개인 시간", description: "애정을 느끼는 방식과 각자에게 필요한 시간을 확인합니다." },

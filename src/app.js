@@ -1,8 +1,9 @@
 import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "./auth.js";
-import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "./auth-ui.js";
+import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent, renderWithdrawConfirm, renderWithdrawDone } from "./auth-ui.js";
 import { INSTALL_PATH, START_PATH, isInAppBrowser, openInSystemBrowser, readInstallSkip, resolveInstallView, writeInstallSkip } from "./install.js";
 import { marriagePack, questions } from "./questions.js";
-import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { PACK_LOCK_COPY, WITHDRAW_ERRORS } from "./pair-code.js";
 import { escapeHtml } from "./html.js";
 import { developmentHistory, developmentStages, developmentSummary } from "./development.js";
 
@@ -30,6 +31,9 @@ let openedWhileSignedIn = false;
 let preferInviteLogin = false;
 let partnerEmailDraft = "";
 let installSkipped = readInstallSkip();
+let withdrawStep = "";
+let withdrawError = "";
+let withdrawBusy = false;
 let lastPackView = "product";
 
 function emptyPackState() {
@@ -63,7 +67,7 @@ function applyPackState(next) {
 }
 
 function remainingQuestionOpen(index) {
-  return index < 3 || state.entitlement?.entitled === true;
+  return !isChapterLocked(index, state.entitlement?.entitled === true);
 }
 
 function viewerRole() {
@@ -305,8 +309,10 @@ function render() {
         <aside class="chapter-nav"><span>CONVERSATION</span>${questions.map((item, index) => {
           const itemState = state.questions[item.id];
           const status = isRevealed(itemState) ? "revealed" : isSubmitted(itemState.roles[state.activeRole]) ? "submitted" : "";
-          return `<button class="chapter ${index === state.index ? "active" : ""} ${status}" data-index="${index}"><i>${String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전"}</small></button>`;
-        }).join("")}</aside>
+          const locked = !remainingQuestionOpen(index);
+          const label = locked ? PACK_LOCK_COPY.status : status === "revealed" ? "공개됨" : status === "submitted" ? "제출됨" : "답변 전";
+          return `<button class="chapter ${index === state.index ? "active" : ""} ${status} ${locked ? "locked" : ""}" data-index="${index}" ${locked ? "disabled aria-disabled=\"true\"" : ""}><i>${locked ? "🔒" : String(index + 1).padStart(2, "0")}</i><strong>${escapeHtml(item.chapter)}</strong><small>${label}</small></button>`;
+        }).join("")}${state.remainingLocked ? `<p class="chapter-lock-note">${PACK_LOCK_COPY.notice}</p>` : ""}</aside>
         <article class="question-card">
           <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${questionState.lock ? "공개 잠금" : isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
           <h2>${escapeHtml(question.title)}</h2>
@@ -360,6 +366,26 @@ function renderResultsScreen(results) {
 }
 
 function renderAccountView() {
+  if (withdrawStep === "done") {
+    document.querySelector("#app").innerHTML = renderWithdrawDone();
+    bindAccountNavigation();
+    document.querySelector('[data-action="back-to-onboarding"]')?.addEventListener("click", () => {
+      withdrawStep = "";
+      authScreen = "onboarding";
+      render();
+    });
+    return;
+  }
+  if (session.user && withdrawStep === "confirm") {
+    document.querySelector("#app").innerHTML = renderWithdrawConfirm({
+      email: session.user.email,
+      error: withdrawError,
+      busy: withdrawBusy
+    });
+    bindAccountNavigation();
+    bindWithdrawActions();
+    return;
+  }
   if (session.user) {
     const inviteFlow = Boolean(inviteToken) && !inviteAccepted && !session.workspace?.acceptedPartner;
     const view = resolveSignedInView(session, noticeDismissed, inviteFlow, inviteFlow && isInvitePriorityError(inviteError));
@@ -410,6 +436,7 @@ function renderAccountView() {
   document.querySelector('[data-action="oauth-naver"]')?.addEventListener("click", () => startOAuth("naver"));
   document.querySelector('[data-action="oauth-google"]')?.addEventListener("click", () => startOAuth("google"));
   document.querySelector('[data-action="back-to-onboarding"]')?.addEventListener("click", () => {
+    withdrawStep = "";
     authScreen = userNeedsEmail(session.user) ? "bind" : "onboarding";
     authError = "";
     currentView = "product";
@@ -424,6 +451,22 @@ function renderAccountView() {
   document.querySelector('[data-action="copy-invite-link"]')?.addEventListener("click", () => shareInvite("copy"));
   document.querySelector('[data-action="share-instagram"]')?.addEventListener("click", () => shareInvite("instagram"));
   document.querySelector('[data-action="share-kakao"]')?.addEventListener("click", () => shareInvite("kakao"));
+  bindWithdrawActions();
+}
+
+function bindWithdrawActions() {
+  document.querySelector('[data-action="withdraw"]')?.addEventListener("click", () => {
+    withdrawStep = "confirm";
+    withdrawError = "";
+    currentView = "product";
+    render();
+  });
+  document.querySelector('[data-action="withdraw-cancel"]')?.addEventListener("click", () => {
+    withdrawStep = "";
+    withdrawError = "";
+    render();
+  });
+  document.querySelector('[data-action="withdraw-confirm"]')?.addEventListener("click", withdrawAccount);
 }
 
 function bindAccountNavigation() {
@@ -677,6 +720,51 @@ function continueInviteLogin() {
   render();
 }
 
+async function withdrawAccount() {
+  if (withdrawBusy) return;
+  withdrawBusy = true;
+  withdrawError = "";
+  render();
+  let result = null;
+  try {
+    const response = await fetch("/api/account/delete", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ confirm: true })
+    });
+    result = await response.json();
+  } catch {
+    result = { ok: false, error: "failed" };
+  }
+  withdrawBusy = false;
+  if (!result?.ok) {
+    withdrawError = WITHDRAW_ERRORS[result?.error] || WITHDRAW_ERRORS.failed;
+    render();
+    return;
+  }
+  session = emptySession();
+  state = emptyPackState();
+  saveStatus = "saved";
+  openRationaleQuestionId = null;
+  authScreen = "onboarding";
+  noticeDismissed = false;
+  authError = "";
+  inviteToken = "";
+  invitePreview = null;
+  inviteAccepted = false;
+  inviteCopied = false;
+  inviteError = "";
+  emailDraft = "";
+  partnerEmailDraft = "";
+  currentView = "product";
+  openedWhileSignedIn = false;
+  try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
+  try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
+  withdrawStep = "done";
+  render();
+}
+
 async function logout(options = {}) {
   const continueInvite = options.continueInvite === true;
   try {
@@ -691,6 +779,8 @@ async function logout(options = {}) {
   authScreen = "onboarding";
   noticeDismissed = false;
   authError = "";
+  withdrawStep = "";
+  withdrawError = "";
   inviteAccepted = false;
   inviteCopied = false;
   inviteError = "";

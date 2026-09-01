@@ -1,7 +1,7 @@
 .auth-shell {
   max-width: 720px;
   margin: 0 auto;
-  padding: 74px 26px 80px;
+  padding: var(--v-xxxl) var(--gutter-right) calc(var(--v-xxxl) + var(--v-xl) + var(--safe-bottom)) var(--gutter-left);
 }
 
 .auth-card {
@@ -13,7 +13,7 @@
 
 .auth-card h1 {
   margin: 16px 0 14px;
-  font: 500 clamp(36px, 7vw, 56px)/1.12 Georgia, serif;
+  font: 500 var(--type-hero)/var(--leading-hero) var(--font-title);
   letter-spacing: -.04em;
 }
 
@@ -21,8 +21,8 @@
   max-width: 34rem;
   margin: 0 0 28px;
   color: var(--muted);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: var(--type-body);
+  line-height: var(--leading-relaxed);
 }
 
 .auth-form {
@@ -31,7 +31,7 @@
 }
 
 .auth-form label {
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 800;
 }
 
@@ -40,12 +40,13 @@
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  font: 16px/1.4 inherit;
-  background: white;
+  /* A fixed 17px step: anything smaller makes iOS Safari zoom the page on focus. */
+  font: var(--text-body-large)/var(--leading-tight) inherit;
+  background: var(--surface);
 }
 
 .auth-form input:focus {
-  outline: 3px solid #587fae;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
   border-color: var(--coral);
 }
@@ -54,7 +55,7 @@
   min-height: 48px;
   margin-top: 8px;
   border-radius: 12px;
-  font-size: 15px;
+  font-size: var(--type-body);
   font-weight: 700;
   cursor: pointer;
 }
@@ -66,15 +67,15 @@
 
 .auth-error {
   margin: 16px 0 0;
-  color: #b64838;
-  font-size: 13px;
+  color: var(--error);
+  font-size: var(--type-footnote);
   font-weight: 700;
 }
 
 .auth-social-divider {
   margin: 22px 0 12px !important;
   color: var(--muted) !important;
-  font-size: 13px !important;
+  font-size: var(--type-footnote) !important;
   font-weight: 700;
   text-align: center;
 }
@@ -91,7 +92,7 @@
 .auth-email-hint {
   margin-top: -12px !important;
   color: var(--ink) !important;
-  font-size: 14px !important;
+  font-size: var(--type-footnote) !important;
 }
 
 .invite-status {
@@ -111,13 +112,13 @@
 
 .invite-status dt {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--type-caption);
   font-weight: 800;
 }
 
 .invite-status dd {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--type-footnote);
   font-weight: 700;
 }
 
@@ -130,8 +131,8 @@
 .invite-share > p {
   margin: 0;
   color: var(--ink);
-  font-size: 16px;
-  line-height: 1.7;
+  font-size: var(--type-body);
+  line-height: var(--leading-relaxed);
 }
 
 .invite-share-actions {
@@ -145,7 +146,7 @@
   min-width: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: var(--type-footnote);
   font-weight: 700;
   cursor: pointer;
 }
@@ -153,14 +154,14 @@
 .invite-copied {
   margin: 0 !important;
   color: var(--ink) !important;
-  font-size: 14px !important;
+  font-size: var(--type-footnote) !important;
   font-weight: 700;
 }
 
 .install-banner {
   display: grid;
   gap: 12px;
-  max-width: 1180px;
+  max-width: var(--shell-max);
   margin: 0 auto 20px;
   padding: 16px 18px;
   border: 1px solid var(--line);
@@ -176,8 +177,8 @@
 .install-inapp p {
   margin: 0;
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: var(--type-body);
+  line-height: var(--leading-normal);
 }
 
 .install-banner-actions,
@@ -202,7 +203,7 @@
   min-width: 44px;
   padding: 0 16px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: var(--type-footnote);
   font-weight: 700;
   text-decoration: none;
   display: inline-grid;
@@ -224,23 +225,19 @@
 .logout-cluster small {
   max-width: 16rem;
   color: var(--muted);
-  font-size: 11px;
-  line-height: 1.45;
+  font-size: var(--type-caption);
+  line-height: var(--leading-normal);
   text-align: right;
 }
 
-@media (max-width: 760px) {
-  .auth-shell {
-    padding: 42px 16px 64px;
-  }
-
+@media (max-width: 767.98px) {
   .auth-card {
     padding: 28px 18px 32px;
     border-radius: 18px;
   }
 
   .auth-card h1 {
-    font-size: 34px;
+    font-size: var(--type-headline);
   }
 
   .logout-cluster {

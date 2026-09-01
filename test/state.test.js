@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isRevealed, normalizeState, submittedCount } from "../src/state.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, normalizeState, submittedCount } from "../src/state.js";
+import { PACK_LOCK_COPY } from "../src/pair-code.js";
 import { escapeHtml } from "../src/html.js";
 
 const ids = ["q1", "q2"];
@@ -148,4 +149,24 @@ test("approved agreement HTML is escaped before insertion into results markup", 
   const result = buildSharedResults(state, ["q1"], { q1: choiceIds.q1 });
   assert.equal(result.items[0].agreement.text, malicious);
   assert.equal(escapeHtml(result.items[0].agreement.text), "&lt;img src=x onerror=&quot;globalThis.pwned=true&quot;&gt;");
+});
+
+test("locked chapters are the ones past the free sample, and entitlement opens them", () => {
+  for (const index of [0, 1, 2]) assert.equal(isChapterLocked(index, false), false);
+  for (const index of [3, 7, 11]) assert.equal(isChapterLocked(index, false), true);
+  for (const index of [3, 7, 11]) assert.equal(isChapterLocked(index, true), false);
+  assert.equal(isChapterLocked(-1, false), false);
+});
+
+test("the web pack view shows a locked chapter instead of ignoring the click", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const app = await readFile("src/app.js", "utf8");
+  assert.match(app, /const locked = !remainingQuestionOpen\(index\)/);
+  assert.match(app, /locked \? "locked" : ""/);
+  assert.match(app, /locked \? PACK_LOCK_COPY\.status/);
+  assert.match(app, /chapter-lock-note/);
+  assert.equal(PACK_LOCK_COPY.status, "잠김");
+  const css = await readFile("src/accessibility.css", "utf8");
+  assert.match(css, /\.chapter\.locked/);
+  assert.match(css, /\.chapter-lock-note/);
 });

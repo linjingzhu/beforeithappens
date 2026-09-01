@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Linking, Share } from "react-native";
+import { Alert, Linking, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SPLASH_MS } from "./src/copy.js";
@@ -11,6 +11,7 @@ import {
   EmailBindScreen,
   InviteScreen,
   NoticeScreen,
+  PackIntroScreen,
   PackListScreen,
   PartnerWaitScreen,
   SampleQuestionScreen,
@@ -30,8 +31,11 @@ import {
   sendHostEmailBind,
   sendHostMagicLink,
   splashOpenResult,
-  startHostFlow
+  startHostFlow,
+  withdrawHost
 } from "./src/session.js";
+import { PackMount } from "./pack/screens.js";
+import marriagePackCatalog from "./pack/contract/marriage-pack.json";
 import {
   backFromAccount,
   backFromCertificate,
@@ -39,6 +43,7 @@ import {
   backFromInvite,
   backFromPackDetail,
   cancelLogin,
+  backToPackList,
   backToSignup,
   connectPartnerCode,
   copyMyPairCode,
@@ -50,6 +55,7 @@ import {
   openAccount,
   openComingSoonFromList,
   openMarriageFromList,
+  startPackFromIntro,
   openSendLink,
   openTogetherFromSample,
   purchaseShopHearts,
@@ -168,6 +174,21 @@ export default function App() {
           onOpenAccount={() => setState(openAccount(state))}
         />
       ) : null}
+      {state.screen === "pack" ? (
+        <PackMount
+          session={state.session}
+          cookieAccess={hostCookieAccess()}
+          catalog={marriagePackCatalog}
+          onExit={() => setState(backToPackList(state))}
+        />
+      ) : null}
+      {state.screen === "pack-intro" ? (
+        <PackIntroScreen
+          key={state.samplePackId}
+          packId={state.samplePackId}
+          onStart={() => setState(startPackFromIntro(state))}
+        />
+      ) : null}
       {state.screen === "coming-soon" ? (
         <ComingSoonScreen
           packId={state.comingSoonId}
@@ -223,6 +244,13 @@ export default function App() {
           onLogout={async () => setState(await logoutHost(state, api))}
           onLogin={() => setState(openAccount(state))}
           onInvite={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
+          onWithdraw={async () => {
+            setState({ ...state, busy: true, error: "" });
+            const next = await withdrawHost(state, api);
+            setState(next);
+            // The account screen has no error line of its own, so a failed 탈퇴 has to say so here.
+            if (next.error) Alert.alert(next.error);
+          }}
         />
       ) : null}
       {state.screen === "signup" ? (

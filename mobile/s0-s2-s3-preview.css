@@ -1,16 +1,29 @@
+/*
+ * The browser harness for the native S0/S2/S3 screens.
+ *
+ * Colour comes from the generated token sheet — the `loveme` palette, the same one
+ * `mobile/src/theme.js` reads out of `src/design-tokens.js` — so a change to the palette
+ * reaches this preview instead of leaving it to drift the way it did before.
+ */
+
+@import url("../src/tokens.css");
+
 :root {
-  --ink: #3A3338;
-  --charcoal: #3A3338;
-  --muted: #7A7278;
-  --paper: #F6C8D8;
-  --card: rgba(255, 255, 255, 0.72);
-  --line: rgba(58, 51, 56, 0.14);
-  --coral: #F6C8D8;
-  --soft: #B7D9F0;
-  --baby-pink: #F6C8D8;
-  --sky-blue: #B7D9F0;
-  --gradient: linear-gradient(180deg, #F6C8D8 0%, #B7D9F0 100%);
-  --gradient-h: linear-gradient(90deg, #F6C8D8 0%, #B7D9F0 100%);
+  --charcoal: var(--loveme-ink);
+  --ink: var(--loveme-ink);
+  --muted: var(--loveme-muted);
+  --surface: var(--loveme-surface);
+  --paper: var(--loveme-accent);
+  --card: var(--loveme-card);
+  --line: var(--loveme-line);
+  --coral: var(--loveme-accent);
+  --soft: var(--loveme-accent-alt);
+  --error: var(--loveme-error);
+  --baby-pink: var(--loveme-accent);
+  --sky-blue: var(--loveme-accent-alt);
+  --gradient: linear-gradient(180deg, var(--baby-pink) 0%, var(--sky-blue) 100%);
+  --gradient-h: linear-gradient(90deg, var(--baby-pink) 0%, var(--sky-blue) 100%);
+  /* The status bar and home indicator of the device this harness stands in for. */
   --safe-top: max(59px, env(safe-area-inset-top, 0px));
   --safe-bottom: max(34px, env(safe-area-inset-bottom, 0px));
   --font-title: "MaruBuri", "Times New Roman", serif;
@@ -105,7 +118,8 @@ body {
 }
 
 .loveme-splash {
-  min-height: calc(100vh - 0px);
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1045,3 +1059,11 @@ body {
   width: 100%;
 }
 
+.loveme-pack-intro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.loveme-pack-intro h1 { margin: 0 0 28px; font-size: 30px; }
+.loveme-intro-lines { align-self: stretch; padding: 0 12px; margin-bottom: 36px; }
+.loveme-intro-line { margin: 10px 0 0; font-size: 17px; line-height: 30px; opacity: 0; transform: translateY(10px); animation-name: loveme-intro-rise; animation-fill-mode: forwards; animation-timing-function: cubic-bezier(.22, .61, .36, 1); }
+@keyframes loveme-intro-rise { to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .loveme-intro-line { animation: none; opacity: 1; transform: none; }
+}

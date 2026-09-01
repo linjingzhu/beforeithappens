@@ -2,9 +2,9 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
-import { isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl } from "./oauth.mjs";
+import { createOAuthState, exchangeOAuthCode, isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl, oauthRedirectUri, verifyOAuthState } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
-import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml } from "./mail.mjs";
+import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml, wasMailDelivered } from "./mail.mjs";
 import { inviteShareUrl } from "../src/pair-code.js";
 
 const types = {
@@ -40,6 +40,10 @@ function packErrorStatus(error) {
   return 400;
 }
 
+function accountErrorStatus(error) {
+  return error === "unauthenticated" ? 401 : 400;
+}
+
 function entitlementErrorStatus(error) {
   if (error === "unauthenticated") return 401;
   if (error === "forbidden" || error === "locked") return 403;
@@ -51,12 +55,15 @@ export function createListener({
   couple,
   answers,
   entitlement,
+  account,
+  report,
   root,
   allowDevOutbox = false,
   allowDevOAuth = false,
   oauthEnv = process.env,
   mailEnv = process.env,
   mailFetch = globalThis.fetch,
+  oauthFetch = globalThis.fetch,
   outbox = []
 } = {}) {
   if (!auth) throw new Error("auth is required");
@@ -91,7 +98,7 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
-        const linkUrl = consumeUrl(origin, result.token);
+        const linkUrl = consumeUrl(origin, result.token, mailEnv);
         const delivered = await deliverLoginLink({
           to: result.email,
           url: linkUrl,
@@ -100,7 +107,8 @@ export function createListener({
           env: mailEnv
         });
         if (!delivered.ok) {
-          sendJson(response, 502, { ok: false, error: "failed" });
+          console.warn(`magic-link delivery refused: ${delivered.error}`);
+          sendJson(response, 502, { ok: false, error: "failed", reason: delivered.error });
           return;
         }
         recordOutbox(outbox, allowDevOutbox, {
@@ -110,7 +118,7 @@ export function createListener({
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });
-        sendJson(response, 200, { ok: true });
+        sendJson(response, 200, { ok: true, delivered: wasMailDelivered(delivered), via: delivered.via });
         return;
       }
 
@@ -125,8 +133,9 @@ export function createListener({
           sendJson(response, 501, { ok: false, error: "oauth-unconfigured" });
           return;
         }
-        const startUrl = oauthAuthorizeUrl(provider, { origin: requestOrigin(request), env: oauthEnv });
-        sendJson(response, 200, { ok: true, provider, url: startUrl, stubbed: false });
+        const startState = createOAuthState({ provider, env: oauthEnv });
+        const startUrl = oauthAuthorizeUrl(provider, { origin: requestOrigin(request), env: oauthEnv, state: startState });
+        sendJson(response, 200, { ok: true, provider, url: startUrl, state: startState, stubbed: false });
         return;
       }
 
@@ -152,11 +161,60 @@ export function createListener({
           return;
         }
         const wantsJson = String(request.headers.accept || "").includes("application/json");
-        if (wantsJson) {
-          sendJson(response, 501, { ok: false, error: "oauth-unconfigured", stubbed: true, provider });
+        const failOAuth = (status, error) => {
+          if (wantsJson) {
+            sendJson(response, status, { ok: false, error, provider });
+            return;
+          }
+          response.writeHead(302, { location: `/?authError=${encodeURIComponent(error)}` });
+          response.end();
+        };
+
+        if (!isOAuthConfigured(provider, oauthEnv)) {
+          if (wantsJson) {
+            sendJson(response, 501, { ok: false, error: "oauth-unconfigured", stubbed: true, provider });
+            return;
+          }
+          response.writeHead(302, { location: `/?authError=oauth-unconfigured` });
+          response.end();
           return;
         }
-        response.writeHead(302, { location: `/?authError=oauth-unconfigured` });
+
+        const callbackState = url.searchParams.get("state") || "";
+        if (!verifyOAuthState(callbackState, { provider, env: oauthEnv }).ok || url.searchParams.get("error")) {
+          failOAuth(400, "invalid");
+          return;
+        }
+
+        const exchanged = await exchangeOAuthCode({
+          provider,
+          code: url.searchParams.get("code") || "",
+          redirectUri: oauthRedirectUri(provider, requestOrigin(request)),
+          state: callbackState,
+          env: oauthEnv,
+          fetchImpl: oauthFetch
+        });
+        if (!exchanged.ok) {
+          const unconfigured = exchanged.error === "oauth-unconfigured";
+          failOAuth(unconfigured ? 501 : 400, unconfigured ? "oauth-unconfigured" : "invalid");
+          return;
+        }
+
+        const oauthLogin = auth.completeOAuth({
+          provider: exchanged.provider,
+          providerUserId: exchanged.providerUserId,
+          email: exchanged.email
+        });
+        if (!oauthLogin.ok) {
+          failOAuth(400, oauthLogin.error);
+          return;
+        }
+        const oauthCookie = sessionCookieHeader(SESSION_COOKIE, oauthLogin.sessionId, cookieOptions(request));
+        if (wantsJson) {
+          sendJson(response, 200, { ok: true, session: auth.sessionFor(oauthLogin.sessionId) }, { "set-cookie": oauthCookie });
+          return;
+        }
+        response.writeHead(302, { location: "/", "set-cookie": oauthCookie });
         response.end();
         return;
       }
@@ -169,7 +227,7 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
-        const linkUrl = consumeUrl(origin, result.token);
+        const linkUrl = consumeUrl(origin, result.token, mailEnv);
         const delivered = await deliverLoginLink({
           to: result.email,
           url: linkUrl,
@@ -178,7 +236,8 @@ export function createListener({
           env: mailEnv
         });
         if (!delivered.ok) {
-          sendJson(response, 502, { ok: false, error: "failed" });
+          console.warn(`email-bind delivery refused: ${delivered.error}`);
+          sendJson(response, 502, { ok: false, error: "failed", reason: delivered.error });
           return;
         }
         recordOutbox(outbox, allowDevOutbox, {
@@ -188,7 +247,7 @@ export function createListener({
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });
-        sendJson(response, 200, { ok: true });
+        sendJson(response, 200, { ok: true, delivered: wasMailDelivered(delivered), via: delivered.via });
         return;
       }
 
@@ -226,8 +285,13 @@ export function createListener({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/healthz") {
+        sendJson(response, 200, { ok: true, service: "ab", time: new Date().toISOString() });
+        return;
+      }
+
       if (request.method === "GET" && url.pathname === "/auth/consume") {
-        sendHtml(response, 200, consumeHopHtml(url.searchParams.get("token") || ""));
+        sendHtml(response, 200, consumeHopHtml(url.searchParams.get("token") || "", mailEnv));
         return;
       }
 
@@ -333,6 +397,19 @@ export function createListener({
         return;
       }
 
+      if (account && request.method === "POST" && url.pathname === "/api/account/delete") {
+        const body = await readJsonBody(request);
+        const result = account.deleteAccount(sessionId, { confirm: body.confirm === true });
+        const clearCookie = sessionCookieHeader(SESSION_COOKIE, "", { ...cookieOptions(request), clear: true });
+        if (!result.ok) {
+          const headers = result.error === "unauthenticated" ? { "set-cookie": clearCookie } : {};
+          sendJson(response, accountErrorStatus(result.error), result, headers);
+          return;
+        }
+        sendJson(response, 200, { ok: true }, { "set-cookie": clearCookie });
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/auth/force-logout") {
         const result = auth.forceLogout(sessionId);
         if (!result.ok) {
@@ -408,6 +485,18 @@ export function createListener({
           return;
         }
         sendJson(response, 200, result);
+        return;
+      }
+
+      if (report && request.method === "GET" && url.pathname === "/api/report") {
+        const result = report.viewFor(sessionId);
+        sendJson(response, result.ok ? 200 : packErrorStatus(result.error), result);
+        return;
+      }
+
+      if (report && request.method === "POST" && url.pathname === "/api/report") {
+        const result = report.generate(sessionId);
+        sendJson(response, result.ok ? 200 : packErrorStatus(result.error), result);
         return;
       }
 
