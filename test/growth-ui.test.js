@@ -104,3 +104,24 @@ test("nothing rendered here escapes into markup", () => {
   const gifts = renderGiftHome({ gifts: [{ id: '"><script>y</script>', status: "ok", url: "https://ab.example/g" }] });
   assert.equal(has(gifts, "<script>"), false);
 });
+
+test("with a returned slot the button says it is free, and says why", async () => {
+  const { GIFT_COPY: COPY, giftCtaLabel } = await import("../src/growth.js");
+  const free = renderGiftHome({ credits: 1, gifts: [{ id: "g", status: "revoked", url: "" }] });
+  assert.ok(has(free, COPY.creditLabel));
+  assert.ok(has(free, COPY.creditRestored), "the screen explains that no second payment is coming");
+  assert.ok(has(free, COPY.freeCta));
+  assert.equal(has(free, `>${COPY.cta}<`), false, "it must not read as a second purchase");
+
+  const paid = renderGiftHome({ credits: 0, gifts: [] });
+  assert.ok(has(paid, COPY.cta));
+  assert.equal(has(paid, COPY.creditRestored), false, "nothing to restore, nothing to claim");
+  assert.equal(giftCtaLabel(0), COPY.cta);
+  assert.equal(giftCtaLabel(2), COPY.freeCta);
+});
+
+test("a cancelled present shows as cancelled and offers no link", () => {
+  const html = renderGiftHome({ credits: 1, gifts: [{ id: "g", status: "revoked", url: "" }] });
+  assert.ok(has(html, GIFT_COPY.statusRevoked));
+  assert.equal(has(html, INVITE_COPY.copyLink), false, "a withdrawn link is not handed out again");
+});

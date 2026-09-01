@@ -81,6 +81,9 @@ Recommend a friend, and gift the pack:
 | Gift status expired | 기한이 지났어요 |
 | Gift status revoked | 취소했어요 |
 | Gift revoke CTA | 링크 취소하기 |
+| Gift credit label | 보낼 수 있는 선물 |
+| Gift credit restored | 취소한 선물은 다시 보낼 수 있어요. 결제는 한 번만 해요. |
+| Gift free CTA | 선물 링크 다시 만들기 |
 | Gift arrived title | 선물이 도착했어요. |
 | Gift arrived body | 결혼 팩을 열 수 있는 선물이에요. |
 | Gift accept CTA | 선물 받기 |

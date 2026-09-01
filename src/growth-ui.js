@@ -1,6 +1,6 @@
 import { INVITE_COPY } from "./auth.js";
 import { inviteLinkBlock } from "./auth-ui.js";
-import { GIFT_COPY, RECOMMEND_COPY, giftErrorCopy, giftStatusLabel, isGiftSendable, toNextReward } from "./growth.js";
+import { GIFT_COPY, RECOMMEND_COPY, giftCtaLabel, giftErrorCopy, giftStatusLabel, isGiftSendable, toNextReward } from "./growth.js";
 import { escapeHtml } from "./html.js";
 
 /**
@@ -40,7 +40,7 @@ export function renderRecommend({ code = "", url = "", joined = 0, credited = 0,
     </section>`;
 }
 
-export function renderGiftHome({ gifts = [], busy = false, error = "", copied = false, failed = false, activeUrl = "" } = {}) {
+export function renderGiftHome({ gifts = [], credits = 0, busy = false, error = "", copied = false, failed = false, activeUrl = "" } = {}) {
   const list = gifts.map((gift) => `
         <li class="growth-gift" data-gift-id="${escapeHtml(gift.id)}">
           <span class="growth-gift-status">${escapeHtml(giftStatusLabel(gift.status))}</span>
@@ -53,7 +53,9 @@ export function renderGiftHome({ gifts = [], busy = false, error = "", copied = 
       <h1>${escapeHtml(GIFT_COPY.title)}</h1>
       <p>${escapeHtml(GIFT_COPY.body)}</p>
       ${error ? `<p class="auth-error" role="alert">${escapeHtml(error)}</p>` : ""}
-      <button class="primary auth-submit" type="button" data-action="create-gift"${busy ? " disabled" : ""}>${escapeHtml(GIFT_COPY.cta)}</button>
+      ${credits > 0 ? `<p class="growth-credits"><small>${escapeHtml(GIFT_COPY.creditLabel)}</small> <strong data-gift-credits>${credits}</strong></p>
+      <p class="growth-credit-note">${escapeHtml(GIFT_COPY.creditRestored)}</p>` : ""}
+      <button class="primary auth-submit" type="button" data-action="create-gift"${busy ? " disabled" : ""}>${escapeHtml(giftCtaLabel(credits))}</button>
       ${gifts.length ? `<h2>${escapeHtml(GIFT_COPY.sentTitle)}</h2><ul class="growth-gifts">${list}</ul>` : ""}
     </section>`;
 }

@@ -338,6 +338,7 @@ export function createListener({
         const origin = requestOrigin(request);
         sendJson(response, 200, {
           ok: true,
+          credits: result.credits,
           gifts: result.gifts.map((row) => ({ ...row, url: row.token ? giftRedeemUrl(origin, row.token) : "" }))
         });
         return;

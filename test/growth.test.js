@@ -21,6 +21,7 @@ test("the contract and the copy module say the same thing", async () => {
     GIFT_COPY.title, GIFT_COPY.body, GIFT_COPY.cta, GIFT_COPY.sentTitle,
     GIFT_COPY.statusWaiting, GIFT_COPY.statusUsed, GIFT_COPY.statusExpired, GIFT_COPY.statusRevoked,
     GIFT_COPY.revoke, GIFT_COPY.arrivedTitle, GIFT_COPY.arrivedBody, GIFT_COPY.accept,
+    GIFT_COPY.creditLabel, GIFT_COPY.creditRestored, GIFT_COPY.freeCta,
     giftErrorCopy("used"), giftErrorCopy("expired"), giftErrorCopy("revoked"),
     giftErrorCopy("self"), giftErrorCopy("already-entitled")
   ];

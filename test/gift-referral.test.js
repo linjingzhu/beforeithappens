@@ -346,3 +346,87 @@ test("a reward already earned survives the departure of the person who triggered
   assert.ok(still.gifts[0].token, "and it is still sendable");
   assert.equal(referral.viewFor(sharer.sessionId).credited, 0, "but the trail itself is gone");
 });
+
+test("cancelling a present gives the value back, so the next one is not charged again", () => {
+  const { gift, store, login } = system();
+  const giver = login("giver@example.com");
+
+  const first = gift.createGiftPurchase(giver.sessionId);
+  assert.equal(first.charged, true, "the first present is bought");
+  assert.equal(first.credits, 0, "and it is holding the slot it was bought for");
+
+  const id = gift.listSent(giver.sessionId).gifts[0].id;
+  const cancelled = gift.revoke(giver.sessionId, id);
+  assert.equal(cancelled.ok, true);
+  assert.equal(cancelled.credits, 1, "cancelling returns what was paid rather than burning it");
+  assert.equal(gift.listSent(giver.sessionId).credits, 1);
+
+  const second = gift.createGiftPurchase(giver.sessionId);
+  assert.equal(second.charged, false, "the returned slot is spent before money is asked for again");
+  assert.equal(second.credits, 0);
+  assert.notEqual(second.token, first.token, "and it is a new link, not the dead one");
+  assert.equal(gift.previewGift(first.token).ok, false, "the cancelled link stays dead");
+  assert.equal(gift.previewGift(second.token).ok, true);
+
+  const paid = store.snapshot().purchases.filter((row) => row.kind === "gift");
+  assert.equal(paid.length, 1, "one payment, two presents made — because only one was ever sent");
+});
+
+test("cancelling in a loop returns value but never mints any", () => {
+  const { gift, store, login } = system();
+  const giver = login("giver@example.com");
+
+  for (let round = 0; round < 5; round += 1) {
+    gift.createGiftPurchase(giver.sessionId);
+    const live = gift.listSent(giver.sessionId).gifts.find((row) => row.status === "ok");
+    gift.revoke(giver.sessionId, live.id);
+    assert.equal(gift.credits(giver.sessionId).credits, 1, `round ${round}: the balance never grows`);
+  }
+  assert.equal(store.snapshot().purchases.filter((row) => row.kind === "gift").length, 1, "still one payment");
+  assert.equal(store.snapshot().packGifts.filter((row) => !row.revokedAt).length, 0, "and nothing live was left behind");
+});
+
+test("a present someone opened never comes back", () => {
+  const { gift, login, pairedBuyer } = system();
+  const giver = login("giver@example.com");
+  const bought = gift.createGiftPurchase(giver.sessionId);
+  const receiver = pairedBuyer("receiver@example.com", "receiver.p@example.com").buyer;
+  gift.redeem(receiver.sessionId, bought.token);
+
+  assert.equal(gift.credits(giver.sessionId).credits, 0, "somebody used it");
+  const next = gift.createGiftPurchase(giver.sessionId);
+  assert.equal(next.charged, true, "so the next present is a real purchase");
+});
+
+test("a present that quietly expired releases its slot too", () => {
+  const store = createMemoryStore();
+  let clock = Date.parse("2026-01-01T00:00:00.000Z");
+  const entitlement = createEntitlement({ store, pack, now: () => clock });
+  const gift = createGift({ store, entitlement, pack, now: () => clock });
+  const auth = createAuth({ store, now: () => clock });
+  const giver = auth.consumeMagicLink(auth.requestMagicLink("giver@example.com").token);
+
+  assert.equal(gift.createGiftPurchase(giver.sessionId).charged, true);
+  assert.equal(gift.credits(giver.sessionId).credits, 0);
+
+  clock += 31 * 24 * 60 * 60 * 1000;
+  assert.equal(gift.credits(giver.sessionId).credits, 1, "nobody took it, so the value is still the giver's");
+  assert.equal(gift.createGiftPurchase(giver.sessionId).charged, false);
+});
+
+test("a referral reward can be cancelled and re-sent, but is not a second reward", () => {
+  const { referral, gift, entitlement, login, pairedBuyer } = system({ rewardEvery: 1 });
+  const sharer = login("sharer@example.com");
+  const code = referral.viewFor(sharer.sessionId).code;
+  const friend = pairedBuyer("friend@example.com", "friend.p@example.com").buyer;
+  referral.claim(friend.sessionId, code);
+  entitlement.createPurchase(friend.sessionId);
+
+  const earned = gift.listSent(sharer.sessionId).gifts[0];
+  assert.equal(gift.credits(sharer.sessionId).credits, 0, "the reward is holding its own slot");
+
+  gift.revoke(sharer.sessionId, earned.id);
+  assert.equal(gift.credits(sharer.sessionId).credits, 1, "cancelling an unsent reward keeps it");
+  assert.equal(gift.createGiftPurchase(sharer.sessionId).charged, false);
+  assert.equal(gift.credits(sharer.sessionId).credits, 0, "one reward, one present — not two");
+});

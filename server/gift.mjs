@@ -118,17 +118,60 @@ export function createGift({
     return { gift, token };
   }
 
+  /**
+   * How many presents this person may send without paying again.
+   *
+   * Derived, never stored, because a stored balance is a second source of truth that drifts from
+   * the rows it summarises. What was paid for or earned, minus what is still standing or already
+   * opened: a withdrawn or expired present releases the slot it was holding, so cancelling gives
+   * the value back rather than burning it. A redeemed one never comes back — somebody used it.
+   *
+   * This is the closest thing the product has to the heart balance the screens talk about, and it
+   * is deliberately not a balance you can accumulate: it can only ever return what you already
+   * put in, so there is no path here that mints value out of a cancellation loop.
+   */
+  function creditsFor(state, userId, at = now()) {
+    const paid = rows(state, "purchases").filter((row) => row.kind === "gift" && row.buyerUserId === userId).length;
+    const earned = rows(state, "packGifts").filter((row) => row.fromUserId === userId && row.origin === "referral").length;
+    const held = rows(state, "packGifts").filter((row) => {
+      if (row.fromUserId !== userId) return false;
+      return giftStatus(row, at) === "ok" || Boolean(row.redeemedAt);
+    }).length;
+    return Math.max(0, paid + earned - held);
+  }
+
   return {
     issue,
 
+    credits(sessionId) {
+      const access = requireSession(sessionId);
+      if (!access.ok) return access;
+      return { ok: true, credits: creditsFor(access.state, access.user.id) };
+    },
+
     /**
      * Buying a present. This is a second purchase, not a re-gift of the buyer's own unlock:
-     * the giver keeps whatever they already have, and the money buys a token someone else uses.
+     * the giver keeps whatever they already have, and the money buys a token someone else uses —
+     * unless a cancelled present already released a slot, in which case nobody is charged twice.
      */
     createGiftPurchase(sessionId) {
       const access = requireSession(sessionId);
       if (!access.ok) return access;
       const at = now();
+
+      // A present released by a cancellation is spent before money is asked for again.
+      const spare = creditsFor(access.state, access.user.id);
+      if (spare > 0) {
+        const { gift, token } = issue({ fromUserId: access.user.id, origin: "purchase", orderId: null, at });
+        return {
+          ok: true,
+          token,
+          gift: publicGift(gift, at),
+          charged: false,
+          credits: creditsFor(store.snapshot(), access.user.id)
+        };
+      }
+
       const orderId = createId("ord");
       store.mutate((state) => {
         if (!Array.isArray(state.purchases)) state.purchases = [];
@@ -151,6 +194,8 @@ export function createGift({
         ok: true,
         token,
         gift: publicGift(gift, at),
+        charged: true,
+        credits: creditsFor(store.snapshot(), access.user.id),
         amount: PACK_PRICE_KRW,
         currency: PACK_CURRENCY
       };
@@ -177,7 +222,7 @@ export function createGift({
           token: row.redeemedAt || row.revokedAt ? "" : row.shareToken
         }))
         .reverse();
-      return { ok: true, gifts: sent };
+      return { ok: true, gifts: sent, credits: creditsFor(access.state, access.user.id) };
     },
 
     revoke(sessionId, giftId) {
@@ -195,7 +240,7 @@ export function createGift({
           row.shareToken = "";
         }
       });
-      return { ok: true, giftId };
+      return { ok: true, giftId, credits: creditsFor(store.snapshot(), access.user.id) };
     },
 
     /**

@@ -29,6 +29,9 @@ export const GIFT_COPY = Object.freeze({
   statusExpired: "기한이 지났어요",
   statusRevoked: "취소했어요",
   revoke: "링크 취소하기",
+  creditLabel: "보낼 수 있는 선물",
+  creditRestored: "취소한 선물은 다시 보낼 수 있어요. 결제는 한 번만 해요.",
+  freeCta: "선물 링크 다시 만들기",
   arrivedTitle: "선물이 도착했어요.",
   arrivedBody: "결혼 팩을 열 수 있는 선물이에요.",
   accept: "선물 받기",
@@ -74,6 +77,15 @@ export function canRevokeGift(gift) {
 }
 
 /**
+ * Making a present is free while a cancelled or expired one has released its slot, so the button
+ * has to say which it is. Offering `선물 링크 만들기` to someone who will not be charged reads as a
+ * second payment, and that is the moment a person stops trusting the screen.
+ */
+export function giftCtaLabel(credits) {
+  return Number(credits) > 0 ? GIFT_COPY.freeCta : GIFT_COPY.cta;
+}
+
+/**
  * How many more paying friends until the next present. Mirrors the server's counting rule rather
  * than restating it: `credited` is how many have paid, `rewardEvery` is the threshold.
  */
@@ -88,6 +100,9 @@ export function assertLockedGrowthCopy() {
   if (RECOMMEND_COPY.title !== "친구에게 추천하기") throw new Error("recommend title drifted");
   if (GIFT_COPY.title !== "결혼 팩 선물하기") throw new Error("gift title drifted");
   if (GIFT_COPY.accept !== "선물 받기") throw new Error("gift accept drifted");
+  if (GIFT_COPY.creditRestored !== "취소한 선물은 다시 보낼 수 있어요. 결제는 한 번만 해요.") {
+    throw new Error("gift credit line drifted");
+  }
   if (SHARE_LABELS.kakao !== INVITE_COPY.kakao) throw new Error("share labels drifted from the invite row");
   if (SHARE_LABELS.copyFailed !== INVITE_COPY.copyFailed) throw new Error("copy-failure line drifted");
   return true;
