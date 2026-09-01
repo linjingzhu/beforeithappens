@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PUBLISHED, SITE } from "../site/config.js";
-import { SITE_COPY } from "../site/render.js";
+import { SITE_COPY, renderIndex, renderQuestionPage } from "../site/render.js";
+import { indexModel, pageModel } from "../site/content.js";
 import { RESULT_COPY } from "../site/result-copy.js";
 import { findPack } from "../src/packs.js";
 
@@ -49,6 +50,8 @@ test("the mark and the four faces are all present and small enough to send", () 
   // shipping the app's originals by mistake.
   const files = [
     ["site/brand/logo.png", 40],
+    ["site/brand/apple-touch-icon.png", 40],
+    ["site/brand/favicon.ico", 40],
     ["site/brand/maruburi-400.woff2", 200],
     ["site/brand/maruburi-600.woff2", 200],
     ["site/brand/pretendard-400.woff2", 200],
@@ -83,4 +86,30 @@ test("the stylesheet declares the faces it preloads, and the app's typographic l
   for (const [, stack] of uses.matchAll(/font-family: (MaruBuri[^;]*|Pretendard[^;]*);/g)) {
     assert.ok(stack.includes(","), `"${stack}" has no fallback`);
   }
+});
+
+test("every page asks for the mark as its icon, and the .ico carries the size a tab draws", () => {
+  // A tab with no icon is a blank square next to the name, and the browser asks for /favicon.ico
+  // whether or not a page links one — so both the link and the root file have to exist.
+  const site = { ...SITE, origin: "" };
+  const published = PUBLISHED;
+  const pages = [
+    renderIndex(indexModel({ site, published }), site),
+    renderQuestionPage(pageModel(published[0].slug, 1, { site, published }), site)
+  ];
+  for (const html of pages) {
+    assert.match(html, /<link rel="icon" href="\/favicon\.ico"/, "the tab icon");
+    assert.match(html, /<link rel="apple-touch-icon" href="\/brand\/apple-touch-icon\.png">/);
+  }
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /join\(OUT, "favicon\.ico"\)/);
+
+  // The .ico holds 16, 32 and 48. A single 48 downsampled by the browser is what the drawing
+  // cannot survive — the stroke is one hairline wide at 16px and averages away into grey.
+  const ico = readFileSync("site/brand/favicon.ico");
+  const widths = [];
+  for (let i = 0; i < ico.readUInt16LE(4); i += 1) {
+    // ICONDIR is 6 bytes, then one 16-byte entry per image, whose first byte is the width (0=256).
+    widths.push(ico[6 + i * 16] || 256);
+  }
+  assert.deepEqual(widths.sort((a, b) => a - b), [16, 32, 48]);
 });
