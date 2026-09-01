@@ -68,6 +68,7 @@ export function pageModel(slug, pageNumber, { site = SITE, published = null } = 
     slug: entry.slug,
     packId: entry.packId,
     title: entry.title,
+    tagline: entry.tagline || "",
     description: entry.description,
     lead: first ? entry.lead : "",
     page,

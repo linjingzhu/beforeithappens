@@ -504,28 +504,88 @@ test("every tab label is the pack's own section title, never a string from the r
   const rendered = [...html.matchAll(/<span class="part-tab-title">([^<]*)<\/span>/g)].map(([, x]) => x);
   assert.deepEqual(rendered, titles, "in the pack's order, and nothing else");
 
-  // The only text the renderer contributes is the ordinal, and it is a number the pack decides.
+  // The only thing the renderer contributes is the position, and even that is the pack's order.
   const ordinals = [...html.matchAll(/<span class="part-tab-n">([^<]*)<\/span>/g)].map(([, x]) => x);
-  assert.deepEqual(ordinals, titles.map((_, i) => SITE_COPY.partWord(i + 1)));
+  assert.deepEqual(ordinals, titles.map((_, i) => String(i + 1)));
 });
 
-test("the tab strip is a sibling of the header, which is what lets it stay", () => {
+test("the bar is a sibling of the header, which is what lets it stay", () => {
   // A sticky element can only stay while its own parent is on screen. Nested in the header it
-  // would leave with the title after one screenful, so the strip sits directly in the stage.
+  // would leave with the title after one screenful, so the bar sits directly in the stage.
   const html = renderQuestionPage(pageModel("marriage", 4, { site }), site);
   const headerEnd = html.indexOf("</header>");
-  const stripStart = html.indexOf('<nav class="parts"');
-  assert.ok(headerEnd > 0 && stripStart > headerEnd, "the strip comes after the header, not inside it");
+  const barStart = html.indexOf('<div class="tabbar">');
+  assert.ok(headerEnd > 0 && barStart > headerEnd, "the bar comes after the header, not inside it");
   const header = html.slice(html.indexOf('<header class="stage-head">'), headerEnd);
   assert.equal(header.includes('class="parts"'), false);
 
+  // Tabs and progress are one unit, so the bar cannot catch up with itself as the page moves.
+  const bar = html.slice(barStart, html.indexOf("</div>", html.indexOf('class="progress"')));
+  assert.ok(bar.includes('<nav class="parts"'));
+  assert.ok(bar.includes('class="progress"'));
+
   const css = readFileSync("site/site.css", "utf8");
-  const strip = css.slice(css.indexOf(".parts {"), css.indexOf("}", css.indexOf(".parts {")));
-  assert.match(strip, /position: sticky/);
-  assert.match(strip, /top: 0/);
+  const sticky = css.slice(css.indexOf(".tabbar {"), css.indexOf("}", css.indexOf(".tabbar {")));
+  assert.match(sticky, /position: sticky/);
+  assert.match(sticky, /top: 0/);
   // Opaque and layered, because it now passes over cards rather than sitting above them.
-  assert.match(strip, /background: var\(--ab-paper\)/);
-  assert.match(strip, /z-index/);
+  assert.match(sticky, /background: var\(--ab-paper\)/);
+  assert.match(sticky, /z-index/);
   // And an in-page link must not land a question underneath it.
   assert.match(css, /scroll-padding-top/);
+});
+
+test("the progress bar carries its value in aria and nothing on the screen", () => {
+  const model = pageModel("marriage", 3, { site });
+  const html = renderQuestionPage(model, site);
+  const bar = html.slice(html.indexOf('<div class="progress"'), html.indexOf("</div>", html.indexOf('class="progress"')));
+
+  assert.ok(bar.includes('role="progressbar"'));
+  assert.ok(bar.includes(`aria-valuemax="${model.total}"`), "measured against the whole pack, not the Part");
+  assert.ok(bar.includes('aria-valuenow="0"'), "empty until answers are recorded in the browser");
+  assert.ok(bar.includes(`data-progress-total="${model.total}"`), "and the script is told the same total");
+
+  // No text: the bar is the message, and "3 / 100" so early reads as a rebuke. Strip the tags and
+  // there is nothing left but whitespace.
+  assert.equal(bar.replace(/<[^>]*>/g, "").trim(), "", "the bar says nothing in words");
+  for (const digits of [String(model.total), "%"]) {
+    assert.equal(bar.replace(/aria-value(max|now)="[^"]*"|data-progress-total="[^"]*"/g, "").includes(digits), false);
+  }
+});
+
+test("the strip pins the current tab left on a phone, and never scrolls sideways on a desktop", () => {
+  const css = readFileSync("site/site.css", "utf8");
+  const narrow = css.slice(css.indexOf("@media (max-width: 899px)"));
+  const block = narrow.slice(0, narrow.indexOf("\n}\n"));
+  assert.match(block, /flex-wrap: nowrap/, "one row that scrolls");
+  assert.match(block, /justify-content: flex-start/, "centring a scrolling row hides its left end");
+  // Room after the last tab, so Part 10 can reach the left edge like every other Part can.
+  assert.match(block, /padding-right: 100%/);
+
+  const strip = css.slice(css.indexOf(".parts {"), css.indexOf("}", css.indexOf(".parts {")));
+  assert.match(strip, /flex-wrap: wrap/, "wide screens wrap rather than scroll");
+  assert.match(strip, /justify-content: center/);
+
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /function pinCurrentTab/);
+  // Re-run once the webfonts land: every tab changes width when they do, and a single early pass
+  // leaves the tab further off with each Part — the drift this exists to remove.
+  assert.match(enhance, /document\.fonts\?\.ready/);
+});
+
+test("the opening is on the way in, and only the name is above the later Parts", () => {
+  const entry = PUBLISHED[0];
+  const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  assert.ok(has(first, `<h1>${entry.title}</h1>`), "the pack's name, short enough to be a name");
+  assert.ok(has(first, entry.tagline), "the question the hundred are for");
+  assert.ok(has(first, entry.description));
+
+  // Repeating it above all ten would push the questions off the screen nine times over to say
+  // something the reader has read.
+  for (const page of [2, 5, LAST_PAGE]) {
+    const later = renderQuestionPage(pageModel("marriage", page, { site }), site);
+    assert.ok(has(later, `<h1>${entry.title}</h1>`), `Part ${page} still says which pack it is`);
+    assert.equal(has(later, entry.tagline), false, `Part ${page} does not repeat the opening`);
+    assert.equal(has(later, entry.description), false);
+  }
 });
