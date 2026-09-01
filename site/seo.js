@@ -106,3 +106,20 @@ export function robotsTxt(site = SITE) {
   if (site.origin) lines.push(`Sitemap: ${absoluteUrl(site.origin, "/sitemap.xml")}`);
   return `${lines.join("\n")}\n`;
 }
+
+/**
+ * The two files GitHub Pages needs, as data rather than as a side effect of the build.
+ *
+ * They were briefly asserted by reading `site/dist/` after a build, which passed locally and failed
+ * on a fresh checkout: CI runs the tests before the build, and the output is gitignored. A test
+ * that depends on a build artefact is testing the last build, not the code.
+ *
+ * `CNAME` matters because Pages drops a custom domain on any deploy whose artefact lacks one.
+ * `.nojekyll` matters because Pages otherwise runs Jekyll, which swallows anything starting with an
+ * underscore — nothing does today, and this keeps that from becoming a trap later.
+ */
+export function pagesFiles(site = SITE) {
+  const files = { ".nojekyll": "" };
+  if (site.customDomain) files.CNAME = `${site.customDomain}\n`;
+  return files;
+}
