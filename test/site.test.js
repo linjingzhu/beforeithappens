@@ -4,7 +4,7 @@ import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
-import { questionsFor } from "../src/packs.js";
+import { findPack, questionsFor } from "../src/packs.js";
 
 const site = siteWith({ origin: "https://ab.example", appOrigin: "https://app.example" });
 /** The pack the site actually publishes, read through the same list the build reads. */
@@ -468,4 +468,42 @@ test("the forward control names where it goes, and the last Part offers the shee
   const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
   assert.ok(has(last, SITE_COPY.resultAction));
   assert.equal(has(last, 'rel="next"'), false);
+});
+
+test("the header is the shell's, and a pack renderer emits only the pack's content", () => {
+  // The pack's name and its tab strip are the same on all ten Parts; only the current marker moves.
+  // Keeping them in the shell is what lets `renderQuestionPage` be about one Part's questions.
+  const html = renderQuestionPage(pageModel("marriage", 4, { site }), site);
+  const stage = html.slice(html.indexOf('<div class="stage">'), html.indexOf("<main"));
+  assert.ok(stage.includes('<header class="stage-head">'), "the header is above the reading column");
+  assert.ok(stage.includes('class="parts"'), "and so is the tab strip");
+
+  // Nothing of the chrome leaks back into the body.
+  const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+  assert.equal(main.includes("stage-head"), false);
+  assert.equal(main.includes('class="parts"'), false);
+  assert.equal(main.includes("<h1"), false, "the pack is named once, by the shell");
+
+  // Pages with no Parts get no strip rather than an empty one.
+  const about = renderIndex(indexModel({ site }), site);
+  assert.equal(about.includes('class="parts"'), false);
+  assert.equal(about.includes("stage-head"), false);
+});
+
+test("every tab label is the pack's own section title, never a string from the renderer", () => {
+  // The strip is generated from the pack: `partsOf` carries `section.title` through untouched, so
+  // renaming a section in the pack renames its tab by rebuilding, with nothing here to update.
+  const pack = findPack(PUBLISHED[0].packId);
+  const titles = pack.sections.map((section) => section.title);
+  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+
+  for (const title of titles) {
+    assert.ok(has(html, `<span class="part-tab-title">${title}</span>`), `${title} is a tab`);
+  }
+  const rendered = [...html.matchAll(/<span class="part-tab-title">([^<]*)<\/span>/g)].map(([, x]) => x);
+  assert.deepEqual(rendered, titles, "in the pack's order, and nothing else");
+
+  // The only text the renderer contributes is the ordinal, and it is a number the pack decides.
+  const ordinals = [...html.matchAll(/<span class="part-tab-n">([^<]*)<\/span>/g)].map(([, x]) => x);
+  assert.deepEqual(ordinals, titles.map((_, i) => SITE_COPY.partWord(i + 1)));
 });
