@@ -1,0 +1,94 @@
+/*
+ * GENERATED FILE — do not edit.
+ * Source: src/design-tokens.js · Generator: scripts/build-tokens.mjs
+ * Regenerate with `node scripts/build-tokens.mjs`; test/design-system-web.test.js
+ * fails when this file and the token module disagree.
+ */
+
+:root {
+  /* palette · ab (the AB web product) */
+  --ab-ink: #2b2521;
+  --ab-muted: #81756e;
+  --ab-surface: #fffdfa;
+  --ab-card: #fffdfa;
+  --ab-line: #e7ddd5;
+  --ab-accent: #ee775f;
+  --ab-accent-alt: #769987;
+  --ab-error: #8C3A44;
+  --ab-paper: #f8f3ed;
+  --ab-soft: #fce8e1;
+
+  /* palette · loveme (the native screens and their browser preview) */
+  --loveme-ink: #3A3338;
+  --loveme-muted: #7A7278;
+  --loveme-surface: #FFFFFF;
+  --loveme-card: rgba(255, 255, 255, 0.72);
+  --loveme-line: rgba(58, 51, 56, 0.14);
+  --loveme-accent: #F6C8D8;
+  --loveme-accent-alt: #B7D9F0;
+  --loveme-error: #8C3A44;
+
+  /* active palette · ab */
+  --ink: var(--ab-ink);
+  --muted: var(--ab-muted);
+  --surface: var(--ab-surface);
+  --card: var(--ab-card);
+  --line: var(--ab-line);
+  --accent: var(--ab-accent);
+  --accent-alt: var(--ab-accent-alt);
+  --error: var(--ab-error);
+  --paper: var(--ab-paper);
+  --soft: var(--ab-soft);
+  --coral: var(--accent);
+  --green: var(--accent-alt);
+
+  /* type scale · a step is a size a designer can name */
+  --text-caption: 12px;
+  --text-footnote: 13px;
+  --text-body: 15px;
+  --text-body-large: 17px;
+  --text-title: 22px;
+  --text-display: 28px;
+  --text-hero: 32px;
+
+  /* line height */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* space · a 4pt rhythm */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-xxxl: 48px;
+
+  /* radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* motion */
+  --motion-quick: 180ms;
+  --motion-base: 320ms;
+  --motion-gentle: 620ms;
+  --motion-stagger: 420ms;
+
+  /* layout constants */
+  --hit-slop-min: 44px;
+  --base-width: 390px;
+
+  /* width classes · media queries cannot read a var, so these document the ladder */
+  --breakpoint-compact: 0px;
+  --breakpoint-base: 360px;
+  --breakpoint-wide: 430px;
+  --breakpoint-tablet: 768px;
+
+  /* vertical density · how much breathing room an aspect ratio can afford */
+  --density-short: 0.7;
+  --density-regular: 1;
+  --density-tall: 1.12;
+}
