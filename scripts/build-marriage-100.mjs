@@ -21,9 +21,19 @@ const OUT = "src/questions-marriage-100.js";
 
 export async function readSourceQuestions(path = SOURCE) {
   const html = await readFile(path, "utf8");
-  const match = html.match(/const QUESTIONS = (\[[\s\S]*?\]);/);
-  if (!match) throw new Error(`${path}: no QUESTIONS array found`);
-  const raw = JSON.parse(match[1]);
+
+  // Sliced by index rather than matched by regex. `const QUESTIONS = (\[[\s\S]*?\]);` did the same
+  // job and did it fragilely: a lazy quantifier crossing half a megabyte backtracks once per
+  // character, and past some engine-dependent threshold it stops matching rather than slowing down.
+  // It worked here and returned null on a CI runner one Node patch ahead, which is the worst way to
+  // find out. Two `indexOf` calls cannot behave differently on different days.
+  const opening = "const QUESTIONS = [";
+  const start = html.indexOf(opening);
+  if (start === -1) throw new Error(`${path}: no QUESTIONS array found`);
+  const end = html.indexOf("];", start);
+  if (end === -1) throw new Error(`${path}: the QUESTIONS array is never closed`);
+
+  const raw = JSON.parse(html.slice(start + opening.length - 1, end + 1));
   if (!Array.isArray(raw) || !raw.length) throw new Error(`${path}: QUESTIONS is empty`);
   return raw;
 }
