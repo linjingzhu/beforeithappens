@@ -4,7 +4,7 @@ import { SESSION_COOKIE } from "./auth.mjs";
 import { inviteAcceptUrl } from "../src/auth.js";
 import { createOAuthState, exchangeOAuthCode, isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl, oauthRedirectUri, verifyOAuthState } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
-import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml } from "./mail.mjs";
+import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml, wasMailDelivered } from "./mail.mjs";
 import { inviteShareUrl } from "../src/pair-code.js";
 
 const types = {
@@ -106,7 +106,8 @@ export function createListener({
           env: mailEnv
         });
         if (!delivered.ok) {
-          sendJson(response, 502, { ok: false, error: "failed" });
+          console.warn(`magic-link delivery refused: ${delivered.error}`);
+          sendJson(response, 502, { ok: false, error: "failed", reason: delivered.error });
           return;
         }
         recordOutbox(outbox, allowDevOutbox, {
@@ -116,7 +117,7 @@ export function createListener({
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });
-        sendJson(response, 200, { ok: true });
+        sendJson(response, 200, { ok: true, delivered: wasMailDelivered(delivered), via: delivered.via });
         return;
       }
 
@@ -225,7 +226,7 @@ export function createListener({
           return;
         }
         const origin = requestOrigin(request);
-        const linkUrl = consumeUrl(origin, result.token);
+        const linkUrl = consumeUrl(origin, result.token, mailEnv);
         const delivered = await deliverLoginLink({
           to: result.email,
           url: linkUrl,
@@ -234,7 +235,8 @@ export function createListener({
           env: mailEnv
         });
         if (!delivered.ok) {
-          sendJson(response, 502, { ok: false, error: "failed" });
+          console.warn(`email-bind delivery refused: ${delivered.error}`);
+          sendJson(response, 502, { ok: false, error: "failed", reason: delivered.error });
           return;
         }
         recordOutbox(outbox, allowDevOutbox, {
@@ -244,7 +246,7 @@ export function createListener({
           createdAt: new Date().toISOString(),
           expiresAt: result.expiresAt
         });
-        sendJson(response, 200, { ok: true });
+        sendJson(response, 200, { ok: true, delivered: wasMailDelivered(delivered), via: delivered.via });
         return;
       }
 

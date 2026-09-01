@@ -219,7 +219,11 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.equal(sentBody.ok, true);
     assert.equal(sentBody.token, undefined);
     assert.equal(Object.hasOwn(sentBody, "token"), false);
-    assert.deepEqual(Object.keys(sentBody), ["ok"]);
+    // The guard is that no secret rides along; delivered/via say whether a mail really went out.
+    assert.deepEqual(Object.keys(sentBody).sort(), ["delivered", "ok", "via"]);
+    for (const leaked of ["token", "url", "email", "link"]) {
+      assert.equal(Object.hasOwn(sentBody, leaked), false, `${leaked} must never appear in the send response`);
+    }
 
     let state = finishSplash(createNativeFlow());
     state = setEmail(state, " Buyer@Example.com ");

@@ -198,7 +198,9 @@ test("an audit row survives the deletion of the user it refers to and re-identif
 
   const buyerRef = audit.refForUser(buyerId);
   const before = audit.count();
-  assert.equal(audit.listForUser(buyerId).length, 3);
+  // The grant is recorded against the workspace, not against a person.
+  assert.equal(audit.listForUser(buyerId).length, 2);
+  assert.equal(audit.list({ workspaceRef: audit.refForWorkspace(workspaceId), action: "entitlement-granted" }).length, 1);
 
   const deleted = account.deleteAccount(buyer.sessionId, { confirm: true });
   assert.equal(deleted.ok, true);
@@ -217,7 +219,7 @@ test("an audit row survives the deletion of the user it refers to and re-identif
 
   // The rows still exist under the same ref, and the ref joins to nothing that names a person.
   const history = audit.list({ subjectRef: buyerRef });
-  assert.equal(history.length, 4);
+  assert.deepEqual(history.map((row) => row.action), ["account-deleted", "invite-issued", "login"]);
   assert.deepEqual(history[0].context, { partnerRemains: true, removedWorkspaces: 0, archivedWorkspaces: 1 });
   const serialized = JSON.stringify(after.auditEvents);
   assert.equal(serialized.includes(buyerId), false);
