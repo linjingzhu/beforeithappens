@@ -8,7 +8,6 @@ import { debugLine } from "./virtual.js";
 import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../../src/hearts.js";
 import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, TOGETHER_CTA } from "../../src/marriage-sample.js";
 import { requestLoveMeNotificationPermission } from "./notifications.js";
-import { fonts } from "./fonts.js";
 import { PACK_INTRO_COPY, PACK_INTRO_MOTION, packIntroLines, packIntroTitle } from "../../src/pack-intro.js";
 
 /**

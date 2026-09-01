@@ -21,6 +21,8 @@
   --font-body: Arial, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   /* Display leading sits below the token ladder's tight step, which is body-oriented. */
   --leading-hero: 1.08;
+  /* The focus ring is a contrast requirement rather than a brand colour, so it lives here. */
+  --focus-ring: #587fae;
 
   /* This page is opened on phones; honour the cutout and the home indicator. */
   --safe-top: env(safe-area-inset-top, 0px);

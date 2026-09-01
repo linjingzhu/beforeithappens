@@ -13,7 +13,7 @@
 
 .auth-card h1 {
   margin: 16px 0 14px;
-  font: 500 var(--type-hero)/1.12 var(--font-title);
+  font: 500 var(--type-hero)/var(--leading-hero) var(--font-title);
   letter-spacing: -.04em;
 }
 
@@ -42,11 +42,11 @@
   border-radius: 12px;
   /* A fixed 17px step: anything smaller makes iOS Safari zoom the page on focus. */
   font: var(--text-body-large)/var(--leading-tight) inherit;
-  background: white;
+  background: var(--surface);
 }
 
 .auth-form input:focus {
-  outline: 3px solid #587fae;
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
   border-color: var(--coral);
 }
