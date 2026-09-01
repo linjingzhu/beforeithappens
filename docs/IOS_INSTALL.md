@@ -242,7 +242,7 @@ Mac. This agent has no Mac and did not do this.
 The web app is served by the same host as the API (`server/app.mjs` serves `index.html`), and the
 product rule in `docs/PRODUCT_SPEC.md` is that the web path is never blocked on install. That is a
 stopgap for trying the flow, not a substitute for the round's goal — the mailed login link is the
-an `https` hop on the host's own origin, which offers the `loveme://` app scheme to a phone; `AB_WEB_CONSUME_FALLBACK=0` mails the scheme itself instead
+`loveme://` app scheme unless `AB_WEB_CONSUME_FALLBACK=1` is set on the host
 (see `docs/DEPLOY.md`).
 
 ## Out of scope
