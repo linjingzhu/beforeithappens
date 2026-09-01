@@ -270,6 +270,8 @@ ${head}
   <link rel="stylesheet" href="/site.css">
   <link rel="preload" href="/brand/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/brand/maruburi-600.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
 </head>
 <body>
   <div class="shell">

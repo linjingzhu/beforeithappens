@@ -242,7 +242,8 @@ a { color: var(--ab-ink); }
 }
 
 /*
- * Narrow: one row that scrolls, with the current tab pinned to the left edge by `enhance.js`.
+ * Narrow: one row that scrolls, with the current tab pinned as far left as the row reaches by
+ * `enhance.js` — the left edge for the early Parts, the end of the row for the last few.
  *
  * Wrapping ten titles into four rows would make the sticky bar taller than the question under it,
  * and centring a row that scrolls is worse than useless — what runs off the left of a scroll
@@ -259,20 +260,20 @@ a { color: var(--ab-ink); }
   }
 
   /*
-   * A screen's worth of room after the last tab, so that every tab can reach the left edge.
-   * Without it the final Parts run out of scroll and stop wherever they land, which is the
-   * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule that
-   * holds for seven of ten is not one.
+   * The strip scrolls exactly as far as its tabs and no further: at the end of the scroll, Part 10
+   * sits against the right edge with nothing after it.
    *
-   * A flex item rather than `padding-right`. Padding was the first attempt and it made the *page*
-   * scroll sideways: with `box-sizing: border-box`, padding wider than the element widens the
-   * element, so the strip became 406px inside a 390px screen and took the document with it. A
-   * child adds to the strip's scrollable content and nothing to its box.
+   * There used to be `.parts::after { flex: 0 0 100% }` here — a screen's worth of empty room, so
+   * that the last Parts could still be scrolled to the left edge like the first ones. It bought
+   * that at the price of a strip that scrolls into blank space, which reads as the bar having come
+   * loose. So the left-pinning below is now what the strip can do rather than a guarantee: the
+   * first Parts land on the left edge, and the last few stop at the end of the row, as far left as
+   * the row itself allows.
+   *
+   * Whatever takes its place must not be `padding-right`. That was the first attempt and it made
+   * the *page* scroll sideways: under `box-sizing: border-box`, padding wider than the element
+   * widens the element, so a 390px screen got a 406px strip and the document went with it.
    */
-  .parts::after {
-    content: "";
-    flex: 0 0 100%;
-  }
 
   .parts::-webkit-scrollbar { display: none; }
 }
