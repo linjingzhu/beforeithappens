@@ -5,7 +5,7 @@ import { inviteAcceptUrl } from "../src/auth.js";
 import { createOAuthState, exchangeOAuthCode, isOAuthConfigured, normalizeProvider, oauthAuthorizeUrl, oauthRedirectUri, verifyOAuthState } from "./oauth.mjs";
 import { parseCookies, readJsonBody, requestOrigin, sendJson, sendText, sessionCookieHeader } from "./http.mjs";
 import { consumeUrl, consumeHopHtml, deliverLoginLink, inviteHopHtml, wasMailDelivered } from "./mail.mjs";
-import { inviteShareUrl } from "../src/pair-code.js";
+import { giftRedeemUrl, referralCodeFromPath, referralUrl, inviteShareUrl } from "../src/pair-code.js";
 
 const types = {
   ".html": "text/html; charset=utf-8",
@@ -57,6 +57,8 @@ export function createListener({
   entitlement,
   account,
   report,
+  gift,
+  referral,
   root,
   allowDevOutbox = false,
   allowDevOAuth = false,
@@ -302,6 +304,86 @@ export function createListener({
 
       if (request.method === "GET" && (url.pathname === "/invite/accept" || url.pathname === "/install" || url.pathname === "/start")) {
         await serveStatic(response, "/");
+        return;
+      }
+
+      // Both are sent to people who may have no account and no app, so they answer with the shell
+      // rather than a redirect into a scheme nothing on their phone has registered.
+      if (request.method === "GET" && (url.pathname === "/gift/redeem" || referralCodeFromPath(url.pathname))) {
+        await serveStatic(response, "/");
+        return;
+      }
+
+      if (gift && request.method === "POST" && url.pathname === "/api/gift") {
+        const result = gift.createGiftPurchase(sessionId);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, { ...result, url: giftRedeemUrl(requestOrigin(request), result.token) });
+        return;
+      }
+
+      if (gift && request.method === "GET" && url.pathname === "/api/gift/preview") {
+        sendJson(response, 200, gift.previewGift(url.searchParams.get("token")));
+        return;
+      }
+
+      if (gift && request.method === "GET" && url.pathname === "/api/gift/sent") {
+        const result = gift.listSent(sessionId);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        const origin = requestOrigin(request);
+        sendJson(response, 200, {
+          ok: true,
+          credits: result.credits,
+          gifts: result.gifts.map((row) => ({ ...row, url: row.token ? giftRedeemUrl(origin, row.token) : "" }))
+        });
+        return;
+      }
+
+      if (gift && request.method === "POST" && url.pathname === "/api/gift/revoke") {
+        const body = await readJsonBody(request);
+        const result = gift.revoke(sessionId, body.giftId);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, result);
+        return;
+      }
+
+      if (gift && request.method === "POST" && url.pathname === "/api/gift/redeem") {
+        const body = await readJsonBody(request);
+        const result = gift.redeem(sessionId, body.token);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, { ok: true, session: auth.sessionFor(sessionId) });
+        return;
+      }
+
+      if (referral && request.method === "GET" && url.pathname === "/api/referral") {
+        const result = referral.viewFor(sessionId);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, { ...result, url: referralUrl(requestOrigin(request), result.code) });
+        return;
+      }
+
+      if (referral && request.method === "POST" && url.pathname === "/api/referral/claim") {
+        const body = await readJsonBody(request);
+        const result = referral.claim(sessionId, body.code);
+        if (!result.ok) {
+          sendJson(response, result.error === "unauthenticated" ? 401 : 400, result);
+          return;
+        }
+        sendJson(response, 200, result);
         return;
       }
 

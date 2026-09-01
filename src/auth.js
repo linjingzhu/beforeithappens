@@ -222,9 +222,14 @@ export async function copyText(value, clipboard = globalThis.navigator?.clipboar
   return false;
 }
 
-export async function shareInviteChannel(url, channel, io = {}) {
+/**
+ * `text` is the only thing that was ever invite-specific here, so a present and a recommendation
+ * pass their own line and reuse the rest: share sheet first, clipboard second, and a failure
+ * recorded against the exact url so a reissued link never inherits an old error.
+ */
+export async function shareInviteChannel(url, channel, io = {}, text = INVITE_COPY.share) {
   if (!url) return recordInviteShare("failed", url);
-  const payload = { title: "AB", text: INVITE_COPY.share, url };
+  const payload = { title: "AB", text, url };
   if (channel !== "copy") {
     const share = io.share || (typeof globalThis.navigator?.share === "function"
       ? globalThis.navigator.share.bind(globalThis.navigator)

@@ -63,6 +63,17 @@ test("the real server entry point boots and answers", async () => {
     const report = await get(port, "/api/report");
     assert.equal(report.status, 401, "report is wired and refuses an anonymous caller");
 
+    const referral = await get(port, "/api/referral");
+    assert.equal(referral.status, 401, "referral is wired and refuses an anonymous caller");
+
+    const giftPreview = await get(port, "/api/gift/preview?token=nope");
+    assert.equal(giftPreview.status, 200, "gift is wired");
+    assert.match(giftPreview.body, /"error":"invalid"/, "an unknown present says so rather than throwing");
+
+    // Both links are sent to people with no account, so the shell must answer them.
+    assert.equal((await get(port, "/gift/redeem?token=nope")).status, 200);
+    assert.equal((await get(port, "/r/ABCD1234")).status, 200);
+
     assert.equal(stderr.text.includes("before initialization"), false, "no temporal dead zone at boot");
   } finally {
     child.kill("SIGTERM");

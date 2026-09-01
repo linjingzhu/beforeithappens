@@ -29,7 +29,9 @@ export function isEntitled(state, workspaceId) {
   return rows(state, "entitlements").some((row) => row.workspaceId === workspaceId && row.status === "active");
 }
 
-export function createEntitlement({ store, now = Date.now, pack = {}, audit = null } = {}) {
+export function createEntitlement({ store, now = Date.now, pack = {}, audit = null, onEntitled = null } = {}) {
+  // Fires exactly where a workspace becomes entitled by paying, so a referral reward can never
+  // be credited by anything cheaper than the purchase it is supposed to follow.
   if (!store) throw new Error("store is required");
 
   function requireSession(sessionId) {
@@ -129,10 +131,55 @@ export function createEntitlement({ store, now = Date.now, pack = {}, audit = nu
       amount: PACK_PRICE_KRW,
       currency: PACK_CURRENCY
     });
+    onEntitled?.({ workspaceId: purchase.workspaceId, orderId, at });
     return { ok: true, duplicate: false, entitled: true, eventId, orderId };
   }
 
+  /**
+   * A gift is paid for by one person and used by another, so it cannot go through
+   * grantFromPaidOrder: that resolves the workspace from the purchase, which here belongs to the
+   * giver. The gift module owns who may redeem what; this stays the only writer of entitlements.
+   */
+  function grantFromGift({ giftId, orderId, workspaceId, at = now() }) {
+    if (!workspaceId) return { ok: false, error: "invalid-workspace" };
+    if (isEntitled(store.snapshot(), workspaceId)) return { ok: true, duplicate: true, entitled: true };
+    const eventId = `gift:${giftId}`;
+    let granted = false;
+    store.mutate((state) => {
+      if (!Array.isArray(state.webhookEvents)) state.webhookEvents = [];
+      if (!Array.isArray(state.entitlements)) state.entitlements = [];
+      if (state.webhookEvents.some((row) => row.eventId === eventId)) return;
+      if (state.entitlements.some((row) => row.workspaceId === workspaceId && row.status === "active")) return;
+      state.webhookEvents.push({ id: createId("evt"), eventId, orderId: orderId || null, processedAt: iso(at) });
+      state.entitlements.push({
+        id: createId("ent"),
+        workspaceId,
+        purchaseId: null,
+        orderId: orderId || null,
+        packId: pack.id || null,
+        packVersion: pack.version || null,
+        amount: PACK_PRICE_KRW,
+        currency: PACK_CURRENCY,
+        status: "active",
+        grantedAt: iso(at)
+      });
+      granted = true;
+    });
+    if (granted) {
+      audit?.recordEntitlementGranted({
+        workspaceId,
+        orderId: orderId || "",
+        source: "gift",
+        amount: PACK_PRICE_KRW,
+        currency: PACK_CURRENCY
+      });
+    }
+    return { ok: true, duplicate: !granted, entitled: true };
+  }
+
   return {
+    grantFromGift,
+
     isEntitled(workspaceId) {
       return isEntitled(store.snapshot(), workspaceId);
     },

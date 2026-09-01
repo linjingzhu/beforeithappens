@@ -60,6 +60,10 @@ test("every documented action is recordable and anything else is refused", () =>
     "invite-issued",
     "invite-accepted",
     "entitlement-granted",
+    "gift-issued",
+    "gift-redeemed",
+    "referral-claimed",
+    "referral-credited",
     "account-deleted"
   ]);
   for (const action of AUDIT_ACTIONS) {

@@ -52,6 +52,16 @@ export const COLLECTIONS = {
   purchases: { unique: [{ name: "purchases_order", fields: ["orderId"], nonBlank: true }] },
   entitlements: {},
   webhookEvents: { unique: [{ name: "webhook_events_event", fields: ["eventId"], nonBlank: true }] },
+  // A gift link must open exactly once, so the token is unique at the database level rather
+  // than only inside the redeem path. One attribution per referred account, likewise.
+  packGifts: { unique: [{ name: "pack_gifts_token", fields: ["tokenHash"], nonBlank: true }] },
+  referralCodes: {
+    unique: [
+      { name: "referral_codes_user", fields: ["userId"], nonBlank: true },
+      { name: "referral_codes_code", fields: ["code"], nonBlank: true }
+    ]
+  },
+  referrals: { unique: [{ name: "referrals_referred", fields: ["referredUserId"], nonBlank: true }] },
   auditEvents: {},
   // The id is a content hash: regenerating an identical report reuses the row, it never
   // duplicates it, and the index says so at the database level rather than in a caller.

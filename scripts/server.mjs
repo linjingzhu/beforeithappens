@@ -10,6 +10,8 @@ import { createCouple } from "../server/workspace.mjs";
 import { createAccount } from "../server/account.mjs";
 import { createAudit } from "../server/audit.mjs";
 import { createReport } from "../server/report.mjs";
+import { createGift } from "../server/gift.mjs";
+import { createReferral } from "../server/referral.mjs";
 
 const root = process.cwd();
 const storePath = process.env.AB_STORE_PATH
@@ -19,7 +21,17 @@ const audit = createAudit({ store });
 const couple = createCouple({ store, audit });
 const account = createAccount({ store, audit });
 const pack = { id: marriagePack.id, version: marriagePack.version };
-const entitlement = createEntitlement({ store, pack, audit });
+// referral is credited from inside the entitlement grant, so the reward can only follow a real
+// purchase. Declared first and filled below because the two refer to each other.
+let referral = null;
+const entitlement = createEntitlement({
+  store,
+  pack,
+  audit,
+  onEntitled: ({ workspaceId, at }) => referral?.creditPurchase({ workspaceId, at })
+});
+const gift = createGift({ store, entitlement, pack, audit });
+referral = createReferral({ store, gift, audit });
 const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
 const answers = createAnswers({
   store,
@@ -36,6 +48,6 @@ const auth = createAuth({
 });
 const allowDevOutbox = process.env.AB_DEV_OUTBOX === "1" && process.env.NODE_ENV !== "production";
 const allowDevOAuth = process.env.AB_DEV_OAUTH === "1" && process.env.NODE_ENV !== "production";
-const server = createServer(createListener({ auth, couple, answers, entitlement, account, report, root, allowDevOutbox, allowDevOAuth }));
+const server = createServer(createListener({ auth, couple, answers, entitlement, account, report, gift, referral, root, allowDevOutbox, allowDevOAuth }));
 const port = Number(process.env.PORT) || 4173;
 server.listen(port, "0.0.0.0", () => console.log(`AB running at http://localhost:${port} (store: ${storePath})`));
