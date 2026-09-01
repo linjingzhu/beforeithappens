@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
@@ -506,4 +507,25 @@ test("every tab label is the pack's own section title, never a string from the r
   // The only text the renderer contributes is the ordinal, and it is a number the pack decides.
   const ordinals = [...html.matchAll(/<span class="part-tab-n">([^<]*)<\/span>/g)].map(([, x]) => x);
   assert.deepEqual(ordinals, titles.map((_, i) => SITE_COPY.partWord(i + 1)));
+});
+
+test("the tab strip is a sibling of the header, which is what lets it stay", () => {
+  // A sticky element can only stay while its own parent is on screen. Nested in the header it
+  // would leave with the title after one screenful, so the strip sits directly in the stage.
+  const html = renderQuestionPage(pageModel("marriage", 4, { site }), site);
+  const headerEnd = html.indexOf("</header>");
+  const stripStart = html.indexOf('<nav class="parts"');
+  assert.ok(headerEnd > 0 && stripStart > headerEnd, "the strip comes after the header, not inside it");
+  const header = html.slice(html.indexOf('<header class="stage-head">'), headerEnd);
+  assert.equal(header.includes('class="parts"'), false);
+
+  const css = readFileSync("site/site.css", "utf8");
+  const strip = css.slice(css.indexOf(".parts {"), css.indexOf("}", css.indexOf(".parts {")));
+  assert.match(strip, /position: sticky/);
+  assert.match(strip, /top: 0/);
+  // Opaque and layered, because it now passes over cards rather than sitting above them.
+  assert.match(strip, /background: var\(--ab-paper\)/);
+  assert.match(strip, /z-index/);
+  // And an in-page link must not land a question underneath it.
+  assert.match(css, /scroll-padding-top/);
 });

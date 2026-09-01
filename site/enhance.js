@@ -137,7 +137,28 @@ function startResultPage(root, store) {
   }
 }
 
+/**
+ * Bring the current Part's tab into view inside the strip.
+ *
+ * On a phone the strip scrolls sideways and ten tabs do not fit, so landing on Part 7 puts the tab
+ * that says where you are off the left edge. `scrollLeft` rather than `scrollIntoView`: the latter
+ * can scroll the page as well as the strip, and the page is exactly where the reader already is.
+ *
+ * Enhancement, like the rest of this module. Without it the strip simply starts at Part 1, which is
+ * a worse first glance and not a broken page.
+ */
+function revealCurrentTab() {
+  const strip = document.querySelector(".parts");
+  const current = strip?.querySelector(".part-tab.is-current");
+  if (!strip || !current) return;
+  // Nothing to do when they all fit, which is the desktop case where the strip wraps instead.
+  if (strip.scrollWidth <= strip.clientWidth) return;
+  strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
+}
+
 function start() {
+  revealCurrentTab();
+
   const slug = slugFromPath();
   if (!slug) return;
   const store = createAnswerStore(slug);
