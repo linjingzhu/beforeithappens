@@ -1,0 +1,200 @@
+/*
+ * The site's own sheet, built on the generated tokens in `/tokens.css` so it shares one visual
+ * system with the app rather than inventing a second palette. Reading is the only job here, so the
+ * measure is capped and the type scale is the token scale.
+ */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ab-paper);
+  color: var(--ab-ink);
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+a { color: var(--ab-ink); }
+
+.masthead {
+  padding: 24px 16px 8px;
+  text-align: center;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+}
+
+.tagline {
+  margin: 4px 0 0;
+  color: var(--ab-muted);
+  font-size: 13px;
+}
+
+/* One column, capped at a comfortable measure. Long lines are the main way a reading page fails. */
+.page {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+.page > h1 {
+  font-size: 28px;
+  line-height: 1.25;
+  margin: 24px 0 8px;
+}
+
+.lead {
+  color: var(--ab-muted);
+  margin: 0 0 32px;
+}
+
+.q {
+  background: var(--ab-surface);
+  border: 1px solid var(--ab-line);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 0 0 16px;
+}
+
+.q h2 {
+  font-size: 20px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.q-number {
+  display: inline-block;
+  min-width: 2ch;
+  color: var(--ab-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.q-intent { margin: 0 0 8px; }
+
+.q-example {
+  margin: 0 0 16px;
+  color: var(--ab-muted);
+  font-size: 15px;
+}
+
+.q-label {
+  font-size: 13px;
+  color: var(--ab-muted);
+  margin: 0 0 8px;
+  font-weight: 400;
+}
+
+.q-choices {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.q-choices li {
+  border: 1px solid var(--ab-line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 0 0 8px;
+  background: var(--ab-paper);
+}
+
+.q-why summary {
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--ab-muted);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.q-why p { margin: 0; font-size: 15px; }
+
+/* Reserved, not filled. Holding the height keeps the layout from shifting when a unit arrives. */
+.ad-slot {
+  min-height: 100px;
+  margin: 32px 0;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 32px 0;
+}
+
+.pager a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 20px;
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+.pager-prev { border: 1px solid var(--ab-line); }
+
+.pager-next {
+  background: var(--ab-ink);
+  color: var(--ab-surface);
+  font-weight: 600;
+}
+
+.pager-progress {
+  color: var(--ab-muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cta {
+  background: var(--ab-soft);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 48px 0 0;
+}
+
+.cta h2 { margin: 0 0 8px; font-size: 20px; }
+.cta p { margin: 0 0 16px; }
+
+.cta-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--ab-accent);
+  color: var(--ab-surface);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cards { list-style: none; margin: 24px 0 0; padding: 0; }
+
+.card {
+  background: var(--ab-surface);
+  border: 1px solid var(--ab-line);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 0 0 16px;
+}
+
+.card h2 { margin: 0 0 8px; font-size: 20px; }
+.card p { margin: 0; }
+.card-meta { color: var(--ab-muted); font-size: 14px; margin-top: 8px !important; }
+
+.foot {
+  padding: 24px 16px 48px;
+  text-align: center;
+  color: var(--ab-muted);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
