@@ -170,7 +170,9 @@ test("the sitemap lists every page, because nothing links to page seven from out
   assert.ok(has(xml, "<loc>https://ab.example/marriage/</loc>"));
   assert.ok(has(xml, "<loc>https://ab.example/marriage/2/</loc>"));
   assert.ok(has(robotsTxt(site), "Sitemap: https://ab.example/sitemap.xml"));
-  assert.equal(has(robotsTxt(SITE), "Sitemap:"), false, "no origin, no sitemap line pointing nowhere");
+  // The default SITE now carries the real origin, so the no-origin branch needs one made bare.
+  const bare = siteWith({ origin: "" });
+  assert.equal(has(robotsTxt(bare), "Sitemap:"), false, "no origin, no sitemap line pointing nowhere");
 });
 
 test("nothing rendered from content escapes into markup", () => {
@@ -338,4 +340,37 @@ test("nothing on the sheet can break out of the embedded JSON", async () => {
   const html = renderResultPage("marriage", hostile, site);
   const closers = html.match(/<\/script>/g) || [];
   assert.equal(closers.length, 2, "one for the JSON block, one for the module tag — none from data");
+});
+
+test("the build carries the custom domain and keeps Jekyll out of it", async () => {
+  const { pagesFiles } = await import("../site/seo.js");
+  // Asserted from the function, not from `site/dist/`: CI runs the tests before the build and the
+  // output is gitignored, so reading the directory tests the last build rather than the code.
+  const files = pagesFiles(SITE);
+  assert.equal(files.CNAME.trim(), SITE.customDomain, "Pages drops the domain without this file");
+  assert.equal(SITE.customDomain, "lovemedialogue.com");
+  assert.equal(Object.hasOwn(files, ".nojekyll"), true, "or Pages runs Jekyll over the output");
+
+  // No custom domain, no CNAME — an empty one would blank the domain rather than leave it alone.
+  const bare = siteWith({ customDomain: "" });
+  assert.equal(Object.hasOwn(pagesFiles(bare), "CNAME"), false);
+});
+
+test("the site's own origin is https, so the canonical is not split across two schemes", () => {
+  assert.match(SITE.origin, /^https:\/\//);
+  assert.equal(SITE.origin, `https://${SITE.customDomain}`, "the origin and the CNAME name one site");
+
+  // An http canonical would also hand every page to search engines as an insecure URL.
+  const html = renderQuestionPage(pageModel("marriage", 1, { site: SITE }), SITE);
+  assert.ok(has(html, 'rel="canonical" href="https://lovemedialogue.com/marriage/"'));
+  assert.equal(has(html, 'href="http://lovemedialogue.com'), false);
+});
+
+test("only the site is deployed to Pages, never the app", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const workflow = await readFile(".github/workflows/deploy-site.yml", "utf8");
+  assert.ok(workflow.includes("path: site/dist"), "the artifact is the site");
+  // The app needs a Node process for its API and holds private notes; it is not a static bundle.
+  assert.equal(/path:\s*dist\b/.test(workflow), false, "the app's dist must not be published");
+  assert.ok(workflow.includes("npm test"), "a broken generator fails before it publishes");
 });

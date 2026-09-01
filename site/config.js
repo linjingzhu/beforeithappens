@@ -8,10 +8,16 @@
 export const SITE = Object.freeze({
   name: "AB",
   tagline: "다가올 삶을, 함께 준비하다.",
-  /** Set to the site's own origin at build time; used for canonical URLs and structured data. */
-  origin: "",
-  /** Where a reader who wants the two-person version goes. */
+  /**
+   * The site's own origin. `https`, not `http`: GitHub Pages issues a certificate for a custom
+   * domain, a canonical pointing at `http` splits the site's identity across two schemes, and an
+   * insecure page is marked as such in the browser. `AB_SITE_ORIGIN` overrides for previews.
+   */
+  origin: "https://lovemedialogue.com",
+  /** Where a reader who wants the two-person version goes. Overridden by `AB_APP_ORIGIN`. */
   appOrigin: "",
+  /** Emitted as a CNAME file so Pages keeps serving the custom domain on every deploy. */
+  customDomain: "lovemedialogue.com",
   locale: "ko-KR",
   /** Ten to a page, per the strategy. A hundred questions is ten pages. */
   pageSize: 10

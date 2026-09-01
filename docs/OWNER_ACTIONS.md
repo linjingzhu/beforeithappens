@@ -14,6 +14,7 @@ run's report.
 | 🟢 | can be done now — nothing is blocking it |
 | ⏳ | waiting on something above it |
 | ❓ | unknown here — this agent could not verify it and will not guess |
+| 🔄 | in progress, owner-side |
 | 🤔 | a decision, not a task |
 
 ---
@@ -63,7 +64,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N4 | 앱 | **Apple Developer: enrol as Individual** | 🟢 | The only wait nobody controls. Organization needs a D-U-N-S number and takes days to weeks | `docs/IOS_INSTALL.md` |
 | N5 | 공통 | **Business details for the privacy policy** | 🟢 | 54 placeholders: 상호, 대표자, 주소, 사업자등록번호, 보호책임자, 문의 이메일 | `docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md` |
 | N6 | 공통 | **Resend domain verification** | 🟢 | Until then `onboarding@resend.dev` reaches only the Resend account owner. Needed for login mail and later for the result sheet | `docs/DEPLOY.md` §4 |
-| N7 | 웹 | **Write `혼자만의 연애` 100문항** | 🟢 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
+| N7 | 웹 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
 
 ---
 
@@ -75,9 +76,12 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X2 | 앱 | Friend's UDID, then `eas device:create` | ⏳ | N4 | **Register the device before building.** A device added later is not in the built profile and needs a rebuild |
 | X3 | 앱 | The two-person round on real phones | ⏳ | X1, X2 | The round this whole effort was aimed at |
 | X4 | 공통 | Consent step + age gate + published policy | ⏳ | N5 | Store-blocking, and required before the site accepts a single email address |
-| X5 | 웹 | Site domain and hosting | ⏳ | — | Separate origin from the API. Then set `AB_SITE_ORIGIN` / `AB_APP_ORIGIN` |
+| X5 | 웹 | Site domain and hosting | ✅ | — | `lovemedialogue.com`, GitHub Pages. Build emits CNAME; deploy workflow on `stable` |
+| X5a | 웹 | **Point DNS at GitHub Pages** | 🟢 | X5 | Apex domain needs A/AAAA records at the registrar. Verify the current IPs in GitHub's Pages docs rather than from memory |
+| X5b | 웹 | **Turn Pages on: Settings → Pages → Source = GitHub Actions** | 🟢 | X5 | `has_pages` is false today, so the workflow has nothing to deploy into |
+| X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5a, X5b | The build already writes `https://` canonicals; serving over http would contradict them |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
-| X7 | 웹 | AdSense application | ⏳ | N7, X5 | 10 pages is borderline; 15–30 is the usual bar. In-page units only, never on the page turn |
+| X7 | 웹 | AdSense application | ⏳ | N7, X5c | 10 pages is borderline; 15–30 is the usual bar. In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
 
 ---
@@ -109,5 +113,6 @@ Not owner actions — recorded so the ledger reads as a whole.
 | Audit log with six event types | D2 for a read path |
 | Account deletion, all surfaces | D3 |
 | Pack registry | N7 to hold a second pack |
-| Question site: 10-per-page, SEO, sitemap | N7, X5 |
+| Question site: 10-per-page, SEO, sitemap | N7, X5a/X5b |
+| Pages deploy workflow, CNAME, .nojekyll | X5b |
 | Result sheet, browser-only, no delivery | X6 |
