@@ -169,6 +169,13 @@ a { color: var(--ab-ink); }
   top: 0;
   z-index: 20;
   display: flex;
+  /*
+   * `safe center` rather than plain `center`: centred while the tabs fit, and start-aligned the
+   * moment they do not. Plain `center` on a scrolling row pushes the overflow off *both* ends and
+   * makes the first tabs unreachable — you cannot scroll to something that starts before the
+   * scroll origin. On a phone ten tabs never fit, so that is the case, not the edge case.
+   */
+  justify-content: safe center;
   gap: 4px;
   padding: 4px 16px 0;
   background: var(--ab-paper);
