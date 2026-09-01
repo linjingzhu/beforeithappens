@@ -24,11 +24,11 @@ run's report.
 Rows are marked so the ledger can be sliced without re-deriving it: **앱** (the couple app and its
 API), **웹** (the public question site), **공통** (serves both).
 
-### The smallest live web service
+### The smallest live web service — reached
 
-Worth stating separately because it is much smaller than the full list looks. The site is live and
-useful with **N7 + X5 only** — the hundred questions, and somewhere to put them. The result sheet
-already works: it is computed in the reader's browser from answers that never leave it.
+**`https://lovemedialogue.com` serves 결혼 100제 over ten Parts.** The result sheet works: it is
+computed in the reader's browser from answers that never leave it. Everything below is what turns a
+live site into a monetised one, or a second pack into a reason to come back.
 
 Everything else on the 웹 rows is enhancement on top of a working site:
 
@@ -77,12 +77,13 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X3 | 앱 | The two-person round on real phones | ⏳ | X1, X2 | The round this whole effort was aimed at |
 | X4 | 공통 | Consent step + age gate + published policy | ⏳ | N5 | Store-blocking, and required before the site accepts a single email address |
 | X5 | 웹 | Site domain and hosting | ✅ | — | `lovemedialogue.com`, GitHub Pages. Build emits CNAME; deploy workflow on `stable` |
-| X5a | 웹 | **Point DNS at GitHub Pages** | 🟢 | X5 | **The last step.** The site is deployed and waiting; the apex still answers `118.67.131.217`, the registrar's parking page. Records, verification and the failure modes: `docs/DNS_SETUP.md` |
+| X5a | 웹 | ~~Point DNS at GitHub Pages~~ | ✅ | X5 | Done at 후이즈. The apex answers the four GitHub addresses; `www` is a CNAME. `docs/DNS_SETUP.md` keeps the records and the failure modes |
 | X5b | 웹 | ~~Turn Pages on~~ | ✅ | X5 | Done by the owner. The deploy then ran clean end to end: build, CNAME check, configure, upload, deploy |
-| X5d | 웹 | **Settings → Pages → Custom domain → type it and Save** | 🟢 | X5a | Not optional and not automatic. The `CNAME` in the artifact registered the domain under branch-based Pages; under Actions deployment it does not, and an unregistered domain 404s however green the deploy is |
-| X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5d | The build already writes `https://` canonicals; serving over http would contradict them. The certificate starts only after the domain is registered |
+| X5d | 웹 | ~~Register the custom domain in Settings~~ | ✅ | X5a | Not automatic under Actions deployment, which is what the 404 was |
+| X5c | 웹 | ~~Enforce HTTPS~~ | ✅ | X5d | **`https://lovemedialogue.com` is live.** The canonicals the build writes are now true |
+| X5e | 웹 | **Google Search Console: verify the property, submit the sitemap** | 🟢 | X5c | Nothing indexes a site it has not found. The build already emits `/sitemap.xml` and a `robots.txt` that points at it. Verification is a DNS TXT record or an HTML tag — the TXT goes in the same 후이즈 screen as the A records |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
-| X7 | 웹 | AdSense application | ⏳ | X5c, N5 | Ten pages of a hundred questions now exist. What is still missing is a **published** privacy policy (N5) and a live HTTPS site (X5c). In-page units only, never on the page turn |
+| X7 | 웹 | AdSense application | ⏳ | N5 | Ten Parts of a hundred questions exist and the site is live over HTTPS. **The one thing left is a published privacy policy** — the business details in N5, then the page. In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
 
 ---

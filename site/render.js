@@ -39,11 +39,19 @@ export const SITE_COPY = Object.freeze({
 
 function questionArticle(question) {
   const choices = question.choices
-    .map((choice) => `          <li><label class="q-choice">
+    .map((choice) => {
+      // The name of the value a choice stands for, where the pack's author wrote one. It is what
+      // makes four plausible answers legible as four different things to want.
+      const value = choice.valueLabel
+        ? `<em class="q-choice-value">${escapeHtml(choice.valueLabel)}</em>`
+        : "";
+      return `          <li><label class="q-choice">
             <input type="radio" name="q-${escapeHtml(question.id)}" value="${escapeHtml(choice.id)}">
-            <span>${escapeHtml(choice.label)}</span>
-          </label></li>`)
+            <span>${escapeHtml(choice.label)}${value}</span>
+          </label></li>`;
+    })
     .join("\n");
+  const mood = question.mood ? `<span class="q-mood">${escapeHtml(question.mood)}</span>` : "";
   // Guidance copy is app-pack only (see `PACK_SURFACE` in `src/pack-schema.js`). A site pack has
   // none, and an empty <p> would render as a gap the reader cannot account for, so the elements are
   // omitted rather than emptied.
@@ -56,7 +64,7 @@ function questionArticle(question) {
         </details>`
     : "";
   return `      <article class="q" id="q-${escapeHtml(question.id)}" data-question="${escapeHtml(question.id)}">
-        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>${intent}${example}
+        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}${mood}</h2>${intent}${example}
         <h3 class="q-label">${escapeHtml(SITE_COPY.choicesLabel)}</h3>
         <ul class="q-choices">
 ${choices}
@@ -194,7 +202,7 @@ ${partTabs(model)}
       </header>
       <main class="page">
         <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partWord(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
-${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
+${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map(questionArticle).join("\n")}
         </section>
 ${adSlot(model)}

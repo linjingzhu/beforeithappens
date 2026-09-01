@@ -30,14 +30,16 @@ export const PACK_AUDIENCE = Object.freeze({ couple: "couple", solo: "solo" });
  * and is sold, so it declares how many questions are free. Those requirements are why the app's
  * pack cannot drift, and they stay exactly as strict as they were.
  *
- * A **site** pack is published as public web pages. It has no shelf, no price, and no guidance
- * copy — a hundred questions and their choices, which is the whole of what a reader sees. Requiring
- * the app's fields of it would mean inventing three paragraphs per question, and invented guidance
- * is worse than none: it reads as advice and is not.
+ * A **site** pack is published as public web pages. It has no shelf and no price, and it carries
+ * whatever guidance its author actually wrote — which is not the same across packs. 결혼 100제 is a
+ * question and four choices and nothing else; 임신 100제 was written with a scene for every question.
+ * Requiring the app's full set of either would mean inventing paragraphs, and invented guidance is
+ * worse than none: it reads as advice and is not.
  *
- * The distinction is declared rather than inferred, and each surface is checked for what it must
- * have *and* refused what it must not — a site pack carrying half a set of guidance fields is a
- * mistake, not a bonus, and fails here rather than rendering blank sections.
+ * So a site pack's guidance fields are optional but **all-or-nothing per field**: every question
+ * carries an `example` or none does. That is the rule the earlier "a site pack carries none" was
+ * reaching for — half a set renders inconsistently and nothing downstream would report it — without
+ * throwing away copy somebody wrote.
  */
 export const PACK_SURFACE = Object.freeze({ app: "app", site: "site" });
 
@@ -87,6 +89,8 @@ export function definePack(raw = {}) {
   for (const section of sections) {
     requireText(id, section?.id, "section id");
     requireText(id, section?.title, `section ${section?.id} title`);
+    // A line introducing the Part, shown once above its questions.
+    if (section.blurb !== undefined) requireText(id, section.blurb, `section ${section.id} blurb`);
     if (sectionIds.has(section.id)) fail(id, `duplicate section id ${section.id}`);
     sectionIds.add(section.id);
   }
@@ -108,11 +112,10 @@ export function definePack(raw = {}) {
       }
     } else {
       requireText(id, question.title, `${question.id}.title`);
-      // Refused rather than ignored: a site pack with guidance on some questions and not others
-      // renders inconsistently, and nothing downstream would report it.
-      for (const field of APP_ONLY_QUESTION_FIELDS) {
-        if (question[field] !== undefined) fail(id, `${question.id}.${field} is app-only; a site pack carries none`);
+      if (question.researchKeywords !== undefined) {
+        fail(id, `${question.id}.researchKeywords is app-only; the site renders no keyword list`);
       }
+      if (question.mood !== undefined) requireText(id, question.mood, `${question.id}.mood`);
     }
 
     const choices = Array.isArray(question.choices) ? question.choices : [];
@@ -123,11 +126,28 @@ export function definePack(raw = {}) {
     for (const choice of choices) {
       requireText(id, choice?.id, `${question.id} choice id`);
       requireText(id, choice?.label, `${question.id}.${choice?.id} label`);
+      // The name of the value a choice stands for, where the pack's author wrote one.
+      if (choice.valueLabel !== undefined) requireText(id, choice.valueLabel, `${question.id}.${choice.id} valueLabel`);
       // Choice ids are stored on answers, so a collision anywhere in the pack corrupts a reply.
       if (choiceIds.has(choice.id)) fail(id, `duplicate choice id ${choice.id}`);
       choiceIds.add(choice.id);
       if (labels.has(choice.label.trim())) fail(id, `${question.id} repeats the label ${choice.label}`);
       labels.add(choice.label.trim());
+    }
+  }
+
+  // All-or-nothing per field. A pack where nine questions in ten carry a scene reads as though the
+  // tenth lost one, and that is exactly the kind of gap nobody reports.
+  if (!isApp) {
+    for (const field of [...APP_ONLY_QUESTION_FIELDS, "mood"]) {
+      const withField = questions.filter((question) => question[field] !== undefined).length;
+      if (withField !== 0 && withField !== questions.length) {
+        fail(id, `${field} is on ${withField} of ${questions.length} questions; a site pack carries it on all or none`);
+      }
+    }
+    const withValue = questions.filter((q) => q.choices.every((c) => c.valueLabel !== undefined)).length;
+    if (withValue !== 0 && withValue !== questions.length) {
+      fail(id, `choice valueLabel is on ${withValue} of ${questions.length} questions; all or none`);
     }
   }
 

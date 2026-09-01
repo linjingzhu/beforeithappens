@@ -56,10 +56,10 @@ test("an unpublished pack, or a page past the end, is a definite no", () => {
 test("the site publishes only what it names, never whatever the registry happens to hold", () => {
   // The registry holds the app's content too. A site that published everything it found would put
   // a pack in front of the public the first time someone registered one.
-  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100"]);
+  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100", "pregnancy-100"]);
   assert.equal(pageModel("marriage-preparation", 1, { site }), null, "the app's pack is not on the site");
   assert.equal(pageModel("dating", 1, { site }), null);
-  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage"]);
+  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage", "pregnancy"]);
 });
 
 test("the model knows where it is in the series", () => {
@@ -79,12 +79,15 @@ test("the model knows where it is in the series", () => {
 
 test("every page is emitted, in order, once", () => {
   const pages = allPages({ site });
-  assert.equal(pages.length, LAST_PAGE);
-  assert.equal(LAST_PAGE, 10, "a hundred questions, ten to a page");
+  assert.equal(LAST_PAGE, 10, "a hundred questions, ten to a Part");
+  assert.equal(pages.length, PUBLISHED.length * LAST_PAGE, "every pack's every Part");
+  const marriagePages = pages.filter((p) => p.slug === "marriage");
   assert.deepEqual(
-    pages.map((p) => p.path),
+    marriagePages.map((p) => p.path),
     ["/marriage/", ...Array.from({ length: LAST_PAGE - 1 }, (_, i) => `/marriage/${i + 2}/`)]
   );
+  // Packs are emitted in the order they are published, not interleaved.
+  assert.deepEqual([...new Set(pages.map((p) => p.slug))], PUBLISHED.map((entry) => entry.slug));
   assert.equal(new Set(pages.map((p) => p.path)).size, pages.length);
 });
 

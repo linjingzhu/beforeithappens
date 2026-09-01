@@ -41,6 +41,18 @@ export const PUBLISHED = Object.freeze([
     description: "결혼을 앞둔 두 사람이 미리 맞춰 두면 좋은 100가지 질문. 정답은 없고, 서로의 기대를 먼저 알아보는 것이 목적입니다.",
     /** Shown above the questions, before the first one. */
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
+  }),
+  Object.freeze({
+    packId: "pregnancy-100",
+    slug: "pregnancy",
+    title: "임신 100제 — 함께 지나는 열 달",
+    navTitle: "임신 100제",
+    description: "임신을 함께 지나는 두 사람이 미리 맞춰 두면 좋은 100가지 질문. 몸의 경험은 한 사람에게 더 실리지만, 결정과 책임은 둘이 함께 만듭니다.",
+    /**
+     * The pack's own guide line, which the editorial build printed under every question. It is one
+     * sentence and it was the same sentence a hundred times, so it belongs here, once.
+     */
+    lead: "각자 먼저 답하세요. 상대가 좋아할 답이 아니라, 실제 상황에서 내가 지킬 수 있는 선택을 골라요."
   })
 ]);
 
