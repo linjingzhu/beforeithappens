@@ -36,7 +36,7 @@ await mkdir(OUT, { recursive: true });
 await cp("site/site.css", join(OUT, "site.css"));
 // The enhancement module and what it imports, served as-is: there is no bundler and no need for
 // one — four small ES modules load natively.
-for (const module of ["enhance.js", "answers.js", "reflect.js", "result-copy.js"]) {
+for (const module of ["enhance.js", "answers.js", "reflect.js", "result-copy.js", "feedback.js"]) {
   await cp(`site/${module}`, join(OUT, module));
 }
 await cp("src/tokens.css", join(OUT, "tokens.css"));

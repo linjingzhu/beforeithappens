@@ -5,6 +5,8 @@ import { PUBLISHED, SITE } from "../site/config.js";
 import { SITE_COPY, renderIndex, renderQuestionPage } from "../site/render.js";
 import { indexModel, pageModel } from "../site/content.js";
 import { RESULT_COPY } from "../site/result-copy.js";
+// Debug only; it is on the page until `SITE.debugFeedback` comes off, so its words are covered too.
+import { FEEDBACK_COPY } from "../site/feedback.js";
 import { findPack } from "../src/packs.js";
 
 /**
@@ -31,9 +33,20 @@ function renderedCharacters() {
       for (const choice of question.choices) parts.push(choice.label, choice.valueLabel || "");
     }
   }
-  for (const copy of [SITE_COPY, RESULT_COPY]) {
-    for (const value of Object.values(copy)) if (typeof value === "string") parts.push(value);
-  }
+  // Copy is not always a flat string: an options list is an array of objects, and a label that
+  // takes a number is a function. Walking it, and calling the formatters, keeps a string nested one
+  // level deeper than this scanner expected from going uncovered.
+  const walk = (value) => {
+    if (typeof value === "string") parts.push(value);
+    else if (typeof value === "function") {
+      try {
+        walk(value(1));
+      } catch {
+        /* a formatter that needs something else is covered by its own copy */
+      }
+    } else if (value && typeof value === "object") Object.values(value).forEach(walk);
+  };
+  for (const copy of [SITE_COPY, RESULT_COPY, FEEDBACK_COPY]) walk(copy);
   return new Set(parts.join(""));
 }
 

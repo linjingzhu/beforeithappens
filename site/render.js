@@ -4,6 +4,8 @@ import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
+// Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
+import { FEEDBACK_COPY } from "./feedback.js";
 
 /**
  * Whole documents, not fragments.
@@ -33,14 +35,111 @@ export const SITE_COPY = Object.freeze({
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
   ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
   ctaAction: "둘이 함께 해보기",
-  choicesLabel: "네 가지 답",
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
+  /* What a reader writes beside a question. Every line here is the pack's own wording. */
+  depthLead: "이 선택은 내게",
+  importancePlaceholder: "중요도를 선택해요",
+  importanceOptions: Object.freeze([
+    { value: "light", label: "가벼운 선호예요" },
+    { value: "hope", label: "가능하면 지키고 싶어요" },
+    { value: "need", label: "꼭 존중받아야 해요" }
+  ]),
+  reasonPlaceholder: "왜 이 답을 골랐나요? 내가 지키고 싶은 마음이나 경험을 적어보세요.",
+  guessPlaceholder: "상대는 무엇을 고를까요? 그 이유까지 다정하게 추측해보세요.",
+  /* The part that stays shut until both people have answered. */
+  talkLabel: "답을 나눈 뒤 열어보는 대화",
+  talkSteps: Object.freeze([
+    { lead: "먼저 같은 마음을 찾아요.", body: "선택이 달라도 두 사람 모두 지키고 싶은 것은 무엇인가요?" },
+    { lead: "차이를 부담의 언어로 말해요.", body: "누가 맞는지보다 내가 두려워하는 비용과 책임을 설명해요." },
+    { lead: "예외를 함께 상상해요.", body: "상대의 선택이 더 필요한 날은 어떤 날일까요?" }
+  ]),
+  ruleLabel: "우리의 임시 원칙",
+  rulePlaceholder: "기본 원칙 / 예외 조건 / 다시 이야기할 시점을 적어보세요.",
+  talkClosing: "오늘 꼭 결론 내리지 않아도 괜찮아요. 서로가 무엇을 지키고 싶은지 알게 된 것만으로도 우리는 조금 더 좋은 팀이 되었습니다.",
   noScriptNote: "브라우저 저장이 꺼져 있으면 답이 기억되지 않아요. 질문은 그대로 읽으실 수 있습니다."
 });
 
-function questionArticle(question) {
+/**
+ * What a reader writes beside a question: how much the choice matters, why they chose it, and what
+ * they think the other person will choose. It is one block of form controls rather than three,
+ * because they are one thought, and nothing here is required — a reader who only picks an answer
+ * sees three empty fields and loses nothing by leaving them empty.
+ */
+function depthBlock(question) {
+  const options = SITE_COPY.importanceOptions
+    .map((option) => `            <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
+    .join("\n");
+  return `
+        <div class="q-depth">
+          <label class="q-depth-lead" for="importance-${escapeHtml(question.id)}">${escapeHtml(SITE_COPY.depthLead)}</label>
+          <select id="importance-${escapeHtml(question.id)}" data-note="importance">
+            <option value="">${escapeHtml(SITE_COPY.importancePlaceholder)}</option>
+${options}
+          </select>
+          <textarea data-note="reason" rows="3" placeholder="${escapeHtml(SITE_COPY.reasonPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.reasonPlaceholder)}"></textarea>
+          <textarea data-note="guess" rows="3" placeholder="${escapeHtml(SITE_COPY.guessPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.guessPlaceholder)}"></textarea>
+        </div>`;
+}
+
+/**
+ * The conversation to have once both people have answered, shut by default. Shut because reading it
+ * first turns the question into a test with a stated right way through it; a reader opens it when
+ * they are ready to talk, which is the only moment its three steps mean anything.
+ */
+function talkBlock(question) {
+  const steps = SITE_COPY.talkSteps
+    .map((step) => `          <p><b>${escapeHtml(step.lead)}</b> ${escapeHtml(step.body)}</p>`)
+    .join("\n");
+  return `
+        <details class="q-talk">
+          <summary>${escapeHtml(SITE_COPY.talkLabel)}</summary>
+${steps}
+          <p class="q-rule-label">${escapeHtml(SITE_COPY.ruleLabel)}</p>
+          <textarea data-note="rule" rows="3" placeholder="${escapeHtml(SITE_COPY.rulePlaceholder)}" aria-label="${escapeHtml(SITE_COPY.ruleLabel)}"></textarea>
+          <p class="q-talk-closing">${escapeHtml(SITE_COPY.talkClosing)}</p>
+        </details>`;
+}
+
+/**
+ * The review block, and the only place on the site where a star means anything. It rates the
+ * *question* — whether the scene is real and the four answers are distinct — never the reader and
+ * never the couple. It exists while the pack is being read through and comes out with
+ * `SITE.debugFeedback`; see `site/feedback.js`.
+ */
+function feedbackBlock(question) {
+  const stars = [1, 2, 3, 4, 5]
+    .map((value) => `            <label title="${value}"><input type="radio" name="rating-${escapeHtml(question.id)}" value="${value}" data-feedback-score><span aria-hidden="true">★</span></label>`)
+    .join("\n");
+  return `
+        <aside class="q-feedback" data-feedback="${escapeHtml(question.id)}">
+          <div class="q-feedback-head">
+            <b>${escapeHtml(FEEDBACK_COPY.title)}</b>
+            <span>${escapeHtml(FEEDBACK_COPY.badge)}</span>
+          </div>
+          <p>${escapeHtml(FEEDBACK_COPY.lead)}</p>
+          <fieldset class="q-stars" aria-label="${escapeHtml(FEEDBACK_COPY.starsLabel)}">
+${stars}
+          </fieldset>
+          <p class="q-feedback-state" data-feedback-state>${escapeHtml(FEEDBACK_COPY.unrated)}</p>
+          <textarea data-feedback-comment rows="2" placeholder="${escapeHtml(FEEDBACK_COPY.commentPlaceholder)}" aria-label="${escapeHtml(FEEDBACK_COPY.title)}"></textarea>
+        </aside>`;
+}
+
+/**
+ * How the review gets off the reviewer's phone. The site makes no request, so the feedback leaves
+ * as a file the reviewer saves and sends — which keeps that true while the pack is being reviewed.
+ * Goes with the rest of the debug block.
+ */
+function feedbackExport() {
+  return `        <p class="q-feedback-export">
+          <button type="button" data-feedback-export>${escapeHtml(SITE_COPY.feedbackExport)}</button>
+        </p>
+`;
+}
+
+function questionArticle(question, site = SITE) {
   const choices = question.choices
     .map((choice) => {
       // The name of the value a choice stands for, where the pack's author wrote one. It is what
@@ -54,7 +153,9 @@ function questionArticle(question) {
           </label></li>`;
     })
     .join("\n");
-  const mood = question.mood ? `<span class="q-mood">${escapeHtml(question.mood)}</span>` : "";
+  // The pack writes a mood for every question and the page does not print it. It is a note about
+  // the arc — the tenth question of a Part is meant to land differently from the first — and beside
+  // the question it read as a label telling the reader how to feel before they had answered.
   // Guidance copy is app-pack only (see `PACK_SURFACE` in `src/pack-schema.js`). A site pack has
   // none, and an empty <p> would render as a gap the reader cannot account for, so the elements are
   // omitted rather than emptied.
@@ -72,15 +173,14 @@ function questionArticle(question) {
         </details>`
     : "";
   return `      <article class="q" id="q-${escapeHtml(question.id)}" data-question="${escapeHtml(question.id)}">
-        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}${mood}</h2>${scene}${intent}${example}
-        <h3 class="q-label">${escapeHtml(SITE_COPY.choicesLabel)}</h3>
+        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>${scene}${intent}${example}
         <ul class="q-choices">
 ${choices}
         </ul>
         <label class="q-undiscussed">
           <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
           <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>${why}
+        </label>${depthBlock(question)}${talkBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
       </article>`;
 }
 
@@ -301,9 +401,9 @@ export function renderQuestionPage(model, site = SITE) {
   const body = `      <main class="page">
         <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partOrdinal(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
-${model.questions.map(questionArticle).join("\n")}
+${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
-${adSlot(model)}
+${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model)}
 ${pager(model)}
 ${callToAction(site)}
       </main>`;

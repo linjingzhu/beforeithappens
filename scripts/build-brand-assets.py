@@ -69,10 +69,21 @@ import('./src/packs.js').then(async (packs) => {
   }
   const { SITE } = await import('./site/config.js');
   parts.push(SITE.name, SITE.tagline);
+  // Copy is not always a flat string any more: an options list is an array of objects, and a label
+  // that takes a number is a function. Walk it, and call the formatters with a number, so that a
+  // string nested one level deeper than the scanner expected cannot quietly go uncovered.
+  const walk = (value) => {
+    if (typeof value === 'string') parts.push(value);
+    else if (typeof value === 'function') { try { walk(value(1)); } catch {} }
+    else if (value && typeof value === 'object') Object.values(value).forEach(walk);
+  };
   const { SITE_COPY } = await import('./site/render.js');
-  parts.push(...Object.values(SITE_COPY).filter((v) => typeof v === 'string'));
+  walk(SITE_COPY);
   const { RESULT_COPY } = await import('./site/result-copy.js');
-  parts.push(...Object.values(RESULT_COPY).filter((v) => typeof v === 'string'));
+  walk(RESULT_COPY);
+  // Debug only, and scanned anyway: it is on the live page until the owner takes it off.
+  const { FEEDBACK_COPY } = await import('./site/feedback.js');
+  walk(FEEDBACK_COPY);
   const pages = await import('./site/pages.js');
   for (const page of pages.standingPages()) {
     parts.push(page.title, page.description);

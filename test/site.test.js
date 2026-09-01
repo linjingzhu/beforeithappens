@@ -659,3 +659,117 @@ test("the marriage source is sliced by index, not scanned by a lazy regex", asyn
   assert.equal(raw.questions.every((q) => q.o?.length === 4 && q.s && q.q), true);
   assert.equal(raw.values.every((set) => set.length === 4), true);
 });
+
+test("every question carries the notes block and the conversation, and neither is prefilled", () => {
+  const model = pageModel(PUBLISHED[0].slug, 1, { site });
+  const html = renderQuestionPage(model, site);
+
+  for (const question of model.questions) {
+    // Scoped to the question's own article, so a count across the page cannot hide a card missing
+    // one of these while another has two.
+    const start = html.indexOf(`data-question="${question.id}"`);
+    const article = html.slice(start, html.indexOf("</article>", start));
+    for (const field of ["importance", "reason", "guess", "rule"]) {
+      assert.equal(
+        (article.match(new RegExp(`data-note="${field}"`, "g")) || []).length,
+        1,
+        `${question.id} has one ${field} field`
+      );
+    }
+    assert.match(article, /<details class="q-talk">/, `${question.id} conversation`);
+    assert.ok(article.includes(SITE_COPY.talkLabel));
+    assert.ok(article.includes(SITE_COPY.ruleLabel));
+    for (const step of SITE_COPY.talkSteps) assert.ok(article.includes(step.body), step.lead);
+    // The conversation is shut on arrival: opened, it reads as a stated right way through the
+    // question before the reader has answered it.
+    assert.equal(/<details class="q-talk" open/.test(article), false);
+    // Nothing is answered for the reader — no option preselected, no textarea with content in it.
+    assert.equal(/<option value="[^"]+" selected/.test(article), false);
+    assert.equal(/<textarea[^>]*>[^<]/.test(article), false, "textareas ship empty");
+  }
+});
+
+test("the review block is behind one flag, and the page it leaves is intact", () => {
+  const model = pageModel(PUBLISHED[0].slug, 1, { site });
+
+  const withDebug = renderQuestionPage(model, siteWith({ ...site, debugFeedback: true }));
+  assert.equal((withDebug.match(/data-feedback="/g) || []).length, model.questions.length);
+  assert.equal((withDebug.match(/data-feedback-export/g) || []).length, 1, "one export for the page");
+  assert.match(withDebug, /DEBUG/);
+
+  // What the owner will do later: one flag, and every trace of it is gone from the page.
+  const without = renderQuestionPage(model, siteWith({ ...site, debugFeedback: false }));
+  for (const marker of ["data-feedback", "q-stars", "DEBUG", "★"]) {
+    assert.equal(without.includes(marker), false, `${marker} goes with the flag`);
+  }
+  // And the question itself is untouched: the notes, the conversation and the answer all remain.
+  for (const marker of ['data-note="reason"', 'class="q-talk"', "q-choices"]) {
+    assert.ok(without.includes(marker), `${marker} is not part of the debug block`);
+  }
+});
+
+test("the question card names no mood and no heading over its choices", () => {
+  // Both were on the card and both were removed at the owner's word: the mood read as an
+  // instruction about how to feel, and the heading named what four radio buttons already are.
+  const html = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+  assert.equal(html.includes("q-mood"), false);
+  assert.equal(html.includes('class="q-label"'), false);
+  assert.equal(html.includes("네 가지 답"), false);
+  assert.equal(SITE_COPY.choicesLabel, undefined, "and the copy went with it");
+});
+
+test("a question keeps what was written beside it, before and after it is answered", async () => {
+  const { answeredCount, emptyAnswers, parseAnswers, serializeAnswers, withAnswer, withNote } =
+    await import("../site/answers.js");
+  let answers = emptyAnswers("marriage");
+
+  // Notes can come first: someone may write their way to a decision.
+  answers = withNote(answers, "q1", "reason", "약속 없는 날이 제일 좋아서");
+  assert.equal(answers.items.q1.reason, "약속 없는 날이 제일 좋아서");
+  assert.equal(answers.items.q1.choiceId, "");
+  assert.equal(answeredCount(answers), 0, "written on is not answered");
+
+  // And answering does not overwrite them.
+  answers = withAnswer(answers, "q1", "q1-a");
+  assert.equal(answers.items.q1.reason, "약속 없는 날이 제일 좋아서");
+  assert.equal(answeredCount(answers), 1);
+
+  // Only the four named fields, and importance only from its own list.
+  answers = withNote(answers, "q1", "importance", "need");
+  assert.equal(answers.items.q1.importance, "need");
+  assert.equal(withNote(answers, "q1", "importance", "매우").items.q1.importance, undefined);
+  assert.equal(withNote(answers, "q1", "secret", "x").items.q1.secret, undefined);
+
+  // A note cleared back to empty leaves nothing behind, and an item holding nothing is dropped.
+  let onlyNotes = withNote(emptyAnswers("marriage"), "q2", "guess", "상대는 B를 고를 것 같아요");
+  onlyNotes = withNote(onlyNotes, "q2", "guess", "");
+  assert.equal(onlyNotes.items.q2, undefined);
+
+  // A runaway paste cannot fill the quota and take the other answers down with it.
+  const long = withNote(emptyAnswers("marriage"), "q3", "rule", "가".repeat(5000));
+  assert.equal(long.items.q3.rule.length, 2000);
+
+  // And it all survives a round trip through storage.
+  assert.deepEqual(parseAnswers(serializeAnswers(answers), "marriage").items.q1, answers.items.q1);
+});
+
+test("question feedback is a separate store, so removing it cannot take answers with it", async () => {
+  const { emptyFeedback, feedbackCount, feedbackKey, parseFeedback, serializeFeedback, withFeedback } =
+    await import("../site/feedback.js");
+  const { storageKey } = await import("../site/answers.js");
+  assert.notEqual(feedbackKey("marriage"), storageKey("marriage"));
+
+  let feedback = withFeedback(emptyFeedback("marriage"), "q1", { rating: 4 });
+  feedback = withFeedback(feedback, "q1", { comment: "B와 D가 겹쳐 보여요" });
+  assert.deepEqual(feedback.items.q1, { rating: 4, comment: "B와 D가 겹쳐 보여요" });
+  assert.equal(feedbackCount(feedback), 1);
+
+  // Out-of-range ratings are dropped rather than stored, and an entry holding neither goes.
+  assert.equal(withFeedback(emptyFeedback("marriage"), "q2", { rating: 9 }).items.q2, undefined);
+  const cleared = withFeedback(withFeedback(feedback, "q1", { rating: 0 }), "q1", { comment: "" });
+  assert.equal(cleared.items.q1, undefined);
+
+  assert.deepEqual(parseFeedback(serializeFeedback(feedback), "marriage"), feedback);
+  // Another pack's file is not this pack's feedback.
+  assert.deepEqual(parseFeedback(serializeFeedback(feedback), "pregnancy"), emptyFeedback("pregnancy"));
+});
