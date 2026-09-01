@@ -583,8 +583,12 @@ test("the strip pins the current tab left on a phone, and never scrolls sideways
   const block = narrow.slice(0, narrow.indexOf("\n}\n"));
   assert.match(block, /flex-wrap: nowrap/, "one row that scrolls");
   assert.match(block, /justify-content: flex-start/, "centring a scrolling row hides its left end");
-  // Room after the last tab, so Part 10 can reach the left edge like every other Part can.
-  assert.match(block, /padding-right: 100%/);
+  // Room after the last tab, so Part 10 can reach the left edge like every other Part can — as a
+  // flex item, not padding. Padding was the first attempt and it made the *page* scroll sideways:
+  // under `border-box`, padding wider than the element widens the element, so a 390px screen got a
+  // 406px strip and the document went with it.
+  assert.match(css, /\.parts::after \{[^}]*flex: 0 0 100%/s, "the trailing room is a child");
+  assert.equal(/\.parts \{[^}]*padding-right: 100%/s.test(css), false, "and never padding");
 
   const strip = css.slice(css.indexOf(".parts {"), css.indexOf("}", css.indexOf(".parts {")));
   assert.match(strip, /flex-wrap: wrap/, "wide screens wrap rather than scroll");

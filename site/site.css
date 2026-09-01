@@ -227,13 +227,22 @@ a { color: var(--ab-ink); }
     justify-content: flex-start;
     overflow-x: auto;
     scrollbar-width: none;
-    /*
-     * A screen's worth of room after the last tab, so that every tab can reach the left edge.
-     * Without it the final Parts run out of scroll and stop wherever they land, which is the
-     * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule
-     * that holds for seven of ten is not one.
-     */
-    padding-right: 100%;
+  }
+
+  /*
+   * A screen's worth of room after the last tab, so that every tab can reach the left edge.
+   * Without it the final Parts run out of scroll and stop wherever they land, which is the
+   * shuffling this is meant to end — the rule is "the current tab is on the left", and a rule that
+   * holds for seven of ten is not one.
+   *
+   * A flex item rather than `padding-right`. Padding was the first attempt and it made the *page*
+   * scroll sideways: with `box-sizing: border-box`, padding wider than the element widens the
+   * element, so the strip became 406px inside a 390px screen and took the document with it. A
+   * child adds to the strip's scrollable content and nothing to its box.
+   */
+  .parts::after {
+    content: "";
+    flex: 0 0 100%;
   }
 
   .parts::-webkit-scrollbar { display: none; }
