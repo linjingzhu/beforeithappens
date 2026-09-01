@@ -1,13 +1,13 @@
 # Web service strategy — the question site that feeds the app
 
-Two products, one content core. This file is the routing document for the web service; where it
+Two products sharing a schema, not a content set. This file is the routing document for the web service; where it
 and `docs/PRODUCT_SPEC.md` disagree about the **app**, the spec wins. The web service is not
 governed by that spec, which is exactly why the boundary below has to be explicit.
 
 ## What is being built
 
-A public, ad-supported question site. First topic `연애`, 100 questions across four movements,
-ten to a page, ten pages. Finish the set and a result sheet is produced and sent to the address the
+A public, ad-supported question site. First topic **`혼자만의 연애`** — dating, answered alone —
+100 questions across four movements, ten to a page, ten pages. Finish the set and a result sheet is produced and sent to the address the
 person gave, or to KakaoTalk. Topics multiply after that — 인생의 질문들.
 
 Its job is priming water. The site answers a question someone has **alone**; the app answers one
@@ -100,11 +100,12 @@ A public site that wants traffic and an API that holds couples' private notes sh
 same process on the same origin. Different scaling, different blast radius, different privacy
 posture. The site is mostly static; it can sit somewhere cheap and cacheable.
 
-What both sides share is the part that is expensive to write twice:
+What both sides share is the part that is expensive to build twice — note that the questions
+themselves are not on this list:
 
 | Shared | Why |
 |---|---|
-| Question content and its shape | `intent` / `example` / `whyItMatters` / `researchKeywords` / four choices already exist |
+| The question *schema* | `intent` / `example` / `whyItMatters` / `researchKeywords` / four choices — the shape is reused, the text is not |
 | Design tokens (`src/design-tokens.js`) | One visual system across web, site and app |
 | The share row and its copy | Already unified across four surfaces |
 | Privacy documents | Same operator, same obligations |
@@ -115,16 +116,23 @@ registry. `src/questions.js` exports exactly `marriagePack` and `questions` — 
 creates it, and the app gets it for free. The web service is not a detour from M6; it is the thing
 that forces it.
 
-Note the app already reserves the slot: `PACK_LIST_ROWS[0]` is `{ id: "dating", label: "연애" }`,
-locked by assertion in `src/pair-code.js:206`. The site's first topic and the app's first
-coming-soon pack are the same pack. Write the questions once.
+**`혼자만의 연애` is not the app's `연애`.** The app reserves `PACK_LIST_ROWS[0]` as
+`{ id: "dating", label: "연애" }`, locked by assertion in `src/pair-code.js:206` — that pack is two
+people in a relationship answering together. This one is a single person answering about a
+relationship they are in. Same subject, different instrument, different questions, different id.
+
+So the content is not written once; it is written twice, and it should be. What the two share is
+the *shape* — sections, four choices, `intent` / `example` / `whyItMatters` — not the text. That
+makes the registry argument stronger rather than weaker: two packs that differ in content while
+sharing a schema is precisely the case a hardcoded `marriagePack` cannot express, and precisely the
+case M6 says must exist before a second pack ships.
 
 ## Order of work
 
 1. **Pack registry.** Make packs data, not a hardcoded export. Serves the site and unblocks M6.
 2. **Site skeleton** on its own origin: ten paginated pages, question rendering from the registry,
    SEO metadata, structured data, a CTA into the app.
-3. **Write `연애` 100문항** in four movements. This is the long pole and it is writing, not code.
+3. **Write `혼자만의 연애` 100문항** in four movements. The long pole, and it is writing, not code.
 4. **Result sheet, on screen only.** Reflection, no verdict, no delivery yet.
 5. **Consent, policy, age gate** — the gate before any address is accepted.
 6. **Email delivery** once the Resend domain is verified.
