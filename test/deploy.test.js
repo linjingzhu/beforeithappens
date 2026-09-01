@@ -3,19 +3,24 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { appHopHtml, consumeHopHtml, consumeUrl, webConsumeFallback, webConsumePath } from "../server/mail.mjs";
 
-const OFF = {};
+const DEFAULT = {};
+const OFF = { AB_WEB_CONSUME_FALLBACK: "0" };
 const ON = { AB_WEB_CONSUME_FALLBACK: "1" };
 
-test("the mailed link stays the locked app scheme unless a deployment opts out", () => {
-  assert.equal(webConsumeFallback(OFF), false);
+test("the mailed link is the web by default, and the app scheme when a deployment asks for it", () => {
+  // This was the other way round while the app was the product. The web is, so a login link no
+  // browser can open is a link that signs nobody in — a deployment that wants the scheme opts out.
+  assert.equal(webConsumeFallback(DEFAULT), true, "unset means the web");
   assert.equal(webConsumeFallback(ON), true);
+  assert.equal(webConsumeFallback(OFF), false, "and 0 is how a deployment gets the scheme back");
+
+  const opened = consumeUrl("https://ab.example.test/", "tok 123", DEFAULT);
+  assert.equal(opened, "https://ab.example.test/auth/consume?token=tok%20123");
 
   const locked = consumeUrl("https://ab.example.test", "tok123", OFF);
   assert.match(locked, /^loveme:\/\/\/auth\/consume\?token=tok123$/);
-  assert.equal(consumeUrl("", "tok123", ON), "loveme:///auth/consume?token=tok123", "no origin means no https link to give");
-
-  const opened = consumeUrl("https://ab.example.test/", "tok 123", ON);
-  assert.equal(opened, "https://ab.example.test/auth/consume?token=tok%20123");
+  // With no origin there is no https link to give, whatever the flag says.
+  assert.equal(consumeUrl("", "tok123", DEFAULT), "loveme:///auth/consume?token=tok123");
 });
 
 test("the hop hands off to the app first and only then falls back to the web", () => {

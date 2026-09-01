@@ -96,13 +96,15 @@ test("HTTP magic-link request, consume, notice, and forced logout", async () => 
     assert.equal(sent.json.token, undefined);
 
     const outbox = await request(port, "/api/dev/outbox");
+    // A link the recipient's browser can open: the hop, on this deployment's own origin.
     const url = new URL(outbox.json.items[0].url);
-    assert.equal(url.protocol, "loveme:");
+    assert.match(url.protocol, /^https?:$/);
     assert.equal(url.pathname, "/auth/consume");
     const token = url.searchParams.get("token");
 
     const prefetch = await request(port, `/auth/consume?token=${token}`);
     assert.equal(prefetch.status, 200);
+    // The app is still one tap away from the hop, for a phone that has it.
     assert.match(prefetch.text, /loveme:\/\/\/auth\/consume/);
     assert.equal(prefetch.text.includes("<div id=\"app\">"), false);
     assert.equal(prefetch.text.includes("파트너 초대"), false);

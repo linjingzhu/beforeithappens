@@ -13,13 +13,17 @@ export function webConsumePath(token) {
 }
 
 /**
- * The mailed link stays the `loveme` app scheme, which the spec locks so an installed app
- * opens instead of Safari. A deployment that must also serve phones without the app can set
- * AB_WEB_CONSUME_FALLBACK=1: the mail then links to an https hop that still hands off to the
- * app first and only falls back to the web when nothing answers.
+ * The mailed link is an https hop, and the hop decides: a phone gets handed to the app, everything
+ * else goes straight to the web.
+ *
+ * It used to be the `loveme` app scheme itself, so that an installed app opened instead of Safari.
+ * That made sense while the app was the product. It is not: the web is, the answers live on the
+ * server behind it, and a login link no browser can open signs nobody in. A deployment that wants
+ * the old behaviour back sets AB_WEB_CONSUME_FALLBACK=0 and the mail links to the scheme again.
  */
 export function webConsumeFallback(env = process.env) {
-  return String(env?.AB_WEB_CONSUME_FALLBACK || "") === "1";
+  const value = String(env?.AB_WEB_CONSUME_FALLBACK ?? "").trim();
+  return value === "" ? true : value !== "0";
 }
 
 export function consumeUrl(origin, token, env = process.env) {

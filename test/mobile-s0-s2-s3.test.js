@@ -231,9 +231,10 @@ test("mobile API client reuses web magic-link and workspace session", async () =
     assert.equal(state.screen, "sent");
 
     const outbox = await fetch(`http://127.0.0.1:${port}/api/dev/outbox`).then((res) => res.json());
+    // The mailed link is the web hop now, and the native client reads a token out of either shape
+    // — which is the point of `extractMagicLinkToken` above, asserted on both forms.
     const url = outbox.items[0].url;
-    assert.match(url, /loveme:\/\/\/auth\/consume\?token=/);
-    assert.equal(url.includes("https://"), false);
+    assert.match(url, /^https?:\/\/[^/]+\/auth\/consume\?token=/);
     state = await consumeOpenedLink(state, api, url);
     assert.equal(state.screen, "notice");
     assert.equal(state.session.user.email, "buyer@example.com");

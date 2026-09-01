@@ -214,8 +214,14 @@ function inAppBrowserNow() {
   return isInAppBrowser(globalThis.navigator?.userAgent || "");
 }
 
+/*
+ * No banner. This used to invite every signed-in reader to install the app, which was right while
+ * the app was the product; the web is, and the answers live on the server behind it. The landing
+ * page at `/install` is untouched — a link to it from outside still works — but the product's own
+ * path no longer points at it.
+ */
 function accountBannerHtml() {
-  return renderInstallBanner({ visible: Boolean(session.user) && !installSkipped });
+  return "";
 }
 
 function showInstallLanding() {

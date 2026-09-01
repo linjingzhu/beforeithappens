@@ -94,10 +94,16 @@ async function login(port, email) {
 
 test("measurement copy and consume scheme are locked", () => {
   assert.equal(assertLockedMeasurementCopy(), true);
+  // The scheme is still what a deployment gets when it opts out, and the native client still reads
+  // a token out of it. What changed is the default: the web is the product, so the mail links to a
+  // hop a browser can open, and the hop offers the app to a phone.
+  const scheme = consumeUrl("https://loveme-api.onrender.com", "tok_9", { AB_WEB_CONSUME_FALLBACK: "0" });
+  assert.equal(scheme.startsWith("loveme:///auth/consume?token="), true);
+  assert.equal(scheme.includes("onrender.com"), false);
+  assert.equal(extractMagicLinkToken(scheme), "tok_9");
   const url = consumeUrl("https://loveme-api.onrender.com", "tok_9");
-  assert.equal(url.startsWith("loveme:///auth/consume?token="), true);
-  assert.equal(url.includes("onrender.com"), false);
-  assert.equal(extractMagicLinkToken(url), "tok_9");
+  assert.equal(url, "https://loveme-api.onrender.com/auth/consume?token=tok_9", "the default is the web");
+  assert.equal(extractMagicLinkToken(url), "tok_9", "and the native client reads that shape too");
   assert.equal(extractMagicLinkToken("loveme://auth/consume?token=abc"), "abc");
   assert.match(consumeHopHtml("tok_9"), /loveme:\/\/\/auth\/consume\?token=tok_9/);
   assert.equal(consumeHopHtml("tok_9").includes("로그인 링크 보내기"), false);

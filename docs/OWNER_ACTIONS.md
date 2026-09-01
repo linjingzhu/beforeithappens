@@ -59,7 +59,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | # | 면 | What | Status | Why it is first | Where |
 |---|---|---|---|---|---|
 | N1 | 앱 | **Confirm the deployment is current** | ❓ 🟢 | The app calls `/api/referral` and `/api/gift/*`. If the host still runs old code those screens 404. This agent cannot reach the host (proxy blocks all outbound HTTPS) | `curl .../api/referral` → **401 = new code**, **404 = old** |
-| N2 | 앱 | **Host environment variables** | 🟢 | `NODE_ENV=production` also closes the dev OAuth routes; without `AB_STORE_PATH` on a persistent disk every account is lost on redeploy | `docs/DEPLOY.md` §0 |
+| N2 | 웹 | **Host environment variables** | 🟢 | `NODE_ENV=production` also closes the dev OAuth routes; without `AB_STORE_PATH` on a persistent disk every account — and now every answer — is lost on redeploy. The login link needs nothing set: the web is the default | `docs/DEPLOY.md` §0 |
 | N3 | 앱 | **Kakao developer app** | 🟢 | Registration is immediate. Redirect URI must match exactly or it fails before reaching the server | `docs/SOCIAL_LOGIN.md` §3 |
 | N4 | 앱 | **Apple Developer: enrol as Individual** | 🟢 | The only wait nobody controls. Organization needs a D-U-N-S number and takes days to weeks | `docs/IOS_INSTALL.md` |
 | N5 | 공통 | **Business details for the privacy policy** | 🔄 | 상호 is **afterscent**, filled in. Still missing: 대표자, 주소, 사업자등록번호, 통신판매업 신고번호, 보호책임자 성명·연락처, 문의 이메일 | `docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md` |

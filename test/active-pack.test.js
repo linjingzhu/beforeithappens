@@ -64,3 +64,21 @@ test("the screen's lock follows the server's answer rather than a constant of it
   assert.equal(isChapterLocked(50, true, SAMPLE_QUESTION_COUNT, true), false, "and never once it is bought");
   assert.equal(isChapterLocked(1, false, SAMPLE_QUESTION_COUNT, true), false, "the sample stays open");
 });
+
+test("a deployment with no environment set can sign a person in on the web", async () => {
+  const { consumeUrl, webConsumeFallback } = await import("../server/mail.mjs");
+  // The web is the product, so an unset flag means the web. It was the other way round while the
+  // app was: the mail linked to `loveme://`, which no browser can open, so a deployment that had
+  // not set the flag could sign nobody in at all.
+  assert.equal(webConsumeFallback({}), true);
+  assert.equal(consumeUrl("https://ab.example", "tok", {}), "https://ab.example/auth/consume?token=tok");
+  assert.equal(webConsumeFallback({ AB_WEB_CONSUME_FALLBACK: "0" }), false, "and a deployment can still opt out");
+});
+
+test("the product's own screens no longer advertise the app", async () => {
+  const app = readFileSync("src/app.js", "utf8");
+  // The banner invited every signed-in reader to install the app, which was right while the app
+  // was the product. `/install` is untouched — a link from outside still works — but nothing on
+  // the path a reader actually walks points at it.
+  assert.match(app, /function accountBannerHtml\(\) \{\s*return "";\s*\}/);
+});
