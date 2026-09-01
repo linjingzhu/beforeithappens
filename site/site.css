@@ -552,6 +552,122 @@ html { scroll-padding-top: 120px; }
   text-align: right;
 }
 
+/*
+ * Comparing with the other person: their answers, and the link that carries mine to them. Each row
+ * is two lines rather than two columns, because on a phone two columns of Korean sentences wrap
+ * into an unreadable ladder, and the pair reads as a pair when one is directly under the other.
+ */
+.result-share {
+  margin-top: 32px;
+  padding: 20px;
+  border: 1px solid var(--ab-line);
+  border-radius: 16px;
+  background: var(--ab-card);
+}
+
+.result-share h2 {
+  margin: 0 0 6px;
+}
+
+.result-share > p {
+  margin: 0 0 12px;
+  color: var(--ab-muted);
+}
+
+.result-share-action {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ab-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.result-share-state {
+  margin: 10px 0 0;
+  color: var(--ab-muted);
+}
+
+.result-share-link {
+  display: block;
+  margin-top: 10px;
+}
+
+.result-share-link span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ab-muted);
+  font-size: 13px;
+}
+
+.result-share-link input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--ab-line);
+  border-radius: 12px;
+  background: var(--ab-surface);
+  color: var(--ab-ink);
+  font: inherit;
+}
+
+.result-compare {
+  margin-bottom: 32px;
+  padding: 20px;
+  border: 1px solid var(--ab-line);
+  border-radius: 16px;
+  background: var(--ab-card);
+}
+
+.result-compare h2 {
+  margin: 0 0 6px;
+}
+
+.result-compare h3 {
+  margin: 24px 0 6px;
+}
+
+.compare-note {
+  margin: 0 0 12px;
+  color: var(--ab-muted);
+}
+
+.compare-count {
+  margin: 0;
+  color: var(--ab-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compare-list li {
+  padding: 14px 0;
+  border-top: 1px solid var(--ab-line);
+}
+
+.compare-q {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.compare-a {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--ab-line);
+  color: var(--ab-ink);
+}
+
+/* The other person's line is the one the reader came for, so it is the one that is marked. */
+.compare-theirs {
+  margin-top: 6px;
+  border-left-color: var(--ab-accent);
+}
+
 .q-feedback-export button {
   padding: 8px 12px;
   border: 1px dashed #b58a76;

@@ -546,7 +546,7 @@ them may be invented.**
 
 | Placeholder | Why it is needed |
 |---|---|
-| ⟪사업자명(상호)⟫ | 처리방침 필수 — who the 개인정보처리자 is |
+| ~~⟪사업자명(상호)⟫~~ **afterscent** | 처리방침 필수 — who the 개인정보처리자 is. Given by the owner 2026-09-01 and filled in |
 | ⟪대표자 성명⟫ | 처리방침 / 이용약관 통상 기재 |
 | ⟪사업자등록번호⟫ | 전자상거래 사업자 표시 |
 | ⟪통신판매업 신고번호⟫ | 유료 판매 시 |
