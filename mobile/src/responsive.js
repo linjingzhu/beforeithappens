@@ -27,6 +27,18 @@ import { fonts } from "./fonts.js";
 /** How many window sizes we keep built sheets for (portrait, landscape, a split view or two). */
 const SHEET_CACHE_LIMIT = 8;
 
+/**
+ * A scrim over a palette colour. This defines no colour of its own — it takes one from
+ * `PALETTES.loveme` (through `colors`) and gives it an alpha, so an overlay cannot drift
+ * away from the palette the way a pasted `rgba(...)` literal does.
+ */
+export function withAlpha(color, alpha) {
+  const hex = String(color).trim();
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
 /** The adaptive context for the current window: width class, density, scale, content width. */
 export function useLayout() {
   const { width, height } = useWindowDimensions();
@@ -51,6 +63,8 @@ export function styleTools(layout) {
     motion: MOTION,
     hit: HIT_SLOP_MIN,
     hairline: StyleSheet.hairlineWidth,
+    absoluteFill: StyleSheet.absoluteFillObject,
+    withAlpha,
     font: (step) => fontSize(step, layout.width),
     lineHeight: (step, ratio = "normal") => Math.round(fontSize(step, layout.width) * LINE_HEIGHT[ratio]),
     space: (step) => space(step, layout),
