@@ -8,19 +8,19 @@ import { indexModel, pageModel } from "../site/content.js";
 const site = siteWith({ origin: "https://ab.example" });
 const has = (html, text) => html.includes(text);
 
-test("소개 is built; 문의 waits for an address rather than shipping a dead one", () => {
-  assert.deepEqual(standingPages({ site }).map((page) => page.slug), ["about"]);
-  assert.equal(SITE.contactEmail, "", "there is no inbox yet");
-
-  // The page appears by itself the moment there is one. No switch to remember, which is the point:
-  // a contact page carrying an address nobody reads invites a message into a void.
-  const withInbox = siteWith({ origin: site.origin, contactEmail: "hello@lovemedialogue.com" });
-  const pages = standingPages({ site: withInbox });
+test("문의 is built from the address, and not built without one", () => {
+  // The page appears from the address alone — no switch to remember — and disappears with it. A
+  // contact page carrying an address nobody reads invites a message into a void.
+  assert.match(SITE.contactEmail, /^[^@\s]+@[^@\s]+$/, "there is an inbox");
+  const pages = standingPages({ site });
   assert.deepEqual(pages.map((page) => page.slug), ["about", "contact"]);
   const contact = pages[1];
-  assert.equal(contact.email, "hello@lovemedialogue.com");
-  const html = renderStandingPage(contact, withInbox);
-  assert.ok(has(html, 'href="mailto:hello@lovemedialogue.com"'), "and it is reachable, not just printed");
+  assert.equal(contact.email, SITE.contactEmail);
+  const html = renderStandingPage(contact, site);
+  assert.ok(has(html, `href="mailto:${SITE.contactEmail}"`), "and it is reachable, not just printed");
+
+  const withoutInbox = siteWith({ origin: site.origin, contactEmail: "" });
+  assert.deepEqual(standingPages({ site: withoutInbox }).map((page) => page.slug), ["about"]);
 });
 
 test("the footer links only to pages the build actually emits", () => {

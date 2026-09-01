@@ -19,17 +19,28 @@ export const PALETTES = Object.freeze({
     accentAlt: "#B7D9F0",
     error: "#8C3A44"
   }),
+  /*
+   * Cool greys, from the owner's palette: #EFF2F9 · #E4EBF1 · #B5BFC6 · #6E7F8D, over the two
+   * shadows that give the surfaces their relief (#FAFBFF at full strength, #161B1D at 23%).
+   *
+   * Text is darker than any of the four. Measured against the ground it sits on, #6E7F8D reads at
+   * 3.69:1 on a card and 3.43:1 on the page — under the 4.5:1 a sentence needs — so `ink`, `muted`
+   * and `accent` are darker steps of the same hue, at 10.4:1, 5.1:1 and 6.6:1. The palette's own
+   * #6E7F8D stays as `accentAlt`, where nothing has to be read out of it: a rule, a track, a mark.
+   */
   ab: Object.freeze({
-    ink: "#2b2521",
-    muted: "#81756e",
-    surface: "#fffdfa",
-    card: "#fffdfa",
-    line: "#e7ddd5",
-    accent: "#ee775f",
-    accentAlt: "#769987",
+    ink: "#2e3a44",
+    muted: "#5a6874",
+    surface: "#eff2f9",
+    card: "#eff2f9",
+    line: "#b5bfc6",
+    accent: "#4a5764",
+    accentAlt: "#6e7f8d",
     error: "#8C3A44",
-    paper: "#f8f3ed",
-    soft: "#fce8e1"
+    paper: "#e4ebf1",
+    soft: "#e4ebf1",
+    shadowLight: "#fafbff",
+    shadowDark: "rgba(22, 27, 29, 0.23)"
   })
 });
 

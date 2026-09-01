@@ -7,16 +7,18 @@
 
 :root {
   /* palette · ab (the AB web product) */
-  --ab-ink: #2b2521;
-  --ab-muted: #81756e;
-  --ab-surface: #fffdfa;
-  --ab-card: #fffdfa;
-  --ab-line: #e7ddd5;
-  --ab-accent: #ee775f;
-  --ab-accent-alt: #769987;
+  --ab-ink: #2e3a44;
+  --ab-muted: #5a6874;
+  --ab-surface: #eff2f9;
+  --ab-card: #eff2f9;
+  --ab-line: #b5bfc6;
+  --ab-accent: #4a5764;
+  --ab-accent-alt: #6e7f8d;
   --ab-error: #8C3A44;
-  --ab-paper: #f8f3ed;
-  --ab-soft: #fce8e1;
+  --ab-paper: #e4ebf1;
+  --ab-soft: #e4ebf1;
+  --ab-shadow-light: #fafbff;
+  --ab-shadow-dark: rgba(22, 27, 29, 0.23);
 
   /* palette · loveme (the native screens and their browser preview) */
   --loveme-ink: #3A3338;
@@ -39,6 +41,8 @@
   --error: var(--ab-error);
   --paper: var(--ab-paper);
   --soft: var(--ab-soft);
+  --shadow-light: var(--ab-shadow-light);
+  --shadow-dark: var(--ab-shadow-dark);
   --coral: var(--accent);
   --green: var(--accent-alt);
 
