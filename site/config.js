@@ -36,6 +36,8 @@ export const PUBLISHED = Object.freeze([
     packId: "marriage-100",
     slug: "marriage",
     title: "결혼 100제 — 우리 둘의 가치관",
+    /** What the rail calls it. The full title is a headline and wraps to three lines in a column. */
+    navTitle: "결혼 100제",
     description: "결혼을 앞둔 두 사람이 미리 맞춰 두면 좋은 100가지 질문. 정답은 없고, 서로의 기대를 먼저 알아보는 것이 목적입니다.",
     /** Shown above the questions, before the first one. */
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."

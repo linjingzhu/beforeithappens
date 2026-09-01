@@ -1,4 +1,4 @@
-import { questionsFor } from "../src/packs.js";
+import { findPack, questionsFor } from "../src/packs.js";
 import { PUBLISHED, SITE, publishedBySlug } from "./config.js";
 
 /**
@@ -8,19 +8,26 @@ import { PUBLISHED, SITE, publishedBySlug } from "./config.js";
  * questions without running anything, and so ten pages are ten page loads — which is the entire
  * basis for putting ad units in the page rather than squeezing them out of a transition.
  *
- * Pagination is derived, never configured per pack: a pack that grows from twelve questions to a
- * hundred becomes ten pages by being written, with nothing here to update.
+ * **A page is a Part.** Pagination used to be arithmetic — ten questions, count them off — and for
+ * 결혼 100제 the two agree exactly, because every Part holds ten. They agree by luck. Cutting on the
+ * count puts a reader mid-theme whenever a pack is written unevenly, and it gives the page no name:
+ * "2/10" says where you are in a list, "감정과 애정" says what you are being asked about. Cutting on
+ * the Part means the tab strip, the page, and the pack's own structure are one thing rather than
+ * three that have to be kept in step.
  */
-export function pageCount(total, pageSize = SITE.pageSize) {
-  const size = Number(pageSize) > 0 ? Number(pageSize) : 1;
-  return Math.max(1, Math.ceil((Number(total) || 0) / size));
-}
-
-/** 1-based, because the number is in the URL and in front of a reader. */
-export function pageSlice(questions, pageNumber, pageSize = SITE.pageSize) {
-  const size = Number(pageSize) > 0 ? Number(pageSize) : 1;
-  const page = Math.max(1, Math.floor(Number(pageNumber) || 1));
-  return questions.slice((page - 1) * size, page * size);
+export function partsOf(packId) {
+  const pack = findPack(packId);
+  if (!pack) return [];
+  const questions = pack.orderedQuestions;
+  return pack.sections
+    .map((section, index) => Object.freeze({
+      id: section.id,
+      title: section.title,
+      number: index + 1,
+      questions: Object.freeze(questions.filter((question) => question.sectionId === section.id))
+    }))
+    // A section nobody wrote questions for is not a page; it would be a tab onto nothing.
+    .filter((part) => part.questions.length > 0);
 }
 
 export function pagePath(slug, pageNumber) {
@@ -45,11 +52,12 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
   const questions = questionsFor(entry.packId);
   if (!questions.length) return null;
 
-  const pages = pageCount(questions.length, site.pageSize);
+  const parts = partsOf(entry.packId);
+  const pages = parts.length;
   const page = Math.max(1, Math.floor(Number(pageNumber) || 1));
   if (page > pages) return null;
 
-  const slice = pageSlice(questions, page, site.pageSize);
+  const part = parts[page - 1];
   const first = page === 1;
   const last = page === pages;
 
@@ -64,8 +72,18 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
     first,
     last,
     total: questions.length,
-    // The number a reader sees is the question's own, so page two starts at 11 rather than 1.
-    questions: slice,
+    /** The Part this page is, and the strip of all of them for the tabs above the questions. */
+    part: Object.freeze({ id: part.id, title: part.title, number: part.number }),
+    parts: Object.freeze(parts.map((each) => Object.freeze({
+      id: each.id,
+      title: each.title,
+      number: each.number,
+      count: each.questions.length,
+      path: pagePath(entry.slug, each.number),
+      current: each.number === page
+    }))),
+    // The number a reader sees is the question's own, so Part two starts at 11 rather than 1.
+    questions: part.questions,
     path: pagePath(entry.slug, page),
     previousPath: page > 1 ? pagePath(entry.slug, page - 1) : "",
     nextPath: last ? "" : pagePath(entry.slug, page + 1),
@@ -79,9 +97,8 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
 export function allPages({ site = SITE, published = PUBLISHED } = {}) {
   const out = [];
   for (const entry of published) {
-    const questions = questionsFor(entry.packId);
-    if (!questions.length) continue;
-    const pages = pageCount(questions.length, site.pageSize);
+    const pages = partsOf(entry.packId).length;
+    if (!pages) continue;
     for (let page = 1; page <= pages; page += 1) {
       const model = pageModel(entry.slug, page, { site });
       if (model) out.push(model);
@@ -99,9 +116,10 @@ export function indexModel({ site = SITE, published = PUBLISHED } = {}) {
       return Object.freeze({
         slug: entry.slug,
         title: entry.title,
+        navTitle: entry.navTitle || entry.title,
         description: entry.description,
         total: questions.length,
-        pages: pageCount(questions.length, site.pageSize),
+        pages: partsOf(entry.packId).length,
         path: pagePath(entry.slug, 1)
       });
     })

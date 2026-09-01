@@ -1,6 +1,6 @@
 import { escapeHtml } from "../src/html.js";
 import { SITE } from "./config.js";
-import { absoluteUrl } from "./content.js";
+import { absoluteUrl, indexModel } from "./content.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 
@@ -18,9 +18,14 @@ import { RESULT_COPY } from "./result.js";
  * so the page needs no session, no account, and no request.
  */
 export const SITE_COPY = Object.freeze({
-  next: "다음 질문 열 개",
-  previous: "이전으로",
+  wordmark: "Love Me",
+  next: "다음",
+  previous: "이전",
   backToIndex: "질문집 목록",
+  partsLabel: "파트",
+  partsUnit: "개 파트",
+  packsLabel: "질문집",
+  partWord: (n) => `Part ${n}`,
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
   ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
@@ -28,7 +33,7 @@ export const SITE_COPY = Object.freeze({
   choicesLabel: "네 가지 답",
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
-  resultAction: "내가 답한 것 보기",
+  resultAction: "결과 보기",
   noScriptNote: "브라우저 저장이 꺼져 있으면 답이 기억되지 않아요. 질문은 그대로 읽으실 수 있습니다."
 });
 
@@ -73,13 +78,36 @@ function adSlot(model) {
   return `      <div class="ad-slot" data-ad-slot="${escapeHtml(model.adSlot)}" aria-hidden="true"></div>`;
 }
 
+/**
+ * The tab strip. One tab per Part, and the page is the Part — so a tab is a link to a real
+ * document, not a control that hides and shows things. That is what lets a reader open Part 7 in a
+ * new tab, land on it from a search result, or read the whole pack with scripting off.
+ */
+function partTabs(model) {
+  const tabs = model.parts
+    .map((part) => `        <a class="part-tab${part.current ? " is-current" : ""}" href="${escapeHtml(part.path)}"${part.current ? ' aria-current="page"' : ""}>
+          <span class="part-tab-n">${escapeHtml(SITE_COPY.partWord(part.number))}</span>
+          <span class="part-tab-title">${escapeHtml(part.title)}</span>
+        </a>`)
+    .join("\n");
+  return `      <nav class="parts" aria-label="${escapeHtml(SITE_COPY.partsLabel)}">
+${tabs}
+      </nav>`;
+}
+
+/**
+ * The bottom control. Forward is the prominent one because forward is what a reader is doing; the
+ * last Part offers the sheet instead, since there is no next Part to promise. The next Part is named
+ * rather than counted — "다음 · 감정과 애정" tells you what you are about to be asked.
+ */
 function pager(model) {
+  const nextPart = model.parts.find((part) => part.number === model.page + 1);
   const previous = model.previousPath
     ? `<a class="pager-prev" href="${escapeHtml(model.previousPath)}" rel="prev">${escapeHtml(SITE_COPY.previous)}</a>`
     : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.backToIndex)}</a>`;
   const next = model.nextPath
-    ? `<a class="pager-next" href="${escapeHtml(model.nextPath)}" rel="next">${escapeHtml(SITE_COPY.next)}</a>`
-    : `<a class="pager-next" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.resultAction)}</a>`;
+    ? `<a class="pager-next" href="${escapeHtml(model.nextPath)}" rel="next">${escapeHtml(SITE_COPY.next)}<span class="pager-next-part">${escapeHtml(nextPart ? nextPart.title : "")}</span></a>`
+    : `<a class="pager-next is-result" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.resultAction)}</a>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
         <span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>
@@ -100,7 +128,38 @@ function enhancement() {
   return `  <script type="module" src="/enhance.js"></script>`;
 }
 
-function document_({ site, head, body, scripts = "" }) {
+/**
+ * The left rail: the mark, then one entry per published pack.
+ *
+ * It is built from `indexModel`, the same list the index page renders, so a pack cannot appear in
+ * one and not the other. Today that is one entry; the markup is a list because it will not be, and
+ * a list of one costs nothing while a list grown out of a single hard-coded link costs a rewrite.
+ */
+function rail(site, currentSlug) {
+  const items = indexModel({ site }).packs
+    .map((pack) => {
+      const current = pack.slug === currentSlug;
+      // `true`, not `page`: this links to the pack's first Part, and the reader may be on its
+      // seventh. The Part tab is the one that is genuinely the current page.
+      return `        <li><a class="rail-item${current ? " is-current" : ""}" href="${escapeHtml(pack.path)}"${current ? ' aria-current="true"' : ""}>${escapeHtml(pack.navTitle)}</a></li>`;
+    })
+    .join("\n");
+  return `  <aside class="rail">
+    <a class="mark" href="/">
+      <img class="mark-logo" src="/brand/logo.png" width="32" height="32" alt="" decoding="async">
+      <span class="wordmark">${escapeHtml(SITE_COPY.wordmark)}</span>
+    </a>
+    <nav class="rail-nav" aria-label="${escapeHtml(SITE_COPY.packsLabel)}">
+      <p class="rail-label">${escapeHtml(SITE_COPY.packsLabel)}</p>
+      <ul>
+${items}
+      </ul>
+    </nav>
+    <p class="rail-foot">${escapeHtml(site.tagline)}</p>
+  </aside>`;
+}
+
+function document_({ site, head, body, scripts = "", currentSlug = "" }) {
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -109,16 +168,19 @@ function document_({ site, head, body, scripts = "" }) {
 ${head}
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/site.css">
+  <link rel="preload" href="/brand/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/brand/maruburi-600.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
-  <header class="masthead">
-    <a class="brand" href="/">${escapeHtml(site.name)}</a>
-    <p class="tagline">${escapeHtml(site.tagline)}</p>
-  </header>
+  <div class="shell">
+${rail(site, currentSlug)}
+    <div class="stage">
 ${body}
-  <footer class="foot">
-    <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
-  </footer>
+      <footer class="foot">
+        <p>${escapeHtml(SITE_COPY.wordmark)} · ${escapeHtml(site.tagline)}</p>
+      </footer>
+    </div>
+  </div>
 ${scripts}
 </body>
 </html>
@@ -126,20 +188,25 @@ ${scripts}
 }
 
 export function renderQuestionPage(model, site = SITE) {
-  const body = `  <main class="page">
-    <h1>${escapeHtml(model.title)}</h1>
-${model.lead ? `    <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}    <section class="questions">
+  const body = `      <header class="stage-head">
+        <h1>${escapeHtml(model.title)}</h1>
+${partTabs(model)}
+      </header>
+      <main class="page">
+        <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partWord(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
+${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map(questionArticle).join("\n")}
-    </section>
+        </section>
 ${adSlot(model)}
 ${pager(model)}
 ${callToAction(site)}
-  </main>`;
+      </main>`;
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
     body,
-    scripts: enhancement()
+    scripts: enhancement(),
+    currentSlug: model.slug
   });
 }
 
@@ -180,7 +247,8 @@ export function renderResultPage(slug, questions, site = SITE) {
 ${callToAction(site)}
   </main>
   <script type="application/json" data-question-index>${data}</script>`,
-    scripts: enhancement()
+    scripts: enhancement(),
+    currentSlug: slug
   });
 }
 
@@ -189,7 +257,7 @@ export function renderIndex(model, site = SITE) {
     .map((pack) => `      <li class="card">
         <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
         <p>${escapeHtml(pack.description)}</p>
-        <p class="card-meta">${pack.total}개의 질문 · ${pack.pages}쪽</p>
+        <p class="card-meta">${pack.total}개의 질문 · ${pack.pages}${escapeHtml(SITE_COPY.partsUnit)}</p>
       </li>`)
     .join("\n");
   const head = [
