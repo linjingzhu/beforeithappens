@@ -1,39 +1,42 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
-import { allPages, indexModel, pageCount, pageModel, pagePath, pageSlice } from "../site/content.js";
-import { SITE_COPY, renderIndex, renderQuestionPage } from "../site/render.js";
+import { allPages, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
+import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
 import { questionsFor } from "../src/packs.js";
 
 const site = siteWith({ origin: "https://ab.example", appOrigin: "https://app.example" });
 /** The pack the site actually publishes, read through the same list the build reads. */
 const published = questionsFor(PUBLISHED[0].packId);
-const LAST_PAGE = Math.ceil(published.length / SITE.pageSize);
+const PARTS = partsOf(PUBLISHED[0].packId);
+const LAST_PAGE = PARTS.length;
 /** Two real questions from the published pack, so the ids are never hand-copied. */
 const [Q1, Q2] = published;
 const has = (html, text) => html.includes(text);
 
-test("a hundred questions is ten pages, and pagination is derived rather than configured", () => {
-  assert.equal(pageCount(100, 10), 10);
-  assert.equal(pageCount(12, 10), 2, "a short pack paginates by the same rule");
-  assert.equal(pageCount(10, 10), 1);
-  assert.equal(pageCount(1, 10), 1);
-  assert.equal(pageCount(0, 10), 1, "an empty pack still has one page rather than zero");
-  assert.equal(pageCount(100, 0), 100, "a nonsense page size does not divide by zero");
+test("a page is a Part, so the pack's own structure decides where the pages cut", () => {
+  assert.equal(PARTS.length, 10, "ten Parts, ten pages");
+  assert.deepEqual(PARTS.map((part) => part.questions.length), Array(10).fill(10));
+  assert.deepEqual(
+    PARTS.map((part) => part.number),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "numbered from one, in the pack's section order"
+  );
+  // The cut is the section boundary, not an arithmetic one: every question on a page belongs to
+  // that page's Part. This is what a tab can honestly be named after.
+  for (const part of PARTS) {
+    for (const question of part.questions) {
+      assert.equal(question.sectionId, part.id, `${question.id} belongs to ${part.title}`);
+    }
+  }
+  assert.deepEqual(partsOf("no-such-pack"), [], "an unknown pack has no parts, rather than throwing");
 });
 
-test("a page carries its own ten, and the reader sees the question's own number", () => {
-  const questions = published;
-  assert.equal(questions.length, 100, "the published pack is the hundred, not the app's twelve");
-  assert.deepEqual(pageSlice(questions, 1, 10).map((q) => q.number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(
-    pageSlice(questions, 2, 10).map((q) => q.number),
-    [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-    "page two starts at 11, not 1"
-  );
-  assert.deepEqual(pageSlice(questions, LAST_PAGE + 1, 10), [], "past the end is empty, not wrapped");
-  assert.deepEqual(pageSlice(questions, 0, 10).map((q) => q.number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "page 0 reads as 1");
+test("a reader sees the question's own number, so Part two starts at eleven", () => {
+  assert.deepEqual(PARTS[0].questions.map((q) => q.number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  assert.deepEqual(PARTS[1].questions.map((q) => q.number), [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
+  assert.equal(PARTS.at(-1).questions.at(-1).number, published.length);
 });
 
 test("paths are clean and page one has no number in it", () => {
@@ -167,7 +170,7 @@ test("turning a page is a real navigation, not a script", () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.ok(has(html, `<a class="pager-next" href="/marriage/2/" rel="next">`));
   const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
-  assert.ok(has(last, 'class="pager-next" href="/marriage/result/"'), "the end leads to the sheet");
+  assert.ok(has(last, 'class="pager-next is-result" href="/marriage/result/"'), "the end leads to the sheet");
   assert.equal(has(last, 'rel="next"'), false, "but it is not another page in the series");
   assert.ok(has(last, `class="pager-prev" href="/marriage/${LAST_PAGE - 1}/"`));
 });
@@ -175,8 +178,8 @@ test("turning a page is a real navigation, not a script", () => {
 test("the index lists what is published and links to page one", () => {
   const html = renderIndex(indexModel({ site }), site);
   assert.ok(has(html, 'href="/marriage/"'));
-  assert.ok(has(html, `${published.length}개의 질문 · ${LAST_PAGE}쪽`));
-  assert.ok(has(html, "100개의 질문 · 10쪽"), "and that is a hundred questions over ten pages");
+  assert.ok(has(html, `${published.length}개의 질문 · ${LAST_PAGE}개 파트`));
+  assert.ok(has(html, "100개의 질문 · 10개 파트"), "a hundred questions across ten Parts");
 });
 
 test("the sitemap lists every page, because nothing links to page seven from outside", () => {
@@ -404,4 +407,58 @@ test("only the site is deployed to Pages, never the app", async () => {
   // The app needs a Node process for its API and holds private notes; it is not a static bundle.
   assert.equal(/path:\s*dist\b/.test(workflow), false, "the app's dist must not be published");
   assert.ok(workflow.includes("npm test"), "a broken generator fails before it publishes");
+});
+
+test("the rail carries the mark and every published pack, on every kind of page", () => {
+  // Built from `indexModel`, the same list the index renders, so a pack cannot appear in one and
+  // not the other. Checked on all three page kinds because the shell is where that usually rots.
+  const pages = [
+    renderQuestionPage(pageModel("marriage", 1, { site }), site),
+    renderIndex(indexModel({ site }), site),
+    renderResultPage("marriage", published, site)
+  ];
+  for (const html of pages) {
+    assert.ok(has(html, 'class="rail"'), "the rail is on the page");
+    assert.ok(has(html, SITE_COPY.wordmark), "and carries the wordmark");
+    assert.ok(has(html, 'src="/brand/logo.png"'), "and the mark");
+    for (const pack of indexModel({ site }).packs) {
+      assert.ok(has(html, `href="${pack.path}"`), `${pack.slug} is reachable from the rail`);
+      assert.ok(has(html, pack.navTitle), `${pack.slug} is named by its short label`);
+    }
+  }
+  // The rail says which pack you are in — but only where you are in one, and it says it as
+  // `aria-current="true"`, since the page itself is a Part and the tab owns `page`.
+  assert.ok(has(pages[0], 'class="rail-item is-current"'));
+  assert.ok(has(pages[0], 'aria-current="true"'));
+  assert.equal(has(pages[1], "is-current"), false, "the index is not inside a pack");
+});
+
+test("the Part tabs are links to real pages, one per Part, with exactly one marked current", () => {
+  for (const part of PARTS) {
+    const html = renderQuestionPage(pageModel("marriage", part.number, { site }), site);
+    const tabs = html.match(/<a class="part-tab[^"]*" href="[^"]+"/g) || [];
+    assert.equal(tabs.length, PARTS.length, `Part ${part.number} shows every tab`);
+    assert.equal((html.match(/aria-current="page"/g) || []).length, 1, "one current tab");
+    assert.ok(has(html, `class="part-tab is-current" href="${pagePath("marriage", part.number)}"`));
+    // A tab is a link to a document, which is what lets it be opened in a new tab, shared, or read
+    // with scripting off. A tab that only showed and hid things would fail all three.
+    for (const other of PARTS) {
+      assert.ok(has(html, `href="${pagePath("marriage", other.number)}"`), `${other.title} is linked`);
+    }
+    assert.ok(has(html, part.title), "the page names the Part it is");
+    for (const question of part.questions) assert.ok(has(html, question.title), question.id);
+    // and nothing from a Part it is not
+    const elsewhere = PARTS.find((each) => each.number !== part.number);
+    assert.equal(has(html, elsewhere.questions[0].title), false, "questions from other Parts stay there");
+  }
+});
+
+test("the forward control names where it goes, and the last Part offers the sheet instead", () => {
+  const middle = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  assert.ok(has(middle, `class="pager-next" href="${pagePath("marriage", 3)}" rel="next"`));
+  assert.ok(has(middle, PARTS[2].title), "the next Part is named, not just counted");
+
+  const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
+  assert.ok(has(last, SITE_COPY.resultAction));
+  assert.equal(has(last, 'rel="next"'), false);
 });

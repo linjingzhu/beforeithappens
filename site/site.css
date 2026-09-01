@@ -2,7 +2,40 @@
  * The site's own sheet, built on the generated tokens in `/tokens.css` so it shares one visual
  * system with the app rather than inventing a second palette. Reading is the only job here, so the
  * measure is capped and the type scale is the token scale.
+ *
+ * The faces are the app's, subsetted to what these pages say — see `scripts/build-brand-assets.py`.
+ * The lock is the app's too: MaruBuri carries titles and question stems, Pretendard carries body,
+ * choices and buttons. `swap` because a reader should get the words immediately and the right
+ * shapes a moment later, never the other way round.
  */
+
+@font-face {
+  font-family: MaruBuri;
+  src: url("/brand/maruburi-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: MaruBuri;
+  src: url("/brand/maruburi-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Pretendard;
+  src: url("/brand/pretendard-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: Pretendard;
+  src: url("/brand/pretendard-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
 
 * { box-sizing: border-box; }
 
@@ -17,23 +50,160 @@ body {
 
 a { color: var(--ab-ink); }
 
-.masthead {
-  padding: 24px 16px 8px;
-  text-align: center;
+/*
+ * Rail beside stage on a desktop; rail stacked above it on a phone. One grid, one breakpoint, and
+ * the rail is a real column rather than a drawer — there is one nav item today and it should be
+ * visible, not behind a button.
+ */
+.shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
 }
 
-.brand {
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: 0.08em;
+@media (min-width: 900px) {
+  .shell { grid-template-columns: 15rem 1fr; }
+  .rail {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    border-right: 1px solid var(--ab-line);
+    border-bottom: 0;
+  }
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 20px;
+  background: var(--ab-surface);
+  border-bottom: 1px solid var(--ab-line);
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
   text-decoration: none;
 }
 
-.tagline {
-  margin: 4px 0 0;
-  color: var(--ab-muted);
-  font-size: 13px;
+.mark-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex: none;
 }
+
+.wordmark {
+  font-family: MaruBuri, Georgia, serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: 0.01em;
+}
+
+.rail-label {
+  margin: 0 0 8px;
+  color: var(--ab-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.rail-nav ul { list-style: none; margin: 0; padding: 0; }
+
+.rail-item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.rail-item.is-current {
+  background: var(--ab-soft);
+  font-weight: 600;
+}
+
+/*
+ * Pushed to the bottom of the rail where it is a signature rather than a headline — and only there.
+ * Stacked above the questions on a phone it is one more thing between the reader and the first
+ * question, and the footer already says it.
+ */
+.rail-foot { display: none; }
+
+@media (min-width: 900px) {
+  .rail-foot {
+    display: block;
+    margin: auto 0 0;
+    color: var(--ab-muted);
+    font-size: 12px;
+  }
+}
+
+.stage { display: flex; flex-direction: column; min-width: 0; }
+
+.stage-head {
+  padding: 24px 16px 0;
+  border-bottom: 1px solid var(--ab-line);
+}
+
+.stage-head h1 {
+  font-family: MaruBuri, Georgia, serif;
+  max-width: 40rem;
+  margin: 0 auto 16px;
+  font-size: 24px;
+  line-height: 1.3;
+}
+
+/*
+ * The tab strip scrolls sideways rather than wrapping to four rows on a phone. `scroll-snap` makes
+ * the sideways movement land on a tab instead of halfway through one.
+ */
+.parts {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+/* Wide enough to hold them all: wrap instead of scroll, so ten Parts are ten visible Parts. */
+@media (min-width: 900px) {
+  .parts {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+.part-tab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: none;
+  scroll-snap-align: start;
+  min-height: 52px;
+  padding: 6px 14px;
+  border-bottom: 2px solid transparent;
+  color: var(--ab-muted);
+  text-decoration: none;
+}
+
+.part-tab.is-current {
+  border-bottom-color: var(--ab-accent);
+  color: var(--ab-ink);
+}
+
+.part-tab-n {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.part-tab-title { font-size: 14px; font-weight: 600; white-space: nowrap; }
 
 /* One column, capped at a comfortable measure. Long lines are the main way a reading page fails. */
 .page {
@@ -44,9 +214,28 @@ a { color: var(--ab-ink); }
 }
 
 .page > h1 {
+  font-family: MaruBuri, Georgia, serif;
   font-size: 28px;
   line-height: 1.25;
   margin: 24px 0 8px;
+}
+
+.part-title {
+  font-family: MaruBuri, Georgia, serif;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 24px 0 8px;
+  font-size: 26px;
+  line-height: 1.25;
+}
+
+.part-title-n {
+  color: var(--ab-accent);
+  font-family: Pretendard, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 .lead {
@@ -63,8 +252,9 @@ a { color: var(--ab-ink); }
 }
 
 .q h2 {
+  font-family: MaruBuri, Georgia, serif;
   font-size: 20px;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0 0 12px;
 }
 
@@ -141,9 +331,28 @@ a { color: var(--ab-ink); }
 .pager-prev { border: 1px solid var(--ab-line); }
 
 .pager-next {
+  flex-direction: column;
+  padding: 8px 24px;
   background: var(--ab-ink);
   color: var(--ab-surface);
   font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.pager-next-part {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+/*
+ * The end of the pack is a different destination, not a further page. It is also the only accent
+ * control on that screen: reaching the sheet is the reader's own goal, and it outranks ours.
+ */
+.pager-next.is-result {
+  justify-content: center;
+  background: var(--ab-accent);
 }
 
 .pager-progress {
@@ -162,13 +371,18 @@ a { color: var(--ab-ink); }
 .cta h2 { margin: 0 0 8px; font-size: 20px; }
 .cta p { margin: 0 0 16px; }
 
+/*
+ * Ink, not accent. On the last Part this sits a few lines under 결과 보기, and two accent pills
+ * competing there would put our funnel level with the thing the reader actually came for. The
+ * panel's own tint already separates it from the page.
+ */
 .cta-action {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   padding: 0 24px;
   border-radius: 999px;
-  background: var(--ab-accent);
+  background: var(--ab-ink);
   color: var(--ab-surface);
   font-weight: 600;
   text-decoration: none;
