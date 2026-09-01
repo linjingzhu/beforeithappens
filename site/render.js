@@ -39,10 +39,19 @@ function questionArticle(question) {
             <span>${escapeHtml(choice.label)}</span>
           </label></li>`)
     .join("\n");
+  // Guidance copy is app-pack only (see `PACK_SURFACE` in `src/pack-schema.js`). A site pack has
+  // none, and an empty <p> would render as a gap the reader cannot account for, so the elements are
+  // omitted rather than emptied.
+  const intent = question.intent ? `\n        <p class="q-intent">${escapeHtml(question.intent)}</p>` : "";
+  const example = question.example ? `\n        <p class="q-example">${escapeHtml(question.example)}</p>` : "";
+  const why = question.whyItMatters
+    ? `\n        <details class="q-why">
+          <summary>${escapeHtml(SITE_COPY.whyLabel)}</summary>
+          <p>${escapeHtml(question.whyItMatters)}</p>
+        </details>`
+    : "";
   return `      <article class="q" id="q-${escapeHtml(question.id)}" data-question="${escapeHtml(question.id)}">
-        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>
-        <p class="q-intent">${escapeHtml(question.intent)}</p>
-        <p class="q-example">${escapeHtml(question.example)}</p>
+        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>${intent}${example}
         <h3 class="q-label">${escapeHtml(SITE_COPY.choicesLabel)}</h3>
         <ul class="q-choices">
 ${choices}
@@ -50,11 +59,7 @@ ${choices}
         <label class="q-undiscussed">
           <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
           <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>
-        <details class="q-why">
-          <summary>${escapeHtml(SITE_COPY.whyLabel)}</summary>
-          <p>${escapeHtml(question.whyItMatters)}</p>
-        </details>
+        </label>${why}
       </article>`;
 }
 

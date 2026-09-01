@@ -7,11 +7,16 @@ import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structured
 import { questionsFor } from "../src/packs.js";
 
 const site = siteWith({ origin: "https://ab.example", appOrigin: "https://app.example" });
+/** The pack the site actually publishes, read through the same list the build reads. */
+const published = questionsFor(PUBLISHED[0].packId);
+const LAST_PAGE = Math.ceil(published.length / SITE.pageSize);
+/** Two real questions from the published pack, so the ids are never hand-copied. */
+const [Q1, Q2] = published;
 const has = (html, text) => html.includes(text);
 
 test("a hundred questions is ten pages, and pagination is derived rather than configured", () => {
   assert.equal(pageCount(100, 10), 10);
-  assert.equal(pageCount(12, 10), 2, "twelve today becomes ten pages by writing, with nothing to update");
+  assert.equal(pageCount(12, 10), 2, "a short pack paginates by the same rule");
   assert.equal(pageCount(10, 10), 1);
   assert.equal(pageCount(1, 10), 1);
   assert.equal(pageCount(0, 10), 1, "an empty pack still has one page rather than zero");
@@ -19,10 +24,15 @@ test("a hundred questions is ten pages, and pagination is derived rather than co
 });
 
 test("a page carries its own ten, and the reader sees the question's own number", () => {
-  const questions = questionsFor("marriage");
+  const questions = published;
+  assert.equal(questions.length, 100, "the published pack is the hundred, not the app's twelve");
   assert.deepEqual(pageSlice(questions, 1, 10).map((q) => q.number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-  assert.deepEqual(pageSlice(questions, 2, 10).map((q) => q.number), [11, 12], "page two starts at 11, not 1");
-  assert.deepEqual(pageSlice(questions, 3, 10), [], "past the end is empty, not wrapped");
+  assert.deepEqual(
+    pageSlice(questions, 2, 10).map((q) => q.number),
+    [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    "page two starts at 11, not 1"
+  );
+  assert.deepEqual(pageSlice(questions, LAST_PAGE + 1, 10), [], "past the end is empty, not wrapped");
   assert.deepEqual(pageSlice(questions, 0, 10).map((q) => q.number), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "page 0 reads as 1");
 });
 
@@ -43,7 +53,8 @@ test("an unpublished pack, or a page past the end, is a definite no", () => {
 test("the site publishes only what it names, never whatever the registry happens to hold", () => {
   // The registry holds the app's content too. A site that published everything it found would put
   // a pack in front of the public the first time someone registered one.
-  assert.deepEqual(PUBLISHED.map((entry) => entry.catalogId), ["marriage"]);
+  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100"]);
+  assert.equal(pageModel("marriage-preparation", 1, { site }), null, "the app's pack is not on the site");
   assert.equal(pageModel("dating", 1, { site }), null);
   assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage"]);
 });
@@ -56,17 +67,21 @@ test("the model knows where it is in the series", () => {
   assert.equal(first.nextPath, "/marriage/2/");
   assert.ok(first.lead, "the lead is on the first page only");
 
-  const last = pageModel("marriage", 2, { site });
+  const last = pageModel("marriage", LAST_PAGE, { site });
   assert.equal(last.last, true);
   assert.equal(last.nextPath, "", "the last page offers no next");
-  assert.equal(last.previousPath, "/marriage/");
+  assert.equal(last.previousPath, `/marriage/${LAST_PAGE - 1}/`);
   assert.equal(last.lead, "");
 });
 
 test("every page is emitted, in order, once", () => {
   const pages = allPages({ site });
-  assert.equal(pages.length, 2);
-  assert.deepEqual(pages.map((p) => p.path), ["/marriage/", "/marriage/2/"]);
+  assert.equal(pages.length, LAST_PAGE);
+  assert.equal(LAST_PAGE, 10, "a hundred questions, ten to a page");
+  assert.deepEqual(
+    pages.map((p) => p.path),
+    ["/marriage/", ...Array.from({ length: LAST_PAGE - 1 }, (_, i) => `/marriage/${i + 2}/`)]
+  );
   assert.equal(new Set(pages.map((p) => p.path)).size, pages.length);
 });
 
@@ -81,7 +96,7 @@ test("the page is readable with no JavaScript at all", () => {
     ['<script type="application/ld+json">', '<script type="module" src="/enhance.js">'],
     "exactly one behavioural script, and it is the enhancement module"
   );
-  for (const question of questionsFor("marriage").slice(0, 10)) {
+  for (const question of published.slice(0, 10)) {
     assert.ok(has(html, question.title), question.id);
     for (const choice of question.choices) assert.ok(has(html, choice.label), choice.id);
   }
@@ -89,10 +104,10 @@ test("the page is readable with no JavaScript at all", () => {
 
 test("each page in the series says which page it is", () => {
   const one = pageModel("marriage", 1, { site });
-  const two = pageModel("marriage", 2, { site });
+  const two = pageModel("marriage", LAST_PAGE, { site });
   // Pointing every page's canonical at page one would hide nine tenths of the content.
   assert.ok(has(headTags(one, site), 'rel="canonical" href="https://ab.example/marriage/"'));
-  assert.ok(has(headTags(two, site), 'rel="canonical" href="https://ab.example/marriage/2/"'));
+  assert.ok(has(headTags(two, site), `rel="canonical" href="https://ab.example/marriage/${LAST_PAGE}/"`));
   assert.ok(has(headTags(one, site), 'rel="next"'));
   assert.equal(has(headTags(one, site), 'rel="prev"'), false);
   assert.ok(has(headTags(two, site), 'rel="prev"'));
@@ -139,7 +154,7 @@ test("the ad slot is present, positioned, and empty", () => {
 });
 
 test("every page offers the way into the two-person version", () => {
-  for (const page of [1, 2]) {
+  for (const page of [1, LAST_PAGE]) {
     const html = renderQuestionPage(pageModel("marriage", page, { site }), site);
     assert.ok(has(html, SITE_COPY.ctaAction));
     assert.ok(has(html, 'href="https://app.example"'), "the CTA points at the app when an origin is set");
@@ -151,16 +166,17 @@ test("every page offers the way into the two-person version", () => {
 test("turning a page is a real navigation, not a script", () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.ok(has(html, `<a class="pager-next" href="/marriage/2/" rel="next">`));
-  const last = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
   assert.ok(has(last, 'class="pager-next" href="/marriage/result/"'), "the end leads to the sheet");
   assert.equal(has(last, 'rel="next"'), false, "but it is not another page in the series");
-  assert.ok(has(last, 'class="pager-prev" href="/marriage/"'));
+  assert.ok(has(last, `class="pager-prev" href="/marriage/${LAST_PAGE - 1}/"`));
 });
 
 test("the index lists what is published and links to page one", () => {
   const html = renderIndex(indexModel({ site }), site);
   assert.ok(has(html, 'href="/marriage/"'));
-  assert.ok(has(html, "12개의 질문 · 2쪽"));
+  assert.ok(has(html, `${published.length}개의 질문 · ${LAST_PAGE}쪽`));
+  assert.ok(has(html, "100개의 질문 · 10쪽"), "and that is a hundred questions over ten pages");
 });
 
 test("the sitemap lists every page, because nothing links to page seven from outside", () => {
@@ -234,20 +250,20 @@ test("the sheet reflects what was said and never scores it", async () => {
   const { RESULT_COPY, RESULT_FORBIDDEN, resultModel } = await import("../site/result.js");
 
   let answers = emptyAnswers("marriage");
-  answers = withAnswer(answers, "home-01", "home-rest");
-  answers = withAnswer(answers, "money-01", "money-save");
-  answers = withDiscussionFlag(answers, "money-01", true);
+  answers = withAnswer(answers, Q1.id, Q1.choices[0].id);
+  answers = withAnswer(answers, Q2.id, Q2.choices[0].id);
+  answers = withDiscussionFlag(answers, Q2.id, true);
 
   const model = resultModel("marriage", answers);
-  assert.equal(model.total, 12);
+  assert.equal(model.total, published.length);
   assert.equal(model.answered, 2);
   assert.equal(model.complete, false);
   assert.equal(model.empty, false);
 
   // Grouped under the chapter, in pack order, with the person's own words given back.
-  assert.deepEqual(model.chapters.map((c) => c.chapter), ["함께 사는 집", "돈과 선택"]);
-  assert.equal(model.chapters[0].answers[0].choice, "외부의 피로를 회복하는 조용한 안식처");
-  assert.deepEqual(model.notDiscussed.map((r) => r.questionId), ["money-01"]);
+  assert.deepEqual(model.chapters.map((c) => c.chapter), [Q1.chapter]);
+  assert.equal(model.chapters[0].answers[0].choice, Q1.choices[0].label);
+  assert.deepEqual(model.notDiscussed.map((r) => r.questionId), [Q2.id]);
 
   // The pull toward a score is constant; this is what stops the computed sheet becoming a verdict.
   // The check is on the model, not the copy: the lead promises "점수도, 판정도 없습니다", and a naive
@@ -276,7 +292,7 @@ test("an empty or unknown sheet is a definite state, not a broken page", async (
 test("a stored answer for a choice that no longer exists is dropped, not rendered blank", async () => {
   const { emptyAnswers, withAnswer } = await import("../site/answers.js");
   const { resultModel } = await import("../site/result.js");
-  const stale = withAnswer(emptyAnswers("marriage"), "home-01", "a-choice-that-was-removed");
+  const stale = withAnswer(emptyAnswers("marriage"), Q1.id, "a-choice-that-was-removed");
   const model = resultModel("marriage", stale);
   assert.equal(model.answered, 0);
   assert.equal(model.empty, true);
@@ -286,11 +302,11 @@ test("the build and the browser share one reflection rather than two that drift"
   const { reflect, toQuestionIndex } = await import("../site/reflect.js");
   const { emptyAnswers, withAnswer } = await import("../site/answers.js");
   const { resultModel } = await import("../site/result.js");
-  const answers = withAnswer(emptyAnswers("marriage"), "home-01", "home-rest");
+  const answers = withAnswer(emptyAnswers("marriage"), Q1.id, Q1.choices[0].id);
 
   // `site/result.js` adapts registry questions into the index the page embeds, then calls the same
   // function the browser calls. A second implementation is exactly what this prevents.
-  const direct = reflect(toQuestionIndex(questionsFor("marriage")), answers);
+  const direct = reflect(toQuestionIndex(published), answers);
   const viaModel = resultModel("marriage", answers);
   assert.equal(direct.answered, viaModel.answered);
   assert.deepEqual(direct.chapters.map((c) => c.chapter), viaModel.chapters.map((c) => c.chapter));
@@ -302,17 +318,32 @@ test("the build and the browser share one reflection rather than two that drift"
 
 test("the questions are answerable, and readable without answering", async () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
-  assert.ok(has(html, 'type="radio" name="q-home-01"'), "the choices are a real form control");
-  assert.ok(has(html, 'data-undiscussed="home-01"'));
+  assert.ok(has(html, `type="radio" name="q-${Q1.id}"`), "the choices are a real form control");
+  assert.ok(has(html, `data-undiscussed="${Q1.id}"`));
   // Enhancement, not requirement: every word is in the HTML whether or not the script runs.
   assert.ok(has(html, '<script type="module" src="/enhance.js"></script>'));
-  for (const question of questionsFor("marriage").slice(0, 10)) {
-    assert.ok(has(html, question.whyItMatters), `${question.id} explanation is in the markup`);
+  for (const question of published.slice(0, 10)) {
+    assert.ok(has(html, question.title), `${question.id} is in the markup`);
+    for (const choice of question.choices) assert.ok(has(html, choice.label), choice.id);
   }
 });
 
+test("a site pack has no guidance copy, so the page omits those elements rather than emptying them", () => {
+  // An empty <p class="q-intent"> is a gap the reader cannot account for, and an empty
+  // "왜 중요한가요?" is worse: it promises an explanation and opens onto nothing.
+  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  for (const question of published.slice(0, 10)) {
+    assert.equal(question.intent, undefined, `${question.id} carries no intent`);
+    assert.equal(question.whyItMatters, undefined, `${question.id} carries no explanation`);
+  }
+  for (const marker of ['class="q-intent"', 'class="q-example"', 'class="q-why"', SITE_COPY.whyLabel]) {
+    assert.equal(has(html, marker), false, `${marker} is absent, not empty`);
+  }
+  assert.ok(has(html, 'class="q-choices"'), "what the reader came for is still there");
+});
+
 test("the last page offers the sheet instead of a page that is not there", () => {
-  const last = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
   assert.ok(has(last, 'href="/marriage/result/"'));
   const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.equal(has(first, 'href="/marriage/result/"'), false, "only at the end");

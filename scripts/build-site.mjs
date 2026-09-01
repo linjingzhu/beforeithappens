@@ -53,7 +53,7 @@ for (const model of pages) {
 // One sheet per published pack. It is a shell: the answers are in the reader's browser and have
 // never been anywhere else, so there is nothing here to prerender.
 for (const entry of PUBLISHED) {
-  const questions = questionsFor(entry.catalogId);
+  const questions = questionsFor(entry.packId);
   if (!questions.length) continue;
   const dir = join(OUT, entry.slug, "result");
   await mkdir(dir, { recursive: true });

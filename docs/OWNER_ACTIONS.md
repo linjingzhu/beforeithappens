@@ -81,7 +81,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X5b | 웹 | ~~Turn Pages on~~ | ✅ | X5 | Done by the owner. The deploy then ran clean end to end: build, CNAME check, configure, upload, deploy |
 | X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5a | The build already writes `https://` canonicals; serving over http would contradict them. Usually tickable within an hour of DNS resolving |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
-| X7 | 웹 | AdSense application | ⏳ | N7, X5c | 10 pages is borderline; 15–30 is the usual bar. In-page units only, never on the page turn |
+| X7 | 웹 | AdSense application | ⏳ | X5c, N5 | Ten pages of a hundred questions now exist. What is still missing is a **published** privacy policy (N5) and a live HTTPS site (X5c). In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
 
 ---
@@ -112,7 +112,7 @@ Not owner actions — recorded so the ledger reads as a whole.
 | Recommend + gift, four surfaces | Nothing — merged and live in code |
 | Audit log with six event types | D2 for a read path |
 | Account deletion, all surfaces | D3 |
-| Pack registry | N7 to hold a second pack |
-| Question site: 10-per-page, SEO, sitemap | X5a for a reachable address; N7 for a second pack |
+| Pack registry, app and site surfaces | Nothing — holds two packs |
+| Question site: 결혼 100제, 10 pages | Nothing — built and deployed |
 | Pages deploy workflow, CNAME, .nojekyll | Nothing — deployed successfully on 2026-09-01 |
 | Result sheet, browser-only, no delivery | X6 |

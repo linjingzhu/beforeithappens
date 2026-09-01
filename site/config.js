@@ -26,17 +26,17 @@ export const SITE = Object.freeze({
 /**
  * Packs the site publishes, in order.
  *
- * `혼자만의 연애` is not written yet (order of work step 3). Until it is, this list carries the
- * marriage pack so the machine is provably working end to end — publishing questions is safe
- * because the paid thing is the two-person loop, not the text. Whether it *should* be public is
- * the owner's call, and removing it is deleting one entry.
+ * `packId` takes either of a pack's two ids and is resolved through the registry. It is not
+ * `catalogId`: that names a shelf in the app's pack list, and what the site publishes is not on
+ * that shelf. `marriage-100` is the site's own pack — a hundred questions, free — and is a
+ * different pack from the app's twelve-question `marriage`, which stays sold and stays private.
  */
 export const PUBLISHED = Object.freeze([
   Object.freeze({
-    catalogId: "marriage",
+    packId: "marriage-100",
     slug: "marriage",
-    title: "결혼 전에 나눠야 할 대화",
-    description: "결혼을 앞둔 두 사람이 미리 맞춰 두면 좋은 질문들. 정답은 없고, 서로의 기대를 먼저 알아보는 것이 목적입니다.",
+    title: "결혼 100제 — 우리 둘의 가치관",
+    description: "결혼을 앞둔 두 사람이 미리 맞춰 두면 좋은 100가지 질문. 정답은 없고, 서로의 기대를 먼저 알아보는 것이 목적입니다.",
     /** Shown above the questions, before the first one. */
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
   })

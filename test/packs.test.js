@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PACK_AUDIENCE, definePack } from "../src/pack-schema.js";
+import { PACK_AUDIENCE, PACK_SURFACE, definePack } from "../src/pack-schema.js";
 import {
   allPacks,
   catalogWithContent,
@@ -11,6 +11,7 @@ import {
   packByContentId,
   packIdentity,
   packsFor,
+  packsOnSurface,
   questionsFor
 } from "../src/packs.js";
 import { PACK_LIST_ROWS } from "../src/pair-code.js";
@@ -131,7 +132,10 @@ test("audience is carried, because a solo pack must never enter the two-person m
   assert.equal(marriagePack.audience, PACK_AUDIENCE.couple);
   assert.equal(isCouplePack("marriage"), true);
   assert.equal(isCouplePack("dating"), false, "an unregistered pack is not a couple pack by default");
-  assert.deepEqual(packsFor(PACK_AUDIENCE.couple).map((p) => p.id), ["marriage-preparation"]);
+  // Both marriage packs are for two people. They differ by surface, not by audience — the site one
+  // is read alone and answered alone, but the questions are about a pair, which is what `audience`
+  // records.
+  assert.deepEqual(packsFor(PACK_AUDIENCE.couple).map((p) => p.id), ["marriage-preparation", "marriage-100"]);
   assert.deepEqual(packsFor(PACK_AUDIENCE.solo), [], "no solo pack is registered yet");
 
   const solo = definePack(validPack({ id: "solo-pack", audience: PACK_AUDIENCE.solo }));
@@ -159,9 +163,16 @@ test("every pack the app shows as open has questions behind it", () => {
   assert.equal(joined.find((r) => r.id === "dating").hasContent, false);
 });
 
-test("every registered pack points at a real catalog row", () => {
+test("every app pack points at a real catalog row, and no site pack claims one", () => {
+  // The catalog is the app's shelf. A site pack is not on it, and must not be: a row the app shows
+  // is a row the app has a screen for, and it has no screen for a hundred unguided questions.
   const ids = new Set(PACK_LIST_ROWS.map((row) => row.id));
-  for (const pack of allPacks()) {
+  for (const pack of packsOnSurface(PACK_SURFACE.app)) {
     assert.ok(ids.has(pack.catalogId), `${pack.id} has an unknown catalogId ${pack.catalogId}`);
   }
+  for (const pack of packsOnSurface(PACK_SURFACE.site)) {
+    assert.equal(pack.catalogId, undefined, `${pack.id} is a site pack and must not claim a shelf`);
+    assert.equal(packByCatalogId(pack.id), null, "a site pack is not reachable by catalog lookup");
+  }
+  assert.deepEqual(allPacks().map((pack) => pack.surface), ["app", "site"]);
 });

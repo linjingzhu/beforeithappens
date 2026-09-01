@@ -42,7 +42,7 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
   const entry = publishedBySlug(slug);
   if (!entry) return null;
 
-  const questions = questionsFor(entry.catalogId);
+  const questions = questionsFor(entry.packId);
   if (!questions.length) return null;
 
   const pages = pageCount(questions.length, site.pageSize);
@@ -55,7 +55,7 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
 
   return Object.freeze({
     slug: entry.slug,
-    catalogId: entry.catalogId,
+    packId: entry.packId,
     title: entry.title,
     description: entry.description,
     lead: first ? entry.lead : "",
@@ -79,7 +79,7 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
 export function allPages({ site = SITE, published = PUBLISHED } = {}) {
   const out = [];
   for (const entry of published) {
-    const questions = questionsFor(entry.catalogId);
+    const questions = questionsFor(entry.packId);
     if (!questions.length) continue;
     const pages = pageCount(questions.length, site.pageSize);
     for (let page = 1; page <= pages; page += 1) {
@@ -94,7 +94,7 @@ export function allPages({ site = SITE, published = PUBLISHED } = {}) {
 export function indexModel({ site = SITE, published = PUBLISHED } = {}) {
   const packs = published
     .map((entry) => {
-      const questions = questionsFor(entry.catalogId);
+      const questions = questionsFor(entry.packId);
       if (!questions.length) return null;
       return Object.freeze({
         slug: entry.slug,

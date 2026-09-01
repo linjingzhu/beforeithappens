@@ -1,6 +1,7 @@
 import { PACK_LIST_ROWS } from "./pair-code.js";
-import { PACK_AUDIENCE } from "./pack-schema.js";
+import { PACK_AUDIENCE, PACK_SURFACE } from "./pack-schema.js";
 import { marriagePack } from "./questions.js";
+import { marriage100Pack } from "./questions-marriage-100.js";
 
 /**
  * The registry: every pack that has content, in one place, addressable by either of its two ids.
@@ -16,16 +17,21 @@ import { marriagePack } from "./questions.js";
  * ordering, lookup, and the invariant that the app never advertises a pack with nothing in it —
  * follows from being in this list.
  */
-const CONTENT_PACKS = Object.freeze([marriagePack]);
+const CONTENT_PACKS = Object.freeze([marriagePack, marriage100Pack]);
 
-const byCatalogId = new Map(CONTENT_PACKS.map((pack) => [pack.catalogId, pack]));
+const APP_PACKS = CONTENT_PACKS.filter((pack) => pack.surface === PACK_SURFACE.app);
+
+// Only app packs are on a shelf, so only they are addressable by catalogId. `marriage-100` shares a
+// subject with `marriage` and is a different pack: same shelf would mean the app offering a hundred
+// unguided questions it has no screen for.
+const byCatalogId = new Map(APP_PACKS.map((pack) => [pack.catalogId, pack]));
 const byContentId = new Map(CONTENT_PACKS.map((pack) => [pack.id, pack]));
 
-if (byCatalogId.size !== CONTENT_PACKS.length) throw new Error("two packs claim the same catalogId");
+if (byCatalogId.size !== APP_PACKS.length) throw new Error("two packs claim the same catalogId");
 if (byContentId.size !== CONTENT_PACKS.length) throw new Error("two packs claim the same content id");
 
 const catalogIds = new Set(PACK_LIST_ROWS.map((row) => row.id));
-for (const pack of CONTENT_PACKS) {
+for (const pack of APP_PACKS) {
   if (!catalogIds.has(pack.catalogId)) {
     throw new Error(`pack ${pack.id} has catalogId ${pack.catalogId}, which is not in PACK_LIST_ROWS`);
   }
@@ -41,7 +47,7 @@ for (const row of PACK_LIST_ROWS) {
   }
 }
 
-export { PACK_AUDIENCE };
+export { PACK_AUDIENCE, PACK_SURFACE };
 
 export function allPacks() {
   return CONTENT_PACKS;
@@ -66,6 +72,11 @@ export function hasContent(id) {
 
 export function packsFor(audience) {
   return CONTENT_PACKS.filter((pack) => pack.audience === audience);
+}
+
+/** The packs a given product may render. The site publishes its own; the app never sees them. */
+export function packsOnSurface(surface) {
+  return CONTENT_PACKS.filter((pack) => pack.surface === surface);
 }
 
 export function isCouplePack(id) {
