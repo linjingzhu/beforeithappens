@@ -8,6 +8,7 @@ struct InviteWaitingView: View {
     let remaining: String
     let lastSent: String
     let copied: Bool
+    let copyFailed: Bool
     let onCopy: () -> Void
     let onShareInstagram: () -> Void
     let onShareKakao: () -> Void
@@ -25,7 +26,7 @@ struct InviteWaitingView: View {
             }
             Text(S4Copy.title)
                 .font(.largeTitle)
-            if inviteURL != nil {
+            if let link = inviteURL {
                 Text(S4Copy.share)
                 HStack(spacing: 10) {
                     Button(S4Copy.copyLink, action: onCopy)
@@ -35,6 +36,13 @@ struct InviteWaitingView: View {
                     Button(S4Copy.kakao, action: onShareKakao)
                         .frame(minHeight: 44)
                 }
+                if copyFailed {
+                    Text(S4Copy.copyFailed)
+                }
+                // UX_CONTRACT.md: the made link is readable and selectable, never buttons alone.
+                Text(link)
+                    .textSelection(.enabled)
+                    .font(.footnote)
                 if copied {
                     Text(S4Copy.copied)
                 }

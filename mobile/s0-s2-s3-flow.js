@@ -5,7 +5,7 @@ import { shareContainsPairCode } from "../src/pair-code.js";
 import { canUnlockRest, grantShopHearts, HEARTS, spendUnlockHearts, startingHearts } from "../src/hearts.js";
 import { comingSoonExistingQuestion, pickPackSample, pickPartnerChoice, sampleAnswerComplete } from "../src/marriage-sample.js";
 import { introSeen, markIntroSeen, packIntroLines } from "../src/pack-intro.js";
-import { fakeSession, isVirtualDebug } from "./src/virtual.js";
+import { buildEnv, fakeSession, isVirtualDebug } from "./src/virtual.js";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -69,6 +69,7 @@ export function createNativeFlow(session = emptyNativeSession(), {
     sampleChoice: "",
     sampleReason: "",
     samplePartner: null,
+    packCounts: null,
     packIntroOpen: Boolean(packIntroOpen),
     packOpen: false,
     seenPackIntros: Array.isArray(seenPackIntros) ? [...seenPackIntros] : [],
@@ -160,6 +161,7 @@ function clearJourney(state, extras = {}) {
     unlockOpen: false,
     shopOpen: false,
     certificateOpen: false,
+    packCounts: null,
     packIntroOpen: false,
     packOpen: false,
     ...extras
@@ -376,6 +378,64 @@ function runPackSample(state, packId = "marriage", rng = Math.random) {
   }));
 }
 
+/**
+ * 완주 tallies. Every count comes from the public lock the server already wrote for that
+ * question — `comparisonFor` in `src/state.js` is the only thing that decides `같음` from
+ * `이야기해요`. Nothing here classifies an answer itself, so a question that never reached a
+ * lock simply is not counted rather than being guessed at.
+ */
+export function packLockCounts(packState) {
+  const counts = { aligned: 0, close: 0, discuss: 0 };
+  for (const question of Object.values(packState?.questions || {})) {
+    const raw = question?.lock?.comparison;
+    const key = String(raw?.key || raw || "").toLowerCase();
+    if (Object.hasOwn(counts, key)) counts[key] += 1;
+  }
+  return counts;
+}
+
+/**
+ * Watches a pack view for 완주 and says, once, when the host should leave for the certificate.
+ *
+ * Two rules the naive check gets wrong. It waits for the mount's first loaded view before it
+ * judges anything, because the view before `startPack` resolves has no state and is never
+ * "finished". And it reports only a run that finished *while it was open*: a pack that was
+ * already complete when it opened must stay readable, or reopening it would bounce straight
+ * past the two of them’s own answers to the certificate.
+ */
+export function createPackCompletionWatch() {
+  let loaded = false;
+  let wasCompleted = false;
+  let reported = false;
+  return function observePackView(view) {
+    if (!loaded) {
+      if (view?.state) {
+        loaded = true;
+        wasCompleted = Boolean(view.completed);
+      }
+      return false;
+    }
+    const finished = !reported && Boolean(view?.completed) && !wasCompleted;
+    if (finished) reported = true;
+    wasCompleted = Boolean(view?.completed);
+    return finished;
+  };
+}
+
+/**
+ * The end of a real run: every question in the pack ended in a public lock. Without this the
+ * reader is left on the last reveal with nowhere to go. It lands on the certificate the
+ * hearts demo already uses — same locked copy, real counts.
+ */
+export function packRunCompleted(state, packState = null) {
+  return applyScreen(clearJourney(state, {
+    splashDone: true,
+    samplePackId: state?.samplePackId || "marriage",
+    certificateOpen: true,
+    packCounts: packLockCounts(packState)
+  }));
+}
+
 export function openMarriageFromList(state, rng = Math.random) {
   return openPackSample(state, "marriage", rng);
 }
@@ -451,7 +511,7 @@ function virtualTogether(state) {
  * partner has actually accepted, and the real invite surface when one has not. A partner is
  * only ever invented under an explicit virtual build.
  */
-export function openTogetherFromSample(state, env = globalThis.process?.env || {}) {
+export function openTogetherFromSample(state, env = buildEnv()) {
   if (hasAcceptedPartner(state)) {
     return openRealPack(state, state.samplePackId || "marriage");
   }
@@ -592,7 +652,7 @@ export function comingSoonQuestionFor(packId) {
 
 export const HEART_UNLOCK_COST = HEARTS.unlockCost;
 
-export async function submitMagicLink(state, api, env = globalThis.process?.env || {}) {
+export async function submitMagicLink(state, api, env = buildEnv()) {
   const started = requestLinkStarted(state);
   if (started.error) return started;
   if (isVirtualDebug(env)) {
@@ -701,7 +761,7 @@ export async function logoutAccount(state, api) {
   return loggedOutHome(state);
 }
 
-export async function loadInvitePairCode(state, api, env = globalThis.process?.env || {}) {
+export async function loadInvitePairCode(state, api, env = buildEnv()) {
   if (isVirtualDebug(env)) {
     return applyScreen({
       ...state,
@@ -734,7 +794,7 @@ export function setPartnerCode(state, code) {
   return { ...state, partnerCode: String(code || ""), error: "" };
 }
 
-export async function connectPartnerCode(state, api, env = globalThis.process?.env || {}) {
+export async function connectPartnerCode(state, api, env = buildEnv()) {
   if (!state.session?.user) return requireLogin(state, "connect");
   if (isVirtualDebug(env)) {
     return applyScreen(clearJourney(state, {
@@ -765,7 +825,7 @@ export async function connectPartnerCode(state, api, env = globalThis.process?.e
   }
 }
 
-export async function shareMeasurementInvite(state, channel, io = {}, env = globalThis.process?.env || {}) {
+export async function shareMeasurementInvite(state, channel, io = {}, env = buildEnv()) {
   const url = String(state.inviteUrl || "");
   if (!url || shareContainsPairCode(url, state.pairCode)) {
     return { ...state, inviteOpen: true, copied: false };
@@ -774,7 +834,7 @@ export async function shareMeasurementInvite(state, channel, io = {}, env = glob
   return { ...state, inviteOpen: true, copied: result === "copied", codeCopied: false };
 }
 
-export async function copyMyPairCode(state, io = {}, env = globalThis.process?.env || {}) {
+export async function copyMyPairCode(state, io = {}, env = buildEnv()) {
   if (isVirtualDebug(env)) {
     return { ...state, inviteOpen: true, codeCopied: true, copied: false };
   }

@@ -26,6 +26,9 @@ with `<provider>` one of `kakao`, `naver`, `google`. For a production origin of
 
 Rules that bite in practice:
 
+- The shape is not configurable: `oauthRedirectUri` in `server/oauth.mjs` builds
+  `<origin>/api/auth/oauth/<provider>/callback`, and the route that answers it in
+  `server/app.mjs` matches exactly that path. Register that string, nothing else.
 - The string must match **byte for byte** at authorize time and at token
   exchange time. No trailing slash, no `www.` drift, no `http` vs `https` mix.
 - The server derives the origin from `AB_PUBLIC_ORIGIN` when it is set, and from
@@ -79,12 +82,14 @@ response body, an error, or a log line.
    **사용함**. If the secret is generated but left 사용 안 함, Kakao ignores it and
    the flow is weaker than the code assumes; if it is 사용함 and the env var is
    missing, the token call fails.
-6. **제품 설정 → 카카오 로그인 → 동의항목**: enable **카카오계정(이메일)**. Optional
-   consent (선택 동의) is fine — the user may decline, in which case Kakao
-   returns no email and the app falls through to the existing 이메일 연결
-   (email-bind) screen. Required consent (필수 동의) needs Kakao's business
-   verification for most apps.
+6. **제품 설정 → 카카오 로그인 → 동의항목 → 카카오계정(이메일)**: set it to
+   **선택 동의** if the console lets you, and write the purpose text the console
+   asks for. This is the item that decides whether the friend ever sees the
+   이메일 연결 screen. See "Kakao 이메일 동의항목: what is certain and what is
+   not" below before you count on it.
 7. **앱 설정 → 플랫폼 → Web**: add the site domain (`https://loveme.example`).
+   Kakao refuses the authorize call if the Redirect URI's origin has no matching
+   Web platform entry.
 
 Scopes: the code deliberately sends **no** `scope` parameter for Kakao. Kakao
 takes the consent items from the console, and sending a scope that is not
@@ -92,10 +97,53 @@ enabled there fails the authorize call (KOE205). If you later want to force a
 re-consent for email, add `scope=account_email` at the authorize step only after
 the consent item is enabled.
 
-Email note: `kakao_account.email` is used only when Kakao does not flag it as
-invalid or unverified. Even then, `auth.completeOAuth` never merges accounts on
-a Kakao-supplied email — this is intentional, so a Kakao account cannot take
-over an existing email account.
+### How a Kakao email is trusted
+
+Two different bars, on purpose:
+
+- `readKakaoProfile` (`server/oauth.mjs`) returns the address whenever Kakao does
+  not flag it `is_email_valid: false` / `is_email_verified: false`.
+- It marks that address **verified** only when Kakao affirms *both* flags as
+  `true`. A missing flag is not an affirmation.
+
+Only a verified address is turned into a single-use claim
+(`attestProviderEmail` in `server/auth.mjs`) that `completeOAuth` may spend to
+write the address onto the account. The claim is bound to the exact
+`(provider, providerUserId, email)` triple, expires in a minute, and can only be
+minted by `exchangeOAuthCode` — the one function that holds the client secret
+and has actually talked to Kakao. So:
+
+- Kakao login **with** a verified email → `needsEmail: false`, the friend can
+  accept an email-bound invite immediately, and no login mail has to be sent.
+- Kakao login **without** one (declined consent, unverified account, consent
+  item not enabled) → `email: ""`, `needsEmail: true`, the 이메일 연결 gate.
+- A caller that did not perform a token exchange — including the dev routes
+  `POST /api/dev/oauth/complete` and `?dev=1` on the callback — can pass any
+  address it likes and it is still ignored. `test/kakao-verified-email.test.js`
+  and `test/social-login.test.js` pin that.
+
+### Kakao 이메일 동의항목: what is certain and what is not
+
+**Certain (from this repo's code):** the app never asks for `scope=account_email`
+at the authorize step, so whatever the console grants is what arrives; and an
+absent email is a supported outcome, not an error.
+
+**Not verified by anyone here — check it in your own console:** Kakao gates
+personal-information consent items (이메일, 전화번호, 생년월일 …) behind app
+status. The rules have changed more than once, and this repo's authors have no
+Kakao console access. Before launch, confirm in
+**제품 설정 → 카카오 로그인 → 동의항목**:
+
+1. Is **카카오계정(이메일)** selectable at all for your app, or does the row say
+   the app must first become a **비즈 앱** (business app, which needs a
+   비즈니스 채널 and business-registration verification)?
+2. If it is selectable, which levels are offered — 선택 동의 only, or 필수 동의
+   too? Take 선택 동의; 필수 동의 is the level most likely to demand 비즈 앱.
+3. Does saving the item put the app into a review/검수 queue, and if so how long?
+
+Do not assume the answer from this document. If the item is blocked, nothing in
+the code breaks — the friend simply lands on the 이메일 연결 screen, which is
+useless without working mail. Use the pair-code path in §7 instead.
 
 ## 4. Naver — https://developers.naver.com
 
@@ -122,6 +170,11 @@ expects.
 Naver's profile response is `{ resultcode, message, response: { id, email } }`;
 anything other than `resultcode === "00"` is treated as a failed login.
 
+Email note: the Naver login profile carries no verification flag, so the address
+is never treated as verified — a Naver login always goes through the 이메일 연결
+gate (or the pair code in §7). Do not widen this without a real signal from
+Naver's API.
+
 ## 5. Google — https://console.cloud.google.com
 
 1. Create (or select) a project.
@@ -141,24 +194,41 @@ anything other than `resultcode === "00"` is treated as a failed login.
 
 Scopes sent by the code: `openid email profile`.
 
-Email note: Google's `email` is used only when `email_verified` is true. An
+Email note: Google's `email` is used only when `email_verified === true`. An
 unverified Google email is treated as **no email**, so the user lands on the
-email-bind screen instead of silently claiming an address they do not own.
+email-bind screen instead of silently claiming an address they do not own. A
+verified one also mints the same single-use claim described under Kakao.
 
-## 6. What the owner still has to wire
+## 6. What is already wired
 
-`server/oauth.mjs` is a library. The callback route in `server/app.mjs` is what
-turns it into a login:
+The route in `server/app.mjs` is in place, so configuring a console is the only
+missing step:
 
-- `POST /api/auth/oauth/start` must attach `state: createOAuthState({ provider, env })`
-  to the authorize URL.
-- `GET /api/auth/oauth/:provider/callback` must call `verifyOAuthState` first,
-  then `exchangeOAuthCode`, then `auth.completeOAuth`, then set the `ab_session`
-  cookie the same way `/api/auth/consume` does.
+- `POST /api/auth/oauth/start` → `createOAuthState` + `oauthAuthorizeUrl`.
+- `GET /api/auth/oauth/:provider/callback` → `verifyOAuthState`, then
+  `exchangeOAuthCode`, then `auth.completeOAuth`, then the `ab_session` cookie.
 
-Until that route exists, configuring the consoles changes nothing user-visible.
+## 7. Fallback when Kakao email is not available: the pair code
 
-## 7. Rollout checklist
+If the 이메일 동의항목 is blocked, or the friend declines it, the friend still
+logs in with Kakao — they just have no email, and with no working outbound mail
+the 이메일 연결 screen is a dead end. The pair code goes around it:
+
+1. The owner (who does have an email) calls `GET /api/pair-code`
+   (`couple.ensurePairCode`) and reads back a code plus its display form.
+2. The friend logs in with Kakao — an account with `email: ""` is fine — and
+   posts the code to `POST /api/pair-code/connect`
+   (`couple.connectByPairCode` in `server/workspace.mjs`).
+3. Neither call looks at the user's email. `connectByPairCode` needs only a
+   session and a code that matches an active workspace, and it joins the friend
+   as `partner`. `test/kakao-verified-email.test.js` proves the whole join for a
+   Kakao account with no email.
+
+Server-side this path is complete today. The screens that show and enter the
+code are owned elsewhere; this document only claims the API works.
+
+## 8. Rollout checklist
+
 
 1. Set the env vars for **one** provider first (Google is the fastest to
    register) and restart the server.

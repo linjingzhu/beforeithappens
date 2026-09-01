@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Linking, Share } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
@@ -35,6 +35,7 @@ import {
   withdrawHost
 } from "./src/session.js";
 import { PackMount } from "./pack/screens.js";
+import { createHostPack } from "./pack/host-mount.js";
 import marriagePackCatalog from "./pack/contract/marriage-pack.json";
 import {
   backFromAccount,
@@ -54,9 +55,10 @@ import {
   loadInvitePairCode,
   openAccount,
   openComingSoonFromList,
+  createPackCompletionWatch,
   openMarriageFromList,
+  packRunCompleted,
   startPackFromIntro,
-  openSendLink,
   openTogetherFromSample,
   purchaseShopHearts,
   requestLinkStarted,
@@ -87,6 +89,43 @@ function shareIo() {
       }
     }
   };
+}
+
+/**
+ * 완주 routing for the real pack.
+ *
+ * `PackMount` tells the host nothing when the last question locks, so a couple who finished
+ * all twelve were left sitting on the final reveal with nowhere to go. The controller is the
+ * only thing that knows — its view carries `completed` once every question ended in a public
+ * lock — so the host owns the controller, hands it to the mount, and watches that one flag.
+ * `view()` is a pure projection over state the mount already fetched, never a request of its
+ * own, and the hand-off is deferred to a microtask so nothing is reported mid-render.
+ */
+function PackRun({ session, cookieAccess, catalog, onExit, onCompleted }) {
+  const report = useRef(onCompleted);
+  report.current = onCompleted;
+
+  const controller = useMemo(
+    () => createHostPack({ session, cookieAccess, catalog }),
+    [session, cookieAccess, catalog]
+  );
+
+  const watched = useMemo(() => {
+    const observePackView = createPackCompletionWatch();
+    return {
+      ...controller,
+      view() {
+        const next = controller.view();
+        if (observePackView(next)) {
+          const finished = next;
+          Promise.resolve().then(() => report.current?.(finished));
+        }
+        return next;
+      }
+    };
+  }, [controller]);
+
+  return <PackMount controller={watched} onExit={onExit} />;
 }
 
 export default function App() {
@@ -175,11 +214,12 @@ export default function App() {
         />
       ) : null}
       {state.screen === "pack" ? (
-        <PackMount
+        <PackRun
           session={state.session}
           cookieAccess={hostCookieAccess()}
           catalog={marriagePackCatalog}
           onExit={() => setState(backToPackList(state))}
+          onCompleted={(view) => setState(packRunCompleted(stateRef.current, view?.state))}
         />
       ) : null}
       {state.screen === "pack-intro" ? (
@@ -213,7 +253,12 @@ export default function App() {
           question={state.sampleQuestions?.[state.sampleQuestions.length - 1]}
           myChoice={state.sampleQuestions?.[state.sampleQuestions.length - 1]?.choices?.find((choice) => choice.id === state.sampleAnswers?.at?.(-1)?.choiceId)}
           partnerChoice={state.samplePartner}
-          onTogether={() => setState(openTogetherFromSample(state))}
+          onTogether={async () => {
+            const next = openTogetherFromSample(state);
+            // 함께 풀어보기 lands on the pair-code sheet, which is blank until the code is
+            // fetched: without this the owner sees an empty 내 코드 and dead share buttons.
+            setState(next.screen === "invite" && !next.pairCode ? await loadInvitePairCode(next, api) : next);
+          }}
         />
       ) : null}
       {state.screen === "unlock" ? (
@@ -229,7 +274,7 @@ export default function App() {
       {state.screen === "certificate" ? (
         <CertificateScreen
           packLabel={packListLabel(state.samplePackId) || "결혼"}
-          counts={countSampleLabels(state.sampleAnswers, state.sampleQuestions)}
+          counts={state.packCounts || countSampleLabels(state.sampleAnswers, state.sampleQuestions)}
           onHome={() => setState(backFromCertificate(state))}
         />
       ) : null}
@@ -243,7 +288,7 @@ export default function App() {
           onBack={() => setState(backFromAccount(state))}
           onLogout={async () => setState(await logoutHost(state, api))}
           onLogin={() => setState(openAccount(state))}
-          onInvite={async () => setState(await loadInvitePairCode(openSendLink(state), api))}
+          onInvite={() => setState(openS4FromWorkspace(state))}
           onWithdraw={async () => {
             setState({ ...state, busy: true, error: "" });
             const next = await withdrawHost(state, api);

@@ -1,4 +1,4 @@
-import { INVITE_OTHER_SESSION, canOpenPack, resolveInviteAcceptError, shareInviteChannel } from "../../src/auth.js";
+import { INVITE_OTHER_SESSION, canOpenPack, inviteCopyFailed, inviteShareDisplayUrl, resolveInviteAcceptError, shareInviteChannel } from "../../src/auth.js";
 import { PRODUCT_INVITE_COPY, S4_COPY, SAME_SESSION_COPY, assertLockedS4Copy } from "./copy.js";
 
 export const APP_S4_SCREEN = "s4-invite-waiting";
@@ -66,13 +66,19 @@ export function sameSessionViewModel() {
   };
 }
 
-export function s4ViewModel({ invite = null, copied = false, email = "", partnerEmail = "", error = "" } = {}) {
+export function s4ViewModel({ invite = null, copied = false, copyFailed = null, shareUrl = "", origin = "", email = "", partnerEmail = "", error = "" } = {}) {
   const hasInvite = Boolean(invite);
+  // `origin || undefined` so an unset origin falls through to the page origin default.
+  const linkUrl = shareUrl || inviteShareDisplayUrl(invite?.url, origin || undefined);
+  const failed = copyFailed === null ? inviteCopyFailed(linkUrl) : Boolean(copyFailed);
   return {
     screen: APP_S4_SCREEN,
     title: S4_COPY.title,
     share: hasInvite ? S4_COPY.share : "",
     buttons: hasInvite ? s4ShareButtons() : [],
+    // UX_CONTRACT.md: the link is readable on screen, so a silent copy failure is recoverable.
+    shareUrl: hasInvite ? linkUrl : "",
+    copyFailed: failed ? S4_COPY.copyFailed : "",
     copied: copied ? S4_COPY.copied : "",
     deviceRule: S4_COPY.deviceRule,
     emailCheck: hasInvite ? S4_COPY.emailCheck : "",

@@ -134,3 +134,18 @@ test("one user cannot own two active workspaces and a third member cannot join",
   assert.equal(extra.error, "already-paired");
   assert.equal(auth.sessionFor(buyer.sessionId).workspace.acceptedPartner, true);
 });
+
+test("an expired invite is not offered as a share link", () => {
+  const { couple, login, advance } = system();
+  const buyer = login("buyer@example.com");
+  const invite = couple.issueInvite(buyer.sessionId, "partner@example.com");
+  const fresh = couple.viewForUser(buyer.user.id).invite;
+  assert.equal(fresh.status, "waiting");
+  assert.equal(fresh.url, `/invite/accept?token=${invite.token}`);
+  advance(INVITE_TTL_MS + 1);
+  const stale = couple.viewForUser(buyer.user.id).invite;
+  assert.equal(stale.status, "expired");
+  assert.equal(stale.remainingMs, 0);
+  assert.equal(stale.url, "");
+  assert.equal(couple.previewInvite(invite.token).error, "expired");
+});

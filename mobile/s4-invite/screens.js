@@ -1,9 +1,18 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { formatRemaining, formatSentAt } from "../../src/auth.js";
 import { colors } from "../src/theme.js";
 import { S4_COPY, SAME_SESSION_COPY } from "./copy.js";
 import { s4ViewModel } from "./flow.js";
+import { s4ShareUrl, setHostShareIo } from "./host-mount.js";
+
+// The phone has no navigator.share/clipboard. Mounting the S4 screen registers the RN
+// Share bridge so 링크 복사 / 인스타그램 / 카카오톡 do something even when the host
+// mounts them without handing in an io of its own.
+setHostShareIo({
+  share: async (payload) => { await Share.share({ message: payload.url, url: payload.url }); },
+  clipboard: { writeText: async (text) => { await Share.share({ message: String(text || "") }); } }
+});
 
 function LogoutChrome({ label, onPress }) {
   return (
@@ -21,6 +30,7 @@ export function InviteWaitingScreen({
   partnerEmail = "",
   invite = null,
   copied = false,
+  copyFailed = null,
   error = "",
   onCopy,
   onShareInstagram,
@@ -28,7 +38,15 @@ export function InviteWaitingScreen({
   onSendOrResend,
   onLogout
 }) {
-  const model = s4ViewModel({ email, partnerEmail, invite, copied, error });
+  const model = s4ViewModel({
+    email,
+    partnerEmail,
+    invite,
+    copied,
+    copyFailed,
+    shareUrl: s4ShareUrl({ invite }),
+    error
+  });
   const [draft, setDraft] = useState(model.partnerEmail);
   return (
     <View style={styles.shell} testID="s4-invite-waiting" accessibilityLabel="s4-invite-waiting">
@@ -52,6 +70,10 @@ export function InviteWaitingScreen({
                 <Text style={styles.secondaryLabel}>{S4_COPY.kakao}</Text>
               </Pressable>
             </View>
+            {model.copyFailed ? <Text style={styles.copyFailed}>{model.copyFailed}</Text> : null}
+            {model.shareUrl ? (
+              <Text testID="s4-share-url" selectable style={styles.shareUrl}>{model.shareUrl}</Text>
+            ) : null}
             {copied ? <Text style={styles.copied}>{S4_COPY.copied}</Text> : null}
             <Text style={styles.body}>{S4_COPY.deviceRule}</Text>
             <Text style={styles.body}>{S4_COPY.emailCheck}</Text>
@@ -184,6 +206,18 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontSize: 14,
     fontWeight: "700",
+    marginBottom: 12
+  },
+  copyFailed: {
+    color: "#b64838",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 8
+  },
+  shareUrl: {
+    color: colors.ink,
+    fontSize: 13,
+    lineHeight: 20,
     marginBottom: 12
   },
   meta: {

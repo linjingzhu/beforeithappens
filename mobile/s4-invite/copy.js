@@ -8,6 +8,7 @@ export const S4_COPY = Object.freeze({
   instagram: "인스타그램",
   kakao: "카카오톡",
   copied: "링크를 복사했어요.",
+  copyFailed: "복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요.",
   deviceRule: "같은 폰에서 두 계정을 동시에 쓸 수는 없어요.",
   emailCheck: "상대 이메일이 맞는지 다시 확인해 주세요.",
   editResend: "이메일 고치고 링크 다시 만들기",
@@ -36,6 +37,7 @@ export function assertLockedS4Copy() {
   if (S4_COPY.instagram !== INVITE_COPY.instagram) throw new Error("S4 Instagram label drifted");
   if (S4_COPY.kakao !== INVITE_COPY.kakao) throw new Error("S4 KakaoTalk label drifted");
   if (S4_COPY.copied !== INVITE_COPY.copied) throw new Error("S4 copied copy drifted");
+  if (S4_COPY.copyFailed !== INVITE_COPY.copyFailed) throw new Error("S4 copy-failure copy drifted");
   if (S4_COPY.deviceRule !== INVITE_COPY.deviceRule) throw new Error("S4 device rule drifted");
   if (S4_COPY.emailCheck !== INVITE_COPY.emailCheck) throw new Error("S4 typo copy drifted");
   if (S4_COPY.editResend !== INVITE_COPY.editResend) throw new Error("S4 typo CTA drifted");

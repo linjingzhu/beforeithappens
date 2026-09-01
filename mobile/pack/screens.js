@@ -3,7 +3,16 @@ import { Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "reac
 import { colors } from "../src/theme.js";
 import { createStyles } from "../src/responsive.js";
 import { PACK_COPY } from "./contract/pack-copy.js";
+import { PaywallOverlay } from "../paywall/screens.js";
 import { createHostPack } from "./host-mount.js";
+
+/**
+ * Two phones, one round: the reveal and the unlock are both decided on the other side.
+ * Whoever submits first would otherwise sit on a stale screen, and the partner — who has
+ * no button on their gate at all — would have to quit and reopen the app to continue.
+ * So while a screen is waiting on the other person, it refetches instead of freezing.
+ */
+export const GATE_POLL_MS = 5000;
 
 function saveLabel(saveStatus) {
   if (saveStatus === "saving") return PACK_COPY.saving;
@@ -185,6 +194,10 @@ export function PackMount({ session, cookieAccess, fetchImpl, catalog, controlle
   );
   const [view, setView] = useState(() => controller.view());
   const [busy, setBusy] = useState(true);
+  const [shopOpen, setShopOpen] = useState(false);
+  const gate = view.paywall;
+  const waitingForUnlock = Boolean(gate?.visible) && gate.variant === "partner";
+  const waitingForOther = waitingForUnlock || Boolean(view.question?.partnerWaiting);
 
   useEffect(() => {
     let alive = true;
@@ -195,6 +208,20 @@ export function PackMount({ session, cookieAccess, fetchImpl, catalog, controlle
       .finally(() => { if (alive) setBusy(false); });
     return () => { alive = false; };
   }, [controller]);
+
+  useEffect(() => {
+    if (!waitingForOther) return undefined;
+    let alive = true;
+    const timer = setInterval(() => {
+      Promise.resolve(controller.refresh())
+        .then((next) => { if (alive) setView(next); })
+        .catch(() => {});
+    }, GATE_POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [controller, waitingForOther]);
 
   function run(work) {
     return async (...args) => {
@@ -213,32 +240,56 @@ export function PackMount({ session, cookieAccess, fetchImpl, catalog, controlle
   if (view.screen === "signed-out" || view.screen === "ready" || !view.question) {
     return <PackReadyScreen view={view} busy={busy} onStart={run(() => controller.startPack())} onBack={onExit} />;
   }
+
+  // The gate sits on top of the sample comparison, exactly as the iOS and Android packs
+  // stack it: the buyer is offered the unlock, the partner is told who can open it.
+  const overlay = gate?.visible ? (
+    <PaywallOverlay
+      view={{ ...gate, shopOpen }}
+      onUnlock={() => setShopOpen(true)}
+      onPurchase={run(async () => {
+        setShopOpen(false);
+        return controller.purchase();
+      })}
+      onLater={() => {
+        setShopOpen(false);
+        setView(controller.later());
+      }}
+    />
+  ) : null;
+
   if (view.question.screen === "reveal") {
     return (
-      <PackRevealScreen
+      <>
+        <PackRevealScreen
+          view={view}
+          busy={busy}
+          onProposal={run((text) => controller.agree(text))}
+          onAgree={run(() => controller.agree())}
+          onHold={run(() => controller.hold())}
+          onReanswer={run(() => controller.beginReanswer())}
+          onPrevious={run(() => controller.go(-1))}
+          onNext={run(() => controller.go(1))}
+          onBack={onExit}
+        />
+        {overlay}
+      </>
+    );
+  }
+  return (
+    <>
+      <PackQuestionScreen
         view={view}
         busy={busy}
-        onProposal={run((text) => controller.agree(text))}
-        onAgree={run(() => controller.agree())}
-        onHold={run(() => controller.hold())}
-        onReanswer={run(() => controller.beginReanswer())}
+        onChoice={run((choiceId) => controller.saveDraft({ draftChoice: choiceId }))}
+        onNote={run((text) => controller.saveDraft({ privateNote: text }))}
+        onSubmit={run(() => controller.submit())}
         onPrevious={run(() => controller.go(-1))}
         onNext={run(() => controller.go(1))}
         onBack={onExit}
       />
-    );
-  }
-  return (
-    <PackQuestionScreen
-      view={view}
-      busy={busy}
-      onChoice={run((choiceId) => controller.saveDraft({ draftChoice: choiceId }))}
-      onNote={run((text) => controller.saveDraft({ privateNote: text }))}
-      onSubmit={run(() => controller.submit())}
-      onPrevious={run(() => controller.go(-1))}
-      onNext={run(() => controller.go(1))}
-      onBack={onExit}
-    />
+      {overlay}
+    </>
   );
 }
 

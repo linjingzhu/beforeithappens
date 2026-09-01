@@ -49,6 +49,8 @@ Invite-waiting home (buyer, no pack CTA):
 | Share copy | 링크를 보내 파트너를 초대하세요. |
 | Share buttons | 링크 복사 / 인스타그램 / 카카오톡 |
 | Copy success | 링크를 복사했어요. |
+| Copy failure | 복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요. |
+| Link visibility | 만든 초대 링크는 화면에 문자열 그대로 보인다. 복사와 공유가 조용히 실패해도 오너가 직접 집을 수 있어야 하므로, 버튼만 두는 화면은 규약 위반이다. |
 | Device rule | 같은 폰에서 두 계정을 동시에 쓸 수는 없어요. |
 | Email typo | 상대 이메일이 맞는지 다시 확인해 주세요. |
 | Email typo CTA | 이메일 고치고 링크 다시 만들기 |
@@ -57,6 +59,8 @@ Invite-waiting home (buyer, no pack CTA):
 | Success CTA after accept | 결혼 팩 시작하기 |
 | Expired invite | 초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요. |
 | Email mismatch | 이 초대는 다른 이메일로 만들어졌어요. 초대받은 메일로 로그인해야 해요. |
+| In-app browser (accept) | 카카오톡 안에서는 로그인이 막힐 수 있어요. Safari 또는 Chrome에서 열어 주세요. |
+| In-app browser CTA | 브라우저에서 열기 |
 | Draft badge | 나만 보임 |
 
 Recommended web install (not a gate):

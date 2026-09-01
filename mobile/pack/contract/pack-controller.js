@@ -27,6 +27,13 @@ export function createPackController({
     };
   }
 
+  /** 완주: every question in the pack ended in a public lock, so there is nothing left to open. */
+  function packCompleted() {
+    const ids = pack?.questionIds || (pack?.questions || []).map((question) => question.id);
+    if (!state || ids.length === 0) return false;
+    return ids.every((id) => Boolean(state.questions?.[id]?.lock));
+  }
+
   function view() {
     const ready = packReadyScreen(session);
     if (screen === "signed-out") {
@@ -61,7 +68,13 @@ export function createPackController({
       state,
       paywall: gate,
       remainingLocked: gate.remainingLocked,
-      canGoNext: question ? canOpenQuestion((question.index ?? 0) + 1, { entitled: gate.entitled }) : false
+      completed: packCompleted(),
+      // The last question has no next: the native packs bound this by the pack length too,
+      // and without it the reader is offered a "다음 질문" link that goes nowhere.
+      canGoNext: question
+        ? canOpenQuestion((question.index ?? 0) + 1, { entitled: gate.entitled })
+          && (question.index ?? 0) + 1 < (pack?.questions?.length ?? 0)
+        : false
     };
   }
 
@@ -177,6 +190,23 @@ export function createPackController({
       error = "";
       return view();
     },
+
+    /**
+     * Re-reads server state without moving the reader. Entitlement is a workspace fact, so
+     * this is the only way the partner's screen reopens after the buyer pays — the partner
+     * gate carries no button of its own. A failed poll is silent: it leaves the current
+     * view, save status and error line exactly as they were.
+     */
+    async refresh() {
+      if (!state) return view();
+      const result = await client.getState();
+      if (!result?.ok || !result.state) return view();
+      const keepIndex = Number.isInteger(state.index) ? state.index : result.state.index;
+      applyState({ ...result.state, index: keepIndex });
+      paywall.applyPackState(state);
+      return view();
+    },
+
     beginReanswer() {
       const current = projectQuestionScreen({ pack, state, session, reanswering: false });
       if (!current?.lock) return view();

@@ -112,12 +112,24 @@ export function createAuthApi({
       }
     },
 
+    /**
+     * The one call the whole deep link hangs on. It is the only place the host awaits before
+     * it can leave the splash, so it must always settle: an unbounded fetch here leaves a
+     * cold-started app on the wordmark for as long as the socket stays half-open. It gets the
+     * same long allowance as the send, because a phone can open the mail minutes later against
+     * a host that has spun down again.
+     */
     async consumeMagicLink(tokenOrUrl) {
       const token = String(tokenOrUrl || "").includes("://") || String(tokenOrUrl || "").includes("/auth/consume")
         ? extractMagicLinkToken(tokenOrUrl)
         : String(tokenOrUrl || "");
       if (!token) return { ok: false, error: "invalid" };
-      const result = await request(AUTH_API.consume, { method: "POST", body: { token } });
+      let result;
+      try {
+        result = await withTimeout(request(AUTH_API.consume, { method: "POST", body: { token } }), authTimeoutMs);
+      } catch {
+        return { ok: false, error: "invalid" };
+      }
       if (!result.ok) return { ok: false, error: result.payload.error || "invalid" };
       return { ok: true, session: result.payload.session };
     },

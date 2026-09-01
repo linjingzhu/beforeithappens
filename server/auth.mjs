@@ -31,6 +31,63 @@ function iso(ms) {
   return new Date(ms).toISOString();
 }
 
+/**
+ * Verified-email claims, minted only by the real OAuth token exchange.
+ *
+ * `completeOAuth` cannot tell a genuine provider callback from a forged call:
+ * the dev routes in `server/app.mjs` reach it with a caller-supplied `email`,
+ * and a provider *name* is not a verification signal. So trust flows the other
+ * way. `exchangeOAuthCode` — the only code that actually talks to the provider
+ * with the client secret and reads the provider's own verification flags —
+ * mints a single-use, short-lived claim bound to the exact
+ * (provider, providerUserId, email) triple it read. `completeOAuth` consumes
+ * that claim. A caller that never performed a token exchange has no claim, so
+ * its `email` stays untrusted and the user still lands on the email-bind gate.
+ */
+export const PROVIDER_EMAIL_CLAIM_TTL_MS = 60 * 1000;
+const MAX_PROVIDER_EMAIL_CLAIMS = 256;
+const providerEmailClaims = new Map();
+
+function claimKey(provider, providerUserId, email) {
+  return `${provider}\n${providerUserId}\n${email}`;
+}
+
+function pruneProviderEmailClaims(at) {
+  for (const [key, expiresAt] of providerEmailClaims) {
+    if (expiresAt <= at) providerEmailClaims.delete(key);
+  }
+  while (providerEmailClaims.size >= MAX_PROVIDER_EMAIL_CLAIMS) {
+    const oldest = providerEmailClaims.keys().next();
+    if (oldest.done) break;
+    providerEmailClaims.delete(oldest.value);
+  }
+}
+
+/**
+ * Called from the token-exchange path only. Never call this with an address the
+ * provider did not affirm as verified, and never from a route that takes the
+ * address from the request.
+ */
+export function attestProviderEmail({ provider, providerUserId, email } = {}) {
+  const name = String(provider || "").trim().toLowerCase();
+  const subject = String(providerUserId || "").trim();
+  const address = normalizeEmail(email);
+  if (!name || !subject || !isValidEmail(address)) return false;
+  const at = Date.now();
+  pruneProviderEmailClaims(at);
+  providerEmailClaims.set(claimKey(name, subject, address), at + PROVIDER_EMAIL_CLAIM_TTL_MS);
+  return true;
+}
+
+/** Single use: a claim is removed whether or not it was still fresh. */
+function consumeProviderEmailClaim(provider, providerUserId, email) {
+  const key = claimKey(provider, providerUserId, email);
+  const expiresAt = providerEmailClaims.get(key);
+  if (expiresAt === undefined) return false;
+  providerEmailClaims.delete(key);
+  return expiresAt > Date.now();
+}
+
 export function hasAcceptedPartner(state, userId) {
   const memberships = state.members.filter((member) => member.userId === userId && member.status === "accepted");
   return memberships.some((membership) =>
@@ -203,7 +260,12 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
       if (!subject) return { ok: false, error: "invalid-provider" };
       const at = now();
       const normalizedEmail = normalizeEmail(email);
-      const trustEmail = name === "google" && isValidEmail(normalizedEmail);
+      const validEmail = isValidEmail(normalizedEmail);
+      // A provider name is not a verification signal. Google keeps the trust it
+      // already had; every other provider earns it only through a claim minted
+      // by the real token exchange (see attestProviderEmail above).
+      const attestedEmail = validEmail && consumeProviderEmailClaim(name, subject, normalizedEmail);
+      const trustEmail = validEmail && (name === "google" || attestedEmail);
       const existingIdentity = findIdentity(store.snapshot(), name, subject);
       let user = existingIdentity
         ? store.snapshot().users.find((item) => item.id === existingIdentity.userId)

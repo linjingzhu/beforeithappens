@@ -46,6 +46,7 @@ export const INVITE_COPY = {
   instagram: "인스타그램",
   kakao: "카카오톡",
   copied: "링크를 복사했어요.",
+  copyFailed: "복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요.",
   deviceRule: "같은 폰에서 두 계정을 동시에 쓸 수는 없어요.",
   emailCheck: "상대 이메일이 맞는지 다시 확인해 주세요.",
   editResend: "이메일 고치고 링크 다시 만들기",
@@ -56,12 +57,14 @@ export const INVITE_COPY = {
   expired: "초대가 만료됐어요. 구매자에게 새 링크를 부탁해 주세요.",
   mismatch: "이 초대는 다른 이메일로 만들어졌어요. 초대받은 메일로 로그인해야 해요.",
   loginRequired: "초대를 받으려면 초대받은 메일로 먼저 로그인해야 해요.",
+  inAppHint: "카카오톡 안에서는 로그인이 막힐 수 있어요. Safari 또는 Chrome에서 열어 주세요.",
   accept: "초대 수락하기",
   draftBadge: "나만 보임"
 };
 
 export const INVITE_ERRORS = {
   self: "자신의 이메일로는 초대할 수 없어요.",
+  "needs-email": EMAIL_BIND_COPY.title,
   "already-paired": "이미 두 사람이 연결되어 있어요.",
   full: "이 워크스페이스는 두 명까지예요.",
   forbidden: "초대를 보낼 수 있는 구매자가 아니에요.",
@@ -173,6 +176,43 @@ export function isInvitePriorityError(error) {
   return error === INVITE_OTHER_SESSION || error === "mismatch" || error === "needs-email" || error === "expired" || error === "used" || error === "invalid";
 }
 
+/**
+ * The link the owner reads on screen. The session hands back a path; a page origin makes it
+ * absolute, and without one the raw value is still shown rather than nothing — UX_CONTRACT.md
+ * requires the made invite link to be visible as a string, never buttons alone.
+ */
+export function inviteShareDisplayUrl(url, origin = globalThis.location?.origin || "") {
+  const value = String(url || "").trim();
+  if (!value) return "";
+  if (value.includes("://")) return value;
+  return origin ? absoluteInviteUrl(origin, value) : value;
+}
+
+/**
+ * Copy and share can fail with nothing thrown (no clipboard in an insecure context, a share
+ * sheet the platform never opens). The outcome is recorded against the url it was attempted
+ * on so the screen can say so instead of going quiet, and so a reissued link — a different
+ * url — never inherits the previous link's failure.
+ */
+let lastShare = { outcome: "", url: "" };
+
+export function recordInviteShare(outcome, url) {
+  lastShare = { outcome: String(outcome || ""), url: String(url || "") };
+  return lastShare.outcome;
+}
+
+export function lastInviteShare() {
+  return { ...lastShare };
+}
+
+export function resetInviteShare() {
+  lastShare = { outcome: "", url: "" };
+}
+
+export function inviteCopyFailed(url) {
+  return Boolean(url) && lastShare.outcome === "failed" && lastShare.url === String(url);
+}
+
 export async function copyText(value, clipboard = globalThis.navigator?.clipboard) {
   if (!value) return false;
   if (clipboard?.writeText) {
@@ -183,7 +223,7 @@ export async function copyText(value, clipboard = globalThis.navigator?.clipboar
 }
 
 export async function shareInviteChannel(url, channel, io = {}) {
-  if (!url) return "failed";
+  if (!url) return recordInviteShare("failed", url);
   const payload = { title: "AB", text: INVITE_COPY.share, url };
   if (channel !== "copy") {
     const share = io.share || (typeof globalThis.navigator?.share === "function"
@@ -192,11 +232,17 @@ export async function shareInviteChannel(url, channel, io = {}) {
     if (typeof share === "function") {
       try {
         await share(payload);
-        return "shared";
+        return recordInviteShare("shared", url);
       } catch (error) {
-        if (error?.name === "AbortError") return "cancelled";
+        if (error?.name === "AbortError") return recordInviteShare("cancelled", url);
       }
     }
   }
-  return await copyText(url, io.clipboard) ? "copied" : "failed";
+  let copied = false;
+  try {
+    copied = await copyText(url, io.clipboard);
+  } catch {
+    copied = false;
+  }
+  return recordInviteShare(copied ? "copied" : "failed", url);
 }
