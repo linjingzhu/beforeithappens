@@ -162,6 +162,10 @@ function pinCurrentTab() {
   }
   // Measured against the strip itself rather than an offsetParent that may be an ancestor, and
   // past its own left padding, so the tab's edge lands on the strip's visible edge.
+  //
+  // The last Parts ask for more scroll than there is and the browser clamps them, which is the
+  // intent: the row ends with Part 10 against the right edge rather than running on into blank
+  // space. So this pins left where it can and stops at the end of the row where it cannot.
   const left = current.getBoundingClientRect().left - strip.getBoundingClientRect().left;
   const padding = parseFloat(getComputedStyle(strip).paddingLeft) || 0;
   strip.scrollLeft += left - padding;
