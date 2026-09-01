@@ -9,6 +9,22 @@
  * shapes a moment later, never the other way round.
  */
 
+/*
+ * Relief, from the owner's palette: a light source at the top left, so a raised thing catches
+ * #FAFBFF above it and drops #161B1D at 23% below it, and a recessed thing does the reverse.
+ *
+ * Two sizes, taken from the palette sheet: 5px at 10px blur for anything the size of a control,
+ * 10px at 20px for a card. Larger offsets exist there too and are not used — at 20px the drop
+ * under a question card is wider than the gap to the next one, and the page starts to read as
+ * tiles floating rather than paper.
+ */
+:root {
+  --lift: -5px -5px 10px var(--ab-shadow-light), 5px 5px 10px var(--ab-shadow-dark);
+  --lift-card: -10px -10px 20px var(--ab-shadow-light), 10px 10px 20px var(--ab-shadow-dark);
+  --press: inset -5px -5px 10px var(--ab-shadow-light), inset 5px 5px 10px var(--ab-shadow-dark);
+}
+
+
 @font-face {
   font-family: MaruBuri;
   src: url("/brand/maruburi-400.woff2") format("woff2");
@@ -361,11 +377,11 @@ html { scroll-padding-top: 120px; }
 }
 
 .q {
-  background: var(--ab-surface);
-  border: 1px solid var(--ab-line);
-  border-radius: 12px;
+  background: var(--ab-card);
+  border-radius: 20px;
+  box-shadow: var(--lift-card);
   padding: 24px;
-  margin: 0 0 16px;
+  margin: 0 0 24px;
 }
 
 .q h2 {
@@ -388,10 +404,11 @@ html { scroll-padding-top: 120px; }
  * the scene both people are picturing, and reading it as instruction changes the question.
  */
 .q-scene {
-  margin: 0 0 14px;
-  padding: 12px 14px;
-  border-radius: 12px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
   background: var(--ab-soft);
+  box-shadow: var(--press);
   color: var(--ab-ink);
 }
 
@@ -415,12 +432,14 @@ html { scroll-padding-top: 120px; }
 .q-depth select,
 .q-depth textarea,
 .q-talk textarea,
-.q-feedback textarea {
+.q-feedback textarea,
+.result-share-link input {
   width: 100%;
-  padding: 11px;
-  border: 1px solid var(--ab-line);
-  border-radius: 12px;
-  background: var(--ab-surface);
+  padding: 12px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-soft);
+  box-shadow: var(--press);
   color: var(--ab-ink);
   font: inherit;
 }
@@ -560,9 +579,9 @@ html { scroll-padding-top: 120px; }
 .result-share {
   margin-top: 32px;
   padding: 20px;
-  border: 1px solid var(--ab-line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--ab-card);
+  box-shadow: var(--lift-card);
 }
 
 .result-share h2 {
@@ -575,14 +594,15 @@ html { scroll-padding-top: 120px; }
 }
 
 .result-share-action {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--ab-accent);
-  color: #fff;
+  color: var(--ab-card);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--lift);
 }
 
 .result-share-state {
@@ -602,22 +622,12 @@ html { scroll-padding-top: 120px; }
   font-size: 13px;
 }
 
-.result-share-link input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid var(--ab-line);
-  border-radius: 12px;
-  background: var(--ab-surface);
-  color: var(--ab-ink);
-  font: inherit;
-}
-
 .result-compare {
   margin-bottom: 32px;
   padding: 20px;
-  border: 1px solid var(--ab-line);
-  border-radius: 16px;
+  border-radius: 20px;
   background: var(--ab-card);
+  box-shadow: var(--lift-card);
 }
 
 .result-compare h2 {
@@ -735,11 +745,28 @@ html { scroll-padding-top: 120px; }
 }
 
 .q-choices li {
-  border: 1px solid var(--ab-line);
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 12px 16px;
-  margin: 0 0 8px;
-  background: var(--ab-paper);
+  margin: 0 0 10px;
+  background: var(--ab-card);
+  box-shadow: var(--lift);
+  transition: box-shadow 120ms ease;
+}
+
+/* Chosen reads as pressed rather than as coloured, which is the whole idea of this surface. */
+/*
+ * The controls the browser draws for us take the palette too. Without this a radio is the
+ * platform's blue, which is the one saturated thing left on the page and reads as a link.
+ */
+.q-choices input,
+.q-undiscussed input,
+.q-stars input {
+  accent-color: var(--ab-accent);
+}
+
+.q-choices li:has(input:checked) {
+  background: var(--ab-soft);
+  box-shadow: var(--press);
 }
 
 .q-why summary {
@@ -834,6 +861,7 @@ html { scroll-padding-top: 120px; }
   color: var(--ab-surface);
   font-weight: 600;
   text-decoration: none;
+  box-shadow: var(--lift);
 }
 
 .cards { list-style: none; margin: 24px 0 0; padding: 0; }
@@ -948,9 +976,18 @@ html { scroll-padding-top: 120px; }
   min-height: 44px;
   padding: 0 20px;
   border-radius: 999px;
-  border: 1px solid var(--ab-line);
-  background: transparent;
+  border: 0;
+  background: var(--ab-card);
   color: var(--ab-ink);
   font: inherit;
   cursor: pointer;
+  box-shadow: var(--lift);
+}
+
+/* Held down is pressed in — the one bit of feedback a surface with no colour change has left. */
+.cta-action:active,
+.result-clear:active,
+.result-share-action:active,
+.q-feedback-export button:active {
+  box-shadow: var(--press);
 }
