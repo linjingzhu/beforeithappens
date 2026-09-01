@@ -33,13 +33,6 @@ export const ABOUT_COPY = Object.freeze({
       ])
     }),
     Object.freeze({
-      heading: "답은 어디에 저장되나요",
-      paragraphs: Object.freeze([
-        "당신의 브라우저 안에만 저장됩니다. 이곳으로 전송되지 않고, 저희는 무엇을 고르셨는지 알지 못합니다. 가입도, 로그인도 없습니다.",
-        "그래서 브라우저를 바꾸거나 저장 데이터를 지우면 답도 함께 사라집니다. 결과지 화면의 지우기 버튼을 누르면 즉시 지워집니다."
-      ])
-    }),
-    Object.freeze({
       heading: "혼자 답해도 되나요",
       paragraphs: Object.freeze([
         "됩니다. 혼자 읽고 혼자 답해도 자신의 생각을 정리하는 데는 충분합니다.",
