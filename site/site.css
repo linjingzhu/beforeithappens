@@ -146,10 +146,7 @@ a { color: var(--ab-ink); }
 
 .stage { display: flex; flex-direction: column; min-width: 0; }
 
-.stage-head {
-  padding: 24px 16px 0;
-  border-bottom: 1px solid var(--ab-line);
-}
+.stage-head { padding: 24px 16px 0; }
 
 .stage-head h1 {
   font-family: MaruBuri, Georgia, serif;
@@ -160,12 +157,22 @@ a { color: var(--ab-ink); }
 }
 
 /*
- * The tab strip scrolls sideways rather than wrapping to four rows on a phone. `scroll-snap` makes
- * the sideways movement land on a tab instead of halfway through one.
+ * The tab strip stays while the questions move past it: on a page of ten, knowing which Part you
+ * are in — and being able to leave for another — should not require scrolling back up. The title
+ * above it does scroll away; it says the same thing on all ten pages and the tab says the part.
+ *
+ * Opaque, because it now passes over cards. Sideways-scrolling rather than wrapping on a phone,
+ * with `scroll-snap` so the movement lands on a tab instead of halfway through one.
  */
 .parts {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   gap: 4px;
+  padding: 4px 16px 0;
+  background: var(--ab-paper);
+  border-bottom: 1px solid var(--ab-line);
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: thin;
@@ -178,6 +185,9 @@ a { color: var(--ab-ink); }
     overflow-x: visible;
   }
 }
+
+/* So an in-page link does not land a question underneath the strip that is now covering the top. */
+html { scroll-padding-top: 120px; }
 
 .part-tab {
   display: flex;

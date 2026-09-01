@@ -118,10 +118,13 @@ ${tabs}
  */
 function stageHead(chrome) {
   if (!chrome) return "";
+  // The strip is a sibling of the header, not a child of it. A sticky element can only stay while
+  // its own parent is on screen, so nesting it in a header that scrolls away would take it along
+  // after one screenful. Out here its parent is the whole stage, which is what "stays" means.
   const tabs = chrome.parts?.length ? `\n${partTabs(chrome.parts)}` : "";
   return `      <header class="stage-head">
-        <h1>${escapeHtml(chrome.title)}</h1>${tabs}
-      </header>
+        <h1>${escapeHtml(chrome.title)}</h1>
+      </header>${tabs}
 `;
 }
 
