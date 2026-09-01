@@ -645,9 +645,10 @@ html { scroll-padding-top: 120px; }
   color: var(--ab-muted);
 }
 
-/* The invitation, once a desktop has put it on the clipboard. */
-.cta-action[data-copied]::after {
-  content: " ✓";
+/* What the invitation says once a desktop has put it on the clipboard. */
+.cta-state {
+  margin: 12px 0 0;
+  color: var(--ab-muted);
 }
 
 .result-compare {

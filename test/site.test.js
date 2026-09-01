@@ -942,3 +942,25 @@ test("AdSense is two ids away, and absent until they are set", () => {
   assert.match(build, /if \(site\.adsenseClient\)/);
   assert.match(build, /google\.com, \$\{publisher\}, DIRECT, f08c47fec0942fa0/);
 });
+
+test("둘이 함께 해보기 sends the invite link, and the link carries no answers", async () => {
+  const { INVITE_COPY } = await import("../site/invite-copy.js");
+  const html = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+
+  // The owner names this control, and what it does is send the other person a link to the same
+  // questions — the share sheet on a phone, the clipboard on a desktop.
+  assert.ok(html.includes(SITE_COPY.ctaAction));
+  assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
+  assert.match(html, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
+
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
+  assert.match(enhance, /navigator\.clipboard\.writeText\(url\)/);
+  assert.ok(INVITE_COPY.shareText && INVITE_COPY.copied);
+
+  // This is the invite link, not the answer link: it holds the pack's address and nothing else, so
+  // it is the one of the three that is safe to put anywhere.
+  assert.equal(html.includes('data-invite>') && html.includes("#c="), false);
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /"invite-copy\.js"/);
+});

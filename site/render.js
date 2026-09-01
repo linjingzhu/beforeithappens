@@ -1,6 +1,7 @@
 import { escapeHtml } from "../src/html.js";
 import { publishedBySlug, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
+import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
@@ -33,8 +34,8 @@ export const SITE_COPY = Object.freeze({
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
-  ctaBody: "상대에게 링크를 보내면 같은 질문에 답할 수 있어요. 두 사람 다 답한 질문만 나란히 열립니다.",
-  ctaAction: "상대 초대하기",
+  ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
+  ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
@@ -306,6 +307,7 @@ function callToAction(model) {
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
         <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
         <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
+        <p class="cta-state" data-invite-state hidden></p>
       </aside>`;
 }
 

@@ -2,6 +2,7 @@ import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withDiscussi
 // Debug only, and self-contained so that removing the block is removing this line and its uses.
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
+import { INVITE_COPY } from "./invite-copy.js";
 import { reflect } from "./reflect.js";
 import { compareAnswers, decodeShare, encodeShare } from "./share.js";
 import { composeResultMail, mailtoHref } from "./mail.js";
@@ -467,23 +468,27 @@ function pinCurrentTab() {
  */
 function bindInvite() {
   for (const link of document.querySelectorAll("[data-invite]")) {
+    const state = link.parentElement?.querySelector("[data-invite-state]");
     link.addEventListener("click", async (event) => {
       const url = new URL(link.getAttribute("href"), location.origin).href;
+
       if (navigator.share) {
         event.preventDefault();
         try {
-          await navigator.share({ title: document.title, url });
+          await navigator.share({ title: document.title, text: INVITE_COPY.shareText, url });
         } catch {
           /* dismissed; the anchor still works if they meant to open it */
         }
         return;
       }
       if (!navigator.clipboard) return;
+
+      // A desktop has no share sheet, so the link goes on the clipboard — and says so. A ✓ on the
+      // button alone is not an answer to "did that send anything?".
       event.preventDefault();
       try {
         await navigator.clipboard.writeText(url);
-        link.dataset.copied = "true";
-        setTimeout(() => delete link.dataset.copied, 2000);
+        say(state, INVITE_COPY.copied);
       } catch {
         location.href = url;
       }

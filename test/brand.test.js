@@ -7,6 +7,7 @@ import { indexModel, pageModel } from "../site/content.js";
 import { RESULT_COPY } from "../site/result-copy.js";
 // Debug only; it is on the page until `SITE.debugFeedback` comes off, so its words are covered too.
 import { FEEDBACK_COPY } from "../site/feedback.js";
+import { INVITE_COPY } from "../site/invite-copy.js";
 import { findPack } from "../src/packs.js";
 
 /**
@@ -46,7 +47,7 @@ function renderedCharacters() {
       }
     } else if (value && typeof value === "object") Object.values(value).forEach(walk);
   };
-  for (const copy of [SITE_COPY, RESULT_COPY, FEEDBACK_COPY]) walk(copy);
+  for (const copy of [SITE_COPY, RESULT_COPY, FEEDBACK_COPY, INVITE_COPY]) walk(copy);
   return new Set(parts.join(""));
 }
 

@@ -20,7 +20,6 @@ export const RESULT_COPY = Object.freeze({
   clearNote: "이 브라우저에만 저장돼 있어요. 지우면 남지 않습니다.",
   ctaTitle: "이 질문들, 상대와 같이 열어 볼까요?",
   ctaBody: "같은 질문에 상대도 답하면 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
-  ctaAction: "둘이 함께 해보기",
   /*
    * Comparing with the other person. The link carries the choices only, and the words say so —
    * someone about to hand their answers to a person they live with should not have to guess what
