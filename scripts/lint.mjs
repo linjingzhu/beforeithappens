@@ -20,6 +20,7 @@ const files = [
   "server/workspace.mjs",
   "server/answers.mjs",
   "server/entitlement.mjs",
+  "scripts/build-tokens.mjs",
   "server/audit.mjs",
   "server/report.mjs",
   "mobile/App.js",
