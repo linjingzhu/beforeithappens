@@ -31,11 +31,11 @@ export const SITE = Object.freeze({
   /** Emitted as a CNAME file so Pages keeps serving the custom domain on every deploy. */
   customDomain: "lovemedialogue.com",
   /**
-   * Where a reader writes to. Empty until there is a real inbox: `site/pages.js` emits no 문의 page
-   * without one, because a contact page carrying an address nobody reads is worse than none.
-   * Filling this in is `docs/OWNER_ACTIONS.md` N5, and the page appears by itself when it is.
+   * Where a reader writes to. `site/pages.js` emits the 문의 page from this, with its footer link
+   * and its sitemap entry, and emits none of it when the address is empty — a contact page
+   * carrying an address nobody reads is worse than no contact page.
    */
-  contactEmail: "",
+  contactEmail: "loveme@afterscent.kr",
   locale: "ko-KR",
   /**
    * The question-review block under every question, and the switch that takes it away.
