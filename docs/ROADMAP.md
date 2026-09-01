@@ -60,17 +60,19 @@ M10 account deletion       (in progress; one product decision open)
 
 | # | Milestone | Status | What it waits on |
 |---|---|---|---|
-| M0 | Green CI | Done | — |
-| M1 | A service that runs somewhere | **A host already exists** — the preview build points at the origin in `mobile/eas.json`, and `.ai/memory/PROJECT_LESSONS.md` records live cold starts and live Resend failures against it. This session added `AB_STORE_PATH`, `GET /healthz`, and an opt-in https login link (`AB_WEB_CONSUME_FALLBACK=1`) | Host env: `RESEND_API_KEY`, a verified `MAIL_FROM` domain, `AB_PUBLIC_ORIGIN`, and `AB_DEV_OUTBOX` unset |
-| M2 | Durable storage | Not started | M1 |
-| M3 | Prove the loop on two devices | The app runs the real loop and its controller was driven end to end against a live server; two real phones still unproven | M1 and M5 |
+| M0 | Green CI | **Done** | — |
+| M1 | A service that runs somewhere | **Done in code.** A host already runs the API (`mobile/eas.json`). Added `AB_STORE_PATH`, `GET /healthz`, an opt-in https login link, distinct mail-failure codes, and an outbox that refuses on a production-looking host so a missing key can no longer report a mail it never sent. `docs/DEPLOY.md` is the operator's page | Host env only: `RESEND_API_KEY`, a verified `MAIL_FROM` domain, `AB_PUBLIC_ORIGIN`, `AB_DEV_OUTBOX` unset |
+| M2 | Durable storage | **Done.** SQLite on Node's built-in driver, zero new dependencies. Uniqueness enforced by the database, the lost-update window closed inside a transaction, an existing JSON store migrated once with conflicting rows parked rather than dropped | — |
+| M3 | Prove the loop on two devices | The app runs the real loop and its controller was driven end to end against a live server; two real phones still unproven | M1's host env and M5 |
 | M4 | Payment that actually charges | Not started | A decision: StoreKit IAP on iOS, or keep the paid unlock off iOS |
 | M5 | iOS distribution | Blocked outside the repo | Apple Developer enrolment and `eas login` |
-| M6 | Content beyond marriage | Not started; five packs still hold zero questions | Authoring, after M4 |
-| M7 | Tell the partner it is their turn | Not started; nothing is ever sent | M2 and M5 |
-| M8 | Reports and audit | Not started | — |
-| M9 | Social login | Token exchange, profile read and a signed callback state are built and wired, verified over HTTP against a stubbed provider | Client ids and secrets per provider; see `docs/SOCIAL_LOGIN.md` |
-| M10 | Account deletion | In progress | A decision: does a partner keep their record when the other leaves? |
+| M6 | Content beyond marriage | Draft only (`docs/proposals/pack-home-mgmt.md`), deliberately not registered | A pack registry, real comparison rules, and a pack-scoped entitlement — a second pack cannot ship without them |
+| M7 | Tell the partner it is their turn | Not started; nothing is ever sent | M5 |
+| M8 | Reports and audit | **Report done** — routes wired, and its query window throws on private notes rather than trusting the caller. **Audit built but never called** | Call sites in four factories |
+| M9 | Social login | Token exchange, profile read and a signed callback state, verified over HTTP against a stubbed provider | Client ids and secrets; see `docs/SOCIAL_LOGIN.md` |
+| M10 | Account deletion | **Done** across server, web and native, including report snapshots, which outlived deletion until this session | Decisions: grace period, and whether a survivor may read the archived record |
+| — | Privacy | Analysis and a Korean policy draft (`docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md`) | **Store blockers**: no policy URL, no in-app link, no consent step, no age gate, no 보호책임자. 39 placeholders for the owner |
+| — | Design system | **Done.** One token source for both surfaces, adapting to width and to aspect ratio; no hardcoded size left in the native screens, no palette of its own left in the web sheets, and a drift test that fails when the generated CSS and the module disagree | — |
 
 ---
 
