@@ -86,7 +86,7 @@ function createSessionFor(store, user, at, onLogin) {
   return session;
 }
 
-export function createAuth({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex"), onLogin, describeWorkspace } = {}) {
+export function createAuth({ store, now = Date.now, randomToken = () => randomBytes(32).toString("hex"), onLogin, describeWorkspace, audit = null } = {}) {
   if (!store) throw new Error("store is required");
 
   function expireUnusedLinks(email, at) {
@@ -100,10 +100,16 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
     }
   }
 
-  function forceLogoutUser(userId) {
+  /** `reason` says which of the three paths ended the session, for the audit log. */
+  function forceLogoutUser(userId, reason = "new-login") {
+    let sessionsEnded = 0;
     store.mutate((state) => {
+      const before = state.sessions.length;
       state.sessions = state.sessions.filter((session) => session.userId !== userId);
+      sessionsEnded = before - state.sessions.length;
     });
+    if (sessionsEnded > 0) audit?.recordForcedLogout({ userId, reason, sessionsEnded });
+    return sessionsEnded;
   }
 
   function publicSession(sessionId) {
@@ -171,7 +177,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
         const account = state.users.find((item) => item.id === user.id);
         if (account) account.lastLoginAt = iso(at);
       });
-      forceLogoutUser(user.id);
+      const replacedSession = forceLogoutUser(user.id, "new-login") > 0;
       const session = {
         id: createId("ses"),
         userId: user.id,
@@ -180,6 +186,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
       };
       store.mutate((state) => state.sessions.push(session));
       onLogin?.(user.id);
+      audit?.recordLogin({ userId: user.id, method: "magic-link", replacedSession });
       return { ok: true, sessionId: session.id, user: { id: user.id, email: user.email || "" } };
     },
 
@@ -234,6 +241,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
         });
       }
       const session = createSessionFor(store, user, at, onLogin);
+      audit?.recordLogin({ userId: user.id, method: "oauth", provider: name });
       return { ok: true, sessionId: session.id, user: { id: user.id, email: user.email || "" } };
     },
 
@@ -274,7 +282,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
 
     logout(sessionId) {
       const session = store.snapshot().sessions.find((item) => item.id === sessionId);
-      if (session) forceLogoutUser(session.userId);
+      if (session) forceLogoutUser(session.userId, "user-request");
       else if (sessionId) {
         store.mutate((state) => {
           state.sessions = state.sessions.filter((item) => item.id !== sessionId);
@@ -286,7 +294,7 @@ export function createAuth({ store, now = Date.now, randomToken = () => randomBy
     forceLogout(sessionId) {
       const session = store.snapshot().sessions.find((item) => item.id === sessionId);
       if (!session) return { ok: false, error: "unauthenticated" };
-      forceLogoutUser(session.userId);
+      forceLogoutUser(session.userId, "support");
       return { ok: true };
     }
   };

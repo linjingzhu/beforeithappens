@@ -52,7 +52,7 @@ function acceptedOthers(state, workspaceId, userId) {
   );
 }
 
-export function createAccount({ store, now = Date.now } = {}) {
+export function createAccount({ store, now = Date.now, audit = null } = {}) {
   if (!store) throw new Error("store is required");
 
   function requireSession(sessionId) {
@@ -191,6 +191,14 @@ export function createAccount({ store, now = Date.now } = {}) {
       if (!access.ok) return access;
       if (confirm !== true) return { ok: false, error: "unconfirmed" };
       const outcome = purgeUser(access.user.id, now());
+      // Recorded after the purge: the audit collection is not one of the rows it removes,
+      // so the event outlives the account it refers to without naming them.
+      audit?.recordAccountDeleted({
+        userId: access.user.id,
+        partnerRemains: outcome.partnerRemains,
+        removedWorkspaces: outcome.removedWorkspaces.length,
+        archivedWorkspaces: outcome.archivedWorkspaces.length
+      });
       return {
         ok: true,
         userId: access.user.id,
