@@ -624,20 +624,19 @@ test("the opening introduces the pack, so it is the same above every Part", () =
   assert.ok(headTags(model, site).includes(model.descriptionText));
 });
 
-test("turning a Part while the bar is pinned keeps it pinned, over the new Part's first question", () => {
-  // Each Part is its own document, so a tab is a real navigation and the browser lands at the top —
-  // past the pack's name again, and a scroll away from the first question. One bit is carried
-  // across: the bar was pinned when you left.
-  const enhance = readFileSync("site/enhance.js", "utf8");
-  assert.match(enhance, /function rememberPinned/);
-  assert.match(enhance, /function restorePinned/);
-  // Remembered only when it was actually pinned; turning a Part from the top still lands at the top.
-  assert.match(enhance, /getBoundingClientRect\(\)\.top <= 0/);
-  // Session, not local: it describes this visit, and should not outlive the tab.
-  assert.match(enhance, /sessionStorage\.setItem\(PINNED/);
-  assert.match(enhance, /sessionStorage\.removeItem\(PINNED/);
-  // A browser that refuses storage lands at the top, which is not a failure.
-  assert.match(enhance, /catch \{/);
+test("a Part opens at the top, so the opening is on the screen every time", () => {
+  // A `restorePinned` used to scroll a newly opened Part to where the tab bar pins. That cannot
+  // coexist with the opening being visible on every Part: the name, the question and the
+  // description sit above the bar, so scrolling far enough to pin it pushes them off the top —
+  // measured at -81px after a tab click. Nothing in the enhancement moves the page now.
+  // On the code, not the prose: the note explaining the removal names both APIs.
+  const enhance = readFileSync("site/enhance.js", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  assert.equal(/window\.scrollTo/.test(enhance), false, "the enhancement never scrolls the page");
+  assert.equal(/scrollIntoView/.test(enhance), false);
+  // The strip's own sideways scroll is a different axis and stays.
+  assert.match(enhance, /strip\.scrollLeft/);
 });
 
 test("the marriage source is sliced by index, not scanned by a lazy regex", async () => {

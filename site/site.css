@@ -98,10 +98,30 @@ a { color: var(--ab-ink); }
 }
 
 .wordmark {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wordmark-name {
   font-family: MaruBuri, Georgia, serif;
   font-weight: 600;
   font-size: 19px;
+  line-height: 1.15;
   letter-spacing: 0.01em;
+}
+
+/*
+ * The quiet half of the name. Wide tracking rather than a larger size: it has to read as the same
+ * mark's second line, not as a caption someone added underneath.
+ */
+.wordmark-sub {
+  color: var(--ab-muted);
+  font-family: Pretendard, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.34em;
+  line-height: 1.2;
 }
 
 .rail-label {

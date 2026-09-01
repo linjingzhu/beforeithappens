@@ -72,7 +72,10 @@ test("the stylesheet declares the faces it preloads, and the app's typographic l
   // `.ai/PROJECT_CONTEXT.md`: titles and question stems MaruBuri; body, choices, buttons Pretendard.
   assert.match(css, /body \{[^}]*font-family: Pretendard/s, "body is Pretendard");
   assert.match(css, /\.q h2 \{[^}]*font-family: MaruBuri/s, "the question stem is MaruBuri");
-  assert.match(css, /\.wordmark \{[^}]*font-family: MaruBuri/s, "the wordmark is MaruBuri");
+  assert.match(css, /\.wordmark-name \{[^}]*font-family: MaruBuri/s, "the mark's name is MaruBuri");
+  // Its second line is the sans face, so the two halves of the mark read as different weights of
+  // the same thing rather than as one word in two serifs.
+  assert.match(css, /\.wordmark-sub \{[^}]*font-family: Pretendard/s);
   // Every *use* of a family needs a real fallback: a reader whose browser refuses a webfont should
   // still get a sensible shape. The @font-face blocks are where a bare family name is the point, so
   // they are removed before scanning rather than special-cased inside it.
