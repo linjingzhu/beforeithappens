@@ -9,6 +9,7 @@ import { HEART_COPY, HEARTS, canUnlockRest, showsHeartBalance } from "../../src/
 import { CERTIFICATE_COPY, comingSoonExistingQuestion, REASON_PROMPT, SAMPLE_LABELS, SAMPLE_NEXT, SAMPLE_RESULT_EXAMPLE, TOGETHER_CTA } from "../../src/marriage-sample.js";
 import { requestLoveMeNotificationPermission } from "./notifications.js";
 import { PACK_INTRO_COPY, PACK_INTRO_MOTION, packIntroLines, packIntroTitle } from "../../src/pack-intro.js";
+import { GIFT_COPY, RECOMMEND_COPY } from "../../src/growth.js";
 
 /**
  * Press and disabled feedback is opacity only: it does not change with the window, so it is
@@ -373,6 +374,8 @@ export function AccountScreen({
   onLogout,
   onLogin,
   onInvite,
+  onRecommend,
+  onGift,
   onWithdraw
 }) {
   const styles = useStyles();
@@ -401,6 +404,14 @@ export function AccountScreen({
           <PrimaryButton testID="account-invite" label={ACCOUNT_COPY.invite} onPress={onInvite} />
         </>
       )}
+      <View style={styles.accountShare} testID="account-share">
+        <Pressable testID="account-recommend" accessibilityRole="button" onPress={onRecommend} style={pressableStyle(styles.accountShareItem)}>
+          <Text style={styles.accountShareLabel}>{RECOMMEND_COPY.title}</Text>
+        </Pressable>
+        <Pressable testID="account-gift" accessibilityRole="button" onPress={onGift} style={pressableStyle(styles.accountShareItem)}>
+          <Text style={styles.accountShareLabel}>{GIFT_COPY.title}</Text>
+        </Pressable>
+      </View>
       <Pressable testID="account-logout" disabled={busy} onPress={onLogout} style={pressableStyle(styles.logoutBtn, busy ? styles.disabled : null)}>
         <Text style={styles.logoutLabel}>{ACCOUNT_COPY.logout}</Text>
       </Pressable>
@@ -684,6 +695,19 @@ export function buildStyles(t) {
     navRowCenter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     navTitle: { color: colors.charcoal, fontSize: font("title"), fontWeight: "700", fontFamily: fonts.titleStrong },
     accountEmailValue: { color: colors.charcoal, fontSize: font("bodyLarge"), marginTop: space("xl"), textAlign: "center", fontFamily: fonts.body },
+    accountShare: { flexDirection: "row", marginTop: space("xl"), marginHorizontal: -space("xs") },
+    accountShareItem: {
+      flex: 1,
+      minHeight: hit,
+      marginHorizontal: space("xs"),
+      borderRadius: radius.pill,
+      borderWidth: hairline,
+      borderColor: colors.line,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: space("sm")
+    },
+    accountShareLabel: { color: colors.charcoal, fontSize: font("footnote"), fontFamily: fonts.body, textAlign: "center" },
     logoutBtn: { minHeight: hit + space("xs"), marginTop: "auto", alignItems: "center", justifyContent: "center" },
     logoutLabel: { color: colors.charcoal, fontSize: font("bodyLarge"), textDecorationLine: "underline", fontFamily: fonts.body },
     withdrawEntryLabel: { color: colors.charcoal, fontSize: font("footnote"), textDecorationLine: "underline", fontFamily: fonts.body, opacity: 0.7 },

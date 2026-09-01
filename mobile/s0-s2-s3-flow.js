@@ -108,6 +108,8 @@ export function resolveNativeScreen(state) {
     if (userNeedsEmail(state.session.user)) return state.sentEmail ? "sent" : "bind";
     if (state.sentEmail) return "sent";
     if (state.inviteOpen) return "invite";
+    if (state.recommendOpen) return "recommend";
+    if (state.giftOpen) return "gift";
     if (state.accountOpen) return "account";
     if (state.session.notice && !state.noticeDismissed) return "notice";
     if (state.certificateOpen) return "certificate";
@@ -153,6 +155,9 @@ function clearJourney(state, extras = {}) {
     packDetailOpen: false,
     accountOpen: false,
     inviteOpen: false,
+    // Without these, leaving 계정 for the pack list resolves straight back into recommend.
+    recommendOpen: false,
+    giftOpen: false,
     comingSoonId: "",
     tasteResultOpen: false,
     signupOpen: false,
@@ -593,6 +598,25 @@ export function openAccount(state) {
 
 export function backFromAccount(state) {
   return applyScreen({ ...state, accountOpen: false });
+}
+
+/**
+ * Recommending and gifting are both "send someone a link", so they live one tap from 계정 and
+ * return to it rather than to the home list. Leaving one puts the person back where they were,
+ * which is what makes trying the other cheap.
+ */
+export function openRecommendScreen(state) {
+  if (!state.session?.user) return requireLogin(clearJourney(state), "account");
+  return applyScreen({ ...state, accountOpen: true, recommendOpen: true, giftOpen: false, copied: false, error: "" });
+}
+
+export function openGiftScreen(state) {
+  if (!state.session?.user) return requireLogin(clearJourney(state), "account");
+  return applyScreen({ ...state, accountOpen: true, giftOpen: true, recommendOpen: false, copied: false, error: "" });
+}
+
+export function backToAccount(state) {
+  return applyScreen({ ...state, recommendOpen: false, giftOpen: false, accountOpen: true, copied: false, error: "" });
 }
 
 export function backFromPackDetail(state) {
