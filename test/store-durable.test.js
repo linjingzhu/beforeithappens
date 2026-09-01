@@ -63,9 +63,23 @@ function child(dbPath, source, env = {}) {
 
 const WRITER = `
   import { createSqliteStore } from ${JSON.stringify(storeModule)};
+  const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   const store = createSqliteStore(process.env.AB_TEST_DB);
   const tag = process.env.AB_TAG;
   const rounds = Number(process.env.AB_ROUNDS);
+  const peers = Number(process.env.AB_PEERS || "1");
+
+  // Barrier: nobody starts writing until every writer is up, so the writes below really
+  // do overlap instead of quietly running one after another.
+  store.mutate((state) => state.progress.push({ workspaceId: "barrier", userId: tag, index: 0 }));
+  const deadline = Date.now() + 20000;
+  let seenPeers = 0;
+  while (Date.now() < deadline) {
+    seenPeers = store.snapshot().progress.filter((row) => row.workspaceId === "barrier").length;
+    if (seenPeers >= peers) break;
+    sleep(5);
+  }
+
   for (let i = 0; i < rounds; i += 1) {
     // Read first, write second — the shape that loses data in a read-modify-rewrite store.
     const before = store.snapshot().sessions.length;
@@ -74,6 +88,7 @@ const WRITER = `
     });
   }
   store.close();
+  process.stdout.write(String(seenPeers));
 `;
 
 test("every collection the server knows has a durable table behind it", () => {
@@ -186,25 +201,29 @@ test("uniqueness does not punish rows that legitimately have no value yet", (t) 
   assert.equal(store.snapshot().answers.length, 4);
 });
 
-test("two processes writing at the same moment lose nothing", async (t) => {
+test("four processes writing at the same moment lose nothing", async (t) => {
   const dir = workspace(t);
   const dbPath = join(dir, "state.sqlite");
   const tags = ["a", "b", "c", "d"];
   const rounds = 25;
-  await Promise.all(tags.map((tag) => child(dbPath, WRITER, { AB_TAG: tag, AB_ROUNDS: String(rounds) })));
+  const seen = await Promise.all(tags.map((tag) => child(dbPath, WRITER, {
+    AB_TAG: tag,
+    AB_ROUNDS: String(rounds),
+    AB_PEERS: String(tags.length)
+  })));
+  // Each writer saw every other writer before it started: the writes really did overlap,
+  // and one process's view of the store is not frozen at the moment it opened the file.
+  assert.deepEqual(seen, tags.map(() => String(tags.length)));
 
   const store = open(dir);
   t.after(() => store.close());
   const sessions = store.snapshot().sessions;
-  assert.equal(sessions.length, tags.length * rounds);
+  assert.equal(sessions.length, tags.length * rounds, "a concurrent write was lost");
   assert.equal(new Set(sessions.map((row) => row.id)).size, tags.length * rounds);
   for (const tag of tags) {
     assert.equal(sessions.filter((row) => row.userId === tag).length, rounds);
   }
-  // Every writer saw a state at least as large as the one before it: no reader was
-  // handed a stale snapshot it could have overwritten.
-  const last = sessions.at(-1);
-  assert.ok(last.seenBefore >= 0);
+  assert.equal(store.snapshot().progress.length, tags.length);
 });
 
 test("a partner submitting from another process is visible without a restart", async (t) => {
@@ -213,15 +232,22 @@ test("a partner submitting from another process is visible without a restart", a
   const store = createSqliteStore(dbPath);
   t.after(() => store.close());
   store.mutate((state) => state.workspaces.push({ id: "ws_1", status: "active" }));
-  assert.equal(store.snapshot().sessions.length, 0);
+  const stale = store.snapshot();
+  assert.equal(stale.sessions.length, 0);
 
   await child(dbPath, WRITER, { AB_TAG: "partner", AB_ROUNDS: "3" });
 
   // Same open store instance, no restart.
   assert.equal(store.snapshot().sessions.length, 3);
+  // And a write that follows a snapshot taken before the partner's writes must not roll
+  // them back — the whole failure mode of rewriting a file from a stale read.
   store.mutate((state) => state.sessions.push({ id: "mine", userId: "buyer" }));
   assert.equal(store.snapshot().sessions.length, 4);
   assert.equal(store.snapshot().workspaces.length, 1);
+
+  const fresh = open(dir, "state.sqlite");
+  t.after(() => fresh.close());
+  assert.deepEqual(fresh.snapshot().sessions.map((row) => row.userId).sort(), ["buyer", "partner", "partner", "partner"]);
 });
 
 test("a duplicate rejected in one process is rejected against the other's rows", async (t) => {
@@ -339,6 +365,43 @@ test("a real pairing and a real submitted round survive a restart", async (t) =>
   assert.equal(after.state.questions["home-01"].roles.a.privateNote, "나만 볼 메모");
   assert.equal(second.snapshot().publicLocks.length, 1);
   assert.equal(rebooted.auth.sessionFor(partner.sessionId).workspace.acceptedPartner, true);
+});
+
+test("audit events and report snapshots round-trip through a restart", (t) => {
+  const dir = workspace(t);
+  const first = open(dir);
+  const event = {
+    id: "aud_1",
+    at: "2026-09-01T00:00:00.000Z",
+    actorUserId: "usr_1",
+    workspaceId: "ws_1",
+    action: "answer.submitted",
+    detail: { questionId: "home-01", roundNumber: 1 }
+  };
+  const snapshotRow = {
+    id: "rep_9f2c",
+    workspaceId: "ws_1",
+    createdAt: "2026-09-01T00:00:01.000Z",
+    rows: [{ questionId: "home-01", status: "agreed" }]
+  };
+  first.mutate((state) => {
+    state.auditEvents.push(event);
+    state.reportSnapshots.push(snapshotRow);
+  });
+  // An append-only log takes repeats; a content-hashed report does not.
+  first.mutate((state) => state.auditEvents.push({ ...event, id: "aud_2" }));
+  assert.throws(
+    () => first.mutate((state) => state.reportSnapshots.push({ ...snapshotRow, workspaceId: "ws_2" })),
+    /UNIQUE constraint failed/
+  );
+  first.close();
+
+  const second = open(dir);
+  t.after(() => second.close());
+  const state = second.snapshot();
+  assert.deepEqual(state.auditEvents.map((row) => row.id), ["aud_1", "aud_2"]);
+  assert.deepEqual(state.auditEvents[0], event);
+  assert.deepEqual(state.reportSnapshots, [snapshotRow]);
 });
 
 test("an unknown collection is refused rather than silently dropped", (t) => {

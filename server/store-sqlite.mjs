@@ -51,7 +51,11 @@ export const COLLECTIONS = {
   progress: { key: ["workspaceId", "userId"] },
   purchases: { unique: [{ name: "purchases_order", fields: ["orderId"], nonBlank: true }] },
   entitlements: {},
-  webhookEvents: { unique: [{ name: "webhook_events_event", fields: ["eventId"], nonBlank: true }] }
+  webhookEvents: { unique: [{ name: "webhook_events_event", fields: ["eventId"], nonBlank: true }] },
+  auditEvents: {},
+  // The id is a content hash: regenerating an identical report reuses the row, it never
+  // duplicates it, and the index says so at the database level rather than in a caller.
+  reportSnapshots: { unique: [{ name: "report_snapshots_id", fields: ["id"], nonBlank: true }] }
 };
 
 export const collectionNames = Object.keys(COLLECTIONS);
@@ -356,6 +360,11 @@ export function createSqliteStore(dbPath, { importJsonFrom = null } = {}) {
     },
 
     mutate(writer) {
+      if (inTransaction) {
+        // Nothing in the server nests these today; if something starts to, say so plainly
+        // instead of failing with "cannot start a transaction within a transaction".
+        throw new Error("store: mutate() cannot be called from inside another mutate()");
+      }
       db.exec("BEGIN IMMEDIATE");
       inTransaction = true;
       let committed = false;

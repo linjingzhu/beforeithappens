@@ -56,6 +56,7 @@ export function createListener({
   answers,
   entitlement,
   account,
+  report,
   root,
   allowDevOutbox = false,
   allowDevOAuth = false,
@@ -484,6 +485,18 @@ export function createListener({
           return;
         }
         sendJson(response, 200, result);
+        return;
+      }
+
+      if (report && request.method === "GET" && url.pathname === "/api/report") {
+        const result = report.viewFor(sessionId);
+        sendJson(response, result.ok ? 200 : packErrorStatus(result.error), result);
+        return;
+      }
+
+      if (report && request.method === "POST" && url.pathname === "/api/report") {
+        const result = report.generate(sessionId);
+        sendJson(response, result.ok ? 200 : packErrorStatus(result.error), result);
         return;
       }
 

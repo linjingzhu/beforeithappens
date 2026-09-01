@@ -38,7 +38,10 @@ function userIdOf(store, email) {
 }
 
 test("the audit collection is tolerated absent and appended to on first write", () => {
+  // emptyState now declares auditEvents, so absence is forced here: the module must still
+  // cope with a store that predates the collection, such as a JSON file written before it.
   const { store, audit } = system();
+  store.mutate((state) => { delete state.auditEvents; });
   assert.equal(Array.isArray(store.snapshot().auditEvents), false);
   assert.equal(audit.count(), 0);
   assert.deepEqual(audit.list(), []);

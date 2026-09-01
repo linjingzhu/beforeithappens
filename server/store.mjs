@@ -17,7 +17,9 @@ export function emptyState() {
     progress: [],
     purchases: [],
     entitlements: [],
-    webhookEvents: []
+    webhookEvents: [],
+    auditEvents: [],
+    reportSnapshots: []
   };
 }
 
