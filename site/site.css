@@ -10,18 +10,31 @@
  */
 
 /*
- * Relief, from the owner's palette: a light source at the top left, so a raised thing catches
- * #FAFBFF above it and drops #161B1D at 23% below it, and a recessed thing does the reverse.
+ * Glass, from the owner's palette. A panel is white laid over the ground at a fraction, lit along
+ * its top edge and dropping a soft shadow — the light comes from above and slightly left, as in
+ * the reference, and every raised thing repeats the same three parts:
  *
- * Two sizes, taken from the palette sheet: 5px at 10px blur for anything the size of a control,
- * 10px at 20px for a card. Larger offsets exist there too and are not used — at 20px the drop
- * under a question card is wider than the gap to the next one, and the page starts to read as
- * tiles floating rather than paper.
+ *   1. the pane itself      — `--ab-card`, alpha, so the ground shows through it
+ *   2. the lit edge         — an inset hairline of white along the top
+ *   3. the drop             — wide and soft, never a hard line
+ *
+ * Recessed things invert it: the shadow goes inside and the lit edge moves to the bottom.
+ *
+ * `backdrop-filter` is what actually frosts the pane. Where it is unsupported the panel is still
+ * translucent white over the ground, which is the same colour without the blur — the layout and
+ * every contrast ratio hold either way.
  */
 :root {
-  --lift: -5px -5px 10px var(--ab-shadow-light), 5px 5px 10px var(--ab-shadow-dark);
-  --lift-card: -10px -10px 20px var(--ab-shadow-light), 10px 10px 20px var(--ab-shadow-dark);
-  --press: inset -5px -5px 10px var(--ab-shadow-light), inset 5px 5px 10px var(--ab-shadow-dark);
+  --lift:
+    0 6px 16px var(--ab-shadow-dark),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --lift-card:
+    0 14px 36px var(--ab-shadow-dark),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --press:
+    inset 0 2px 8px var(--ab-shadow-dark),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+  --frost: blur(14px) saturate(115%);
 }
 
 
@@ -57,7 +70,15 @@
 
 body {
   margin: 0;
-  background: var(--ab-paper);
+  /*
+   * The ground, with the light on it. In the reference the taupe is not flat — it is brighter at
+   * the top left and falls away, which is what makes the panes read as glass catching a light
+   * rather than as grey rectangles. Fixed, so the light stays put while the page scrolls.
+   */
+  background:
+    radial-gradient(120% 90% at 12% -10%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 60%),
+    var(--ab-paper);
+  background-attachment: fixed;
   color: var(--ab-ink);
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 17px;
@@ -95,6 +116,7 @@ a { color: var(--ab-ink); }
   gap: 24px;
   padding: 24px 20px;
   background: var(--ab-surface);
+  backdrop-filter: var(--frost);
   border-bottom: 1px solid var(--ab-line);
 }
 
@@ -241,6 +263,11 @@ a { color: var(--ab-ink); }
  * Tabs and progress stick as one unit, so the progress bar is always the line under the tabs
  * rather than something that catches up with them.
  */
+/*
+ * The one surface that stays opaque. It is sticky, so the questions pass underneath it — through a
+ * translucent bar that reads as a smear, and worse, a dark title sliding under the tab labels
+ * takes their contrast with it. Frosted glass is for panels that sit still.
+ */
 .tabbar {
   position: sticky;
   top: 0;
@@ -378,6 +405,8 @@ html { scroll-padding-top: 120px; }
 
 .q {
   background: var(--ab-card);
+  backdrop-filter: var(--frost);
+  border: 1px solid var(--ab-line);
   border-radius: 20px;
   box-shadow: var(--lift-card);
   padding: 24px;
@@ -579,8 +608,10 @@ html { scroll-padding-top: 120px; }
 .result-share {
   margin-top: 32px;
   padding: 20px;
+  border: 1px solid var(--ab-line);
   border-radius: 20px;
   background: var(--ab-card);
+  backdrop-filter: var(--frost);
   box-shadow: var(--lift-card);
 }
 
@@ -598,7 +629,7 @@ html { scroll-padding-top: 120px; }
   border: 0;
   border-radius: 14px;
   background: var(--ab-accent);
-  color: var(--ab-card);
+  color: var(--ab-on-ink);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -625,8 +656,10 @@ html { scroll-padding-top: 120px; }
 .result-compare {
   margin-bottom: 32px;
   padding: 20px;
+  border: 1px solid var(--ab-line);
   border-radius: 20px;
   background: var(--ab-card);
+  backdrop-filter: var(--frost);
   box-shadow: var(--lift-card);
 }
 
@@ -745,12 +778,13 @@ html { scroll-padding-top: 120px; }
 }
 
 .q-choices li {
+  border: 1px solid var(--ab-line);
   border-radius: 14px;
   padding: 12px 16px;
   margin: 0 0 10px;
-  background: var(--ab-card);
+  background: var(--ab-soft);
   box-shadow: var(--lift);
-  transition: box-shadow 120ms ease;
+  transition: box-shadow 120ms ease, background 120ms ease;
 }
 
 /* Chosen reads as pressed rather than as coloured, which is the whole idea of this surface. */
@@ -765,7 +799,7 @@ html { scroll-padding-top: 120px; }
 }
 
 .q-choices li:has(input:checked) {
-  background: var(--ab-soft);
+  background: var(--ab-card);
   box-shadow: var(--press);
 }
 
@@ -809,7 +843,7 @@ html { scroll-padding-top: 120px; }
   flex-direction: column;
   padding: 8px 24px;
   background: var(--ab-ink);
-  color: var(--ab-surface);
+  color: var(--ab-on-ink);
   font-weight: 600;
   line-height: 1.3;
   text-align: center;
@@ -858,7 +892,7 @@ html { scroll-padding-top: 120px; }
   padding: 0 24px;
   border-radius: 999px;
   background: var(--ab-ink);
-  color: var(--ab-surface);
+  color: var(--ab-on-ink);
   font-weight: 600;
   text-decoration: none;
   box-shadow: var(--lift);
@@ -982,6 +1016,28 @@ html { scroll-padding-top: 120px; }
   font: inherit;
   cursor: pointer;
   box-shadow: var(--lift);
+}
+
+/*
+ * The bloom under the primary action, as in the reference: the light the pane catches spills out
+ * beneath it. Decorative only — `aria-hidden` by construction, since it is a pseudo-element — and
+ * it is the one flourish on the page, kept for the button that asks for the next step.
+ */
+.cta-action {
+  position: relative;
+}
+
+.cta-action::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -5px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.9), transparent);
+  filter: blur(4px);
+  pointer-events: none;
 }
 
 /* Held down is pressed in — the one bit of feedback a surface with no colour change has left. */

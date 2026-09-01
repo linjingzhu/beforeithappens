@@ -20,27 +20,32 @@ export const PALETTES = Object.freeze({
     error: "#8C3A44"
   }),
   /*
-   * Cool greys, from the owner's palette: #EFF2F9 · #E4EBF1 · #B5BFC6 · #6E7F8D, over the two
-   * shadows that give the surfaces their relief (#FAFBFF at full strength, #161B1D at 23%).
+   * Warm taupe under frosted glass, from the owner's second palette. The ground is the colour;
+   * every panel is white laid over it at a fraction, which is what makes a card look like glass
+   * rather than paper — and it is why `surface`, `card`, `soft` and `line` are alpha rather than
+   * hex. A panel over a lighter part of the ground comes out lighter, exactly as in the reference.
    *
-   * Text is darker than any of the four. Measured against the ground it sits on, #6E7F8D reads at
-   * 3.69:1 on a card and 3.43:1 on the page — under the 4.5:1 a sentence needs — so `ink`, `muted`
-   * and `accent` are darker steps of the same hue, at 10.4:1, 5.1:1 and 6.6:1. The palette's own
-   * #6E7F8D stays as `accentAlt`, where nothing has to be read out of it: a rule, a track, a mark.
+   * Text is dark, and that is the one place this parts company with the reference. White on glass
+   * reads at 1.43:1 there, which is beautiful in a mock of eight buttons and unreadable in a
+   * hundred Korean questions. Measured against the composite each sits on — glass #E4E0DB, the
+   * recessed #D5CDC5, the bare ground #C4B9AE — `ink` reads 10.45 / 8.74 / 7.13 and `muted`
+   * 6.64 / 5.55 / 4.52, so every one of them clears 4.5:1. `onInk` is the light text that goes the
+   * other way, on a filled button, at 13.7:1.
    */
   ab: Object.freeze({
-    ink: "#2e3a44",
-    muted: "#5a6874",
-    surface: "#eff2f9",
-    card: "#eff2f9",
-    line: "#b5bfc6",
-    accent: "#4a5764",
-    accentAlt: "#6e7f8d",
+    ink: "#332c26",
+    muted: "#544942",
+    surface: "rgba(255, 255, 255, 0.55)",
+    card: "rgba(255, 255, 255, 0.55)",
+    line: "rgba(255, 255, 255, 0.6)",
+    accent: "#6b5346",
+    accentAlt: "#8a7566",
     error: "#8C3A44",
-    paper: "#e4ebf1",
-    soft: "#e4ebf1",
-    shadowLight: "#fafbff",
-    shadowDark: "rgba(22, 27, 29, 0.23)"
+    paper: "#c4b9ae",
+    soft: "rgba(255, 255, 255, 0.28)",
+    onInk: "#f4f0ec",
+    shadowLight: "rgba(255, 255, 255, 0.75)",
+    shadowDark: "rgba(58, 45, 35, 0.28)"
   })
 });
 
