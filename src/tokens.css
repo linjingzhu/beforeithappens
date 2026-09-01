@@ -7,19 +7,18 @@
 
 :root {
   /* palette · ab (the AB web product) */
-  --ab-ink: #332c26;
-  --ab-muted: #544942;
-  --ab-surface: rgba(255, 255, 255, 0.55);
-  --ab-card: rgba(255, 255, 255, 0.55);
-  --ab-line: rgba(255, 255, 255, 0.6);
-  --ab-accent: #6b5346;
-  --ab-accent-alt: #8a7566;
+  --ab-ink: #2e3a44;
+  --ab-muted: #5a6874;
+  --ab-surface: #eff2f9;
+  --ab-card: #eff2f9;
+  --ab-line: #b5bfc6;
+  --ab-accent: #4a5764;
+  --ab-accent-alt: #6e7f8d;
   --ab-error: #8C3A44;
-  --ab-paper: #c4b9ae;
-  --ab-soft: rgba(255, 255, 255, 0.28);
-  --ab-on-ink: #f4f0ec;
-  --ab-shadow-light: rgba(255, 255, 255, 0.75);
-  --ab-shadow-dark: rgba(58, 45, 35, 0.28);
+  --ab-paper: #e4ebf1;
+  --ab-soft: #e4ebf1;
+  --ab-shadow-light: #fafbff;
+  --ab-shadow-dark: rgba(22, 27, 29, 0.23);
 
   /* palette · loveme (the native screens and their browser preview) */
   --loveme-ink: #3A3338;
@@ -42,7 +41,6 @@
   --error: var(--ab-error);
   --paper: var(--ab-paper);
   --soft: var(--ab-soft);
-  --on-ink: var(--ab-on-ink);
   --shadow-light: var(--ab-shadow-light);
   --shadow-dark: var(--ab-shadow-dark);
   --coral: var(--accent);
