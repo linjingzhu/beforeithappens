@@ -6,7 +6,12 @@
  * front of the public the first time someone registered one. Appearing here is a decision.
  */
 export const SITE = Object.freeze({
-  name: "AB",
+  /**
+   * The name a reader sees, everywhere: the rail's wordmark, every page title, the footer, the
+   * Open Graph card. It was `AB` while the site had no mark of its own, which meant the wordmark
+   * said one thing and the browser tab another. One name, one place.
+   */
+  name: "Love Me",
   tagline: "다가올 삶을, 함께 준비하다.",
   /**
    * The site's own origin. `https`, not `http`: GitHub Pages issues a certificate for a custom
@@ -18,6 +23,12 @@ export const SITE = Object.freeze({
   appOrigin: "",
   /** Emitted as a CNAME file so Pages keeps serving the custom domain on every deploy. */
   customDomain: "lovemedialogue.com",
+  /**
+   * Where a reader writes to. Empty until there is a real inbox: `site/pages.js` emits no 문의 page
+   * without one, because a contact page carrying an address nobody reads is worse than none.
+   * Filling this in is `docs/OWNER_ACTIONS.md` N5, and the page appears by itself when it is.
+   */
+  contactEmail: "",
   locale: "ko-KR",
   /** Ten to a page, per the strategy. A hundred questions is ten pages. */
   pageSize: 10

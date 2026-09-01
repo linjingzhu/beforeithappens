@@ -63,6 +63,16 @@ import('./src/packs.js').then(async (packs) => {
   parts.push(...Object.values(SITE_COPY).filter((v) => typeof v === 'string'));
   const { RESULT_COPY } = await import('./site/result-copy.js');
   parts.push(...Object.values(RESULT_COPY).filter((v) => typeof v === 'string'));
+  const pages = await import('./site/pages.js');
+  for (const page of pages.standingPages()) {
+    parts.push(page.title, page.description);
+    for (const section of page.sections) parts.push(section.heading, ...section.paragraphs);
+  }
+  // The pages that are not built yet still have copy, and it should be covered before it ships.
+  for (const copy of [pages.ABOUT_COPY, pages.CONTACT_COPY]) {
+    parts.push(copy.title, copy.description);
+    for (const section of copy.sections) parts.push(section.heading, ...section.paragraphs);
+  }
   process.stdout.write(JSON.stringify(parts.join('')));
 });
 """

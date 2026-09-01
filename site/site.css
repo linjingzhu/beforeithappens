@@ -445,6 +445,38 @@ a { color: var(--ab-ink); }
   font-size: 13px;
 }
 
+.foot-nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 8px;
+}
+
+.foot-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ab-muted);
+}
+
+/* Standing pages are prose. The measure is the reading column's; the rhythm is looser than a card. */
+.prose { margin: 0 0 32px; }
+
+.prose h2 {
+  font-family: MaruBuri, Georgia, serif;
+  font-size: 20px;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.prose p { margin: 0 0 16px; }
+
+.prose-contact {
+  margin: 0 0 32px;
+  font-size: 19px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
