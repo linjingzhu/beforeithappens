@@ -1,6 +1,6 @@
 import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { siteWith } from "../site/config.js";
+import { SITE, siteWith } from "../site/config.js";
 import { allPages, indexModel } from "../site/content.js";
 import { renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
 import { questionsFor } from "../src/packs.js";
@@ -25,7 +25,7 @@ import { robotsTxt, sitemapXml } from "../site/seo.js";
 const OUT = "site/dist";
 
 const site = siteWith({
-  origin: String(process.env.AB_SITE_ORIGIN || "").replace(/\/$/, ""),
+  origin: String(process.env.AB_SITE_ORIGIN || SITE.origin).replace(/\/$/, ""),
   appOrigin: String(process.env.AB_APP_ORIGIN || "").replace(/\/$/, "")
 });
 
@@ -63,6 +63,13 @@ for (const entry of PUBLISHED) {
 // The sheet is personal and carries noindex, so it is deliberately absent from the sitemap.
 await writeFile(join(OUT, "sitemap.xml"), sitemapXml(pages, site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
+
+// GitHub Pages forgets the custom domain on a deploy that does not carry a CNAME, so the build
+// emits one rather than leaving it as a setting somebody has to remember to re-enter.
+if (site.customDomain) await writeFile(join(OUT, "CNAME"), `${site.customDomain}\n`);
+// Pages runs Jekyll unless told not to, which would swallow any file or directory starting with an
+// underscore. Nothing here starts with one today; this keeps that from becoming a trap later.
+await writeFile(join(OUT, ".nojekyll"), "");
 
 console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"})`);
 if (!site.origin) console.log("  note: AB_SITE_ORIGIN is unset, so pages carry no canonical URL");
