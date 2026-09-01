@@ -70,7 +70,7 @@ export const PUBLISHED = Object.freeze([
      */
     description: Object.freeze([
       "우리는 함께 미래를 꿈꾸지만, 마음속에 그려온 풍경은 서로 달랐을지도 모릅니다.",
-      "그 다름을 하나씩 알아가는 순간, 결혼은 조금 더 따뜻하고 선명한 약속이 될 거에요."
+      "그 다름을 하나씩 알아가는 순간, 결혼은 조금 더 따뜻하고 선명한 약속이 될 거예요."
     ]),
     /** Shown above the questions, before the first one. */
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
