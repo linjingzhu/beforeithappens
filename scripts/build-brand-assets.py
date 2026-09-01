@@ -176,6 +176,41 @@ def write_marks() -> None:
         print(f"{name}: {(OUT / name).stat().st_size / 1024:.1f} KB")
 
 
+APP = ROOT / "mobile" / "assets"
+
+
+def write_app_icons() -> None:
+    """The same mark as the app's icons, in the four shapes the platforms each demand.
+
+    They are four files rather than one because the requirements contradict each other. iOS drops an
+    icon's alpha and rejects a transparent one outright, so its tile is opaque. Android composes an
+    adaptive icon from a foreground over a background and then masks the pair to whatever shape the
+    launcher likes, so the foreground is transparent and the drawing is kept well inside the safe
+    circle — 66% of the tile, and a square inscribed in that circle is narrower still, which is why
+    the mark takes less than half the width here and two thirds of it on iOS. The monochrome layer
+    is for themed icons, where only coverage is read and the colour is the system's to choose.
+    """
+    mark = drawn_mark()
+    paper = PAPER + (255,)
+
+    framed(mark, 1024, 0.70, paper).convert("RGB").save(APP / "icon.png", optimize=True)
+    framed(mark, 1024, 0.46, (0, 0, 0, 0)).save(APP / "android-icon-foreground.png", optimize=True)
+    Image.new("RGB", (1024, 1024), PAPER).save(APP / "android-icon-background.png", optimize=True)
+
+    # Themed icons read the alpha and ignore the colour, so the ink is flattened to one value.
+    monochrome = framed(mark, 1024, 0.46, (0, 0, 0, 0))
+    black = Image.new("RGBA", monochrome.size, (0, 0, 0, 255))
+    black.putalpha(monochrome.split()[3])
+    black.save(APP / "android-icon-monochrome.png", optimize=True)
+
+    # Expo's web build, where the tab is the same 16px problem the site's favicon has.
+    inked(mark, 64, 0.55, paper).save(APP / "favicon.png", optimize=True)
+
+    for name in ("icon.png", "android-icon-foreground.png", "android-icon-background.png",
+                 "android-icon-monochrome.png", "favicon.png"):
+        print(f"mobile/{name}: {(APP / name).stat().st_size / 1024:.1f} KB")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
 
@@ -210,6 +245,7 @@ def main() -> int:
     (OUT / "COVERAGE.txt").write_text(text, encoding="utf8")
 
     write_marks()
+    write_app_icons()
     return 0
 
 
