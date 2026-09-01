@@ -342,3 +342,23 @@ test("deletion never leaves a member row or session pointing at the removed user
   assert.equal(state.sessions.length, 1);
   assert.equal(state.sessions[0].userId, partner.user.id);
 });
+
+test("a report snapshot never outlives the workspace deletion removed", () => {
+  const { store, account, login } = system();
+  const solo = login("solo.report@example.com");
+  const workspaceId = activeWorkspaceOf(store, solo.user.id).id;
+
+  store.mutate((state) => {
+    state.reportSnapshots = [
+      { id: "rep_solo", workspaceId, content: { agreement: "둘만의 합의문" } },
+      { id: "rep_other", workspaceId: "ws_someone_else", content: { agreement: "남의 합의문" } }
+    ];
+  });
+  assert.equal(store.snapshot().reportSnapshots.length, 2);
+
+  assert.equal(account.deleteAccount(solo.sessionId, { confirm: true }).ok, true);
+
+  const left = store.snapshot().reportSnapshots;
+  assert.deepEqual(left.map((row) => row.id), ["rep_other"], "the departed couple's snapshot goes with them");
+  assert.equal(JSON.stringify(left).includes("둘만의 합의문"), false, "no agreed text survives the deletion");
+});

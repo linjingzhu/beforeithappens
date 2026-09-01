@@ -107,6 +107,9 @@ export function createAccount({ store, now = Date.now } = {}) {
       state.answerRounds = rows(state, "answerRounds").filter((item) => !removed.has(item.workspaceId));
       state.agreements = rows(state, "agreements").filter((item) => !removed.has(item.workspaceId));
       state.publicLocks = rows(state, "publicLocks").filter((item) => !removed.has(item.workspaceId));
+      // A report snapshot carries both partners' submitted choices and the agreed text, so it
+      // must not outlive the workspace it describes.
+      state.reportSnapshots = rows(state, "reportSnapshots").filter((item) => !removed.has(item.workspaceId));
       state.entitlements = rows(state, "entitlements").filter((item) => !removed.has(item.workspaceId));
       state.workspaces = rows(state, "workspaces").filter((item) => !removed.has(item.id));
 
