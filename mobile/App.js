@@ -39,6 +39,9 @@ import { createHostPack } from "./pack/host-mount.js";
 import marriagePackCatalog from "./pack/contract/marriage-pack.json";
 import {
   backFromAccount,
+  backToAccount,
+  openGiftScreen,
+  openRecommendScreen,
   backFromCertificate,
   backFromComingSoon,
   backFromInvite,
@@ -77,6 +80,16 @@ import * as Font from "expo-font";
 import { APP_S4_SCREEN, APP_SAME_SESSION_SCREEN } from "./s4-invite/flow.js";
 import { createHostInviteApi, finishHostOpen, logoutAndContinueFromS4, logoutFromS4Home, openS4FromWorkspace, sendS4Invite, shareS4FromHost } from "./s4-invite/host-mount.js";
 import { InviteWaitingScreen, SameSessionFailScreen } from "./s4-invite/screens.js";
+import { GiftScreen, RecommendScreen } from "./growth/screens.js";
+import {
+  createHostGrowthApi,
+  createGiftFromHost,
+  loadGifts,
+  loadRecommend,
+  revokeGiftFromHost,
+  shareGiftFromHost,
+  shareRecommendFromHost
+} from "./growth/host-mount.js";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -134,6 +147,7 @@ export default function App() {
   stateRef.current = state;
   const api = createHostApi();
   const inviteApi = createHostInviteApi(hostCookieAccess());
+  const growthApi = createHostGrowthApi(hostCookieAccess());
 
   useEffect(() => {
     let cancelled = false;
@@ -289,6 +303,8 @@ export default function App() {
           onLogout={async () => setState(await logoutHost(state, api))}
           onLogin={() => setState(openAccount(state))}
           onInvite={() => setState(openS4FromWorkspace(state))}
+          onRecommend={async () => setState(await loadRecommend(openRecommendScreen(state), growthApi))}
+          onGift={async () => setState(await loadGifts(openGiftScreen(state), growthApi))}
           onWithdraw={async () => {
             setState({ ...state, busy: true, error: "" });
             const next = await withdrawHost(state, api);
@@ -335,6 +351,42 @@ export default function App() {
           error={state.error}
           busy={state.busy}
           onAcknowledgeNotice={async () => setState(await ackHostNotice(state, api))}
+        />
+      ) : null}
+      {state.screen === "recommend" ? (
+        <RecommendScreen
+          code={state.referral?.code || ""}
+          url={state.referral?.url || ""}
+          joined={state.referral?.joined || 0}
+          credited={state.referral?.credited || 0}
+          rewardEvery={state.referral?.rewardEvery || 3}
+          copied={state.copied}
+          failed={state.shareFailed}
+          error={state.error}
+          onBack={() => setState(backToAccount(state))}
+          onCopy={async () => setState(await shareRecommendFromHost(state, "copy", shareIo()))}
+          onInstagram={async () => setState(await shareRecommendFromHost(state, "instagram", shareIo()))}
+          onKakao={async () => setState(await shareRecommendFromHost(state, "kakao", shareIo()))}
+        />
+      ) : null}
+      {state.screen === "gift" ? (
+        <GiftScreen
+          gifts={state.gifts || []}
+          credits={state.giftCredits || 0}
+          busy={state.busy}
+          error={state.error}
+          copied={state.copied}
+          failed={state.shareFailed}
+          activeUrl={state.activeShareUrl || ""}
+          onBack={() => setState(backToAccount(state))}
+          onCreate={async () => {
+            setState({ ...state, busy: true, error: "" });
+            setState(await createGiftFromHost({ ...state, busy: true }, growthApi));
+          }}
+          onRevoke={async (giftId) => setState(await revokeGiftFromHost(state, giftId, growthApi))}
+          onCopy={async (giftId) => setState(await shareGiftFromHost(state, giftId, "copy", shareIo()))}
+          onInstagram={async (giftId) => setState(await shareGiftFromHost(state, giftId, "instagram", shareIo()))}
+          onKakao={async (giftId) => setState(await shareGiftFromHost(state, giftId, "kakao", shareIo()))}
         />
       ) : null}
       {state.screen === "invite" ? (
