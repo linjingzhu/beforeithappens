@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "../src/theme.js";
-import { fonts } from "../src/fonts.js";
+import { createStyles } from "../src/responsive.js";
 import { PACK_COPY } from "./contract/pack-copy.js";
 import { createHostPack } from "./host-mount.js";
 
@@ -12,6 +12,7 @@ function saveLabel(saveStatus) {
 }
 
 function Shell({ children, testID }) {
+  const styles = useStyles();
   return (
     <SafeAreaView style={styles.shell} testID={testID} accessibilityLabel={testID}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
@@ -22,6 +23,7 @@ function Shell({ children, testID }) {
 }
 
 function Primary({ label, onPress, disabled, testID }) {
+  const styles = useStyles();
   return (
     <Pressable
       testID={testID}
@@ -36,6 +38,7 @@ function Primary({ label, onPress, disabled, testID }) {
 }
 
 function TextLink({ label, onPress, testID }) {
+  const styles = useStyles();
   return (
     <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={styles.textLink}>
       <Text style={styles.textLinkLabel}>{label}</Text>
@@ -44,6 +47,7 @@ function TextLink({ label, onPress, testID }) {
 }
 
 export function PackLockedScreen({ view, onBack }) {
+  const styles = useStyles();
   return (
     <Shell testID="pack-locked">
       <Text style={styles.title}>{view.title || PACK_COPY.title}</Text>
@@ -54,6 +58,7 @@ export function PackLockedScreen({ view, onBack }) {
 }
 
 export function PackReadyScreen({ view, busy, onStart, onBack }) {
+  const styles = useStyles();
   return (
     <Shell testID="pack-ready">
       <Text style={styles.title}>{view.title || PACK_COPY.title}</Text>
@@ -66,6 +71,7 @@ export function PackReadyScreen({ view, busy, onStart, onBack }) {
 }
 
 export function PackQuestionScreen({ view, busy, onChoice, onNote, onSubmit, onPrevious, onNext, onBack }) {
+  const styles = useStyles();
   const q = view.question;
   return (
     <Shell testID="pack-question">
@@ -128,6 +134,7 @@ export function PackQuestionScreen({ view, busy, onChoice, onNote, onSubmit, onP
 }
 
 export function PackRevealScreen({ view, busy, onProposal, onAgree, onHold, onReanswer, onPrevious, onNext, onBack }) {
+  const styles = useStyles();
   const q = view.question;
   return (
     <Shell testID="pack-reveal">
@@ -235,31 +242,74 @@ export function PackMount({ session, cookieAccess, fetchImpl, catalog, controlle
   );
 }
 
-const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: colors.white },
-  scroll: { padding: 24, paddingBottom: 48 },
-  title: { color: colors.charcoal, fontSize: 26, marginBottom: 12, fontFamily: fonts.titleStrong },
-  stem: { color: colors.charcoal, fontSize: 22, lineHeight: 32, marginBottom: 10, fontFamily: fonts.title },
-  body: { color: colors.charcoal, fontSize: 15, lineHeight: 24, marginBottom: 20, fontFamily: fonts.body },
-  rule: { color: colors.muted, fontSize: 12, lineHeight: 20, marginBottom: 16, fontFamily: fonts.body },
-  badge: { color: colors.muted, fontSize: 12, marginBottom: 8, fontFamily: fonts.body },
-  choices: { marginBottom: 18 },
-  choice: { borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 14, marginTop: 8, backgroundColor: colors.white },
-  choiceSelected: { borderColor: colors.babyPink, backgroundColor: colors.card },
-  choiceLabel: { color: colors.charcoal, fontSize: 15, fontFamily: fonts.body },
-  noteLabel: { color: colors.muted, fontSize: 12, marginBottom: 6, fontFamily: fonts.body },
-  note: { minHeight: 84, borderWidth: 1, borderColor: colors.line, borderRadius: 12, padding: 12, color: colors.charcoal, fontFamily: fonts.body, textAlignVertical: "top" },
-  status: { color: colors.muted, fontSize: 12, lineHeight: 20, marginTop: 14, fontFamily: fonts.body },
-  comparison: { color: colors.charcoal, fontSize: 13, fontWeight: "700", marginBottom: 12, fontFamily: fonts.body },
-  answers: { marginBottom: 12 },
-  answer: { color: colors.charcoal, fontSize: 15, lineHeight: 26, fontFamily: fonts.body },
-  primary: { minHeight: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", backgroundColor: colors.babyPink, marginTop: 18 },
-  primaryLabel: { color: colors.charcoal, fontSize: 16, fontFamily: fonts.bodyStrong },
-  disabled: { opacity: 0.45 },
-  pressed: { opacity: 0.8 },
-  textLink: { minHeight: 40, alignItems: "center", justifyContent: "center", marginTop: 8 },
-  textLinkLabel: { color: colors.muted, fontSize: 13, fontFamily: fonts.body },
-  save: { color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 10, fontFamily: fonts.body },
-  error: { color: colors.error, fontSize: 13, marginTop: 10, fontFamily: fonts.body },
-  nav: { flexDirection: "row", justifyContent: "space-between", marginTop: 12 }
-});
+/**
+ * The sheet as a function of the window: type from `font`/`lineHeight`, vertical rhythm from
+ * `space` (a short screen gets its margins back), gutters from `gutter`, corners from
+ * `radius`, control heights built up from `hit`. Opacity feedback is the only thing here that
+ * is not a design token — the token module holds no opacity scale.
+ */
+export function buildStyles(t) {
+  const { colors, fonts, font, lineHeight, space, gutter, radius, hit, layout } = t;
+  return {
+    shell: { flex: 1, backgroundColor: colors.white },
+    scroll: {
+      padding: gutter("xl"),
+      paddingBottom: space("xxxl"),
+      width: "100%",
+      maxWidth: layout.maxContentWidth,
+      alignSelf: "center"
+    },
+    title: { color: colors.charcoal, fontSize: font("display"), marginBottom: space("md"), fontFamily: fonts.titleStrong },
+    stem: { color: colors.charcoal, fontSize: font("title"), lineHeight: lineHeight("title"), marginBottom: space("sm"), fontFamily: fonts.title },
+    body: { color: colors.charcoal, fontSize: font("body"), lineHeight: lineHeight("body"), marginBottom: space("lg"), fontFamily: fonts.body },
+    rule: { color: colors.muted, fontSize: font("caption"), lineHeight: lineHeight("caption", "relaxed"), marginBottom: space("lg"), fontFamily: fonts.body },
+    badge: { color: colors.muted, fontSize: font("caption"), marginBottom: space("sm"), fontFamily: fonts.body },
+    choices: { marginBottom: space("lg") },
+    choice: {
+      minHeight: hit,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.md,
+      padding: gutter("lg"),
+      marginTop: space("sm"),
+      backgroundColor: colors.white
+    },
+    choiceSelected: { borderColor: colors.babyPink, backgroundColor: colors.card },
+    choiceLabel: { color: colors.charcoal, fontSize: font("body"), fontFamily: fonts.body },
+    noteLabel: { color: colors.muted, fontSize: font("caption"), marginBottom: space("xs"), fontFamily: fonts.body },
+    note: {
+      minHeight: hit + space("xxl"),
+      borderWidth: 1,
+      borderColor: colors.line,
+      borderRadius: radius.md,
+      padding: gutter("md"),
+      color: colors.charcoal,
+      fontSize: font("body"),
+      fontFamily: fonts.body,
+      textAlignVertical: "top"
+    },
+    status: { color: colors.muted, fontSize: font("caption"), lineHeight: lineHeight("caption", "relaxed"), marginTop: space("md"), fontFamily: fonts.body },
+    comparison: { color: colors.charcoal, fontSize: font("footnote"), fontWeight: "700", marginBottom: space("md"), fontFamily: fonts.body },
+    answers: { marginBottom: space("md") },
+    answer: { color: colors.charcoal, fontSize: font("body"), lineHeight: lineHeight("body", "relaxed"), fontFamily: fonts.body },
+    primary: {
+      minHeight: hit + space("sm"),
+      borderRadius: radius.pill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.babyPink,
+      marginTop: space("lg")
+    },
+    primaryLabel: { color: colors.charcoal, fontSize: font("bodyLarge"), fontFamily: fonts.bodyStrong },
+    disabled: { opacity: 0.45 },
+    pressed: { opacity: 0.8 },
+    textLink: { minHeight: hit, alignItems: "center", justifyContent: "center", marginTop: space("sm") },
+    textLinkLabel: { color: colors.muted, fontSize: font("footnote"), fontFamily: fonts.body },
+    save: { color: colors.muted, fontSize: font("caption"), textAlign: "center", marginTop: space("sm"), fontFamily: fonts.body },
+    error: { color: colors.error, fontSize: font("footnote"), marginTop: space("sm"), fontFamily: fonts.body },
+    nav: { flexDirection: "row", justifyContent: "space-between", marginTop: space("md") }
+  };
+}
+
+const useStyles = createStyles(buildStyles);
