@@ -25,10 +25,11 @@ run's report.
 Rows are marked so the ledger can be sliced without re-deriving it: **앱** (the couple app and its
 API), **웹** (the public question site), **공통** (serves both).
 
-They also carry a milestone, from `docs/MILESTONES.md`: **M1** web only, with ads — what is being
-built now; **M2** server storage and login; **M3** the app. A row belonging to a later milestone is
-not urgent even when nothing blocks it, and doing it early spends time on decisions that milestone
-has not reached yet.
+They also carry a milestone, from `docs/MILESTONES.md`: **M1** web only, with ads; **M2** server
+storage and login; **M3** the app. The three run in parallel, so a later milestone's row is not
+postponed — but the *release* order stays M1 → M2 → M3, and a row that only matters at release
+(a store submission, a price) can wait while one that has a long queue (a developer enrolment)
+should not.
 
 ### The smallest live web service — reached
 

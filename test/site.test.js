@@ -662,7 +662,7 @@ test("the marriage source is sliced by index, not scanned by a lazy regex", asyn
   assert.equal(raw.values.every((set) => set.length === 4), true);
 });
 
-test("every question carries the notes block and the conversation, and neither is prefilled", () => {
+test("every question carries the notes block, and nothing in it is prefilled", () => {
   const model = pageModel(PUBLISHED[0].slug, 1, { site });
   const html = renderQuestionPage(model, site);
 
@@ -671,20 +671,17 @@ test("every question carries the notes block and the conversation, and neither i
     // one of these while another has two.
     const start = html.indexOf(`data-question="${question.id}"`);
     const article = html.slice(start, html.indexOf("</article>", start));
-    for (const field of ["importance", "reason", "guess", "rule"]) {
+    for (const field of ["importance", "reason", "guess"]) {
       assert.equal(
         (article.match(new RegExp(`data-note="${field}"`, "g")) || []).length,
         1,
         `${question.id} has one ${field} field`
       );
     }
-    assert.match(article, /<details class="q-talk">/, `${question.id} conversation`);
-    assert.ok(article.includes(SITE_COPY.talkLabel));
-    assert.ok(article.includes(SITE_COPY.ruleLabel));
-    for (const step of SITE_COPY.talkSteps) assert.ok(article.includes(step.body), step.lead);
-    // The conversation is shut on arrival: opened, it reads as a stated right way through the
-    // question before the reader has answered it.
-    assert.equal(/<details class="q-talk" open/.test(article), false);
+    // The conversation block that used to sit here — three steps and a working rule — is gone at
+    // the owner's word, along with the `rule` field it wrote into.
+    assert.equal(article.includes("q-talk"), false);
+    assert.equal(article.includes('data-note="rule"'), false);
     // Nothing is answered for the reader — no option preselected, no textarea with content in it.
     assert.equal(/<option value="[^"]+" selected/.test(article), false);
     assert.equal(/<textarea[^>]*>[^<]/.test(article), false, "textareas ship empty");
@@ -704,8 +701,8 @@ test("the review block is behind one flag, and the page it leaves is intact", ()
   for (const marker of ["data-feedback", "q-stars", "DEBUG", "★"]) {
     assert.equal(without.includes(marker), false, `${marker} goes with the flag`);
   }
-  // And the question itself is untouched: the notes, the conversation and the answer all remain.
-  for (const marker of ['data-note="reason"', 'class="q-talk"', "q-choices"]) {
+  // And the question itself is untouched: the notes and the answer remain.
+  for (const marker of ['data-note="reason"', 'data-note="guess"', "q-choices"]) {
     assert.ok(without.includes(marker), `${marker} is not part of the debug block`);
   }
 });
@@ -736,7 +733,7 @@ test("a question keeps what was written beside it, before and after it is answer
   assert.equal(answers.items.q1.reason, "약속 없는 날이 제일 좋아서");
   assert.equal(answeredCount(answers), 1);
 
-  // Only the four named fields, and importance only from its own list.
+  // Only the three named fields, and importance only from its own list.
   answers = withNote(answers, "q1", "importance", "need");
   assert.equal(answers.items.q1.importance, "need");
   assert.equal(withNote(answers, "q1", "importance", "매우").items.q1.importance, undefined);
@@ -748,8 +745,12 @@ test("a question keeps what was written beside it, before and after it is answer
   assert.equal(onlyNotes.items.q2, undefined);
 
   // A runaway paste cannot fill the quota and take the other answers down with it.
-  const long = withNote(emptyAnswers("marriage"), "q3", "rule", "가".repeat(5000));
-  assert.equal(long.items.q3.rule.length, 2000);
+  const long = withNote(emptyAnswers("marriage"), "q3", "reason", "가".repeat(5000));
+  assert.equal(long.items.q3.reason.length, 2000);
+
+  // The block that wrote a working rule is gone, and so is the field: a note nothing can write is
+  // a note nobody can read back.
+  assert.equal(withNote(answers, "q1", "rule", "기본은 오후 외출").items.q1.rule, undefined);
 
   // And it all survives a round trip through storage.
   assert.deepEqual(parseAnswers(serializeAnswers(answers), "marriage").items.q1, answers.items.q1);

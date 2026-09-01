@@ -48,16 +48,6 @@ export const SITE_COPY = Object.freeze({
   ]),
   reasonPlaceholder: "왜 이 답을 골랐나요? 내가 지키고 싶은 마음이나 경험을 적어보세요.",
   guessPlaceholder: "상대는 무엇을 고를까요? 그 이유까지 다정하게 추측해보세요.",
-  /* The part that stays shut until both people have answered. */
-  talkLabel: "답을 나눈 뒤 열어보는 대화",
-  talkSteps: Object.freeze([
-    { lead: "먼저 같은 마음을 찾아요.", body: "선택이 달라도 두 사람 모두 지키고 싶은 것은 무엇인가요?" },
-    { lead: "차이를 부담의 언어로 말해요.", body: "누가 맞는지보다 내가 두려워하는 비용과 책임을 설명해요." },
-    { lead: "예외를 함께 상상해요.", body: "상대의 선택이 더 필요한 날은 어떤 날일까요?" }
-  ]),
-  ruleLabel: "우리의 임시 원칙",
-  rulePlaceholder: "기본 원칙 / 예외 조건 / 다시 이야기할 시점을 적어보세요.",
-  talkClosing: "오늘 꼭 결론 내리지 않아도 괜찮아요. 서로가 무엇을 지키고 싶은지 알게 된 것만으로도 우리는 조금 더 좋은 팀이 되었습니다.",
   noScriptNote: "브라우저 저장이 꺼져 있으면 답이 기억되지 않아요. 질문은 그대로 읽으실 수 있습니다."
 });
 
@@ -81,25 +71,6 @@ ${options}
           <textarea data-note="reason" rows="3" placeholder="${escapeHtml(SITE_COPY.reasonPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.reasonPlaceholder)}"></textarea>
           <textarea data-note="guess" rows="3" placeholder="${escapeHtml(SITE_COPY.guessPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.guessPlaceholder)}"></textarea>
         </div>`;
-}
-
-/**
- * The conversation to have once both people have answered, shut by default. Shut because reading it
- * first turns the question into a test with a stated right way through it; a reader opens it when
- * they are ready to talk, which is the only moment its three steps mean anything.
- */
-function talkBlock(question) {
-  const steps = SITE_COPY.talkSteps
-    .map((step) => `          <p><b>${escapeHtml(step.lead)}</b> ${escapeHtml(step.body)}</p>`)
-    .join("\n");
-  return `
-        <details class="q-talk">
-          <summary>${escapeHtml(SITE_COPY.talkLabel)}</summary>
-${steps}
-          <p class="q-rule-label">${escapeHtml(SITE_COPY.ruleLabel)}</p>
-          <textarea data-note="rule" rows="3" placeholder="${escapeHtml(SITE_COPY.rulePlaceholder)}" aria-label="${escapeHtml(SITE_COPY.ruleLabel)}"></textarea>
-          <p class="q-talk-closing">${escapeHtml(SITE_COPY.talkClosing)}</p>
-        </details>`;
 }
 
 /**
@@ -180,7 +151,7 @@ ${choices}
         <label class="q-undiscussed">
           <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
           <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>${depthBlock(question)}${talkBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
+        </label>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
       </article>`;
 }
 
