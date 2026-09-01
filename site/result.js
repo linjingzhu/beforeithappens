@@ -14,7 +14,7 @@ export function resultModel(slug, answers, { questions = null } = {}) {
   const entry = publishedBySlug(slug);
   if (!entry) return null;
 
-  const all = questions || questionsFor(entry.catalogId);
+  const all = questions || questionsFor(entry.packId);
   if (!all.length) return null;
 
   const model = reflect(toQuestionIndex(all), answers);

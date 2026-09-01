@@ -72,7 +72,9 @@ export function structuredData(model, site = SITE) {
       item: {
         "@type": "Question",
         name: question.title,
-        text: question.intent,
+        // `text` is the question as asked. The app pack's `intent` is a better one-line gloss where
+        // it exists; where it does not, the title is the question and repeating it is honest.
+        text: question.intent || question.title,
         suggestedAnswer: question.choices.map((choice) => ({
           "@type": "Answer",
           text: choice.label

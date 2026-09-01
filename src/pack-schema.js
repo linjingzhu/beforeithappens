@@ -22,7 +22,27 @@
  */
 export const PACK_AUDIENCE = Object.freeze({ couple: "couple", solo: "solo" });
 
+/**
+ * Which product a pack belongs to, which decides what it must carry.
+ *
+ * An **app** pack is rendered by `src/app.js`, which prints `intent`, `example`, `whyItMatters` and
+ * `researchKeywords` on every question; it sits on a shelf in `PACK_LIST_ROWS` under a `catalogId`,
+ * and is sold, so it declares how many questions are free. Those requirements are why the app's
+ * pack cannot drift, and they stay exactly as strict as they were.
+ *
+ * A **site** pack is published as public web pages. It has no shelf, no price, and no guidance
+ * copy — a hundred questions and their choices, which is the whole of what a reader sees. Requiring
+ * the app's fields of it would mean inventing three paragraphs per question, and invented guidance
+ * is worse than none: it reads as advice and is not.
+ *
+ * The distinction is declared rather than inferred, and each surface is checked for what it must
+ * have *and* refused what it must not — a site pack carrying half a set of guidance fields is a
+ * mistake, not a bonus, and fails here rather than rendering blank sections.
+ */
+export const PACK_SURFACE = Object.freeze({ app: "app", site: "site" });
+
 const REQUIRED_QUESTION_TEXT = ["title", "intent", "example", "whyItMatters"];
+const APP_ONLY_QUESTION_FIELDS = ["intent", "example", "whyItMatters", "researchKeywords"];
 const CHOICES_PER_QUESTION = 4;
 
 function fail(packId, message) {
@@ -40,7 +60,18 @@ function requireText(packId, value, what) {
 export function definePack(raw = {}) {
   const id = raw.id;
   requireText(id, id, "id");
-  requireText(id, raw.catalogId, "catalogId (the id the app's pack list uses)");
+
+  const surface = raw.surface || PACK_SURFACE.app;
+  if (!Object.values(PACK_SURFACE).includes(surface)) {
+    fail(id, `surface must be one of ${Object.values(PACK_SURFACE).join(", ")}`);
+  }
+  const isApp = surface === PACK_SURFACE.app;
+
+  // A catalogId names a shelf in the app's pack list. A site pack has no shelf, and claiming one
+  // would advertise it in an app that cannot open it.
+  if (isApp) requireText(id, raw.catalogId, "catalogId (the id the app's pack list uses)");
+  else if (raw.catalogId) fail(id, "a site pack must not claim a catalogId; it is not on the app's shelf");
+
   requireText(id, raw.version, "version");
   requireText(id, raw.locale, "locale");
   requireText(id, raw.title, "title");
@@ -70,9 +101,18 @@ export function definePack(raw = {}) {
     if (questionIds.has(question.id)) fail(id, `duplicate question id ${question.id}`);
     questionIds.add(question.id);
     if (!sectionIds.has(question.sectionId)) fail(id, `${question.id} points at unknown section ${question.sectionId}`);
-    for (const field of REQUIRED_QUESTION_TEXT) requireText(id, question[field], `${question.id}.${field}`);
-    if (!Array.isArray(question.researchKeywords) || question.researchKeywords.length === 0) {
-      fail(id, `${question.id}.researchKeywords is required`);
+    if (isApp) {
+      for (const field of REQUIRED_QUESTION_TEXT) requireText(id, question[field], `${question.id}.${field}`);
+      if (!Array.isArray(question.researchKeywords) || question.researchKeywords.length === 0) {
+        fail(id, `${question.id}.researchKeywords is required`);
+      }
+    } else {
+      requireText(id, question.title, `${question.id}.title`);
+      // Refused rather than ignored: a site pack with guidance on some questions and not others
+      // renders inconsistently, and nothing downstream would report it.
+      for (const field of APP_ONLY_QUESTION_FIELDS) {
+        if (question[field] !== undefined) fail(id, `${question.id}.${field} is app-only; a site pack carries none`);
+      }
     }
 
     const choices = Array.isArray(question.choices) ? question.choices : [];
@@ -91,9 +131,14 @@ export function definePack(raw = {}) {
     }
   }
 
-  const free = Number(raw.freeQuestionCount);
-  if (!Number.isInteger(free) || free < 0) fail(id, "freeQuestionCount must be a non-negative integer");
-  if (free >= questions.length) fail(id, "freeQuestionCount must leave at least one question behind the gate");
+  // Only an app pack is sold, so only an app pack has a gate to describe.
+  if (isApp) {
+    const free = Number(raw.freeQuestionCount);
+    if (!Number.isInteger(free) || free < 0) fail(id, "freeQuestionCount must be a non-negative integer");
+    if (free >= questions.length) fail(id, "freeQuestionCount must leave at least one question behind the gate");
+  } else if (raw.freeQuestionCount !== undefined) {
+    fail(id, "a site pack has no gate, so freeQuestionCount does not apply; every question is free");
+  }
 
   const sectionsById = Object.fromEntries(sections.map((section) => [section.id, section]));
   const sectionOrder = Object.fromEntries(sections.map((section, index) => [section.id, index]));
@@ -107,6 +152,7 @@ export function definePack(raw = {}) {
 
   return Object.freeze({
     ...raw,
+    surface,
     audience,
     sections: Object.freeze(sections.map((section) => Object.freeze({ ...section }))),
     questions: Object.freeze(raw.questions.map((question) => Object.freeze({ ...question }))),
