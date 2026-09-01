@@ -167,6 +167,51 @@ function pinCurrentTab() {
   strip.scrollLeft += left - padding;
 }
 
+/**
+ * Turning a Part while the bar is pinned should feel like changing the panel under it, not like
+ * being thrown back to the top of a new page.
+ *
+ * Each Part is its own document, so a tab is a real navigation and the browser lands at the top —
+ * past the pack's name again, and a scroll away from the first question. These two functions carry
+ * one bit across that navigation: *the bar was pinned when you left*. On arrival the page scrolls
+ * to exactly where the bar pins, so the tabs are where they were and the first question is under
+ * them.
+ *
+ * Only when it was pinned. Turning a Part from the top of the page still lands at the top, which is
+ * where the reader already was.
+ */
+const PINNED = "ab:tabbar-pinned";
+
+function rememberPinned() {
+  const bar = document.querySelector(".tabbar");
+  if (!bar) return;
+  for (const tab of bar.querySelectorAll(".part-tab")) {
+    tab.addEventListener("click", () => {
+      try {
+        if (bar.getBoundingClientRect().top <= 0) sessionStorage.setItem(PINNED, "1");
+        else sessionStorage.removeItem(PINNED);
+      } catch {
+        // A browser that refuses session storage simply lands at the top, which is not a failure.
+      }
+    });
+  }
+}
+
+function restorePinned() {
+  const bar = document.querySelector(".tabbar");
+  if (!bar) return;
+  let wasPinned = false;
+  try {
+    wasPinned = sessionStorage.getItem(PINNED) === "1";
+    sessionStorage.removeItem(PINNED);
+  } catch {
+    return;
+  }
+  if (!wasPinned) return;
+  // Where the bar comes to rest: its own offset from the top of the document.
+  window.scrollTo({ top: window.scrollY + bar.getBoundingClientRect().top, behavior: "instant" });
+}
+
 /** The bar under the tabs: answers recorded across the whole pack, as a width and an aria value. */
 function showProgress(store) {
   const bar = document.querySelector("[data-progress-total]");
@@ -182,6 +227,8 @@ function showProgress(store) {
 function start() {
   pinCurrentTab();
   document.fonts?.ready?.then(pinCurrentTab).catch(() => {});
+  rememberPinned();
+  restorePinned();
 
   const slug = slugFromPath();
   if (!slug) return;

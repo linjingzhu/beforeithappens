@@ -617,3 +617,36 @@ test("the opening is on the way in, and only the name is above the later Parts",
     assert.equal(has(later, entry.description), false);
   }
 });
+
+test("turning a Part while the bar is pinned keeps it pinned, over the new Part's first question", () => {
+  // Each Part is its own document, so a tab is a real navigation and the browser lands at the top —
+  // past the pack's name again, and a scroll away from the first question. One bit is carried
+  // across: the bar was pinned when you left.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /function rememberPinned/);
+  assert.match(enhance, /function restorePinned/);
+  // Remembered only when it was actually pinned; turning a Part from the top still lands at the top.
+  assert.match(enhance, /getBoundingClientRect\(\)\.top <= 0/);
+  // Session, not local: it describes this visit, and should not outlive the tab.
+  assert.match(enhance, /sessionStorage\.setItem\(PINNED/);
+  assert.match(enhance, /sessionStorage\.removeItem\(PINNED/);
+  // A browser that refuses storage lands at the top, which is not a failure.
+  assert.match(enhance, /catch \{/);
+});
+
+test("the marriage source is sliced by index, not scanned by a lazy regex", async () => {
+  // A lazy quantifier crossing half a megabyte backtracks once per character, and past some
+  // engine-dependent threshold stops matching rather than slowing down: this passed here and
+  // returned null on a CI runner one Node patch ahead. Two indexOf calls cannot do that.
+  const generator = readFileSync("scripts/build-marriage-100.mjs", "utf8");
+  // On the code, not the prose: the comment above the fix quotes the pattern it replaced.
+  assert.equal(/html\.match\(/.test(generator), false, "the document is never scanned by regex");
+  assert.match(generator, /html\.indexOf\(opening\)/);
+  assert.match(generator, /html\.indexOf\("\];", start\)/);
+
+  // And it still reads the same hundred questions.
+  const { readSourceQuestions } = await import("../scripts/build-marriage-100.mjs");
+  const raw = await readSourceQuestions();
+  assert.equal(raw.length, 100);
+  assert.equal(raw.every((q) => q.options?.length === 4), true);
+});
