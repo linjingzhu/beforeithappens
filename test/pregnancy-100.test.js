@@ -103,14 +103,29 @@ test("the page shows the Part's line, the mood and the value names", () => {
   assert.equal((html.match(/class="part-blurb"/g) || []).length, 1);
   for (const question of model.questions) {
     assert.ok(html.includes(`<span class="q-mood">${question.mood}</span>`), `${question.id} mood`);
+    if (question.scene) {
+      assert.ok(html.includes(`<p class="q-scene">${question.scene}</p>`), `${question.id} scene`);
+    }
     for (const choice of question.choices) {
       assert.ok(html.includes(choice.label), choice.id);
       assert.ok(html.includes(`>${choice.valueLabel}</em>`), `${choice.id} value name`);
     }
   }
-  // And the marriage pack, which has none of these, renders without empty shells.
-  const marriage = renderQuestionPage(pageModel("marriage", 1, {}), undefined);
-  for (const marker of ["q-mood", "q-choice-value", "part-blurb"]) {
-    assert.equal(marriage.includes(marker), false, `${marker} is absent where there is nothing to say`);
+  // And a pack that wrote none of it renders without empty shells: the elements are omitted, not
+  // emitted blank, so a reader never meets a gap they cannot account for. Both site packs now carry
+  // the full set, so the bare case is built here rather than borrowed from one of them.
+  const bare = {
+    ...model,
+    part: { ...model.part, blurb: "" },
+    questions: model.questions.map((question) => ({
+      ...question,
+      mood: undefined,
+      scene: undefined,
+      choices: question.choices.map((choice) => ({ ...choice, valueLabel: undefined }))
+    }))
+  };
+  const plain = renderQuestionPage(bare, undefined);
+  for (const marker of ["q-mood", "q-choice-value", "q-scene", "part-blurb"]) {
+    assert.equal(plain.includes(marker), false, `${marker} is absent where there is nothing to say`);
   }
 });

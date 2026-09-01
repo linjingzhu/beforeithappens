@@ -59,10 +59,12 @@ import('./src/packs.js').then(async (packs) => {
     // A description may be authored as lines.
     for (const line of [].concat(entry.description || [])) parts.push(line);
     const pack = packs.findPack(entry.packId);
-    for (const section of pack.sections) parts.push(section.title);
+    // Everything a page can print, not only the question: a scene, a mood, a value name or a
+    // section's blurb is copy too, and a character missing from the subset falls back mid-sentence.
+    for (const section of pack.sections) parts.push(section.title, section.blurb || '');
     for (const question of pack.questions) {
-      parts.push(question.title);
-      for (const choice of question.choices) parts.push(choice.label);
+      parts.push(question.title, question.scene || '', question.mood || '');
+      for (const choice of question.choices) parts.push(choice.label, choice.valueLabel || '');
     }
   }
   const { SITE } = await import('./site/config.js');

@@ -58,6 +58,11 @@ function questionArticle(question) {
   // Guidance copy is app-pack only (see `PACK_SURFACE` in `src/pack-schema.js`). A site pack has
   // none, and an empty <p> would render as a gap the reader cannot account for, so the elements are
   // omitted rather than emptied.
+  // The situation the question is asked inside. It comes before the guidance copy because it is
+  // what a reader has to be holding in mind before the question means anything.
+  const scene = question.scene
+    ? `\n        <p class="q-scene">${escapeHtml(question.scene)}</p>`
+    : "";
   const intent = question.intent ? `\n        <p class="q-intent">${escapeHtml(question.intent)}</p>` : "";
   const example = question.example ? `\n        <p class="q-example">${escapeHtml(question.example)}</p>` : "";
   const why = question.whyItMatters
@@ -67,7 +72,7 @@ function questionArticle(question) {
         </details>`
     : "";
   return `      <article class="q" id="q-${escapeHtml(question.id)}" data-question="${escapeHtml(question.id)}">
-        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}${mood}</h2>${intent}${example}
+        <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}${mood}</h2>${scene}${intent}${example}
         <h3 class="q-label">${escapeHtml(SITE_COPY.choicesLabel)}</h3>
         <ul class="q-choices">
 ${choices}

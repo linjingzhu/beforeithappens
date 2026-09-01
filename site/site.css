@@ -382,6 +382,19 @@ html { scroll-padding-top: 120px; }
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * The situation a question is asked inside. Set apart on its own ground rather than as another
+ * paragraph, because it is the one block on the card that is not addressed to the reader — it is
+ * the scene both people are picturing, and reading it as instruction changes the question.
+ */
+.q-scene {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ab-soft);
+  color: var(--ab-ink);
+}
+
 .q-intent { margin: 0 0 8px; }
 
 /* The Part's own line, once, under its title. */

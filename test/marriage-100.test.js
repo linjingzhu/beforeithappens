@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readSourceQuestions, toPack } from "../scripts/build-marriage-100.mjs";
+import { readSource, toPack } from "../scripts/build-marriage-100.mjs";
 import { marriage100Pack } from "../src/questions-marriage-100.js";
 import { PACK_SURFACE, definePack } from "../src/pack-schema.js";
 
@@ -11,20 +11,32 @@ import { PACK_SURFACE, definePack } from "../src/pack-schema.js";
  * edit to both fails in CI rather than in front of a reader.
  */
 test("the generated pack still matches the editorial source it came from", async () => {
-  const fromSource = toPack(await readSourceQuestions());
+  const fromSource = toPack(await readSource());
 
   assert.equal(fromSource.questions.length, 100, "the source is a hundred questions");
   assert.equal(fromSource.sections.length, 10);
   assert.deepEqual(
-    marriage100Pack.sections.map((section) => ({ id: section.id, title: section.title })),
+    marriage100Pack.sections.map((section) => ({
+      id: section.id,
+      title: section.title,
+      blurb: section.blurb
+    })),
     fromSource.sections
   );
+  // Every field the source writes, not just the question: a scene, a mood or a value name lost on
+  // the way across is copy the reader never sees and nothing else would report.
   assert.deepEqual(
     marriage100Pack.questions.map((question) => ({
       id: question.id,
       sectionId: question.sectionId,
       title: question.title,
-      choices: question.choices.map((choice) => ({ id: choice.id, label: choice.label }))
+      scene: question.scene,
+      mood: question.mood,
+      choices: question.choices.map((choice) => ({
+        id: choice.id,
+        label: choice.label,
+        valueLabel: choice.valueLabel
+      }))
     })),
     fromSource.questions,
     "regenerate with `node scripts/build-marriage-100.mjs`"
@@ -89,9 +101,9 @@ test("a site pack carries a guidance field on every question or on none", () => 
     "researchKeywords is app-only"
   );
 
-  // Half a set is the failure this catches: 임신 100제 has a scene on all hundred, 결혼 100제 on
+  // Half a set is the failure this catches: a pack may carry a scene on all hundred questions or on
   // none, and both are fine. Ninety-nine of a hundred is somebody having lost one.
-  for (const field of ["intent", "example", "whyItMatters", "mood"]) {
+  for (const field of ["intent", "example", "whyItMatters", "mood", "scene"]) {
     const onAll = definePack({ ...base, questions: base.questions.map((q) => ({ ...q, [field]: "값" })) });
     assert.equal(onAll.questions[0][field], "값", `${field} on every question is allowed`);
     assert.throws(

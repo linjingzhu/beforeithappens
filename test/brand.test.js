@@ -23,10 +23,12 @@ function renderedCharacters() {
   for (const entry of PUBLISHED) {
     parts.push(entry.title, entry.navTitle || "", entry.description, entry.lead);
     const pack = findPack(entry.packId);
-    for (const section of pack.sections) parts.push(section.title);
+    // Everything a page can print. A scene, a mood, a value name and a section's blurb all reach
+    // the reader, and a character the subset lacks falls back to another face mid-sentence.
+    for (const section of pack.sections) parts.push(section.title, section.blurb || "");
     for (const question of pack.questions) {
-      parts.push(question.title);
-      for (const choice of question.choices) parts.push(choice.label);
+      parts.push(question.title, question.scene || "", question.mood || "");
+      for (const choice of question.choices) parts.push(choice.label, choice.valueLabel || "");
     }
   }
   for (const copy of [SITE_COPY, RESULT_COPY]) {
