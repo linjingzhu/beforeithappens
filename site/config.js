@@ -57,7 +57,14 @@ export const PUBLISHED = Object.freeze([
      * answer. It is what the hundred are for, said once.
      */
     tagline: "우리는 사랑 다음의 장면까지 얼마나 알고 있을까요?",
-    description: "주말 아침의 온도부터 돈, 양가, 커리어, 아이, 아픔과 노년까지. 아직 오지 않은 하루를 미리 함께 걸으며 두 사람만의 결혼을 발견하는 질문집입니다.",
+    /**
+     * Written as lines rather than one string: the break between the two sentences is the author's,
+     * and letting the measure decide where it falls would lose it. Search engines get them joined.
+     */
+    description: Object.freeze([
+      "우리는 같은 미래를 꿈꾸고 있지만 같은 하루를 상상하고 있었던 것은 아닐지 모릅니다.",
+      "서로의 생각을 깊이 알게 될 때, 결혼은 조금 더 따뜻하고 현실적인 약속이 됩니다."
+    ]),
     /** Shown above the questions, before the first one. */
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
   })

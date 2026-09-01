@@ -49,7 +49,9 @@ import('./src/packs.js').then(async (packs) => {
   const { PUBLISHED } = await import('./site/config.js');
   const parts = [];
   for (const entry of PUBLISHED) {
-    parts.push(entry.title, entry.description, entry.lead);
+    parts.push(entry.title, entry.navTitle || '', entry.tagline || '', entry.lead);
+    // A description may be authored as lines.
+    for (const line of [].concat(entry.description || [])) parts.push(line);
     const pack = packs.findPack(entry.packId);
     for (const section of pack.sections) parts.push(section.title);
     for (const question of pack.questions) {

@@ -1,6 +1,6 @@
 import { escapeHtml } from "../src/html.js";
 import { SITE } from "./config.js";
-import { absoluteUrl, indexModel } from "./content.js";
+import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
@@ -149,14 +149,16 @@ ${partTabs(chrome.parts)}
 ${progressBar(chrome.total)}
       </div>`
     : "";
-  // A page says its name, and under it the one line that says what the page is for. On a pack that
-  // opening belongs on the way in only: repeating it above all ten Parts would push the questions
-  // off the screen nine times to say what the reader has already read.
+  // A page says its name, and under it what the page is for. The whole opening is the same on every
+  // Part — it introduces the pack, not the Part — so it is shown on all of them rather than only on
+  // the way in. Its lines are the author's: a description written as two sentences keeps the break
+  // it was written with instead of letting the measure choose one.
   const tagline = chrome.tagline
     ? `\n        <p class="stage-tagline">${escapeHtml(chrome.tagline)}</p>`
     : "";
-  const blurb = chrome.description
-    ? `\n        <p class="stage-blurb">${escapeHtml(chrome.description)}</p>`
+  const lines = descriptionLines(chrome.description);
+  const blurb = lines.length
+    ? `\n        <p class="stage-blurb">${lines.map(escapeHtml).join("<br>\n          ")}</p>`
     : "";
   return `      <header class="stage-head">
         <h1>${escapeHtml(chrome.title)}</h1>${tagline}${blurb}
@@ -304,8 +306,8 @@ ${callToAction(site)}
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
-      tagline: model.first ? model.tagline : "",
-      description: model.first ? model.description : "",
+      tagline: model.tagline,
+      description: model.description,
       parts: model.parts,
       total: model.total
     }
