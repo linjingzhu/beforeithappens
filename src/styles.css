@@ -609,12 +609,18 @@ footer button {
     grid-template-columns: auto 1fr auto;
   }
 
+  .actions > .secondary {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .save-state {
     grid-column: 2;
     grid-row: 1;
   }
 
-  .actions button {
+  .actions > .primary {
+    grid-column: 3;
     grid-row: 1;
   }
 }
