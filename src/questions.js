@@ -1,5 +1,14 @@
-export const marriagePack = {
-  id: "marriage-preparation", version: "2026.08-preview.2", locale: "ko-KR", title: "Marriage Preparation Pack", estimatedMinutes: 25, freeQuestionCount: 3,
+import { definePack } from "./pack-schema.js";
+
+/**
+ * The marriage pack's content. Shape, ordering and validation live in `definePack`; the registry
+ * that makes it findable alongside future packs lives in `src/packs.js`. This file stays what it
+ * has always been — the questions themselves — and keeps exporting `marriagePack` and `questions`
+ * so the sixteen modules that import them do not have to change.
+ */
+export const marriagePack = definePack({
+  id: "marriage-preparation", catalogId: "marriage", audience: "couple",
+  version: "2026.08-preview.2", locale: "ko-KR", title: "Marriage Preparation Pack", estimatedMinutes: 25, freeQuestionCount: 3,
   sections: [
     { id: "home", title: "함께 사는 집", description: "생활 공간과 역할에 대한 서로의 기대를 발견합니다." },
     { id: "connection", title: "친밀감과 개인 시간", description: "애정을 느끼는 방식과 각자에게 필요한 시간을 확인합니다." },
@@ -22,7 +31,7 @@ export const marriagePack = {
     { id: "connection-01", sectionId: "connection", number: 11, title: "유난히 지친 한 주가 끝났을 때 어떤 순간에 가장 연결되어 있다고 느끼나요?", intent: "힘을 회복하면서 애정을 체감하는 방식을 서로 알아보는 질문이에요.", example: "예: 둘 다 바빴고 주말에 겨우 함께 시간을 보내게 된 상황을 떠올려 보세요.", whyItMatters: "애정을 표현해도 상대가 기대한 방식과 다르면 노력 자체를 알아보기 어려울 수 있습니다. 한 가지 방식이 더 좋은 것이 아니라, 지친 때 특히 도움이 되는 연결 방식을 구체적으로 나누는 질문입니다.", researchKeywords: ["애정 표현", "정서적 연결", "관계 의식"], choices: [{id:"connection01-talk",label:"방해 없이 서로의 한 주를 들어주는 대화"},{id:"connection01-touch",label:"포옹이나 손잡기 같은 편안한 신체적 친밀감"},{id:"connection01-care",label:"식사나 집안일을 챙겨주는 실질적인 배려"},{id:"connection01-activity",label:"산책이나 취미처럼 함께하는 집중된 시간"}] },
     { id: "connection-02", sectionId: "connection", number: 12, title: "특별한 일정이 없는 주말, 함께하는 시간과 개인 시간을 어느 정도로 나누고 싶나요?", intent: "가까움과 독립성을 모두 지키는 주말의 기본 비율을 찾아보는 질문이에요.", example: "예: 토요일과 일요일 모두 약속이 없는 주말을 떠올려 보세요.", whyItMatters: "함께 있고 싶은 마음과 혼자 회복하고 싶은 필요는 동시에 존재할 수 있습니다. 개인 시간을 거절이나 무관심으로 오해하지 않도록 서로 편안한 기본 비율을 확인하는 것이 목적입니다.", researchKeywords: ["개인 시간", "관계 자율성", "공동 여가"], choices: [{id:"connection02-all",label:"거의 모든 시간을 함께 보낸다"},{id:"connection02-more-together",label:"함께하는 시간을 개인 시간보다 더 많이 둔다"},{id:"connection02-even",label:"함께하는 시간과 개인 시간을 비슷하게 나눈다"},{id:"connection02-more-separate",label:"개인 시간을 함께하는 시간보다 더 많이 둔다"}] }
   ]
-};
-const sectionsById = Object.fromEntries(marriagePack.sections.map(section => [section.id, section]));
-const sectionOrder = Object.fromEntries(marriagePack.sections.map((section, index) => [section.id, index]));
-export const questions = [...marriagePack.questions].sort((a, b) => sectionOrder[a.sectionId] - sectionOrder[b.sectionId]).map((question, index) => ({ ...question, number: index + 1, chapter: sectionsById[question.sectionId].title }));
+});
+
+/** The same list `definePack` derived, kept as a named export for every existing caller. */
+export const questions = marriagePack.orderedQuestions;
