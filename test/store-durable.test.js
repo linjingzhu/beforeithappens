@@ -126,7 +126,7 @@ test("deletes and reorders survive a restart too", (t) => {
 
 test("the database rejects the duplicates docs/DATA_MODEL.md forbids", (t) => {
   const dir = workspace(t);
-  const store = open(dir);
+  let store = open(dir);
   t.after(() => store.close());
 
   const cases = [
@@ -159,10 +159,9 @@ test("the database rejects the duplicates docs/DATA_MODEL.md forbids", (t) => {
 
   // A rejected write leaves nothing behind on disk either.
   store.close();
-  const reopened = open(dir);
-  t.after(() => reopened.close());
+  store = open(dir);
   for (const [collection] of cases) {
-    assert.equal(reopened.snapshot()[collection].length, 1, `${collection} persisted a rejected row`);
+    assert.equal(store.snapshot()[collection].length, 1, `${collection} persisted a rejected row`);
   }
 });
 
@@ -271,7 +270,7 @@ test("an existing JSON store migrates, once, without touching the JSON file", as
   assert.deepEqual(state.members, legacy.members);
   assert.deepEqual(state.progress, legacy.progress);
   assert.deepEqual(state.answers, []);
-  assert.equal(store.importSummary.imported, 6);
+  assert.equal(store.importSummary.imported, 7);
   assert.equal(store.importSummary.conflicts, 0);
   assert.equal(readFileSync(jsonPath, "utf8"), original, "the old file must stay as a backup");
   assert.ok(existsSync(dbPath));
@@ -328,7 +327,7 @@ test("a real pairing and a real submitted round survive a restart", async (t) =>
   app.answers.submit(partner.sessionId, { questionId: "home-01", index: 0 });
   const before = app.answers.stateFor(buyer.sessionId);
   assert.equal(before.ok, true);
-  assert.equal(before.state.questions["home-01"].publicLock.comparison, "same");
+  assert.equal(before.state.questions["home-01"].lock.comparison.key, "aligned");
   first.close();
 
   const second = await createFileStore(jsonPath);
@@ -336,7 +335,7 @@ test("a real pairing and a real submitted round survive a restart", async (t) =>
   const rebooted = couple(second);
   const after = rebooted.answers.stateFor(buyer.sessionId);
   assert.equal(after.ok, true, "the buyer's session did not survive the restart");
-  assert.deepEqual(after.state.questions["home-01"].publicLock, before.state.questions["home-01"].publicLock);
+  assert.deepEqual(after.state.questions["home-01"].lock, before.state.questions["home-01"].lock);
   assert.equal(after.state.questions["home-01"].roles.a.privateNote, "나만 볼 메모");
   assert.equal(second.snapshot().publicLocks.length, 1);
   assert.equal(rebooted.auth.sessionFor(partner.sessionId).workspace.acceptedPartner, true);

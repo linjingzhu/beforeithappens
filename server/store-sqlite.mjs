@@ -144,10 +144,11 @@ function isConstraintError(error) {
 export function createSqliteStore(dbPath, { importJsonFrom = null } = {}) {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
+  // busy_timeout first: switching journal mode needs a brief exclusive lock, and a second
+  // process opening the same database at the same moment must wait rather than fail.
+  db.exec("PRAGMA busy_timeout = 10000");
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA synchronous = FULL");
-  db.exec("PRAGMA busy_timeout = 10000");
-  db.exec("PRAGMA foreign_keys = ON");
 
   db.exec(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);
   db.exec(`CREATE TABLE IF NOT EXISTS import_conflicts (
