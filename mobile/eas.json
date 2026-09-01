@@ -19,7 +19,8 @@
     "production": {
       "distribution": "store",
       "env": {
-        "EXPO_PUBLIC_STORE_BUILD": "1"
+        "EXPO_PUBLIC_STORE_BUILD": "1",
+        "EXPO_PUBLIC_API_ORIGIN": "https://loveme-api.onrender.com"
       },
       "android": {
         "buildType": "app-bundle"

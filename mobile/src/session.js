@@ -16,8 +16,19 @@ import { WITHDRAW_ERRORS } from "./copy.js";
 
 let cookie = "";
 
+/**
+ * The deployment the app talks to, set by `mobile/eas.json`.
+ *
+ * Expo substitutes the *literal* expression `process.env.EXPO_PUBLIC_API_ORIGIN` while
+ * bundling; nothing reads an environment variable at runtime on a phone. Written with an
+ * optional chain (`globalThis.process?.env?.…`) it is not a substitution target, so it read
+ * `undefined` in every built app: every request went to a bare `/api/...` with no host, the
+ * owner could never get a login link, and S4's share URL had no origin to become absolute
+ * against. The `typeof` guard keeps this safe where there is no `process` at all.
+ */
 export function apiOrigin() {
-  return String(globalThis.process?.env?.EXPO_PUBLIC_API_ORIGIN || "");
+  if (typeof process === "undefined" || !process.env) return "";
+  return String(process.env.EXPO_PUBLIC_API_ORIGIN || "");
 }
 
 export function hostCookieAccess() {

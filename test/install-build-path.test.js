@@ -27,6 +27,18 @@ test("the app build knows which server to call on both platforms", async () => {
   );
 });
 
+test("every profile that ships to a phone knows the server, store build included", async () => {
+  const eas = await readJson("mobile/eas.json");
+  for (const [name, profile] of Object.entries(eas.build)) {
+    const origin = profile.env?.EXPO_PUBLIC_API_ORIGIN;
+    assert.match(
+      String(origin || ""),
+      /^https:\/\//,
+      `${name} builds an app with no server to call; apiOrigin() would resolve to an empty host`
+    );
+  }
+});
+
 test("the Android install doc explains the path without inventing an artifact", async () => {
   await access("docs/ANDROID_INSTALL.md");
   const docs = await readFile("docs/ANDROID_INSTALL.md", "utf8");
