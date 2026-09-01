@@ -113,6 +113,25 @@ export function createAccount({ store, now = Date.now, audit = null } = {}) {
       state.entitlements = rows(state, "entitlements").filter((item) => !removed.has(item.workspaceId));
       state.workspaces = rows(state, "workspaces").filter((item) => !removed.has(item.id));
 
+      // A referral row names two people, so it cannot outlive either of them. This does cost the
+      // sharer a credit when someone they brought in leaves; the alternative is keeping a record
+      // of a person who asked to be forgotten. A reward already minted is a gift row of its own
+      // and survives, because by then it is the sharer's, not a fact about anybody else.
+      state.referralCodes = rows(state, "referralCodes").filter((item) => item.userId !== userId);
+      state.referrals = rows(state, "referrals").filter((item) =>
+        item.referrerUserId !== userId && item.referredUserId !== userId
+      );
+      // An unredeemed present is a live bearer token pointing at an account that no longer exists,
+      // so it goes with the account rather than staying openable by whoever holds the link.
+      state.packGifts = rows(state, "packGifts").filter((item) => {
+        if (item.fromUserId === userId && !item.redeemedAt) return false;
+        return !removed.has(item.redeemedWorkspaceId);
+      });
+      for (const gift of rows(state, "packGifts")) {
+        if (gift.fromUserId === userId) gift.fromUserId = null;
+        if (gift.redeemedByUserId === userId) gift.redeemedByUserId = null;
+      }
+
       // Shared rows that survive keep their text and lose the pointer to the deleted account.
       for (const agreement of rows(state, "agreements")) {
         if (agreement.proposedByUserId === userId) agreement.proposedByUserId = null;

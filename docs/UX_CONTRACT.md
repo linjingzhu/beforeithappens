@@ -63,6 +63,36 @@ Invite-waiting home (buyer, no pack CTA):
 | In-app browser CTA | 브라우저에서 열기 |
 | Draft badge | 나만 보임 |
 
+Recommend a friend, and gift the pack:
+
+| State | Copy |
+|---|---|
+| Recommend title | 친구에게 추천하기 |
+| Recommend body | 링크를 보내면 친구도 여기서 시작할 수 있어요. |
+| Recommend code label | 내 추천 코드 |
+| Recommend counts | 함께 시작한 친구 |
+| Recommend reward rule | 추천한 친구가 결혼 팩을 열면 선물을 드려요. |
+| Gift title | 결혼 팩 선물하기 |
+| Gift body | 링크를 받은 사람이 열면, 그 사람의 팩이 열려요. 내 팩은 그대로예요. |
+| Gift CTA | 선물 링크 만들기 |
+| Gift sent title | 보낸 선물 |
+| Gift status waiting | 아직 받지 않았어요 |
+| Gift status used | 받았어요 |
+| Gift status expired | 기한이 지났어요 |
+| Gift status revoked | 취소했어요 |
+| Gift revoke CTA | 링크 취소하기 |
+| Gift arrived title | 선물이 도착했어요. |
+| Gift arrived body | 결혼 팩을 열 수 있는 선물이에요. |
+| Gift accept CTA | 선물 받기 |
+| Gift login required | 선물을 받으려면 먼저 로그인해 주세요. |
+| Gift used | 이미 사용된 선물이에요. |
+| Gift expired | 선물의 기한이 지났어요. 보낸 사람에게 새 링크를 부탁해 주세요. |
+| Gift revoked | 취소된 선물이에요. |
+| Gift self | 내가 보낸 선물은 내가 받을 수 없어요. |
+| Gift already entitled | 이미 팩이 열려 있어요. 이 선물은 다른 사람에게 보낼 수 있어요. |
+
+The share row is the same one the invite screen uses — `링크 복사` / `인스타그램` / `카카오톡`, the copy-failure line, and the link shown as text — because a person who has learned to send one of these links has learned to send all three.
+
 Recommended web install (not a gate):
 
 | State | Copy |

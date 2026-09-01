@@ -18,6 +18,9 @@ export function emptyState() {
     purchases: [],
     entitlements: [],
     webhookEvents: [],
+    packGifts: [],
+    referralCodes: [],
+    referrals: [],
     auditEvents: [],
     reportSnapshots: []
   };

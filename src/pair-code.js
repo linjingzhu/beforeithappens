@@ -169,6 +169,31 @@ export function inviteShareUrl(origin) {
   return `${base}/invite/open`;
 }
 
+/**
+ * A present and a recommendation are both links a person sends to someone who may not have the
+ * app, so both stay plain https at the deployed origin. Neither is the `loveme://` scheme: the
+ * native app registers no universal links, so an app-scheme link would open nothing for the very
+ * people these are aimed at.
+ */
+export const GIFT_REDEEM_PATH = "/gift/redeem";
+export const REFERRAL_PATH = "/r";
+
+export function giftRedeemUrl(origin, token) {
+  const base = String(origin || "").replace(/\/$/, "");
+  return `${base}${GIFT_REDEEM_PATH}?token=${encodeURIComponent(String(token || ""))}`;
+}
+
+export function referralUrl(origin, code) {
+  const base = String(origin || "").replace(/\/$/, "");
+  return `${base}${REFERRAL_PATH}/${encodeURIComponent(normalizePairCode(code))}`;
+}
+
+/** Reads the code back out of a shared link, tolerating a trailing slash or a query the app added. */
+export function referralCodeFromPath(pathname) {
+  const match = String(pathname || "").match(/^\/r\/([^/?#]+)/);
+  return match ? normalizePairCode(decodeURIComponent(match[1])) : "";
+}
+
 export function shareContainsPairCode(url, code) {
   const haystack = String(url || "").toUpperCase();
   const needle = normalizePairCode(code);

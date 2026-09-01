@@ -39,6 +39,10 @@ export const AUDIT_ACTIONS = Object.freeze([
   "invite-issued",
   "invite-accepted",
   "entitlement-granted",
+  "gift-issued",
+  "gift-redeemed",
+  "referral-claimed",
+  "referral-credited",
   "account-deleted"
 ]);
 
@@ -72,9 +76,19 @@ const CONTEXT_FIELDS = Object.freeze({
     viaPairCode: boolean
   },
   "entitlement-granted": {
-    source: oneOf("purchase", "webhook"),
+    source: oneOf("purchase", "webhook", "gift"),
     amount: count,
     currency: oneOf("KRW")
+  },
+  "gift-issued": {
+    origin: oneOf("purchase", "referral")
+  },
+  "gift-redeemed": {
+    origin: oneOf("purchase", "referral")
+  },
+  "referral-claimed": {},
+  "referral-credited": {
+    rewarded: boolean
   },
   "account-deleted": {
     partnerRemains: boolean,
@@ -234,6 +248,43 @@ export function createAudit({ store, now = Date.now } = {}) {
         workspaceId,
         orderId,
         context: { source, amount, currency },
+        at
+      });
+    },
+
+    recordGiftIssued({ userId, origin = "purchase", at } = {}) {
+      return record({
+        action: "gift-issued",
+        actorUserId: userId,
+        context: { origin },
+        at
+      });
+    },
+
+    recordGiftRedeemed({ userId, workspaceId, origin = "purchase", at } = {}) {
+      return record({
+        action: "gift-redeemed",
+        actorUserId: userId,
+        workspaceId,
+        context: { origin },
+        at
+      });
+    },
+
+    recordReferralClaimed({ userId, at } = {}) {
+      return record({
+        action: "referral-claimed",
+        actorUserId: userId,
+        context: {},
+        at
+      });
+    },
+
+    recordReferralCredited({ userId, rewarded = false, at } = {}) {
+      return record({
+        action: "referral-credited",
+        actorUserId: userId,
+        context: { rewarded },
         at
       });
     },
