@@ -26,8 +26,6 @@ export const SITE = Object.freeze({
    * insecure page is marked as such in the browser. `AB_SITE_ORIGIN` overrides for previews.
    */
   origin: "https://lovemedialogue.com",
-  /** Where a reader who wants the two-person version goes. Overridden by `AB_APP_ORIGIN`. */
-  appOrigin: "",
   /** Emitted as a CNAME file so Pages keeps serving the custom domain on every deploy. */
   customDomain: "lovemedialogue.com",
   /**
@@ -37,6 +35,20 @@ export const SITE = Object.freeze({
    */
   contactEmail: "loveme@afterscent.kr",
   locale: "ko-KR",
+  /**
+   * AdSense, and the two facts it needs.
+   *
+   * `adsenseClient` is the publisher id (`ca-pub-…`), `adsenseSlot` the unit's id. Empty means no
+   * script, no unit and no `ads.txt` — the pages build and read exactly as they do now, and there
+   * is nothing to remember to switch off in a preview. Filling both in is what turns the site into
+   * the MVP; until then the slot on each page stays the empty box it has always been.
+   *
+   * Google will not approve a site without a privacy policy that says what is collected. This one
+   * keeps answers in the reader's own browser, but AdSense itself sets cookies, so that page has
+   * to exist and has to say so — `docs/OWNER_ACTIONS.md` N5.
+   */
+  adsenseClient: "",
+  adsenseSlot: "",
   /**
    * The question-review block under every question, and the switch that takes it away.
    *

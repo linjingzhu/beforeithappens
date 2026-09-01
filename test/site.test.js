@@ -165,14 +165,15 @@ test("the ad slot is present, positioned, and empty", () => {
   assert.ok(slotAt < html.indexOf('class="pager"'), "and before the control that leaves the page");
 });
 
-test("every page offers the way into the two-person version", () => {
+test("every page offers the invitation, and it goes to these questions rather than to an app", () => {
+  // There is no app. What a reader hands the other person is a link to the same questions, so the
+  // control points at the pack — and with no script that address is the whole invitation anyway.
   for (const page of [1, LAST_PAGE]) {
     const html = renderQuestionPage(pageModel("marriage", page, { site }), site);
     assert.ok(has(html, SITE_COPY.ctaAction));
-    assert.ok(has(html, 'href="https://app.example"'), "the CTA points at the app when an origin is set");
+    assert.ok(has(html, 'class="cta-action" href="/marriage/" data-invite'), "it points at the pack");
+    assert.equal(has(html, "app.example"), false, "and never at an app origin");
   }
-  const noOrigin = renderQuestionPage(pageModel("marriage", 1, {}), SITE);
-  assert.ok(has(noOrigin, 'class="cta-action" href="/"'), "and degrades to / rather than to nothing");
 });
 
 test("turning a page is a real navigation, not a script", () => {
@@ -661,7 +662,7 @@ test("the marriage source is sliced by index, not scanned by a lazy regex", asyn
   assert.equal(raw.values.every((set) => set.length === 4), true);
 });
 
-test("every question carries the notes block and the conversation, and neither is prefilled", () => {
+test("every question carries the notes block, and nothing in it is prefilled", () => {
   const model = pageModel(PUBLISHED[0].slug, 1, { site });
   const html = renderQuestionPage(model, site);
 
@@ -670,20 +671,17 @@ test("every question carries the notes block and the conversation, and neither i
     // one of these while another has two.
     const start = html.indexOf(`data-question="${question.id}"`);
     const article = html.slice(start, html.indexOf("</article>", start));
-    for (const field of ["importance", "reason", "guess", "rule"]) {
+    for (const field of ["importance", "reason", "guess"]) {
       assert.equal(
         (article.match(new RegExp(`data-note="${field}"`, "g")) || []).length,
         1,
         `${question.id} has one ${field} field`
       );
     }
-    assert.match(article, /<details class="q-talk">/, `${question.id} conversation`);
-    assert.ok(article.includes(SITE_COPY.talkLabel));
-    assert.ok(article.includes(SITE_COPY.ruleLabel));
-    for (const step of SITE_COPY.talkSteps) assert.ok(article.includes(step.body), step.lead);
-    // The conversation is shut on arrival: opened, it reads as a stated right way through the
-    // question before the reader has answered it.
-    assert.equal(/<details class="q-talk" open/.test(article), false);
+    // The conversation block that used to sit here — three steps and a working rule — is gone at
+    // the owner's word, along with the `rule` field it wrote into.
+    assert.equal(article.includes("q-talk"), false);
+    assert.equal(article.includes('data-note="rule"'), false);
     // Nothing is answered for the reader — no option preselected, no textarea with content in it.
     assert.equal(/<option value="[^"]+" selected/.test(article), false);
     assert.equal(/<textarea[^>]*>[^<]/.test(article), false, "textareas ship empty");
@@ -703,8 +701,8 @@ test("the review block is behind one flag, and the page it leaves is intact", ()
   for (const marker of ["data-feedback", "q-stars", "DEBUG", "★"]) {
     assert.equal(without.includes(marker), false, `${marker} goes with the flag`);
   }
-  // And the question itself is untouched: the notes, the conversation and the answer all remain.
-  for (const marker of ['data-note="reason"', 'class="q-talk"', "q-choices"]) {
+  // And the question itself is untouched: the notes and the answer remain.
+  for (const marker of ['data-note="reason"', 'data-note="guess"', "q-choices"]) {
     assert.ok(without.includes(marker), `${marker} is not part of the debug block`);
   }
 });
@@ -735,7 +733,7 @@ test("a question keeps what was written beside it, before and after it is answer
   assert.equal(answers.items.q1.reason, "약속 없는 날이 제일 좋아서");
   assert.equal(answeredCount(answers), 1);
 
-  // Only the four named fields, and importance only from its own list.
+  // Only the three named fields, and importance only from its own list.
   answers = withNote(answers, "q1", "importance", "need");
   assert.equal(answers.items.q1.importance, "need");
   assert.equal(withNote(answers, "q1", "importance", "매우").items.q1.importance, undefined);
@@ -747,8 +745,12 @@ test("a question keeps what was written beside it, before and after it is answer
   assert.equal(onlyNotes.items.q2, undefined);
 
   // A runaway paste cannot fill the quota and take the other answers down with it.
-  const long = withNote(emptyAnswers("marriage"), "q3", "rule", "가".repeat(5000));
-  assert.equal(long.items.q3.rule.length, 2000);
+  const long = withNote(emptyAnswers("marriage"), "q3", "reason", "가".repeat(5000));
+  assert.equal(long.items.q3.reason.length, 2000);
+
+  // The block that wrote a working rule is gone, and so is the field: a note nothing can write is
+  // a note nobody can read back.
+  assert.equal(withNote(answers, "q1", "rule", "기본은 오후 외출").items.q1.rule, undefined);
 
   // And it all survives a round trip through storage.
   assert.deepEqual(parseAnswers(serializeAnswers(answers), "marriage").items.q1, answers.items.q1);
@@ -869,4 +871,96 @@ test("the result page offers the link, and the build ships the module that makes
   // The payload rides in the fragment, which is the whole reason this can exist on a static site:
   // everything after `#` stays in the browser and reaches no server.
   assert.match(readFileSync("site/enhance.js", "utf8"), /#c=\$\{payload\}/);
+});
+
+test("a result can be mailed from the sheet, and the site still sends nothing", async () => {
+  const { composeResultMail, mailtoHref, MAIL_BODY_LIMIT } = await import("../site/mail.js");
+  const { RESULT_COPY } = await import("../site/result-copy.js");
+
+  const rows = Array.from({ length: 40 }, (_, i) => ({
+    number: i + 1,
+    title: `질문 ${i + 1} — 이 문장은 한 줄을 채울 만큼 깁니다.`,
+    mine: "내가 고른 답",
+    theirs: "상대가 고른 답"
+  }));
+
+  const letter = composeResultMail({ title: "결혼 100제", rows, link: "https://ab.example/x#c=v1", compared: true });
+  assert.equal(letter.subject, RESULT_COPY.mailSubjectCompared("결혼 100제"));
+  assert.ok(letter.body.startsWith(RESULT_COPY.mailBothWarning), "it says whose answers are in it");
+  // A mailto is a URL and a URL has a limit, so the letter carries what fits and links to the rest
+  // rather than being silently cut by whichever program opens it.
+  assert.ok(letter.body.length <= MAIL_BODY_LIMIT, `${letter.body.length} within ${MAIL_BODY_LIMIT}`);
+  assert.ok(letter.written > 0 && letter.left === rows.length - letter.written);
+  assert.ok(letter.body.includes(RESULT_COPY.mailMore(letter.left)));
+  assert.ok(letter.body.includes("https://ab.example/x#c=v1"));
+
+  // One person's own answers: no warning, and no link, because everything fits and a link that
+  // carries answers has no business in a mail that did not need one.
+  const alone = composeResultMail({
+    title: "결혼 100제",
+    rows: [{ number: 1, title: "질문", choice: "고른 답" }],
+    link: "https://ab.example/x",
+    compared: false
+  });
+  assert.equal(alone.subject, RESULT_COPY.mailSubject("결혼 100제"));
+  assert.equal(alone.body.includes("https://"), false);
+  assert.equal(alone.left, 0);
+
+  // The recipient is left for the reader to choose, so no address is ever the site's.
+  const href = mailtoHref(alone);
+  assert.ok(href.startsWith("mailto:?"), href.slice(0, 20));
+  assert.equal(decodeURIComponent(href).includes(alone.body), true);
+
+  // And the sheet offers it.
+  const html = renderResultPage(PUBLISHED[0].slug, published, site);
+  assert.match(html, /data-mail-open/);
+  assert.match(html, /data-mail-copy/);
+  assert.ok(html.includes(RESULT_COPY.mailNote));
+  // The pack's own name travels with the index, so the subject is not the sheet's title.
+  assert.match(html, new RegExp(`"title":"${PUBLISHED[0].title}"`));
+});
+
+test("AdSense is two ids away, and absent until they are set", () => {
+  const withAds = siteWith({ ...site, adsenseClient: "ca-pub-1234567890123456", adsenseSlot: "9876543210" });
+  const on = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site: withAds }), withAds);
+  assert.match(on, /pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=ca-pub-1234567890123456/);
+  assert.equal((on.match(/class="adsbygoogle"/g) || []).length, 1, "one unit a page");
+  // An ad is not hidden from a screen reader once it is really there.
+  assert.equal(on.includes('data-ad-slot="after-questions" aria-hidden'), false);
+  // The site's own rule about where: after the questions, before the control that leaves the page.
+  assert.ok(on.indexOf('class="adsbygoogle"') > on.indexOf('class="questions"'));
+  assert.ok(on.indexOf('class="adsbygoogle"') < on.indexOf('class="pager"'));
+
+  // Nothing at all until a publisher is named — no script, no unit, and the empty box stays hidden.
+  const off = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+  assert.equal(off.includes("adsbygoogle"), false);
+  assert.equal(off.includes("googlesyndication"), false);
+  assert.match(off, /<div class="ad-slot" data-ad-slot="after-questions" aria-hidden="true">/);
+
+  // ads.txt names the publisher, so it is written only when there is one.
+  const build = readFileSync("scripts/build-site.mjs", "utf8");
+  assert.match(build, /if \(site\.adsenseClient\)/);
+  assert.match(build, /google\.com, \$\{publisher\}, DIRECT, f08c47fec0942fa0/);
+});
+
+test("둘이 함께 해보기 sends the invite link, and the link carries no answers", async () => {
+  const { INVITE_COPY } = await import("../site/invite-copy.js");
+  const html = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+
+  // The owner names this control, and what it does is send the other person a link to the same
+  // questions — the share sheet on a phone, the clipboard on a desktop.
+  assert.ok(html.includes(SITE_COPY.ctaAction));
+  assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
+  assert.match(html, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
+
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
+  assert.match(enhance, /navigator\.clipboard\.writeText\(url\)/);
+  assert.ok(INVITE_COPY.shareText && INVITE_COPY.copied);
+
+  // This is the invite link, not the answer link: it holds the pack's address and nothing else, so
+  // it is the one of the three that is safe to put anywhere.
+  assert.equal(html.includes('data-invite>') && html.includes("#c="), false);
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /"invite-copy\.js"/);
 });

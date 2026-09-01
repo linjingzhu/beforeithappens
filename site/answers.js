@@ -14,8 +14,8 @@
  * of answers into "these are the ones to bring to the other person".
  *
  * A question also holds what the reader wrote beside it: how much the choice matters to them, why
- * they chose it, what they think the other person will choose, and the working rule the two of them
- * settled on. Those are notes, not data about a person: they never leave the browser either, and
+ * they chose it, and what they think the other person will choose. Those are notes, not data about
+ * a person: they never leave the browser either, and
  * `importance` is the only one with fixed values, so it is the only one checked against a list.
  * Notes can exist without a choice — someone may write before they decide — so an item is kept if
  * it carries either. Each note is capped, because a runaway paste is the one way a page of
@@ -24,7 +24,7 @@
 
 /** The named fields a question can carry beside its choice, and what each one may hold. */
 export const IMPORTANCE_VALUES = Object.freeze(["light", "hope", "need"]);
-export const NOTE_FIELDS = Object.freeze(["importance", "reason", "guess", "rule"]);
+export const NOTE_FIELDS = Object.freeze(["importance", "reason", "guess"]);
 const NOTE_MAX = 2000;
 
 function validNote(field, value) {

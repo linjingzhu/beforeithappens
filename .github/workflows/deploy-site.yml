@@ -48,10 +48,8 @@ jobs:
 
       - name: Build site
         env:
-          # Overrides the default in site/config.js; set AB_APP_ORIGIN once the app has a public
-          # origin, and the call to action stops pointing at "/".
+          # Overrides the default in site/config.js.
           AB_SITE_ORIGIN: https://lovemedialogue.com
-          AB_APP_ORIGIN: ${{ vars.AB_APP_ORIGIN }}
         run: node scripts/build-site.mjs
 
       - name: Confirm the custom domain survived the build

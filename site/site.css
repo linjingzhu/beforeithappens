@@ -431,7 +431,6 @@ html { scroll-padding-top: 120px; }
 
 .q-depth select,
 .q-depth textarea,
-.q-talk textarea,
 .q-feedback textarea,
 .result-share-link input {
   width: 100%;
@@ -445,48 +444,17 @@ html { scroll-padding-top: 120px; }
 }
 
 .q-depth textarea,
-.q-talk textarea,
 .q-feedback textarea {
   resize: vertical;
 }
 
 .q-depth select:focus-visible,
 .q-depth textarea:focus-visible,
-.q-talk textarea:focus-visible,
 .q-feedback textarea:focus-visible {
   outline: 2px solid var(--ab-accent);
   outline-offset: 1px;
 }
 
-/* The conversation for after both people have answered. Shut until then. */
-.q-talk {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--ab-line);
-}
-
-.q-talk > summary {
-  cursor: pointer;
-  color: var(--ab-accent);
-  font-weight: 600;
-}
-
-.q-talk p {
-  margin: 11px 0;
-}
-
-.q-rule-label {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.q-talk-closing {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--ab-paper);
-  color: var(--ab-muted);
-}
 
 /*
  * The review block, and the export beside the questions. Both go with `SITE.debugFeedback`; the
@@ -620,6 +588,67 @@ html { scroll-padding-top: 120px; }
   margin-bottom: 6px;
   color: var(--ab-muted);
   font-size: 13px;
+}
+
+.result-mail {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--ab-card);
+  box-shadow: var(--lift-card);
+}
+
+.result-mail h2 {
+  margin: 0 0 6px;
+}
+
+.result-mail > p {
+  margin: 0 0 12px;
+  color: var(--ab-muted);
+}
+
+.result-mail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.result-mail-action,
+.result-mail-copy {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-card);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.result-mail-action:active,
+.result-mail-copy:active {
+  box-shadow: var(--press);
+}
+
+/* Nothing to send yet: the control stays visible and says so when it is pressed. */
+.result-mail-action[aria-disabled="true"] {
+  color: var(--ab-muted);
+}
+
+.result-mail-state {
+  margin: 10px 0 0;
+  color: var(--ab-muted);
+}
+
+/* What the invitation says once a desktop has put it on the clipboard. */
+.cta-state {
+  margin: 12px 0 0;
+  color: var(--ab-muted);
 }
 
 .result-compare {

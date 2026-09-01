@@ -1,6 +1,7 @@
 import { escapeHtml } from "../src/html.js";
-import { SITE } from "./config.js";
+import { publishedBySlug, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
+import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
@@ -33,7 +34,7 @@ export const SITE_COPY = Object.freeze({
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
-  ctaBody: "같은 질문에 상대도 답하면, 서로의 답을 같은 화면에서 볼 수 있어요. 먼저 답한 사람의 답은 상대가 낼 때까지 보이지 않습니다.",
+  ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
   ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
@@ -48,16 +49,6 @@ export const SITE_COPY = Object.freeze({
   ]),
   reasonPlaceholder: "왜 이 답을 골랐나요? 내가 지키고 싶은 마음이나 경험을 적어보세요.",
   guessPlaceholder: "상대는 무엇을 고를까요? 그 이유까지 다정하게 추측해보세요.",
-  /* The part that stays shut until both people have answered. */
-  talkLabel: "답을 나눈 뒤 열어보는 대화",
-  talkSteps: Object.freeze([
-    { lead: "먼저 같은 마음을 찾아요.", body: "선택이 달라도 두 사람 모두 지키고 싶은 것은 무엇인가요?" },
-    { lead: "차이를 부담의 언어로 말해요.", body: "누가 맞는지보다 내가 두려워하는 비용과 책임을 설명해요." },
-    { lead: "예외를 함께 상상해요.", body: "상대의 선택이 더 필요한 날은 어떤 날일까요?" }
-  ]),
-  ruleLabel: "우리의 임시 원칙",
-  rulePlaceholder: "기본 원칙 / 예외 조건 / 다시 이야기할 시점을 적어보세요.",
-  talkClosing: "오늘 꼭 결론 내리지 않아도 괜찮아요. 서로가 무엇을 지키고 싶은지 알게 된 것만으로도 우리는 조금 더 좋은 팀이 되었습니다.",
   noScriptNote: "브라우저 저장이 꺼져 있으면 답이 기억되지 않아요. 질문은 그대로 읽으실 수 있습니다."
 });
 
@@ -81,25 +72,6 @@ ${options}
           <textarea data-note="reason" rows="3" placeholder="${escapeHtml(SITE_COPY.reasonPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.reasonPlaceholder)}"></textarea>
           <textarea data-note="guess" rows="3" placeholder="${escapeHtml(SITE_COPY.guessPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.guessPlaceholder)}"></textarea>
         </div>`;
-}
-
-/**
- * The conversation to have once both people have answered, shut by default. Shut because reading it
- * first turns the question into a test with a stated right way through it; a reader opens it when
- * they are ready to talk, which is the only moment its three steps mean anything.
- */
-function talkBlock(question) {
-  const steps = SITE_COPY.talkSteps
-    .map((step) => `          <p><b>${escapeHtml(step.lead)}</b> ${escapeHtml(step.body)}</p>`)
-    .join("\n");
-  return `
-        <details class="q-talk">
-          <summary>${escapeHtml(SITE_COPY.talkLabel)}</summary>
-${steps}
-          <p class="q-rule-label">${escapeHtml(SITE_COPY.ruleLabel)}</p>
-          <textarea data-note="rule" rows="3" placeholder="${escapeHtml(SITE_COPY.rulePlaceholder)}" aria-label="${escapeHtml(SITE_COPY.ruleLabel)}"></textarea>
-          <p class="q-talk-closing">${escapeHtml(SITE_COPY.talkClosing)}</p>
-        </details>`;
 }
 
 /**
@@ -180,7 +152,7 @@ ${choices}
         <label class="q-undiscussed">
           <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
           <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>${depthBlock(question)}${talkBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
+        </label>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
       </article>`;
 }
 
@@ -190,8 +162,38 @@ ${choices}
  * element exists so the position is fixed by the layout rather than chosen later under pressure —
  * after the questions, before the control that leaves the page.
  */
-function adSlot(model) {
-  return `      <div class="ad-slot" data-ad-slot="${escapeHtml(model.adSlot)}" aria-hidden="true"></div>`;
+/**
+ * Where an ad may go, and what goes there once the publisher ids are set.
+ *
+ * The box has always been on the page and empty; with `SITE.adsenseClient` and `SITE.adsenseSlot`
+ * filled in it carries a real unit. Nothing is `aria-hidden` any more once it holds an ad — a
+ * screen reader hiding an advertisement from its reader is not a courtesy, it is a surprise — but
+ * an empty box stays hidden, because an empty box is nothing to announce.
+ *
+ * One unit per page, after the questions and before the control that leaves the page. That
+ * position is the site's own rule, not the network's: an ad above the questions would sell the
+ * reader's attention before the page has given them anything.
+ */
+function adSlot(model, site = SITE) {
+  const name = escapeHtml(model.adSlot);
+  if (!site?.adsenseClient || !site?.adsenseSlot) {
+    return `      <div class="ad-slot" data-ad-slot="${name}" aria-hidden="true"></div>`;
+  }
+  return `      <div class="ad-slot" data-ad-slot="${name}">
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="${escapeHtml(site.adsenseClient)}"
+          data-ad-slot="${escapeHtml(site.adsenseSlot)}"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>`;
+}
+
+/** The network's own script, once, in the head — and only when there is a publisher to name. */
+function adsenseScript(site) {
+  if (!site?.adsenseClient) return "";
+  return `\n  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${escapeHtml(site.adsenseClient)}" crossorigin="anonymous"></script>`;
 }
 
 /**
@@ -291,12 +293,21 @@ function pager(model) {
       </nav>`;
 }
 
-function callToAction(site) {
-  const href = site.appOrigin || "/";
+/**
+ * The invitation, and the only thing on the page that asks for anything.
+ *
+ * It used to be a link into the app. There is no app: this site is the product, and what a reader
+ * hands the other person is a link to these same questions. So it is a button rather than an
+ * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
+ * own address, which is exactly what the invitation is anyway.
+ */
+function callToAction(model) {
+  const href = model?.slug ? `/${escapeHtml(model.slug)}/` : "/";
   return `      <aside class="cta">
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
         <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
-        <a class="cta-action" href="${escapeHtml(href)}">${escapeHtml(SITE_COPY.ctaAction)}</a>
+        <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
+        <p class="cta-state" data-invite-state hidden></p>
       </aside>`;
 }
 
@@ -376,7 +387,7 @@ ${head}
   <link rel="preload" href="/brand/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/brand/maruburi-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${adsenseScript(site)}
 </head>
 <body>
   <div class="shell">
@@ -403,9 +414,9 @@ export function renderQuestionPage(model, site = SITE) {
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
-${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model)}
+${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
 ${pager(model)}
-${callToAction(site)}
+${callToAction(model)}
       </main>`;
   return document_({
     site,
@@ -445,7 +456,10 @@ export function renderResultPage(slug, questions, site = SITE) {
     // The sheet is personal and has nothing to offer a search engine.
     '  <meta name="robots" content="noindex">'
   ].join("\n");
-  const data = JSON.stringify({ slug, questions: index }).replace(/</g, "\\u003c");
+  // The pack's own name travels with the index: the sheet's <title> is the sheet's, and a mail
+  // about 결혼 100제 should say so rather than "내가 답한 것들".
+  const packTitle = publishedBySlug(slug)?.title || site.name;
+  const data = JSON.stringify({ slug, title: packTitle, questions: index }).replace(/</g, "\\u003c");
   return document_({
     site,
     head,
@@ -466,9 +480,18 @@ export function renderResultPage(slug, questions, site = SITE) {
         <input type="text" readonly data-share-url>
       </label>
     </section>
+    <section class="result-mail" data-mail hidden>
+      <h2>${escapeHtml(RESULT_COPY.mailAction)}</h2>
+      <p>${escapeHtml(RESULT_COPY.mailNote)}</p>
+      <div class="result-mail-actions">
+        <a class="result-mail-action" href="#" data-mail-open>${escapeHtml(RESULT_COPY.mailAction)}</a>
+        <button class="result-mail-copy" type="button" data-mail-copy>${escapeHtml(RESULT_COPY.mailCopy)}</button>
+      </div>
+      <p class="result-mail-state" data-mail-state hidden></p>
+    </section>
     <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
     <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
-${callToAction(site)}
+${callToAction({ slug })}
   </main>
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
@@ -501,7 +524,7 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
     chrome: { title: page.title, description: page.description },
     body: `      <main class="page">
 ${sections}
-${contact}${callToAction(site)}
+${contact}${callToAction()}
       </main>`
   });
 }
@@ -526,7 +549,7 @@ export function renderIndex(model, site = SITE) {
     <ul class="cards">
 ${cards}
     </ul>
-${callToAction(site)}
+${callToAction()}
   </main>`
   });
 }

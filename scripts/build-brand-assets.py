@@ -84,6 +84,8 @@ import('./src/packs.js').then(async (packs) => {
   // Debug only, and scanned anyway: it is on the live page until the owner takes it off.
   const { FEEDBACK_COPY } = await import('./site/feedback.js');
   walk(FEEDBACK_COPY);
+  const { INVITE_COPY } = await import('./site/invite-copy.js');
+  walk(INVITE_COPY);
   const pages = await import('./site/pages.js');
   for (const page of pages.standingPages()) {
     parts.push(page.title, page.description);

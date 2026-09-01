@@ -19,15 +19,14 @@ import { pagesFiles, robotsTxt, sitemapXml } from "../site/seo.js";
  * URL with no rewrite rules to configure — the cheapest hosting arrangement that still gives clean
  * URLs, which matters because the whole point is being crawled.
  *
- * Run: `AB_SITE_ORIGIN=https://… AB_APP_ORIGIN=https://… node scripts/build-site.mjs`
- * Both origins are optional: without them the pages build and read correctly, they just carry no
- * canonical and the call to action points at `/`. A real deployment should set them.
+ * Run: `AB_SITE_ORIGIN=https://… node scripts/build-site.mjs`
+ * The origin is optional: without it the pages build and read correctly, they just carry no
+ * canonical. A real deployment should set it.
  */
 const OUT = "site/dist";
 
 const site = siteWith({
-  origin: String(process.env.AB_SITE_ORIGIN || SITE.origin).replace(/\/$/, ""),
-  appOrigin: String(process.env.AB_APP_ORIGIN || "").replace(/\/$/, "")
+  origin: String(process.env.AB_SITE_ORIGIN || SITE.origin).replace(/\/$/, "")
 });
 
 await rm(OUT, { recursive: true, force: true });
@@ -36,7 +35,7 @@ await mkdir(OUT, { recursive: true });
 await cp("site/site.css", join(OUT, "site.css"));
 // The enhancement module and what it imports, served as-is: there is no bundler and no need for
 // one — four small ES modules load natively.
-for (const module of ["enhance.js", "answers.js", "reflect.js", "result-copy.js", "share.js", "feedback.js"]) {
+for (const module of ["enhance.js", "answers.js", "reflect.js", "result-copy.js", "share.js", "mail.js", "invite-copy.js", "feedback.js"]) {
   await cp(`site/${module}`, join(OUT, module));
 }
 await cp("src/tokens.css", join(OUT, "tokens.css"));
@@ -46,6 +45,14 @@ await cp("site/brand", join(OUT, "brand"), { recursive: true, filter: (src) => !
 // Browsers ask for /favicon.ico by name whatever the page links, so it is served from the root too
 // rather than left to 404 on every request that skips the link.
 await cp("site/brand/favicon.ico", join(OUT, "favicon.ico"));
+
+// `ads.txt` is how a publisher says which networks may sell this site's inventory; without it
+// AdSense reports the site as unauthorised and bidders discount it. It names the publisher, so it
+// is written only when there is one — an `ads.txt` carrying a placeholder id is worse than none.
+if (site.adsenseClient) {
+  const publisher = site.adsenseClient.replace(/^ca-/, "");
+  await writeFile(join(OUT, "ads.txt"), `google.com, ${publisher}, DIRECT, f08c47fec0942fa0\n`);
+}
 
 await writeFile(join(OUT, "index.html"), renderIndex(indexModel({ site }), site));
 
@@ -89,4 +96,3 @@ for (const [name, body] of Object.entries(pagesFiles(site))) {
 console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"}, ${standing.length} standing)`);
 if (!site.contactEmail) console.log("  note: SITE.contactEmail is unset, so no 문의 page is built");
 if (!site.origin) console.log("  note: AB_SITE_ORIGIN is unset, so pages carry no canonical URL");
-if (!site.appOrigin) console.log("  note: AB_APP_ORIGIN is unset, so the call to action points at /");
