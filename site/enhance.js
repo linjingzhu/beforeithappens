@@ -167,50 +167,18 @@ function pinCurrentTab() {
   strip.scrollLeft += left - padding;
 }
 
-/**
- * Turning a Part while the bar is pinned should feel like changing the panel under it, not like
- * being thrown back to the top of a new page.
+/*
+ * There was a `rememberPinned` / `restorePinned` pair here that scrolled a newly opened Part to
+ * where the tab bar pins, so turning a Part while scrolled kept the bar in place. It is gone,
+ * because it cannot coexist with the opening being visible on every Part: the name, the question
+ * and the description sit *above* the bar, so scrolling far enough to pin the bar is exactly far
+ * enough to push them off the top. Measured before removing it — after a tab click the description
+ * sat at -81px, off screen.
  *
- * Each Part is its own document, so a tab is a real navigation and the browser lands at the top —
- * past the pack's name again, and a scroll away from the first question. These two functions carry
- * one bit across that navigation: *the bar was pinned when you left*. On arrival the page scrolls
- * to exactly where the bar pins, so the tabs are where they were and the first question is under
- * them.
- *
- * Only when it was pinned. Turning a Part from the top of the page still lands at the top, which is
- * where the reader already was.
+ * So a Part now opens where the browser puts it, at the top, with the whole opening, the tabs and
+ * the first question all in view. Keeping both would mean moving the opening below the bar, which
+ * is a layout decision rather than a scripting one.
  */
-const PINNED = "ab:tabbar-pinned";
-
-function rememberPinned() {
-  const bar = document.querySelector(".tabbar");
-  if (!bar) return;
-  for (const tab of bar.querySelectorAll(".part-tab")) {
-    tab.addEventListener("click", () => {
-      try {
-        if (bar.getBoundingClientRect().top <= 0) sessionStorage.setItem(PINNED, "1");
-        else sessionStorage.removeItem(PINNED);
-      } catch {
-        // A browser that refuses session storage simply lands at the top, which is not a failure.
-      }
-    });
-  }
-}
-
-function restorePinned() {
-  const bar = document.querySelector(".tabbar");
-  if (!bar) return;
-  let wasPinned = false;
-  try {
-    wasPinned = sessionStorage.getItem(PINNED) === "1";
-    sessionStorage.removeItem(PINNED);
-  } catch {
-    return;
-  }
-  if (!wasPinned) return;
-  // Where the bar comes to rest: its own offset from the top of the document.
-  window.scrollTo({ top: window.scrollY + bar.getBoundingClientRect().top, behavior: "instant" });
-}
 
 /** The bar under the tabs: answers recorded across the whole pack, as a width and an aria value. */
 function showProgress(store) {
@@ -227,8 +195,6 @@ function showProgress(store) {
 function start() {
   pinCurrentTab();
   document.fonts?.ready?.then(pinCurrentTab).catch(() => {});
-  rememberPinned();
-  restorePinned();
 
   const slug = slugFromPath();
   if (!slug) return;
