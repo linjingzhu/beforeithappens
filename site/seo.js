@@ -18,7 +18,7 @@ export function pageTitle(model, site = SITE) {
 
 export function pageDescription(model) {
   if (!model) return "";
-  if (model.page === 1) return model.description;
+  if (model.page === 1) return model.descriptionText || model.description;
   const first = model.questions[0];
   const last = model.questions[model.questions.length - 1];
   return `${model.title} ${model.page}쪽. ${first.number}번부터 ${last.number}번까지의 질문입니다.`;

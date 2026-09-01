@@ -31,6 +31,17 @@ export function partsOf(packId) {
     .filter((part) => part.questions.length > 0);
 }
 
+/** A description may be authored as one string or as lines the author chose to break. */
+export function descriptionLines(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  return value ? [String(value)] : [];
+}
+
+/** The same description as one string, for a meta tag or a card, where a line break means nothing. */
+export function descriptionText(value) {
+  return descriptionLines(value).join(" ");
+}
+
 export function pagePath(slug, pageNumber) {
   const page = Math.max(1, Math.floor(Number(pageNumber) || 1));
   return page === 1 ? `/${slug}/` : `/${slug}/${page}/`;
@@ -69,7 +80,8 @@ export function pageModel(slug, pageNumber, { site = SITE, published = null } = 
     packId: entry.packId,
     title: entry.title,
     tagline: entry.tagline || "",
-    description: entry.description,
+    description: Object.freeze(descriptionLines(entry.description)),
+    descriptionText: descriptionText(entry.description),
     lead: first ? entry.lead : "",
     page,
     pages,
@@ -121,7 +133,7 @@ export function indexModel({ site = SITE, published = PUBLISHED } = {}) {
         slug: entry.slug,
         title: entry.title,
         navTitle: entry.navTitle || entry.title,
-        description: entry.description,
+        description: descriptionText(entry.description),
         total: questions.length,
         pages: partsOf(entry.packId).length,
         path: pagePath(entry.slug, 1)

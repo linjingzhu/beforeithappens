@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
-import { allPages, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
+import { allPages, descriptionLines, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
 import { findPack, questionsFor } from "../src/packs.js";
@@ -601,21 +601,27 @@ test("the strip pins the current tab left on a phone, and never scrolls sideways
   assert.match(enhance, /document\.fonts\?\.ready/);
 });
 
-test("the opening is on the way in, and only the name is above the later Parts", () => {
+test("the opening introduces the pack, so it is the same above every Part", () => {
   const entry = PUBLISHED[0];
-  const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
-  assert.ok(has(first, `<h1>${entry.title}</h1>`), "the pack's name, short enough to be a name");
-  assert.ok(has(first, entry.tagline), "the question the hundred are for");
-  assert.ok(has(first, entry.description));
+  const lines = descriptionLines(entry.description);
+  assert.ok(lines.length > 1, "this one is authored as more than a single line");
 
-  // Repeating it above all ten would push the questions off the screen nine times over to say
-  // something the reader has read.
-  for (const page of [2, 5, LAST_PAGE]) {
-    const later = renderQuestionPage(pageModel("marriage", page, { site }), site);
-    assert.ok(has(later, `<h1>${entry.title}</h1>`), `Part ${page} still says which pack it is`);
-    assert.equal(has(later, entry.tagline), false, `Part ${page} does not repeat the opening`);
-    assert.equal(has(later, entry.description), false);
+  for (const page of [1, 2, 5, LAST_PAGE]) {
+    const html = renderQuestionPage(pageModel("marriage", page, { site }), site);
+    assert.ok(has(html, `<h1>${entry.title}</h1>`), `Part ${page} names the pack`);
+    assert.ok(has(html, entry.tagline), `Part ${page} carries the question the hundred are for`);
+    for (const line of lines) assert.ok(has(html, line), `Part ${page} carries "${line.slice(0, 12)}…"`);
   }
+
+  // The author's break is kept rather than left to the measure.
+  const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  const blurb = first.slice(first.indexOf('class="stage-blurb"'), first.indexOf("</p>", first.indexOf('class="stage-blurb"')));
+  assert.equal((blurb.match(/<br>/g) || []).length, lines.length - 1, "one break between each pair");
+
+  // A meta tag has no use for a line break, so it gets the sentences joined.
+  const model = pageModel("marriage", 1, { site });
+  assert.equal(model.descriptionText, lines.join(" "));
+  assert.ok(headTags(model, site).includes(model.descriptionText));
 });
 
 test("turning a Part while the bar is pinned keeps it pinned, over the new Part's first question", () => {
