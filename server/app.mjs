@@ -78,7 +78,17 @@ export function createListener({
       return;
     }
     const filePath = join(root, relative);
-    if (!(await stat(filePath)).isFile()) {
+    // A file that is not there is a 404. `stat` throws for a missing path, and letting that reach
+    // the catch below made every absent asset — favicon, manifest, service worker — a 500, which
+    // reads in a browser console and in a host's logs as the server being broken.
+    let entry;
+    try {
+      entry = await stat(filePath);
+    } catch {
+      sendText(response, 404, "Not found");
+      return;
+    }
+    if (!entry.isFile()) {
       sendText(response, 404, "Not found");
       return;
     }

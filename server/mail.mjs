@@ -36,7 +36,12 @@ export function appHopHtml(appUrl, webFallback = "") {
   }
   const web = JSON.stringify(String(webFallback));
   const webHref = escapeHtml(webFallback);
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><p><a href="${webHref}">웹에서 열기</a></p><script>var w=${web};var t=setTimeout(function(){location.replace(w)},1200);document.addEventListener("visibilitychange",function(){if(document.hidden)clearTimeout(t)});location.href=${app}</script></body></html>`;
+  // A phone gets the hand-off: the app answers and the timer is cancelled by the tab going hidden.
+  // A desktop browser goes straight to the web, because `loveme://` is a scheme it has never heard
+  // of — it opens a modal asking which application to use, and until someone dismisses that dialog
+  // the page underneath receives no clicks at all. Measured: every click on the signed-in screen
+  // was swallowed. The app link stays on the page for anyone who wants it.
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>LoveMe</title></head><body><p><a href="${href}">LoveMe</a></p><p><a href="${webHref}">웹에서 열기</a></p><script>var w=${web};if(!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){location.replace(w)}else{var t=setTimeout(function(){location.replace(w)},1200);document.addEventListener("visibilitychange",function(){if(document.hidden)clearTimeout(t)});location.href=${app}}</script></body></html>`;
 }
 
 export function consumeHopHtml(token, env = process.env) {
