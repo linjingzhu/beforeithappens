@@ -343,12 +343,17 @@ test("nothing on the sheet can break out of the embedded JSON", async () => {
 });
 
 test("the build carries the custom domain and keeps Jekyll out of it", async () => {
-  const { readFile, stat } = await import("node:fs/promises");
-  // GitHub Pages drops a custom domain on any deploy whose artifact has no CNAME, so the build
-  // emits one rather than leaving it as a setting somebody has to remember to re-enter.
-  assert.equal((await readFile("site/dist/CNAME", "utf8")).trim(), SITE.customDomain);
+  const { pagesFiles } = await import("../site/seo.js");
+  // Asserted from the function, not from `site/dist/`: CI runs the tests before the build and the
+  // output is gitignored, so reading the directory tests the last build rather than the code.
+  const files = pagesFiles(SITE);
+  assert.equal(files.CNAME.trim(), SITE.customDomain, "Pages drops the domain without this file");
   assert.equal(SITE.customDomain, "lovemedialogue.com");
-  await stat("site/dist/.nojekyll");
+  assert.equal(Object.hasOwn(files, ".nojekyll"), true, "or Pages runs Jekyll over the output");
+
+  // No custom domain, no CNAME — an empty one would blank the domain rather than leave it alone.
+  const bare = siteWith({ customDomain: "" });
+  assert.equal(Object.hasOwn(pagesFiles(bare), "CNAME"), false);
 });
 
 test("the site's own origin is https, so the canonical is not split across two schemes", () => {

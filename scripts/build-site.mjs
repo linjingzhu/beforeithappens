@@ -5,7 +5,7 @@ import { allPages, indexModel } from "../site/content.js";
 import { renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
 import { questionsFor } from "../src/packs.js";
 import { PUBLISHED } from "../site/config.js";
-import { robotsTxt, sitemapXml } from "../site/seo.js";
+import { pagesFiles, robotsTxt, sitemapXml } from "../site/seo.js";
 
 /**
  * Generates the public question site into `site/dist/`.
@@ -64,12 +64,10 @@ for (const entry of PUBLISHED) {
 await writeFile(join(OUT, "sitemap.xml"), sitemapXml(pages, site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
 
-// GitHub Pages forgets the custom domain on a deploy that does not carry a CNAME, so the build
-// emits one rather than leaving it as a setting somebody has to remember to re-enter.
-if (site.customDomain) await writeFile(join(OUT, "CNAME"), `${site.customDomain}\n`);
-// Pages runs Jekyll unless told not to, which would swallow any file or directory starting with an
-// underscore. Nothing here starts with one today; this keeps that from becoming a trap later.
-await writeFile(join(OUT, ".nojekyll"), "");
+// What Pages needs, decided in `pagesFiles` so a test can assert it without reading a build.
+for (const [name, body] of Object.entries(pagesFiles(site))) {
+  await writeFile(join(OUT, name), body);
+}
 
 console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"})`);
 if (!site.origin) console.log("  note: AB_SITE_ORIGIN is unset, so pages carry no canonical URL");
