@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AUTH_COPY, AUTH_ERRORS, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, absoluteInviteUrl, canOpenPack, classifyInviteConflict, consumeAuthLocation, emptySession, formatRemaining, inviteAcceptUrl, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "../src/auth.js";
+import { AUTH_COPY, AUTH_ERRORS, EMAIL_BIND_COPY, INVITE_COPY, INVITE_ERRORS, SOCIAL_COPY, absoluteInviteUrl, canOpenPack, classifyInviteConflict, consumeAuthLocation, emptySession, formatRemaining, inviteAcceptUrl, inviteShareDisplayUrl, resetInviteShare, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "../src/auth.js";
 import { renderEmailBind, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent } from "../src/auth-ui.js";
 import { createAuth, hashToken, hasAcceptedPartner, isValidEmail, MAGIC_LINK_TTL_MS, normalizeEmail } from "../server/auth.mjs";
 import { createMemoryStore } from "../server/store.mjs";
@@ -226,4 +226,62 @@ test("invite share helpers copy or system-share the existing link", async () => 
     session: { user: { email: "partner@example.com" } },
     openedWhileSignedIn: true
   }), "");
+});
+
+test("the invite link is readable on screen and a failed copy says so", async () => {
+  resetInviteShare();
+  try {
+    const invite = {
+      status: "waiting",
+      remainingMs: 3 * 60 * 60 * 1000,
+      lastSentAt: "2026-08-23T00:00:00.000Z",
+      url: "/invite/accept?token=share-9"
+    };
+    const url = inviteShareDisplayUrl(invite.url, "https://ab.example");
+    assert.equal(url, "https://ab.example/invite/accept?token=share-9");
+
+    // UX_CONTRACT.md link visibility: buttons alone are a contract violation.
+    const shown = renderInviteWaitingHome({ invite, shareUrl: url });
+    assert.equal(shown.includes(url), true);
+    assert.match(shown, /data-invite-link/);
+    assert.match(shown, /user-select:all/);
+    assert.equal(shown.includes(INVITE_COPY.copyFailed), false);
+
+    // Insecure context: no navigator.clipboard, no share sheet. This used to go silent.
+    assert.equal(await shareInviteChannel(url, "copy", { clipboard: null }), "failed");
+    const failed = renderInviteWaitingHome({ invite, shareUrl: url });
+    assert.match(failed, new RegExp(INVITE_COPY.copyFailed));
+    assert.equal(INVITE_COPY.copyFailed, "복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요.");
+    // The whole point of the line: the link is still there to be picked up by hand.
+    assert.equal(failed.includes(url), true);
+
+    // A reissued link is a different url and does not inherit the failure.
+    const reissued = renderInviteWaitingHome({
+      invite: { ...invite, url: "/invite/accept?token=share-10" },
+      shareUrl: inviteShareDisplayUrl("/invite/accept?token=share-10", "https://ab.example")
+    });
+    assert.equal(reissued.includes(INVITE_COPY.copyFailed), false);
+
+    // An explicit flag still wins over the recorded outcome.
+    assert.equal(renderInviteWaitingHome({ invite, shareUrl: url, copyFailed: false }).includes(INVITE_COPY.copyFailed), false);
+    assert.match(renderInviteWaitingHome({ invite, shareUrl: url, copyFailed: true }), new RegExp(INVITE_COPY.copyFailed));
+
+    // A successful copy leaves no failure line behind.
+    const writes = [];
+    assert.equal(await shareInviteChannel(url, "copy", { clipboard: { writeText: async (v) => writes.push(v) } }), "copied");
+    assert.deepEqual(writes, [url]);
+    assert.equal(renderInviteWaitingHome({ invite, shareUrl: url }).includes(INVITE_COPY.copyFailed), false);
+  } finally {
+    resetInviteShare();
+  }
+});
+
+test("issuing an invite without a connected email says so instead of a generic failure", () => {
+  const { auth, couple } = authWithClock();
+  const kakao = auth.completeOAuth({ provider: "kakao", providerUserId: "k-9" });
+  const result = couple.issueInvite(kakao.sessionId, "partner@example.com");
+  assert.equal(result.error, "needs-email");
+  assert.equal(INVITE_ERRORS["needs-email"], EMAIL_BIND_COPY.title);
+  assert.equal(INVITE_ERRORS["needs-email"], "이메일을 연결해 주세요.");
+  assert.notEqual(INVITE_ERRORS["needs-email"], INVITE_ERRORS.failed);
 });

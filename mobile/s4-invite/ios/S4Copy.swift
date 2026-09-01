@@ -8,6 +8,7 @@ enum S4Copy {
     static let instagram = "인스타그램"
     static let kakao = "카카오톡"
     static let copied = "링크를 복사했어요."
+    static let copyFailed = "복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요."
     static let deviceRule = "같은 폰에서 두 계정을 동시에 쓸 수는 없어요."
     static let emailCheck = "상대 이메일이 맞는지 다시 확인해 주세요."
     static let editResend = "이메일 고치고 링크 다시 만들기"

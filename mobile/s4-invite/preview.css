@@ -229,3 +229,20 @@ body {
   color: var(--muted);
   font-size: 11px;
 }
+
+.invite-share-url {
+  margin: 0 0 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  line-height: 20px;
+  word-break: break-all;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+.invite-copy-failed {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b64838;
+}

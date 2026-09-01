@@ -1,4 +1,4 @@
-import { AUTH_COPY, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, formatRemaining, formatSentAt } from "./auth.js";
+import { AUTH_COPY, EMAIL_BIND_COPY, INVITE_COPY, SOCIAL_COPY, formatRemaining, formatSentAt, inviteCopyFailed, inviteShareDisplayUrl } from "./auth.js";
 import { INSTALL_COPY, INSTALL_PATH, STORE_URLS, instagramStartHref } from "./install.js";
 import { WITHDRAW_COPY } from "./pair-code.js";
 import { escapeHtml } from "./html.js";
@@ -49,11 +49,11 @@ export function renderWithdrawDone() {
   `;
 }
 
-function inAppHintBlock(inAppBrowser) {
+function inAppHintBlock(inAppBrowser, hint = INSTALL_COPY.inAppHint) {
   if (!inAppBrowser) return "";
   return `
           <div class="install-inapp" role="status">
-            <p>${escapeHtml(INSTALL_COPY.inAppHint)}</p>
+            <p>${escapeHtml(hint)}</p>
             <button class="secondary auth-submit" type="button" data-action="open-system-browser">${escapeHtml(INSTALL_COPY.openBrowser)}</button>
           </div>
         `;
@@ -158,12 +158,22 @@ export function renderLoginNotice({ email = "" } = {}) {
   `;
 }
 
-export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite = null, error = "", busy = false, copied = false, banner = "" } = {}) {
+/**
+ * UX_CONTRACT.md: the made invite link is shown as a string, not buttons alone. `user-select:all`
+ * turns one long-press into a whole-link selection, which is what the copy-failure line asks for.
+ */
+export function inviteLinkBlock(url) {
+  if (!url) return "";
+  return `<p class="invite-share-url" data-invite-link style="word-break:break-all;user-select:all;-webkit-user-select:all">${escapeHtml(url)}</p>`;
+}
+
+export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite = null, error = "", busy = false, copied = false, copyFailed = null, shareUrl = "", banner = "" } = {}) {
   const hasInvite = Boolean(invite);
-  const shareUrl = invite?.url || "";
+  const linkUrl = shareUrl || inviteShareDisplayUrl(invite?.url);
+  const failed = copyFailed === null ? inviteCopyFailed(linkUrl) : Boolean(copyFailed);
   const remaining = hasInvite ? formatRemaining(invite.remainingMs) : "";
   const shareBlock = hasInvite ? `
-          ${shareUrl ? `
+          ${linkUrl ? `
           <div class="invite-share">
             <p>${escapeHtml(INVITE_COPY.share)}</p>
             <div class="invite-share-actions" role="group" aria-label="${escapeHtml(INVITE_COPY.share)}">
@@ -171,6 +181,8 @@ export function renderInviteWaitingHome({ email = "", partnerEmail = "", invite 
               <button class="secondary invite-share-button" type="button" data-action="share-instagram">${escapeHtml(INVITE_COPY.instagram)}</button>
               <button class="secondary invite-share-button" type="button" data-action="share-kakao">${escapeHtml(INVITE_COPY.kakao)}</button>
             </div>
+            ${failed ? `<p class="invite-copy-failed" role="alert">${escapeHtml(INVITE_COPY.copyFailed)}</p>` : ""}
+            ${inviteLinkBlock(linkUrl)}
             ${copied ? `<p class="invite-copied" role="status">${escapeHtml(INVITE_COPY.copied)}</p>` : ""}
           </div>
           ` : ""}
@@ -219,7 +231,7 @@ export function renderSocialStart({ busy = false } = {}) {
   `;
 }
 
-export function renderEmailBind({ email = "", error = "", busy = false } = {}) {
+export function renderEmailBind({ email = "", error = "", busy = false, inAppBrowser = false, inAppHint = INVITE_COPY.inAppHint } = {}) {
   return `
     ${brand(logoutCluster())}
     <main class="auth-shell">
@@ -227,6 +239,7 @@ export function renderEmailBind({ email = "", error = "", busy = false } = {}) {
         <span class="eyebrow">AB · EMAIL BIND</span>
         <h1>${escapeHtml(EMAIL_BIND_COPY.title)}</h1>
         <p>${escapeHtml(EMAIL_BIND_COPY.body)}</p>
+        ${inAppHintBlock(inAppBrowser, inAppHint)}
         <form class="auth-form" data-bind-form>
           <label for="bind-email">${escapeHtml(EMAIL_BIND_COPY.emailLabel)}</label>
           <input id="bind-email" name="email" type="email" autocomplete="email" inputmode="email" required value="${escapeHtml(email)}" ${busy ? "disabled" : ""}>
@@ -239,9 +252,9 @@ export function renderEmailBind({ email = "", error = "", busy = false } = {}) {
   `;
 }
 
-export function renderInviteAccept({ email = "", error = "", preview = null, accepted = false, busy = false } = {}) {
+export function renderInviteAccept({ email = "", error = "", preview = null, accepted = false, busy = false, inAppBrowser = false } = {}) {
   if (error === "needs-email") {
-    return renderEmailBind({ email, error: "", busy });
+    return renderEmailBind({ email, error: "", busy, inAppBrowser });
   }
   const body = error === "expired"
     ? INVITE_COPY.expired
@@ -274,6 +287,7 @@ export function renderInviteAccept({ email = "", error = "", preview = null, acc
         <h1>${escapeHtml(INVITE_COPY.title)}</h1>
         <p role="status">${escapeHtml(body)}</p>
         ${email ? `<p class="auth-email-hint">${escapeHtml(email)}</p>` : ""}
+        ${inAppHintBlock(inAppBrowser, INVITE_COPY.inAppHint)}
         ${action}
       </section>
     </main>

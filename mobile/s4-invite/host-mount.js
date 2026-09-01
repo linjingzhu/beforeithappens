@@ -1,7 +1,7 @@
 import { invitePartner } from "../s0-s2-s3-flow.js";
 import { extractMagicLinkToken } from "../s0-s2-s3-api.js";
-import { consumeHostMagicLink, finishHostSplash } from "../src/session.js";
-import { INVITE_ERRORS } from "../../src/auth.js";
+import { apiOrigin, consumeHostMagicLink, finishHostSplash } from "../src/session.js";
+import { INVITE_ERRORS, absoluteInviteUrl } from "../../src/auth.js";
 import { createInviteApi } from "./api.js";
 import { APP_S4_SCREEN, resolveNativeInviteScreen, shareS4Invite } from "./flow.js";
 
@@ -88,10 +88,46 @@ export async function sendS4Invite(state, email, inviteApi) {
   };
 }
 
+/**
+ * The session hands back a path (`/invite/accept?token=...`), not a URL. A phone has no
+ * page origin to resolve it against, so anything shared from the native host must be made
+ * absolute against the deployment origin first or the friend receives an unopenable string.
+ */
+export function s4ShareUrl(state, origin = "") {
+  const url = String(state?.invite?.url || "");
+  if (!url) return "";
+  if (url.includes("://")) return url;
+  const base = String(origin || apiOrigin() || globalThis.location?.origin || "").replace(/\/$/, "");
+  if (!base) return "";
+  return absoluteInviteUrl(base, url);
+}
+
+/**
+ * React Native has no `navigator.share` / `navigator.clipboard`; the RN screen module
+ * registers the `Share` bridge here so the share buttons are not silent no-ops when the
+ * host mounts them without passing an io of its own.
+ */
+let hostShareIo = null;
+
+export function setHostShareIo(io) {
+  hostShareIo = io && (io.share || io.clipboard) ? io : null;
+}
+
+export function currentHostShareIo() {
+  return hostShareIo;
+}
+
 export async function shareS4FromHost(state, channel, io = {}) {
-  const url = state.invite?.url || "";
-  const result = await shareS4Invite(url, channel, io);
-  return { ...state, screen: APP_S4_SCREEN, copied: result === "copied" };
+  const url = s4ShareUrl(state, io.origin);
+  if (!url) return { ...state, screen: APP_S4_SCREEN, copied: false, copyFailed: false };
+  const effective = io.share || io.clipboard ? io : (hostShareIo || io);
+  const result = await shareS4Invite(url, channel, effective);
+  return {
+    ...state,
+    screen: APP_S4_SCREEN,
+    copied: result === "copied",
+    copyFailed: result === "failed"
+  };
 }
 
 export async function logoutFromS4Home(state, inviteApi) {

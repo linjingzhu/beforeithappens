@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { createServer } from "node:http";
-import { AUTH_COPY, INVITE_COPY, classifyInviteConflict, resolveInviteAcceptError } from "../src/auth.js";
+import { AUTH_COPY, INVITE_COPY, classifyInviteConflict, inviteShareDisplayUrl, resetInviteShare, resolveInviteAcceptError, shareInviteChannel } from "../src/auth.js";
 import { createAuth } from "../server/auth.mjs";
 import { createListener } from "../server/app.mjs";
 import { createMemoryStore } from "../server/store.mjs";
@@ -23,7 +23,7 @@ import {
   shareS4Invite
 } from "../mobile/s4-invite/flow.js";
 import { renderInviteBlock, renderS4BuyerHome, renderSameSessionFail } from "../mobile/s4-invite/render.js";
-import { finishHostOpen, openS4FromWorkspace, readHostOpenParams } from "../mobile/s4-invite/host-mount.js";
+import { finishHostOpen, openS4FromWorkspace, readHostOpenParams, s4ShareUrl, setHostShareIo, shareS4FromHost } from "../mobile/s4-invite/host-mount.js";
 import { noticeAcknowledged, consumeSucceeded, createNativeFlow, finishSplash } from "../mobile/s0-s2-s3-flow.js";
 
 async function walkFiles(dir) {
@@ -311,4 +311,97 @@ test("stable host mounts S4 on invite-partner and same-session invite open", asy
     { pathname: "/invite/accept", search: "?token=inv-2" }
   );
   assert.equal(same.screen, APP_SAME_SESSION_SCREEN);
+});
+
+test("the native host shares an absolute invite link, never the session's bare path", async () => {
+  const state = { invite: { url: "/invite/accept?token=inv-9" } };
+  assert.equal(s4ShareUrl(state, "https://ab.example/"), "https://ab.example/invite/accept?token=inv-9");
+  assert.equal(s4ShareUrl({ invite: { url: "https://ab.example/invite/accept?token=inv-9" } }, "https://other.example"), "https://ab.example/invite/accept?token=inv-9");
+  assert.equal(s4ShareUrl(state, ""), "");
+  assert.equal(s4ShareUrl({}, "https://ab.example"), "");
+
+  const writes = [];
+  const copied = await shareS4FromHost(state, "copy", {
+    origin: "https://ab.example",
+    clipboard: { writeText: async (value) => writes.push(value) }
+  });
+  assert.deepEqual(writes, ["https://ab.example/invite/accept?token=inv-9"]);
+  assert.equal(copied.copied, true);
+  assert.equal(copied.screen, APP_S4_SCREEN);
+
+  const shared = [];
+  const sent = await shareS4FromHost(state, "kakao", {
+    origin: "https://ab.example",
+    share: async (payload) => shared.push(payload.url)
+  });
+  assert.deepEqual(shared, ["https://ab.example/invite/accept?token=inv-9"]);
+  assert.equal(sent.copied, false);
+
+  const nowhere = await shareS4FromHost(state, "copy", {});
+  assert.equal(nowhere.copied, false);
+  assert.equal(nowhere.screen, APP_S4_SCREEN);
+});
+
+test("the RN screen registers a share bridge so the S4 share buttons are not no-ops", async () => {
+  const screens = await readFile("mobile/s4-invite/screens.js", "utf8");
+  assert.match(screens, /setHostShareIo\(/);
+  assert.match(screens, /Share\.share/);
+
+  const bridged = [];
+  setHostShareIo({ clipboard: { writeText: async (value) => bridged.push(value) } });
+  try {
+    const result = await shareS4FromHost({ invite: { url: "/invite/accept?token=inv-10" } }, "copy", {
+      origin: "https://ab.example"
+    });
+    assert.deepEqual(bridged, ["https://ab.example/invite/accept?token=inv-10"]);
+    assert.equal(result.copied, true);
+  } finally {
+    setHostShareIo(null);
+  }
+});
+
+test("S4 shows the invite link as a string and says so when copying fails", async () => {
+  resetInviteShare();
+  try {
+    const invite = { status: "waiting", remainingMs: 60000, lastSentAt: "2026-08-23T00:00:00.000Z", url: "/invite/accept?token=t-1", email: "partner@example.com" };
+    const url = inviteShareDisplayUrl(invite.url, "https://ab.example");
+
+    const model = s4ViewModel({ invite, origin: "https://ab.example" });
+    assert.equal(model.shareUrl, "https://ab.example/invite/accept?token=t-1");
+    assert.equal(model.copyFailed, "");
+
+    // No clipboard and no share sheet: the old code went silent here.
+    assert.equal(await shareInviteChannel(url, "copy", { clipboard: null }), "failed");
+    const failed = s4ViewModel({ invite, origin: "https://ab.example" });
+    assert.equal(failed.copyFailed, "복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요.");
+
+    const html = renderS4BuyerHome({ invite, origin: "https://ab.example" });
+    assert.match(html, /복사하지 못했어요\. 아래 링크를 길게 눌러 복사해 주세요\./);
+    assert.equal(html.includes("https://ab.example/invite/accept?token=t-1"), true);
+
+    // A reissued link is a different url and must not inherit the failure.
+    const reissued = { ...invite, url: "/invite/accept?token=t-2" };
+    assert.equal(s4ViewModel({ invite: reissued, origin: "https://ab.example" }).copyFailed, "");
+  } finally {
+    resetInviteShare();
+  }
+});
+
+test("every S4 surface carries the copy-failure line and renders the link itself", async () => {
+  assert.equal(S4_COPY.copyFailed, INVITE_COPY.copyFailed);
+  assert.equal(assertLockedS4Copy(), true);
+  const files = await walkFiles("mobile/s4-invite");
+  const texts = {};
+  for (const file of files) texts[file] = await readFile(file, "utf8");
+  for (const file of [
+    "mobile/s4-invite/copy.js",
+    "mobile/s4-invite/ios/S4Copy.swift",
+    "mobile/s4-invite/android/S4Copy.kt"
+  ]) {
+    assert.equal(texts[file].includes("복사하지 못했어요. 아래 링크를 길게 눌러 복사해 주세요."), true, file);
+  }
+  assert.match(texts["mobile/s4-invite/screens.js"], /selectable/);
+  assert.match(texts["mobile/s4-invite/screens.js"], /model\.shareUrl/);
+  assert.match(texts["mobile/s4-invite/ios/InviteWaitingView.swift"], /textSelection\(\.enabled\)/);
+  assert.match(texts["mobile/s4-invite/android/InviteWaitingScreen.kt"], /SelectionContainer/);
 });

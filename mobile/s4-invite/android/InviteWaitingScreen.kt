@@ -1,5 +1,6 @@
 package com.beforeithappens.invite
 
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -25,6 +26,7 @@ fun InviteWaitingScreen(
     remaining: String,
     lastSent: String,
     copied: Boolean,
+    copyFailed: Boolean,
     onCopy: () -> Unit,
     onShareInstagram: () -> Unit,
     onShareKakao: () -> Unit,
@@ -51,6 +53,9 @@ fun InviteWaitingScreen(
                     Text(S4Copy.KAKAO)
                 }
             }
+            if (copyFailed) Text(S4Copy.COPY_FAILED)
+            // UX_CONTRACT.md: the made link is readable and selectable, never buttons alone.
+            SelectionContainer { Text(inviteUrl) }
             if (copied) Text(S4Copy.COPIED)
             Text(S4Copy.DEVICE_RULE)
             Text(S4Copy.EMAIL_CHECK)

@@ -1,6 +1,6 @@
-import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, PENDING_INVITE_KEY, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "./auth.js";
+import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "./auth.js";
 import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent, renderWithdrawConfirm, renderWithdrawDone } from "./auth-ui.js";
-import { INSTALL_PATH, START_PATH, isInAppBrowser, openInSystemBrowser, readInstallSkip, resolveInstallView, writeInstallSkip } from "./install.js";
+import { INSTALL_PATH, INVITE_ACCEPT_PATH, START_PATH, clearPendingInvite, handoffPageUrl, isInAppBrowser, keepPendingInvite, openInSystemBrowser, readInstallSkip, readPendingInvite, resolveInstallView, writeInstallSkip, writePendingInvite } from "./install.js";
 import { marriagePack, questions } from "./questions.js";
 import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
 import { PACK_LOCK_COPY, WITHDRAW_ERRORS } from "./pair-code.js";
@@ -29,6 +29,9 @@ let inviteAccepted = false;
 let inviteCopied = false;
 let openedWhileSignedIn = false;
 let preferInviteLogin = false;
+// Set by render(): the escape hatch has to hand over a token-bearing URL only while the
+// friend is actually on the accept screen.
+let inviteAcceptVisible = false;
 let partnerEmailDraft = "";
 let installSkipped = readInstallSkip();
 let withdrawStep = "";
@@ -226,9 +229,12 @@ function continueOnWeb() {
 }
 
 async function openSystemBrowser() {
-  const pageUrl = currentView === "start"
-    ? new URL(START_PATH, window.location.origin).href
-    : new URL(INSTALL_PATH, window.location.origin).href;
+  const pageUrl = handoffPageUrl({
+    origin: window.location.origin,
+    view: currentView,
+    inviteToken,
+    onInviteAccept: inviteAcceptVisible
+  });
   await openInSystemBrowser(pageUrl, {
     userAgent: globalThis.navigator?.userAgent || "",
     clipboard: globalThis.navigator?.clipboard,
@@ -268,6 +274,7 @@ function renderStartView() {
 }
 
 function render() {
+  inviteAcceptVisible = false;
   if (currentView === "dashboard") { renderDashboard(); return; }
   if (currentView === "install") { renderInstallView(); return; }
   if (currentView === "start") { renderStartView(); return; }
@@ -396,12 +403,14 @@ function renderAccountView() {
     } else if (view === "notice") {
       document.querySelector("#app").innerHTML = renderLoginNotice({ email: session.user.email });
     } else if (view === "invite") {
+      inviteAcceptVisible = true;
       document.querySelector("#app").innerHTML = renderInviteAccept({
         email: session.user.email,
         error: inviteError,
         preview: invitePreview,
         accepted: inviteAccepted,
-        busy: inviteBusy
+        busy: inviteBusy,
+        inAppBrowser: inAppBrowserNow()
       });
     } else if (view === "ready") {
       document.querySelector("#app").innerHTML = renderPackReady({ email: session.user.email, banner: accountBannerHtml() });
@@ -417,10 +426,12 @@ function renderAccountView() {
       });
     }
   } else if (inviteToken && !preferInviteLogin) {
+    inviteAcceptVisible = true;
     document.querySelector("#app").innerHTML = renderInviteAccept({
       error: inviteError || "unauthenticated",
       preview: invitePreview,
-      accepted: false
+      accepted: false,
+      inAppBrowser: inAppBrowserNow()
     });
   } else {
     const view = resolveSignedOutView(authScreen);
@@ -672,7 +683,9 @@ async function acceptInvite() {
       session = payload.session || session;
       inviteAccepted = true;
       inviteError = "";
-      try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
+      clearPendingInvite();
+      // The token is spent; drop it from the address bar so a reload cannot reopen a dead invite.
+      if (window.location.pathname === INVITE_ACCEPT_PATH) history.replaceState({}, "", "/");
     }
   } catch {
     inviteError = "failed";
@@ -760,7 +773,7 @@ async function withdrawAccount() {
   currentView = "product";
   openedWhileSignedIn = false;
   try { sessionStorage.removeItem(INVITE_CONFLICT_KEY); } catch { /* ignore */ }
-  try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
+  clearPendingInvite();
   withdrawStep = "done";
   render();
 }
@@ -798,9 +811,9 @@ async function boot() {
   const locationInfo = consumeAuthLocation(window.location.pathname, window.location.search);
   if (locationInfo.inviteToken) {
     inviteToken = locationInfo.inviteToken;
-    try { sessionStorage.setItem(PENDING_INVITE_KEY, inviteToken); } catch { /* ignore */ }
+    writePendingInvite(inviteToken);
   } else {
-    try { inviteToken = sessionStorage.getItem(PENDING_INVITE_KEY) || ""; } catch { inviteToken = ""; }
+    inviteToken = readPendingInvite();
   }
   if (locationInfo.token) {
     try {
@@ -813,9 +826,16 @@ async function boot() {
   } else {
     await refreshSession();
     if (locationInfo.authError) authError = AUTH_ERRORS[locationInfo.authError] || AUTH_ERRORS.invalid;
-    if (locationInfo.authError || locationInfo.isConsumePath || locationInfo.isInvitePath) history.replaceState({}, "", "/");
+    if (locationInfo.authError || locationInfo.isConsumePath) history.replaceState({}, "", "/");
   }
   if (inviteToken) await loadInvitePreview(inviteToken);
+  // An in-app browser hands Safari/Chrome the URL it is showing, and that browser cannot read
+  // this one's storage. The token stays in the address bar while the invite is still open so
+  // the handoff carries it; a spent or foreign invite is dropped from the URL and the store.
+  if (inviteToken && !keepPendingInvite({ preview: invitePreview, session })) {
+    clearPendingInvite();
+    if (locationInfo.isInvitePath) history.replaceState({}, "", "/");
+  }
   if (locationInfo.isInvitePath && session.user && !userNeedsEmail(session.user) && invitePreview?.ok && session.user.email !== invitePreview.email) {
     openedWhileSignedIn = true;
     try { sessionStorage.setItem(INVITE_CONFLICT_KEY, "other-session"); } catch { /* ignore */ }
@@ -830,7 +850,7 @@ async function boot() {
   });
   if (session.workspace?.acceptedPartner) {
     inviteAccepted = true;
-    try { sessionStorage.removeItem(PENDING_INVITE_KEY); } catch { /* ignore */ }
+    clearPendingInvite();
   }
   if (!session.user) authScreen = resolveSignedOutView(authScreen);
   const installView = resolveInstallView(window.location.pathname);

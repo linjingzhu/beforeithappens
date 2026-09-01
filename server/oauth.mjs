@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import { isValidEmail, normalizeEmail } from "./auth.mjs";
+import { attestProviderEmail, isValidEmail, normalizeEmail } from "./auth.mjs";
 
 export const SOCIAL_PROVIDERS = ["kakao", "naver", "google"];
 
@@ -200,12 +200,26 @@ function isDeniedFlag(value) {
   return value === false || value === "false";
 }
 
+function isAffirmedFlag(value) {
+  return value === true || value === "true";
+}
+
+// `email` is what the provider handed over; `emailVerified` is the stricter
+// question of whether the provider affirmed it. Only `emailVerified` may be
+// turned into a verified-email claim, because that claim lets auth.mjs write
+// the address onto the account and match an existing one.
 function readKakaoProfile(payload) {
   const providerUserId = String(payload?.id ?? "").trim();
   if (!providerUserId) return { ok: false, error: "profile-failed" };
   const account = payload?.kakao_account || {};
-  const verified = !isDeniedFlag(account.is_email_valid) && !isDeniedFlag(account.is_email_verified);
-  return { ok: true, providerUserId, email: verified ? safeEmail(account.email) : "" };
+  const denied = isDeniedFlag(account.is_email_valid) || isDeniedFlag(account.is_email_verified);
+  const email = denied ? "" : safeEmail(account.email);
+  // Both flags must be an explicit yes — an absent flag is not an affirmation,
+  // the same bar Google's email_verified has to clear.
+  const emailVerified = Boolean(email)
+    && isAffirmedFlag(account.is_email_valid)
+    && isAffirmedFlag(account.is_email_verified);
+  return { ok: true, providerUserId, email, emailVerified };
 }
 
 function readNaverProfile(payload) {
@@ -213,14 +227,17 @@ function readNaverProfile(payload) {
   const profile = payload?.response || {};
   const providerUserId = String(profile.id ?? "").trim();
   if (!providerUserId) return { ok: false, error: "profile-failed" };
-  return { ok: true, providerUserId, email: safeEmail(profile.email) };
+  // Naver's login profile carries no verification flag, so nothing here is
+  // affirmed: the address only feeds the email-bind gate.
+  return { ok: true, providerUserId, email: safeEmail(profile.email), emailVerified: false };
 }
 
 function readGoogleProfile(payload) {
   const providerUserId = String(payload?.sub ?? "").trim();
   if (!providerUserId) return { ok: false, error: "profile-failed" };
-  const verified = payload?.email_verified === true || payload?.email_verified === "true";
-  return { ok: true, providerUserId, email: verified ? safeEmail(payload?.email) : "" };
+  const verified = isAffirmedFlag(payload?.email_verified);
+  const email = verified ? safeEmail(payload?.email) : "";
+  return { ok: true, providerUserId, email, emailVerified: Boolean(email) };
 }
 
 const PROFILE_READERS = {
@@ -276,6 +293,13 @@ export async function exchangeOAuthCode({
 
   const profile = await requestProfile({ provider: name, accessToken: token.accessToken, fetchImpl });
   if (!profile.ok) return { ok: false, error: profile.error };
+
+  // The provider affirmed this address over a channel only this function can
+  // reach (client secret + authorization code). Hand auth.mjs a single-use
+  // claim for exactly this identity so completeOAuth may trust the address.
+  if (profile.emailVerified && profile.email) {
+    attestProviderEmail({ provider: name, providerUserId: profile.providerUserId, email: profile.email });
+  }
 
   return {
     ok: true,

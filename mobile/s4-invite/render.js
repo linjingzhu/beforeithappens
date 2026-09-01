@@ -32,6 +32,8 @@ export function renderS4BuyerHome(input = {}) {
             <button class="secondary invite-share-button" type="button" data-action="share-instagram">${escapeHtml(S4_COPY.instagram)}</button>
             <button class="secondary invite-share-button" type="button" data-action="share-kakao">${escapeHtml(S4_COPY.kakao)}</button>
           </div>
+          ${model.copyFailed ? `<p class="invite-copy-failed" role="alert">${escapeHtml(model.copyFailed)}</p>` : ""}
+          ${model.shareUrl ? `<p class="invite-share-url" data-invite-link>${escapeHtml(model.shareUrl)}</p>` : ""}
           ${model.copied ? `<p class="invite-copied" role="status">${escapeHtml(S4_COPY.copied)}</p>` : ""}
         </div>
         <p>${escapeHtml(S4_COPY.deviceRule)}</p>

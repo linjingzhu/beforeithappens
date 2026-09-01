@@ -90,7 +90,9 @@ export function workspaceView(state, userId, now = Date.now) {
       expiresAt: inviteRow.expiresAt,
       lastSentAt: inviteRow.lastSentAt || inviteRow.createdAt,
       remainingMs: Math.max(0, remainingMs),
-      url: inviteRow.shareToken ? inviteAcceptUrl("", inviteRow.shareToken) : ""
+      // An expired link is not shareable: hand back no url so the buyer home offers
+      // "링크 다시 만들기" instead of copy/share buttons that would send a dead link.
+      url: remainingMs > 0 && inviteRow.shareToken ? inviteAcceptUrl("", inviteRow.shareToken) : ""
     };
   }
   const workspace = state.workspaces.find((item) => item.id === membership.workspaceId);
