@@ -149,15 +149,17 @@ ${partTabs(chrome.parts)}
 ${progressBar(chrome.total)}
       </div>`
     : "";
-  // The full opening — the question the hundred are for, and what they cover — belongs on the way
-  // in. Repeating it above all ten Parts would push the questions off the screen nine times to say
-  // something the reader has already read.
-  const opening = chrome.first && chrome.tagline
-    ? `\n        <p class="stage-tagline">${escapeHtml(chrome.tagline)}</p>
-        <p class="stage-blurb">${escapeHtml(chrome.description)}</p>`
+  // A page says its name, and under it the one line that says what the page is for. On a pack that
+  // opening belongs on the way in only: repeating it above all ten Parts would push the questions
+  // off the screen nine times to say what the reader has already read.
+  const tagline = chrome.tagline
+    ? `\n        <p class="stage-tagline">${escapeHtml(chrome.tagline)}</p>`
+    : "";
+  const blurb = chrome.description
+    ? `\n        <p class="stage-blurb">${escapeHtml(chrome.description)}</p>`
     : "";
   return `      <header class="stage-head">
-        <h1>${escapeHtml(chrome.title)}</h1>${opening}
+        <h1>${escapeHtml(chrome.title)}</h1>${tagline}${blurb}
       </header>${bar}
 `;
 }
@@ -302,9 +304,8 @@ ${callToAction(site)}
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
-      tagline: model.tagline,
-      description: model.description,
-      first: model.first,
+      tagline: model.first ? model.tagline : "",
+      description: model.first ? model.description : "",
       parts: model.parts,
       total: model.total
     }
@@ -336,9 +337,8 @@ export function renderResultPage(slug, questions, site = SITE) {
   return document_({
     site,
     head,
+    chrome: { title: RESULT_COPY.title, description: RESULT_COPY.lead },
     body: `  <main class="page result" data-result-slug="${escapeHtml(slug)}">
-    <h1>${escapeHtml(RESULT_COPY.title)}</h1>
-    <p class="lead">${escapeHtml(RESULT_COPY.lead)}</p>
     <div class="result-body" data-result-body>
       <h2>${escapeHtml(RESULT_COPY.emptyTitle)}</h2>
       <p>${escapeHtml(RESULT_COPY.emptyBody)}</p>
@@ -375,9 +375,8 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
   return document_({
     site,
     head,
+    chrome: { title: page.title, description: page.description },
     body: `      <main class="page">
-        <h1>${escapeHtml(page.title)}</h1>
-        <p class="lead">${escapeHtml(page.description)}</p>
 ${sections}
 ${contact}${callToAction(site)}
       </main>`
@@ -399,6 +398,7 @@ export function renderIndex(model, site = SITE) {
   return document_({
     site,
     head,
+    chrome: { title: site.name, tagline: site.tagline },
     body: `  <main class="page">
     <ul class="cards">
 ${cards}

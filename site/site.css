@@ -155,29 +155,36 @@ a { color: var(--ab-ink); }
  * The pack's name, at display size. It is the first thing on the page and the only thing on it that
  * is not a question, so it is allowed to be large; `clamp` keeps it from swallowing a phone.
  */
+/*
+ * Display size, and the proportions of the design: the name is about four times the text under it,
+ * so the page has one thing to look at and then something to read. `clamp` keeps it from
+ * overwhelming a phone, where 60px of MaruBuri would be most of a screen.
+ */
 .stage-head h1 {
   font-family: MaruBuri, Georgia, serif;
   max-width: 40rem;
-  margin: 0 auto 12px;
-  font-size: clamp(34px, 5.2vw, 54px);
+  margin: 0 auto 14px;
+  font-size: clamp(38px, 6vw, 60px);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
 }
 
 /* The question the hundred are for. The one question on the page nobody is asked to answer. */
 .stage-tagline {
   max-width: 40rem;
-  margin: 0 auto 8px;
+  margin: 0 auto 10px;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1.5;
 }
 
 .stage-blurb {
   max-width: 40rem;
-  margin: 0 auto 24px;
+  margin: 0 auto 28px;
   color: var(--ab-muted);
   font-size: 15px;
+  line-height: 1.7;
 }
 
 /*

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
-import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
+import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
 import { findPack, questionsFor } from "../src/packs.js";
 
@@ -485,10 +485,34 @@ test("the header is the shell's, and a pack renderer emits only the pack's conte
   assert.equal(main.includes('class="parts"'), false);
   assert.equal(main.includes("<h1"), false, "the pack is named once, by the shell");
 
-  // Pages with no Parts get no strip rather than an empty one.
-  const about = renderIndex(indexModel({ site }), site);
-  assert.equal(about.includes('class="parts"'), false);
-  assert.equal(about.includes("stage-head"), false);
+  // Every page kind uses the same header — that is what makes it a widget rather than a section of
+  // the pack template — and only a paginated one gets a tab strip under it.
+  const index = renderIndex(indexModel({ site }), site);
+  assert.ok(index.includes("stage-head"), "the index uses the header too");
+  assert.equal(index.includes('class="parts"'), false, "and gets no strip, having no Parts");
+  assert.equal(index.includes('class="tabbar"'), false);
+});
+
+test("every page kind names itself in the one header, and nowhere else", async () => {
+  const { standingPages } = await import("../site/pages.js");
+  const { RESULT_COPY } = await import("../site/result-copy.js");
+  const about = standingPages({ site })[0];
+
+  const pages = [
+    [renderQuestionPage(pageModel("marriage", 1, { site }), site), PUBLISHED[0].title],
+    [renderIndex(indexModel({ site }), site), site.name],
+    [renderStandingPage(about, site), about.title],
+    [renderResultPage("marriage", published, site), RESULT_COPY.title]
+  ];
+  for (const [html, title] of pages) {
+    const head = html.slice(html.indexOf('<header class="stage-head">'), html.indexOf("</header>"));
+    assert.ok(head.includes(`<h1>${title}</h1>`), `${title} is named by the header`);
+    // Exactly one h1, and it is the header's. A page that also titled itself inside <main> would
+    // be two titles agreeing by hand.
+    assert.equal((html.match(/<h1[ >]/g) || []).length, 1, `${title} has one h1`);
+    const main = html.slice(html.indexOf("<main"), html.indexOf("</main>"));
+    assert.equal(main.includes("<h1"), false);
+  }
 });
 
 test("every tab label is the pack's own section title, never a string from the renderer", () => {
