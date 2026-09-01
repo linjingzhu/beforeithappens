@@ -258,3 +258,18 @@ test("install and start routes serve the web app without requiring install", asy
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test("a file that is not there is a 404, not a 500", async () => {
+  // `stat` throws for a missing path, and letting that reach the listener's catch made every
+  // absent asset — favicon, manifest, service worker — read as the server being broken, in the
+  // browser console and in the host's logs alike.
+  const { server, port } = await startServer();
+  try {
+    for (const path of ["/favicon.ico", "/manifest.json", "/sw.js", "/nope/at/all.png"]) {
+      assert.equal((await request(port, path)).status, 404, `${path} is a 404`);
+    }
+    assert.equal((await request(port, "/src/app.js")).status, 200, "and a file that is there serves");
+  } finally {
+    server.close();
+  }
+});

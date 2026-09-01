@@ -35,6 +35,22 @@ test("the hop hands off to the app first and only then falls back to the web", (
   assert.equal(webConsumePath("tok123"), "/?token=tok123");
 });
 
+test("the hop knocks on the app's door only where that door exists", () => {
+  // `loveme://` on a desktop browser opens a modal asking which application to use, and the page
+  // underneath takes no clicks until it is dismissed — the signed-in screen looked implemented and
+  // dead. So the phone gets the hand-off and everything else goes straight to the web.
+  const opened = consumeHopHtml("tok123", ON);
+  assert.match(opened, /iPhone/);
+  assert.match(opened, /navigator\.userAgent/);
+  const script = opened.slice(opened.indexOf("<script"));
+  assert.ok(
+    script.indexOf("location.replace(w)") < script.indexOf("location.href"),
+    "the web is the branch a desktop takes, before the app hand-off is even armed"
+  );
+  // And the app is still one tap away for anyone who wants it.
+  assert.match(opened, /<a href="loveme:\/\/\/auth\/consume\?token=tok123">/);
+});
+
 test("a hop with no fallback keeps its original shape", () => {
   const plain = appHopHtml("loveme://invite");
   assert.match(plain, /http-equiv="refresh"/);
