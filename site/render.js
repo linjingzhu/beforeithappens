@@ -451,10 +451,21 @@ export function renderResultPage(slug, questions, site = SITE) {
     head,
     chrome: { title: RESULT_COPY.title, description: RESULT_COPY.lead },
     body: `  <main class="page result" data-result-slug="${escapeHtml(slug)}">
+    <div class="result-compare" data-compare hidden></div>
     <div class="result-body" data-result-body>
       <h2>${escapeHtml(RESULT_COPY.emptyTitle)}</h2>
       <p>${escapeHtml(RESULT_COPY.emptyBody)}</p>
     </div>
+    <section class="result-share" data-share hidden>
+      <h2>${escapeHtml(RESULT_COPY.ctaTitle)}</h2>
+      <p>${escapeHtml(RESULT_COPY.shareNote)}</p>
+      <button class="result-share-action" type="button" data-share-action>${escapeHtml(RESULT_COPY.shareAction)}</button>
+      <p class="result-share-state" data-share-state hidden></p>
+      <label class="result-share-link" data-share-link hidden>
+        <span>${escapeHtml(RESULT_COPY.shareManual)}</span>
+        <input type="text" readonly data-share-url>
+      </label>
+    </section>
     <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
     <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
 ${callToAction(site)}

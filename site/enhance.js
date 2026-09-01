@@ -3,6 +3,7 @@ import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withDiscussi
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
 import { reflect } from "./reflect.js";
+import { compareAnswers, decodeShare, encodeShare } from "./share.js";
 
 /**
  * The only script the site ships, and it is enhancement.
@@ -172,7 +173,148 @@ function startResultPage(root, store) {
       store.clear();
       renderResult(body, reflect(index.questions, store.read()));
       clear.hidden = true;
+      showShare(root, index, store);
     });
+  }
+
+  showShare(root, index, store);
+  showComparison(root, index, store);
+}
+
+/** The link that carries this reader's choices to the other person, and nothing else. */
+function showShare(root, index, store) {
+  const panel = root.querySelector("[data-share]");
+  const action = root.querySelector("[data-share-action]");
+  if (!panel || !action) return;
+  panel.hidden = false;
+
+  const state = root.querySelector("[data-share-state]");
+  const holder = root.querySelector("[data-share-link]");
+  const field = root.querySelector("[data-share-url]");
+
+  action.addEventListener("click", async () => {
+    const payload = encodeShare(index.slug, index.questions, store.read());
+    if (!payload) {
+      say(state, RESULT_COPY.shareEmpty);
+      if (holder) holder.hidden = true;
+      return;
+    }
+    // Built from the page's own address, so a preview build shares a preview link. The payload
+    // goes in the fragment: everything after `#` stays in the browser and reaches no server.
+    const url = `${location.origin}${location.pathname}#c=${payload}`;
+    if (field) field.value = url;
+    if (holder) holder.hidden = false;
+
+    // The clipboard needs permission and a secure context, and a reader who is denied either still
+    // has the address in front of them.
+    try {
+      await navigator.clipboard?.writeText(url);
+      say(state, RESULT_COPY.shareCopied);
+    } catch {
+      say(state, RESULT_COPY.shareManual);
+    }
+    field?.select?.();
+  });
+}
+
+function say(node, text) {
+  if (!node) return;
+  node.textContent = text;
+  node.hidden = false;
+}
+
+/**
+ * The other person's link, read out of the fragment.
+ *
+ * Their answers are never written to storage. They belong to the person who sent them, they are in
+ * this page for as long as the link is in the address bar, and closing the tab is the end of it.
+ */
+function showComparison(root, index, store) {
+  const panel = root.querySelector("[data-compare]");
+  if (!panel) return;
+  // A second link pasted into the address bar of an open page is a same-document navigation: the
+  // script does not run again, and without this the reader would be looking at the first link's
+  // comparison under the second link's address.
+  if (!showComparison.listening) {
+    showComparison.listening = true;
+    addEventListener("hashchange", () => showComparison(root, index, store));
+  }
+
+  const match = /(?:^|[#&])c=([^&]+)/.exec(location.hash || "");
+  if (!match) {
+    panel.hidden = true;
+    panel.replaceChildren();
+    return;
+  }
+
+  panel.hidden = false;
+  const theirs = decodeShare(decodeURIComponent(match[1]), index.slug, index.questions);
+  if (!theirs) {
+    panel.replaceChildren(element("p", "compare-note", RESULT_COPY.compareUnreadable));
+    return;
+  }
+  renderComparison(panel, compareAnswers(index.questions, store.read(), theirs));
+}
+
+function comparisonRows(rows, withAnswers) {
+  const list = element("ul", "compare-list");
+  for (const row of rows) {
+    const item = element("li");
+    item.append(element("p", "compare-q", `${row.number}. ${row.title}`));
+    if (withAnswers) {
+      item.append(
+        element("p", "compare-a", `${RESULT_COPY.compareMine} · ${row.mine}`),
+        element("p", "compare-a compare-theirs", `${RESULT_COPY.compareTheirs} · ${row.theirs}`)
+      );
+    }
+    list.append(item);
+  }
+  return list;
+}
+
+function renderComparison(panel, model) {
+  panel.replaceChildren();
+  panel.append(
+    element("h2", null, RESULT_COPY.compareTitle),
+    element("p", "compare-note", RESULT_COPY.compareLead)
+  );
+
+  // Nothing of theirs is on the page until the reader has answered something of their own.
+  if (model.empty) {
+    panel.append(
+      element("h3", null, RESULT_COPY.compareGateTitle),
+      element("p", "compare-note", RESULT_COPY.compareGateBody)
+    );
+    return;
+  }
+
+  panel.append(element("p", "compare-count", RESULT_COPY.compareCount(model.compared, model.total)));
+
+  if (model.differing.length) {
+    const section = element("section", "compare-section");
+    section.append(
+      element("h3", null, `${RESULT_COPY.compareDifferentLabel} ${model.differing.length}`),
+      element("p", "compare-note", RESULT_COPY.compareDifferentLead),
+      comparisonRows(model.differing, true)
+    );
+    panel.append(section);
+  }
+  if (model.shared.length) {
+    const section = element("section", "compare-section");
+    section.append(
+      element("h3", null, `${RESULT_COPY.compareSameLabel} ${model.shared.length}`),
+      comparisonRows(model.shared, true)
+    );
+    panel.append(section);
+  }
+  if (model.waiting.length) {
+    const section = element("section", "compare-section");
+    section.append(
+      element("h3", null, `${RESULT_COPY.compareWaitingLabel} ${model.waiting.length}`),
+      element("p", "compare-note", RESULT_COPY.compareWaitingLead),
+      comparisonRows(model.waiting, false)
+    );
+    panel.append(section);
   }
 }
 

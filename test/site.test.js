@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, descriptionLines, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
+import { RESULT_COPY } from "../site/result-copy.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
 import { findPack, questionsFor } from "../src/packs.js";
 
@@ -772,4 +773,100 @@ test("question feedback is a separate store, so removing it cannot take answers 
   assert.deepEqual(parseFeedback(serializeFeedback(feedback), "marriage"), feedback);
   // Another pack's file is not this pack's feedback.
   assert.deepEqual(parseFeedback(serializeFeedback(feedback), "pregnancy"), emptyFeedback("pregnancy"));
+});
+
+test("a link carries the choices to the other person, and nothing else", async () => {
+  const { encodeShare, decodeShare, SHARE_VERSION } = await import("../site/share.js");
+  const { toQuestionIndex } = await import("../site/reflect.js");
+  const { emptyAnswers, withAnswer, withNote } = await import("../site/answers.js");
+
+  const questions = toQuestionIndex(findPack(PUBLISHED[0].packId).orderedQuestions);
+  let mine = withAnswer(emptyAnswers("marriage"), questions[0].id, questions[0].o[2].id);
+  mine = withAnswer(mine, questions[5].id, questions[5].o[0].id);
+  // The notes beside a question are private thoughts about the person about to read the link.
+  mine = withNote(mine, questions[0].id, "reason", "늦잠이 회복이라서");
+  mine = withNote(mine, questions[0].id, "guess", "상대는 B를 고를 것 같아요");
+
+  const payload = encodeShare("marriage", questions, mine);
+  assert.equal(payload, `${SHARE_VERSION}.marriage.${"c----a".padEnd(questions.length, "-")}`);
+  assert.equal(payload.includes("늦잠"), false, "no note travels");
+  assert.equal(payload.includes("m100-"), false, "and no ids, so a link cannot name its build");
+  // A hundred questions is a hundred characters, which fits any browser's address bar.
+  assert.ok(payload.length < 200, `${payload.length} characters`);
+
+  const decoded = decodeShare(payload, "marriage", questions);
+  assert.deepEqual(decoded.items, {
+    [questions[0].id]: questions[0].o[2].id,
+    [questions[5].id]: questions[5].o[0].id
+  });
+
+  // Nothing answered is nothing to send.
+  assert.equal(encodeShare("marriage", questions, emptyAnswers("marriage")), "");
+
+  // Everything that does not match exactly is refused rather than repaired: a comparison lined up
+  // against the wrong questions is worse than one that says it cannot be read.
+  const body = "a".repeat(questions.length);
+  for (const [what, text] of [
+    ["another version", `v2.marriage.${body}`],
+    ["another pack", `${SHARE_VERSION}.pregnancy.${body}`],
+    ["another length", `${SHARE_VERSION}.marriage.${body.slice(0, 40)}`],
+    ["a choice that does not exist", `${SHARE_VERSION}.marriage.${"z".repeat(questions.length)}`],
+    ["nonsense", "hello"]
+  ]) {
+    assert.equal(decodeShare(text, "marriage", questions), null, `refuses ${what}`);
+  }
+});
+
+test("the other person's answer opens only where the reader has answered too", async () => {
+  const { compareAnswers } = await import("../site/share.js");
+  const { toQuestionIndex } = await import("../site/reflect.js");
+  const { emptyAnswers, withAnswer } = await import("../site/answers.js");
+
+  const questions = toQuestionIndex(findPack(PUBLISHED[0].packId).orderedQuestions).slice(0, 3);
+  const [q1, q2, q3] = questions;
+  let mine = withAnswer(emptyAnswers("marriage"), q1.id, q1.o[0].id);
+  mine = withAnswer(mine, q2.id, q2.o[3].id);
+  const theirs = {
+    items: { [q1.id]: q1.o[0].id, [q2.id]: q2.o[1].id, [q3.id]: q3.o[2].id }
+  };
+
+  const model = compareAnswers(questions, mine, theirs);
+  assert.equal(model.shared.length, 1, "the one they answered the same");
+  assert.equal(model.differing.length, 1);
+  assert.equal(model.compared, 2);
+
+  // The third is theirs alone, and the row carries no answer of theirs at all — not hidden by CSS,
+  // not in the page. Seeing it first is how an honest answer becomes an agreeable one.
+  assert.deepEqual(model.waiting.map((row) => row.number), [q3.n]);
+  assert.equal(JSON.stringify(model.waiting).includes(q3.o[2].l), false);
+
+  // A reader who has answered nothing sees nothing of theirs.
+  const gated = compareAnswers(questions, emptyAnswers("marriage"), theirs);
+  assert.equal(gated.empty, true);
+  assert.equal(JSON.stringify(gated.differing) + JSON.stringify(gated.shared), "[][]");
+
+  // And nothing the comparison says is a verdict about the two of them. Scoped to the comparison's
+  // own words: the sheet's lead says "점수도, 판정도 없습니다", which is the promise, not a breach
+  // of it, and a scan over every string would read that disavowal as the thing it disavows.
+  const { RESULT_FORBIDDEN, RESULT_COPY } = await import("../site/result-copy.js");
+  const words = Object.entries(RESULT_COPY)
+    .filter(([name, value]) => name.startsWith("compare") && typeof value === "string")
+    .map(([, value]) => value)
+    .join(" ");
+  for (const forbidden of RESULT_FORBIDDEN) {
+    assert.equal(words.includes(forbidden), false, `the comparison never says ${forbidden}`);
+  }
+  // The count it does show is a fact about what the two of them did, like the sheet's own.
+  assert.match(RESULT_COPY.compareCount(2, 100), /2 \/ 100/);
+});
+
+test("the result page offers the link, and the build ships the module that makes it", () => {
+  const html = renderResultPage(PUBLISHED[0].slug, published, site);
+  assert.match(html, /data-share-action/);
+  assert.match(html, /data-compare/);
+  assert.ok(html.includes(RESULT_COPY.shareNote), "it says what is in the link");
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /"share\.js"/);
+  // The payload rides in the fragment, which is the whole reason this can exist on a static site:
+  // everything after `#` stays in the browser and reaches no server.
+  assert.match(readFileSync("site/enhance.js", "utf8"), /#c=\$\{payload\}/);
 });
