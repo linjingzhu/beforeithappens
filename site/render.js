@@ -1,6 +1,7 @@
 import { escapeHtml } from "../src/html.js";
 import { SITE } from "./config.js";
 import { absoluteUrl, indexModel } from "./content.js";
+import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 
@@ -18,13 +19,13 @@ import { RESULT_COPY } from "./result.js";
  * so the page needs no session, no account, and no request.
  */
 export const SITE_COPY = Object.freeze({
-  wordmark: "Love Me",
   next: "다음",
   previous: "이전",
   backToIndex: "질문집 목록",
   partsLabel: "파트",
   partsUnit: "개 파트",
   packsLabel: "질문집",
+  footerLabel: "사이트 안내",
   partWord: (n) => `Part ${n}`,
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
@@ -166,10 +167,25 @@ ${packs.map((pack) => {
   return `  <aside class="rail">
     <a class="mark" href="/">
       <img class="mark-logo" src="/brand/logo.png" width="32" height="32" alt="" decoding="async">
-      <span class="wordmark">${escapeHtml(SITE_COPY.wordmark)}</span>
+      <span class="wordmark">${escapeHtml(site.name)}</span>
     </a>${nav}
     <p class="rail-foot">${escapeHtml(site.tagline)}</p>
   </aside>`;
+}
+
+/**
+ * The footer's links, from the same list that decides which standing pages are built. A footer that
+ * linked to a page the build does not emit is a 404 nobody notices until a reader finds it.
+ */
+function footerNav(site) {
+  const links = footerLinks({ site });
+  if (!links.length) return "";
+  const items = links
+    .map((link) => `<a href="${escapeHtml(link.path)}">${escapeHtml(link.title)}</a>`)
+    .join("\n          ");
+  return `        <nav class="foot-nav" aria-label="${escapeHtml(SITE_COPY.footerLabel)}">
+          ${items}
+        </nav>`;
 }
 
 function document_({ site, head, body, scripts = "", currentSlug = "" }) {
@@ -190,7 +206,8 @@ ${rail(site, currentSlug)}
     <div class="stage">
 ${body}
       <footer class="foot">
-        <p>${escapeHtml(SITE_COPY.wordmark)} · ${escapeHtml(site.tagline)}</p>
+        <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
+${footerNav(site)}
       </footer>
     </div>
   </div>
@@ -262,6 +279,37 @@ ${callToAction(site)}
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
     currentSlug: slug
+  });
+}
+
+/**
+ * A standing page: 소개, 문의. Prose, not questions, so it carries no answer machinery and no
+ * enhancement script — there is nothing on it to remember.
+ */
+export function renderStandingPage(page, site = SITE) {
+  const sections = page.sections
+    .map((section) => `      <section class="prose">
+        <h2>${escapeHtml(section.heading)}</h2>
+${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>`).join("\n")}
+      </section>`)
+    .join("\n");
+  const contact = page.email
+    ? `      <p class="prose-contact"><a href="mailto:${escapeHtml(page.email)}">${escapeHtml(page.email)}</a></p>\n`
+    : "";
+  const head = [
+    `  <title>${escapeHtml(page.title)} · ${escapeHtml(site.name)}</title>`,
+    `  <meta name="description" content="${escapeHtml(page.description)}">`,
+    site.origin ? `  <link rel="canonical" href="${escapeHtml(absoluteUrl(site.origin, page.path))}">` : ""
+  ].filter(Boolean).join("\n");
+  return document_({
+    site,
+    head,
+    body: `      <main class="page">
+        <h1>${escapeHtml(page.title)}</h1>
+        <p class="lead">${escapeHtml(page.description)}</p>
+${sections}
+${contact}${callToAction(site)}
+      </main>`
   });
 }
 

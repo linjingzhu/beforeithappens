@@ -2,7 +2,8 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SITE, siteWith } from "../site/config.js";
 import { allPages, indexModel } from "../site/content.js";
-import { renderIndex, renderQuestionPage, renderResultPage } from "../site/render.js";
+import { renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
+import { standingPages } from "../site/pages.js";
 import { questionsFor } from "../src/packs.js";
 import { PUBLISHED } from "../site/config.js";
 import { pagesFiles, robotsTxt, sitemapXml } from "../site/seo.js";
@@ -63,8 +64,18 @@ for (const entry of PUBLISHED) {
   await writeFile(join(dir, "index.html"), renderResultPage(entry.slug, questions, site));
 }
 
-// The sheet is personal and carries noindex, so it is deliberately absent from the sitemap.
-await writeFile(join(OUT, "sitemap.xml"), sitemapXml(pages, site));
+// 소개, and 문의 once there is an address to put on it. Prose rather than questions, so they are
+// written the same way and share the shell and nothing else.
+const standing = standingPages({ site });
+for (const page of standing) {
+  const dir = join(OUT, page.slug);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "index.html"), renderStandingPage(page, site));
+}
+
+// The sheet is personal and carries noindex, so it is deliberately absent from the sitemap. The
+// standing pages are not: they are what a reader or a reviewer looks for.
+await writeFile(join(OUT, "sitemap.xml"), sitemapXml([...pages, ...standing], site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
 
 // What Pages needs, decided in `pagesFiles` so a test can assert it without reading a build.
@@ -72,6 +83,7 @@ for (const [name, body] of Object.entries(pagesFiles(site))) {
   await writeFile(join(OUT, name), body);
 }
 
-console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"})`);
+console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"}, ${standing.length} standing)`);
+if (!site.contactEmail) console.log("  note: SITE.contactEmail is unset, so no 문의 page is built");
 if (!site.origin) console.log("  note: AB_SITE_ORIGIN is unset, so pages carry no canonical URL");
 if (!site.appOrigin) console.log("  note: AB_APP_ORIGIN is unset, so the call to action points at /");

@@ -63,6 +63,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N3 | 앱 | **Kakao developer app** | 🟢 | Registration is immediate. Redirect URI must match exactly or it fails before reaching the server | `docs/SOCIAL_LOGIN.md` §3 |
 | N4 | 앱 | **Apple Developer: enrol as Individual** | 🟢 | The only wait nobody controls. Organization needs a D-U-N-S number and takes days to weeks | `docs/IOS_INSTALL.md` |
 | N5 | 공통 | **Business details for the privacy policy** | 🟢 | 54 placeholders: 상호, 대표자, 주소, 사업자등록번호, 보호책임자, 문의 이메일 | `docs/PRIVACY.md`, `docs/proposals/privacy-policy-ko.md` |
+| N5a | 웹 | **A contact address** | 🟢 | One line of N5, and the smallest useful piece of it. Set `SITE.contactEmail` and the 문의 page builds itself, with a footer link and a sitemap entry | `site/config.js` |
 | N6 | 공통 | **Resend domain verification** | 🟢 | Until then `onboarding@resend.dev` reaches only the Resend account owner. Needed for login mail and later for the result sheet | `docs/DEPLOY.md` §4 |
 | N7 | 웹 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
 
@@ -83,7 +84,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X5c | 웹 | ~~Enforce HTTPS~~ | ✅ | X5d | **`https://lovemedialogue.com` is live.** The canonicals the build writes are now true |
 | X5e | 웹 | **Google Search Console: verify the property, submit the sitemap** | 🟢 | X5c | Nothing indexes a site it has not found. The build already emits `/sitemap.xml` and a `robots.txt` that points at it. Verification is a DNS TXT record or an HTML tag — the TXT goes in the same 후이즈 screen as the A records |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
-| X7 | 웹 | AdSense application | ⏳ | N5 | Ten Parts of a hundred questions exist and the site is live over HTTPS. **The one thing left is a published privacy policy** — the business details in N5, then the page. In-page units only, never on the page turn |
+| X7 | 웹 | AdSense application | ⏳ | N5 | The site is live over HTTPS and carries a 소개 page. **What is left is a published privacy policy** — the business details in N5, then the page. Note the page count: ten Parts is on the low side for review, and publishing a second pack is one entry in `site/config.js`. In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
 
 ---

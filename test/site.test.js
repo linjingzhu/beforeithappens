@@ -425,7 +425,7 @@ test("the rail carries the mark on every kind of page, and no nav while there is
   ];
   for (const html of pages) {
     assert.ok(has(html, 'class="rail"'), "the rail is on the page");
-    assert.ok(has(html, SITE_COPY.wordmark), "and carries the wordmark");
+    assert.ok(has(html, site.name), "and carries the wordmark, which is the site's name");
     assert.ok(has(html, 'src="/brand/logo.png"'), "and the mark");
   }
 
