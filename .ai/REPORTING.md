@@ -56,6 +56,29 @@ Recommended Next Actions
 
 Do not list actions the AI could have safely completed itself.
 
+## Owner actions are always a table
+
+Every report ends with the owner-action ledger **as a table, in the chat, with a status emoji on
+every row** — past, present and future in one view, so the owner can see the whole thing at a glance
+rather than reconstructing it from previous messages.
+
+`docs/OWNER_ACTIONS.md` is the persistent copy and the source of truth. Update it whenever a row
+moves, then render it in chat. The chat table is not a substitute for the file: the conversation
+scrolls away and the ledger is the residue of every run.
+
+Status vocabulary for that table:
+
+| | |
+|---|---|
+| ✅ | done |
+| 🟢 | can be done now — nothing is blocking it |
+| ⏳ | waiting on something above it |
+| ❓ | unknown — the agent could not verify it and does not guess |
+| 🤔 | a decision, not a task |
+
+Never mark a row ✅ on the owner's behalf, and never mark one 🟢 when a dependency above it is still
+open. A row the agent could not check is ❓, not an assumption.
+
 ## Persistent detailed report
 
 When a run is substantial or creates useful engineering history, write a detailed report under:
