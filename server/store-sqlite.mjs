@@ -145,13 +145,40 @@ function isConstraintError(error) {
  * single transaction, the first time this database is opened; the JSON file itself is
  * left untouched so a deployment keeps its old file as a cold backup.
  */
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * WAL is a property of the database file, not of a connection, so only the first opener
+ * has to set it. That matters because switching journal mode takes a brief exclusive lock
+ * and SQLite answers SQLITE_BUSY immediately for it — busy_timeout does not cover this
+ * one — so several processes starting together would otherwise race and one would die on
+ * open. Read it first, and only retry when it genuinely has to change.
+ */
+function enableWal(db, { attempts = 40, waitMs = 25 } = {}) {
+  const mode = () => String(db.prepare("PRAGMA journal_mode").get()?.journal_mode || "").toLowerCase();
+  if (mode() === "wal") return true;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      db.exec("PRAGMA journal_mode = WAL");
+      return true;
+    } catch (error) {
+      if (!/lock|busy/i.test(String(error?.message || ""))) throw error;
+      if (mode() === "wal") return true;
+      sleepSync(waitMs);
+    }
+  }
+  // Correctness rests on BEGIN IMMEDIATE and the data_version check, not on WAL, so a
+  // database that stubbornly refuses the switch still opens rather than taking the app down.
+  return mode() === "wal";
+}
+
 export function createSqliteStore(dbPath, { importJsonFrom = null } = {}) {
   mkdirSync(dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
-  // busy_timeout first: switching journal mode needs a brief exclusive lock, and a second
-  // process opening the same database at the same moment must wait rather than fail.
   db.exec("PRAGMA busy_timeout = 10000");
-  db.exec("PRAGMA journal_mode = WAL");
+  enableWal(db);
   db.exec("PRAGMA synchronous = FULL");
 
   db.exec(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);

@@ -16,9 +16,9 @@ const storePath = process.env.AB_STORE_PATH
 const store = await createFileStore(storePath);
 const couple = createCouple({ store });
 const account = createAccount({ store });
-const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
 const pack = { id: marriagePack.id, version: marriagePack.version };
 const entitlement = createEntitlement({ store, pack });
+const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
 const answers = createAnswers({
   store,
   questionIds: questions.map((question) => question.id),
