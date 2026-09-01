@@ -32,7 +32,8 @@ export const PACK_AUDIENCE = Object.freeze({ couple: "couple", solo: "solo" });
  *
  * A **site** pack is published as public web pages. It has no shelf and no price, and it carries
  * whatever guidance its author actually wrote — which is not the same across packs. 결혼 100제 is a
- * question and four choices and nothing else; 임신 100제 was written with a scene for every question.
+ * a question, a scene and four named values; another pack may be a question and four choices and
+ * nothing else.
  * Requiring the app's full set of either would mean inventing paragraphs, and invented guidance is
  * worse than none: it reads as advice and is not.
  *
@@ -116,6 +117,9 @@ export function definePack(raw = {}) {
         fail(id, `${question.id}.researchKeywords is app-only; the site renders no keyword list`);
       }
       if (question.mood !== undefined) requireText(id, question.mood, `${question.id}.mood`);
+      // The situation a question is asked inside, where the pack's author wrote one. Not the app's
+      // `example`, which shows a reader how to answer; a scene is what both readers are picturing.
+      if (question.scene !== undefined) requireText(id, question.scene, `${question.id}.scene`);
     }
 
     const choices = Array.isArray(question.choices) ? question.choices : [];
@@ -139,7 +143,7 @@ export function definePack(raw = {}) {
   // All-or-nothing per field. A pack where nine questions in ten carry a scene reads as though the
   // tenth lost one, and that is exactly the kind of gap nobody reports.
   if (!isApp) {
-    for (const field of [...APP_ONLY_QUESTION_FIELDS, "mood"]) {
+    for (const field of [...APP_ONLY_QUESTION_FIELDS, "mood", "scene"]) {
       const withField = questions.filter((question) => question[field] !== undefined).length;
       if (withField !== 0 && withField !== questions.length) {
         fail(id, `${field} is on ${withField} of ${questions.length} questions; a site pack carries it on all or none`);

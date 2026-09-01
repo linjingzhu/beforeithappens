@@ -641,18 +641,21 @@ test("a Part opens at the top, so the opening is on the screen every time", () =
 });
 
 test("the marriage source is sliced by index, not scanned by a lazy regex", async () => {
-  // A lazy quantifier crossing half a megabyte backtracks once per character, and past some
+  // A lazy quantifier crossing a large file backtracks once per character, and past some
   // engine-dependent threshold stops matching rather than slowing down: this passed here and
   // returned null on a CI runner one Node patch ahead. Two indexOf calls cannot do that.
   const generator = readFileSync("scripts/build-marriage-100.mjs", "utf8");
   // On the code, not the prose: the comment above the fix quotes the pattern it replaced.
   assert.equal(/html\.match\(/.test(generator), false, "the document is never scanned by regex");
   assert.match(generator, /html\.indexOf\(opening\)/);
-  assert.match(generator, /html\.indexOf\("\];", start\)/);
+  assert.match(generator, /html\.indexOf\("\\n {2}\];", start\)/);
 
-  // And it still reads the same hundred questions.
-  const { readSourceQuestions } = await import("../scripts/build-marriage-100.mjs");
-  const raw = await readSourceQuestions();
-  assert.equal(raw.length, 100);
-  assert.equal(raw.every((q) => q.options?.length === 4), true);
+  // And it still reads the same hundred questions, with the four choices and the scene each one
+  // was written with.
+  const { readSource } = await import("../scripts/build-marriage-100.mjs");
+  const raw = await readSource();
+  assert.equal(raw.questions.length, 100);
+  assert.equal(raw.order.length, 100);
+  assert.equal(raw.questions.every((q) => q.o?.length === 4 && q.s && q.q), true);
+  assert.equal(raw.values.every((set) => set.length === 4), true);
 });
