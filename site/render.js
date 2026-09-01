@@ -91,17 +91,38 @@ function adSlot(model) {
  * The tab strip. One tab per Part, and the page is the Part — so a tab is a link to a real
  * document, not a control that hides and shows things. That is what lets a reader open Part 7 in a
  * new tab, land on it from a search result, or read the whole pack with scripting off.
+ *
+ * Every label here comes from the pack: `part.title` is the section's own title, carried through
+ * `partsOf` in `site/content.js` untouched. Nothing about a Part is named in this file, so a pack
+ * that renames a section renames its tab by being rebuilt.
  */
-function partTabs(model) {
-  const tabs = model.parts
-    .map((part) => `        <a class="part-tab${part.current ? " is-current" : ""}" href="${escapeHtml(part.path)}"${part.current ? ' aria-current="page"' : ""}>
-          <span class="part-tab-n">${escapeHtml(SITE_COPY.partWord(part.number))}</span>
-          <span class="part-tab-title">${escapeHtml(part.title)}</span>
-        </a>`)
+function partTabs(parts) {
+  const tabs = parts
+    .map((part) => `          <a class="part-tab${part.current ? " is-current" : ""}" href="${escapeHtml(part.path)}"${part.current ? ' aria-current="page"' : ""}>
+            <span class="part-tab-n">${escapeHtml(SITE_COPY.partWord(part.number))}</span>
+            <span class="part-tab-title">${escapeHtml(part.title)}</span>
+          </a>`)
     .join("\n");
-  return `      <nav class="parts" aria-label="${escapeHtml(SITE_COPY.partsLabel)}">
+  return `        <nav class="parts" aria-label="${escapeHtml(SITE_COPY.partsLabel)}">
 ${tabs}
-      </nav>`;
+        </nav>`;
+}
+
+/**
+ * The chrome above the reading column: the pack's name, and its Parts.
+ *
+ * It lives in the shell rather than in the page renderer because it is the same on all ten Parts —
+ * the only thing that changes between them is which tab is marked. Keeping it here means a page
+ * renderer produces the pack's own content and nothing else, and that the day a second kind of
+ * paginated content arrives it inherits the header instead of copying it.
+ */
+function stageHead(chrome) {
+  if (!chrome) return "";
+  const tabs = chrome.parts?.length ? `\n${partTabs(chrome.parts)}` : "";
+  return `      <header class="stage-head">
+        <h1>${escapeHtml(chrome.title)}</h1>${tabs}
+      </header>
+`;
 }
 
 /**
@@ -188,7 +209,13 @@ function footerNav(site) {
         </nav>`;
 }
 
-function document_({ site, head, body, scripts = "", currentSlug = "" }) {
+/**
+ * The shell every page is poured into: the rail, the header, the reading column, the footer.
+ *
+ * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
+ * identity, not its layout. A page renderer below returns only its own content.
+ */
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null }) {
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -204,7 +231,7 @@ ${head}
   <div class="shell">
 ${rail(site, currentSlug)}
     <div class="stage">
-${body}
+${stageHead(chrome)}${body}
       <footer class="foot">
         <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
 ${footerNav(site)}
@@ -218,11 +245,9 @@ ${scripts}
 }
 
 export function renderQuestionPage(model, site = SITE) {
-  const body = `      <header class="stage-head">
-        <h1>${escapeHtml(model.title)}</h1>
-${partTabs(model)}
-      </header>
-      <main class="page">
+  // Only the Part's own content. Its name and its siblings' tabs are the shell's, because they are
+  // the same on every Part of the pack.
+  const body = `      <main class="page">
         <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partWord(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map(questionArticle).join("\n")}
@@ -236,7 +261,9 @@ ${callToAction(site)}
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
     body,
     scripts: enhancement(),
-    currentSlug: model.slug
+    currentSlug: model.slug,
+    // The pack's title, and its Parts' own labels — both straight from the pack.
+    chrome: { title: model.title, parts: model.parts }
   });
 }
 
