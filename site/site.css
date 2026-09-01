@@ -267,6 +267,42 @@ a { color: var(--ab-ink); }
 
 .q-intent { margin: 0 0 8px; }
 
+/* The Part's own line, once, under its title. */
+.part-blurb {
+  color: var(--ab-muted);
+  margin: 0 0 24px;
+}
+
+/*
+ * The question's tone, in a word. It sits with the stem rather than above it because it qualifies
+ * the question — "걱정" and "웃음" are different invitations to the same kind of asking.
+ */
+.q-mood {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--ab-soft);
+  color: var(--ab-muted);
+  font-family: Pretendard, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/*
+ * What a choice stands for. Four plausible answers read as one blur without it; named, they read as
+ * four different things a person might want.
+ */
+.q-choice-value {
+  display: block;
+  margin-top: 4px;
+  color: var(--ab-accent);
+  font-size: 13px;
+  font-style: normal;
+}
+
 .q-example {
   margin: 0 0 16px;
   color: var(--ab-muted);

@@ -1,4 +1,5 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { literal } from "./lib/js-literal.mjs";
 
 /**
  * Converts `question-packs/marriage.html` into a pack module.
@@ -63,12 +64,6 @@ export function toPack(raw) {
   }
 
   return { sections, questions };
-}
-
-function literal(value) {
-  // U+2028/U+2029 are legal in JSON and were illegal in JS string literals before ES2019.
-  // Escaping them costs nothing and keeps the generated file readable by older tooling.
-  return JSON.stringify(value).replace(/[\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16)}`);
 }
 
 function render({ sections, questions }) {

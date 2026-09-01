@@ -2,6 +2,7 @@ import { PACK_LIST_ROWS } from "./pair-code.js";
 import { PACK_AUDIENCE, PACK_SURFACE } from "./pack-schema.js";
 import { marriagePack } from "./questions.js";
 import { marriage100Pack } from "./questions-marriage-100.js";
+import { pregnancy100Pack } from "./questions-pregnancy-100.js";
 
 /**
  * The registry: every pack that has content, in one place, addressable by either of its two ids.
@@ -17,13 +18,14 @@ import { marriage100Pack } from "./questions-marriage-100.js";
  * ordering, lookup, and the invariant that the app never advertises a pack with nothing in it —
  * follows from being in this list.
  */
-const CONTENT_PACKS = Object.freeze([marriagePack, marriage100Pack]);
+const CONTENT_PACKS = Object.freeze([marriagePack, marriage100Pack, pregnancy100Pack]);
 
 const APP_PACKS = CONTENT_PACKS.filter((pack) => pack.surface === PACK_SURFACE.app);
 
-// Only app packs are on a shelf, so only they are addressable by catalogId. `marriage-100` shares a
-// subject with `marriage` and is a different pack: same shelf would mean the app offering a hundred
-// unguided questions it has no screen for.
+// Only app packs are on a shelf, so only they are addressable by catalogId. The site packs share
+// subjects with catalog rows — `marriage-100` with `marriage`, `pregnancy-100` with `pregnancy` —
+// and are different packs. Same shelf would mean the app offering a hundred questions it has no
+// screen for, and in `pregnancy`'s case flipping a 곧 열려요 row open on content the app cannot run.
 const byCatalogId = new Map(APP_PACKS.map((pack) => [pack.catalogId, pack]));
 const byContentId = new Map(CONTENT_PACKS.map((pack) => [pack.id, pack]));
 

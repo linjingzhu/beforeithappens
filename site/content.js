@@ -23,6 +23,7 @@ export function partsOf(packId) {
     .map((section, index) => Object.freeze({
       id: section.id,
       title: section.title,
+      blurb: section.blurb || "",
       number: index + 1,
       questions: Object.freeze(questions.filter((question) => question.sectionId === section.id))
     }))
@@ -73,7 +74,7 @@ export function pageModel(slug, pageNumber, { site = SITE } = {}) {
     last,
     total: questions.length,
     /** The Part this page is, and the strip of all of them for the tabs above the questions. */
-    part: Object.freeze({ id: part.id, title: part.title, number: part.number }),
+    part: Object.freeze({ id: part.id, title: part.title, blurb: part.blurb, number: part.number }),
     parts: Object.freeze(parts.map((each) => Object.freeze({
       id: each.id,
       title: each.title,

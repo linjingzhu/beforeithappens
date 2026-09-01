@@ -57,7 +57,7 @@ test("the sections are ten of ten, in the source's order, and renumbering runs 1
   );
 });
 
-test("a site pack is refused the app's fields rather than quietly ignoring them", () => {
+test("a site pack carries a guidance field on every question or on none", () => {
   const base = {
     id: "site-pack",
     surface: PACK_SURFACE.site,
@@ -65,12 +65,12 @@ test("a site pack is refused the app's fields rather than quietly ignoring them"
     locale: "ko-KR",
     title: "t",
     sections: [{ id: "s", title: "S" }],
-    questions: [{
-      id: "q1",
+    questions: [1, 2].map((n) => ({
+      id: `q${n}`,
       sectionId: "s",
-      title: "질문",
-      choices: ["a", "b", "c", "d"].map((k) => ({ id: `q1-${k}`, label: k }))
-    }]
+      title: `질문 ${n}`,
+      choices: ["a", "b", "c", "d"].map((k) => ({ id: `q${n}-${k}`, label: `${n}${k}` }))
+    }))
   };
   assert.ok(definePack(base), "the minimum a site pack needs is a question and four choices");
 
@@ -82,11 +82,38 @@ test("a site pack is refused the app's fields rather than quietly ignoring them"
     assert.throws(() => definePack({ ...base, ...extra }), undefined, `a site pack must not carry ${what}`);
   }
 
-  for (const field of ["intent", "example", "whyItMatters", "researchKeywords"]) {
+  // researchKeywords stays app-only: the site has nowhere to put a keyword list.
+  assert.throws(
+    () => definePack({ ...base, questions: base.questions.map((q) => ({ ...q, researchKeywords: ["x"] })) }),
+    undefined,
+    "researchKeywords is app-only"
+  );
+
+  // Half a set is the failure this catches: 임신 100제 has a scene on all hundred, 결혼 100제 on
+  // none, and both are fine. Ninety-nine of a hundred is somebody having lost one.
+  for (const field of ["intent", "example", "whyItMatters", "mood"]) {
+    const onAll = definePack({ ...base, questions: base.questions.map((q) => ({ ...q, [field]: "값" })) });
+    assert.equal(onAll.questions[0][field], "값", `${field} on every question is allowed`);
     assert.throws(
-      () => definePack({ ...base, questions: [{ ...base.questions[0], [field]: "x" }] }),
+      () => definePack({
+        ...base,
+        questions: base.questions.map((q, i) => (i === 0 ? { ...q, [field]: "값" } : q))
+      }),
       undefined,
-      `half-filled guidance (${field}) is a mistake, not a bonus`
+      `${field} on one of two questions is refused`
     );
   }
+
+  // The same rule for the name a choice's value carries.
+  const tagged = (q) => ({ ...q, choices: q.choices.map((c) => ({ ...c, valueLabel: "가치" })) });
+  assert.ok(definePack({ ...base, questions: base.questions.map(tagged) }));
+  assert.throws(
+    () => definePack({ ...base, questions: base.questions.map((q, i) => (i === 0 ? tagged(q) : q)) }),
+    undefined,
+    "value labels on one question's choices and not the other's is refused"
+  );
+
+  // A section may introduce itself, and the line has to be real if it is there.
+  assert.ok(definePack({ ...base, sections: [{ id: "s", title: "S", blurb: "이 파트는" }] }));
+  assert.throws(() => definePack({ ...base, sections: [{ id: "s", title: "S", blurb: "  " }] }));
 });
