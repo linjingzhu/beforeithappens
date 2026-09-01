@@ -1,8 +1,8 @@
 import { AUTH_COPY, AUTH_ERRORS, INVITE_CONFLICT_KEY, INVITE_COPY, INVITE_ERRORS, absoluteInviteUrl, canOpenPack, consumeAuthLocation, emptySession, isInvitePriorityError, resolveInviteAcceptError, resolveSignedInView, resolveSignedOutView, shareInviteChannel, userNeedsEmail } from "./auth.js";
 import { renderEmailBind, renderInstallBanner, renderInstallLanding, renderInstagramStart, renderInviteAccept, renderInviteWaitingHome, renderLoginNotice, renderOnboarding, renderPackReady, renderSent, renderWithdrawConfirm, renderWithdrawDone } from "./auth-ui.js";
 import { INSTALL_PATH, INVITE_ACCEPT_PATH, START_PATH, clearPendingInvite, handoffPageUrl, isInAppBrowser, keepPendingInvite, openInSystemBrowser, readInstallSkip, readPendingInvite, resolveInstallView, writeInstallSkip, writePendingInvite } from "./install.js";
-import { marriagePack, questions } from "./questions.js";
-import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, isSubmitted, normalizeState, submittedCount } from "./state.js";
+import { activePack as marriagePack, activeQuestions as questions } from "./active-pack.js";
+import { buildSharedResults, canApproveAgreement, comparisonFor, createInitialState, isChapterLocked, isRevealed, isSubmitted, normalizeState, SAMPLE_QUESTION_COUNT, submittedCount } from "./state.js";
 import { PACK_LOCK_COPY, WITHDRAW_ERRORS } from "./pair-code.js";
 import { escapeHtml } from "./html.js";
 import { developmentHistory, developmentStages, developmentSummary } from "./development.js";
@@ -56,7 +56,7 @@ function applyPackState(next) {
   state = normalizeState(next, ids, choiceIdsByQuestion, packIdentity);
   state.entitlement = next?.entitlement || state.entitlement || { entitled: false };
   state.remainingLocked = next?.remainingLocked ?? !state.entitlement.entitled;
-  if (state.remainingLocked && state.index > 2) state.index = 2;
+  if (state.remainingLocked && state.index > SAMPLE_QUESTION_COUNT - 1) state.index = SAMPLE_QUESTION_COUNT - 1;
   for (const id of ids) {
     const source = next?.questions?.[id];
     if (source?.round) state.questions[id].round = source.round;
@@ -70,7 +70,12 @@ function applyPackState(next) {
 }
 
 function remainingQuestionOpen(index) {
-  return !isChapterLocked(index, state.entitlement?.entitled === true);
+  return !isChapterLocked(
+    index,
+    state.entitlement?.entitled === true,
+    SAMPLE_QUESTION_COUNT,
+    state.remainingLocked === true
+  );
 }
 
 function viewerRole() {
@@ -323,9 +328,10 @@ function render() {
         <article class="question-card">
           <div class="question-meta"><span>QUESTION ${String(question.number).padStart(2, "0")}</span><strong>${escapeHtml(question.chapter)}</strong><i class="privacy-badge">${questionState.lock ? "공개 잠금" : isSubmitted(mine) ? "제출 잠금" : INVITE_COPY.draftBadge}</i></div>
           <h2>${escapeHtml(question.title)}</h2>
-          <div class="intent"><strong>질문 안내</strong><p>${escapeHtml(question.intent)}</p><small>${escapeHtml(question.example)}</small></div>
-          <details class="why-it-matters" ${openRationaleQuestionId === question.id ? "open" : ""}><summary>ⓘ 왜 중요한가요?</summary><div><p>${escapeHtml(question.whyItMatters)}</p><ul>${question.researchKeywords.map((keyword) => `<li>${escapeHtml(keyword)}</li>`).join("")}</ul></div></details>
-          <fieldset ${isSubmitted(mine) ? "disabled" : ""}><legend class="sr-only">${roleName(state.activeRole)}의 답변을 하나 선택하세요</legend>${question.choices.map((choice, index) => `<label class="choice ${mine.draftChoice === choice.id ? "selected" : ""}"><input type="radio" name="answer" value="${escapeHtml(choice.id)}" ${mine.draftChoice === choice.id ? "checked" : ""}><span class="choice-key">${String.fromCharCode(65 + index)}</span><span>${escapeHtml(choice.label)}</span><i>✓</i></label>`).join("")}</fieldset>
+          ${question.scene ? `<div class="scene"><strong>함께 떠올려 볼 장면</strong><p>${escapeHtml(question.scene)}</p></div>` : ""}
+          ${question.intent ? `<div class="intent"><strong>질문 안내</strong><p>${escapeHtml(question.intent)}</p>${question.example ? `<small>${escapeHtml(question.example)}</small>` : ""}</div>` : ""}
+          ${question.whyItMatters ? `<details class="why-it-matters" ${openRationaleQuestionId === question.id ? "open" : ""}><summary>ⓘ 왜 중요한가요?</summary><div><p>${escapeHtml(question.whyItMatters)}</p>${question.researchKeywords?.length ? `<ul>${question.researchKeywords.map((keyword) => `<li>${escapeHtml(keyword)}</li>`).join("")}</ul>` : ""}</div></details>` : ""}
+          <fieldset ${isSubmitted(mine) ? "disabled" : ""}><legend class="sr-only">${roleName(state.activeRole)}의 답변을 하나 선택하세요</legend>${question.choices.map((choice, index) => `<label class="choice ${mine.draftChoice === choice.id ? "selected" : ""}"><input type="radio" name="answer" value="${escapeHtml(choice.id)}" ${mine.draftChoice === choice.id ? "checked" : ""}><span class="choice-key">${String.fromCharCode(65 + index)}</span><span>${escapeHtml(choice.label)}${choice.valueLabel ? `<em class="choice-value">${escapeHtml(choice.valueLabel)}</em>` : ""}</span><i>✓</i></label>`).join("")}</fieldset>
           <label class="memo"><span>비공개 메모 <small>비교 화면과 공유 결과에는 포함되지 않아요</small></span><textarea ${isSubmitted(mine) ? "disabled" : ""} placeholder="메모는 나만 보여요. 서버에만 저장돼요.">${escapeHtml(mine.privateNote)}</textarea></label>
           ${isSubmitted(mine) ? `<div class="submitted-panel"><strong>이번 라운드의 답변을 제출했어요.</strong><p>제출한 답변은 이 라운드에서 수정할 수 없습니다. ${roleSubmitted(questionState.roles[otherRole]) ? "두 사람의 답이 공개됐어요." : `${roleName(otherRole)}의 제출을 기다리고 있어요.`}</p></div>` : `<p class="submit-help">제출하면 이번 라운드에서는 답변을 수정할 수 없어요.</p>`}
           <div class="actions"><button class="secondary" data-action="previous" ${state.index === 0 || saveStatus === "failed" ? "disabled" : ""}>이전 질문</button><span class="save-state ${saveStatus}" role="status" aria-live="polite">${saveStatus === "failed" ? `저장 실패 <button data-action="retry-save">다시 저장</button>` : "● 서버에 저장됨"}</span><button class="primary" data-action="submit" ${mine.draftChoice === null || isSubmitted(mine) || saveStatus === "failed" ? "disabled" : ""}>이 답변 제출</button></div>

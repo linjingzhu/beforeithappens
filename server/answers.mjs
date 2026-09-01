@@ -3,6 +3,14 @@ import { hasAcceptedPartner } from "./auth.mjs";
 import { isEntitled } from "./entitlement.mjs";
 import { comparisonFor, createInitialState } from "../src/state.js";
 
+/**
+ * The free sample a *sold* pack opens with. It is the twelve-question pack's own
+ * `freeQuestionCount`, kept as the default for callers that do not name one.
+ *
+ * A pack that is not sold passes `freeQuestionCount: null` and has no sample and no paywall: every
+ * question is open from the first. That is not a discount, it is what a site pack is — the schema
+ * refuses a `freeQuestionCount` on one, because there is no gate for it to describe.
+ */
 export const SAMPLE_LOCK_COUNT = 3;
 
 function createId(prefix, bytes = 16) {
@@ -56,9 +64,18 @@ function lockFor(state, workspaceId, questionId, roundNumber) {
   return state.publicLocks.find((row) => row.workspaceId === workspaceId && row.questionId === questionId && row.roundNumber === roundNumber) || null;
 }
 
-export function createAnswers({ store, now = Date.now, questionIds = [], choiceIdsByQuestion = {}, pack = {}, entitlement } = {}) {
+export function createAnswers({
+  store,
+  now = Date.now,
+  questionIds = [],
+  choiceIdsByQuestion = {},
+  pack = {},
+  entitlement,
+  freeQuestionCount = SAMPLE_LOCK_COUNT
+} = {}) {
   if (!store) throw new Error("store is required");
-  const sampleQuestionIds = questionIds.slice(0, SAMPLE_LOCK_COUNT);
+  const gate = Number.isInteger(freeQuestionCount) ? freeQuestionCount : null;
+  const sampleQuestionIds = gate === null ? questionIds.slice() : questionIds.slice(0, gate);
 
   function workspaceEntitled(workspaceId) {
     if (entitlement?.isEntitled) return entitlement.isEntitled(workspaceId);
@@ -310,14 +327,17 @@ export function createAnswers({ store, now = Date.now, questionIds = [], choiceI
       currency: "KRW"
     };
     projected.sampleLockCount = sampleLockCount;
-    projected.paywallRequired = sampleLockCount >= SAMPLE_LOCK_COUNT && !entitled;
-    projected.remainingLocked = !entitled;
-    if (projected.paywallRequired) projected.index = SAMPLE_LOCK_COUNT - 1;
+    // A pack with no gate is never behind one, whatever the workspace has or has not bought.
+    projected.paywallRequired = gate !== null && sampleLockCount >= gate && !entitled;
+    projected.remainingLocked = gate !== null && !entitled;
+    if (projected.paywallRequired) projected.index = gate - 1;
     return projected;
   }
 
   function saveProgress(workspaceId, userId, index) {
-    const maxOpen = workspaceEntitled(workspaceId) ? questionIds.length - 1 : Math.max(0, sampleQuestionIds.length - 1);
+    const maxOpen = gate === null || workspaceEntitled(workspaceId)
+      ? questionIds.length - 1
+      : Math.max(0, sampleQuestionIds.length - 1);
     if (!Number.isInteger(index) || index < 0 || index > maxOpen) return;
     store.mutate((state) => {
       const row = state.progress.find((item) => item.workspaceId === workspaceId && item.userId === userId);

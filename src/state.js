@@ -104,11 +104,21 @@ export function buildSharedResults(state, questionIds, choiceIdsByQuestion = {},
   };
 }
 
-/** Mirrors SAMPLE_LOCK_COUNT in server/answers.mjs: the first three questions are the free sample. */
+/** The free sample a *sold* pack opens with, mirroring SAMPLE_LOCK_COUNT in server/answers.mjs. */
 export const SAMPLE_QUESTION_COUNT = 3;
 
-export function isChapterLocked(index, entitled, sampleCount = SAMPLE_QUESTION_COUNT) {
+/**
+ * Whether the question at `index` is behind the paywall.
+ *
+ * `locked` is the server's own answer — `remainingLocked` from the pack state — and it decides
+ * first, because a pack that is not sold has no sample and no lock at all. Without that the screen
+ * greyed out 97 of a hundred free questions from a constant it kept privately, while the server
+ * said nothing was locked. A number the client believes and the server does not is a lie the
+ * reader sees.
+ */
+export function isChapterLocked(index, entitled, sampleCount = SAMPLE_QUESTION_COUNT, locked = true) {
   const position = Number(index);
   if (!Number.isInteger(position) || position < 0) return false;
+  if (locked !== true) return false;
   return entitled !== true && position >= sampleCount;
 }

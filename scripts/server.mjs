@@ -1,6 +1,12 @@
 import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
-import { marriagePack, questions } from "../src/questions.js";
+import {
+  activeChoiceIdsByQuestion,
+  activePack,
+  activePackRef,
+  activeQuestionIds,
+  packGate
+} from "../src/active-pack.js";
 import { createAnswers } from "../server/answers.mjs";
 import { createAuth } from "../server/auth.mjs";
 import { createListener } from "../server/app.mjs";
@@ -20,7 +26,8 @@ const store = await createFileStore(storePath);
 const audit = createAudit({ store });
 const couple = createCouple({ store, audit });
 const account = createAccount({ store, audit });
-const pack = { id: marriagePack.id, version: marriagePack.version };
+// What this deployment serves; see `src/active-pack.js`.
+const pack = activePackRef;
 // referral is credited from inside the entitlement grant, so the reward can only follow a real
 // purchase. Declared first and filled below because the two refer to each other.
 let referral = null;
@@ -32,13 +39,15 @@ const entitlement = createEntitlement({
 });
 const gift = createGift({ store, entitlement, pack, audit });
 referral = createReferral({ store, gift, audit });
-const report = createReport({ store, questionIds: questions.map((question) => question.id), pack });
+const report = createReport({ store, questionIds: activeQuestionIds, pack });
 const answers = createAnswers({
   store,
-  questionIds: questions.map((question) => question.id),
-  choiceIdsByQuestion: Object.fromEntries(questions.map((question) => [question.id, question.choices.map((choice) => choice.id)])),
+  questionIds: activeQuestionIds,
+  choiceIdsByQuestion: activeChoiceIdsByQuestion,
   pack,
-  entitlement
+  entitlement,
+  // Null for a pack that is not sold, which is what a site pack is: no sample, no paywall.
+  freeQuestionCount: packGate(activePack)
 });
 const auth = createAuth({
   store,
