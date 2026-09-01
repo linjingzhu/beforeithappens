@@ -77,8 +77,8 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X3 | 앱 | The two-person round on real phones | ⏳ | X1, X2 | The round this whole effort was aimed at |
 | X4 | 공통 | Consent step + age gate + published policy | ⏳ | N5 | Store-blocking, and required before the site accepts a single email address |
 | X5 | 웹 | Site domain and hosting | ✅ | — | `lovemedialogue.com`, GitHub Pages. Build emits CNAME; deploy workflow on `stable` |
-| X5a | 웹 | **Point DNS at GitHub Pages** | 🟢 | X5 | Apex domain needs A/AAAA records at the registrar. Verify the current IPs in GitHub's Pages docs rather than from memory |
-| X5b | 웹 | **Turn Pages on: Settings → Pages → Source = GitHub Actions** | 🟢 | X5 | `has_pages` is false today, so the workflow has nothing to deploy into |
+| X5a | 웹 | **Point DNS at GitHub Pages** | 🟢 | X5 | The only thing between the built site and a working `lovemedialogue.com`. Apex needs four A records and four AAAA records at the registrar — read the current IPs from GitHub's Pages docs, not from memory or from an agent |
+| X5b | 웹 | **Turn Pages on: Settings → Pages → Build and deployment → Source = `GitHub Actions`** | 🟢 | X5 | Tried to remove this and could not: the first deploy ran and `configure-pages` was refused — a workflow token may not create a Pages site. Once it exists the workflow keeps it configured, so this is once, by hand |
 | X5c | 웹 | **Enforce HTTPS** once the certificate is issued | ⏳ | X5a, X5b | The build already writes `https://` canonicals; serving over http would contradict them |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
 | X7 | 웹 | AdSense application | ⏳ | N7, X5c | 10 pages is borderline; 15–30 is the usual bar. In-page units only, never on the page turn |
@@ -113,6 +113,6 @@ Not owner actions — recorded so the ledger reads as a whole.
 | Audit log with six event types | D2 for a read path |
 | Account deletion, all surfaces | D3 |
 | Pack registry | N7 to hold a second pack |
-| Question site: 10-per-page, SEO, sitemap | N7, X5a/X5b |
-| Pages deploy workflow, CNAME, .nojekyll | X5b |
+| Question site: 10-per-page, SEO, sitemap | N7 for the second pack; marriage 12문항 is live |
+| Pages deploy workflow, CNAME, .nojekyll | Nothing — merged to `stable`, deploy runs on push |
 | Result sheet, browser-only, no delivery | X6 |

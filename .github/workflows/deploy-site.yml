@@ -59,13 +59,25 @@ jobs:
           test -f site/dist/CNAME || { echo "CNAME missing: Pages would drop the custom domain"; exit 1; }
           grep -qx "lovemedialogue.com" site/dist/CNAME
 
-      # `enablement` lets the workflow turn Pages on itself with the `pages: write` permission
-      # above, so the first deploy does not need somebody in Settings first. If the token cannot
-      # do it the step fails here with a clear message, which is the same place it would have
-      # failed anyway — no worse, and usually one less thing to remember.
-      - uses: actions/configure-pages@v5
+      # `enablement` is kept because it is free once Pages exists: the action only calls the create
+      # endpoint when the get returns 404, and it also switches an existing site's source to
+      # Actions. It cannot do the very first creation here — `GITHUB_TOKEN` is refused with
+      # "Resource not accessible by integration" regardless of the `pages: write` permission above,
+      # so turning Pages on the first time is a person in Settings. The step below says so, because
+      # the raw error does not.
+      - id: pages
+        uses: actions/configure-pages@v5
         with:
           enablement: true
+
+      - name: Explain a failure the error message does not
+        if: failure() && steps.pages.outcome == 'failure'
+        run: |
+          echo "::error::GitHub Pages is not enabled for this repository, and a workflow token is not"
+          echo "::error::allowed to enable it. Turn it on once by hand:"
+          echo "::error::  Settings -> Pages -> Build and deployment -> Source = GitHub Actions"
+          echo "::error::Then re-run this workflow. Every deploy after that is automatic."
+          exit 1
 
       - uses: actions/upload-pages-artifact@v3
         with:
