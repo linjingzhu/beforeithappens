@@ -582,33 +582,76 @@ function pinCurrentTab() {
  * all the control is still an anchor to the same address, which is the invitation anyway.
  */
 function bindInvite() {
-  for (const link of document.querySelectorAll("[data-invite]")) {
-    const state = link.parentElement?.querySelector("[data-invite-state]");
-    link.addEventListener("click", async (event) => {
-      const url = new URL(link.getAttribute("href"), location.origin).href;
+  const panel = document.querySelector("[data-invite-panel]");
+  const controls = [...document.querySelectorAll("[data-invite]")];
+  if (!controls.length) return;
 
-      if (navigator.share) {
-        event.preventDefault();
-        try {
-          await navigator.share({ title: document.title, text: INVITE_COPY.shareText, url });
-        } catch {
-          /* dismissed; the anchor still works if they meant to open it */
-        }
-        return;
-      }
-      if (!navigator.clipboard) return;
+  // No panel on this page — the control is still a link to the questions, which is the invitation.
+  if (!panel || typeof panel.showModal !== "function") return;
 
-      // A desktop has no share sheet, so the link goes on the clipboard — and says so. A ✓ on the
-      // button alone is not an answer to "did that send anything?".
+  const field = panel.querySelector("[data-invite-url]");
+  const state = panel.querySelector("[data-invite-state]");
+  const ways = new Map([...panel.querySelectorAll("[data-invite-way]")].map((el) => [el.getAttribute("data-invite-way"), el]));
+  let url = "";
+
+  // The device's own sheet is the first way where it exists, and absent where it does not: on a
+  // phone it is where KakaoTalk lives, and on a desktop it would be a button that does nothing.
+  ways.get("device")?.toggleAttribute("hidden", !navigator.share);
+
+  const say = (text, error = false) => {
+    if (!state) return;
+    state.hidden = !text;
+    state.textContent = text || "";
+    state.classList.toggle("is-error", Boolean(error));
+  };
+
+  const open = (href) => {
+    url = new URL(href, location.href).href;
+    if (field) field.value = url;
+    // Addresses, not scripts. A message app and a mail app are both a URL scheme away, and the text
+    // is the same sentence the share sheet would have carried.
+    const body = `${INVITE_COPY.shareText}\n${url}`;
+    ways.get("sms")?.setAttribute("href", `sms:?&body=${encodeURIComponent(body)}`);
+    ways.get("mail")?.setAttribute("href", `mailto:?subject=${encodeURIComponent(INVITE_COPY.mailSubject)}&body=${encodeURIComponent(body)}`);
+    say("");
+    panel.showModal();
+  };
+
+  for (const control of controls) {
+    control.addEventListener("click", (event) => {
       event.preventDefault();
-      try {
-        await navigator.clipboard.writeText(url);
-        say(state, INVITE_COPY.copied);
-      } catch {
-        location.href = url;
-      }
+      open(control.getAttribute("href"));
     });
   }
+
+  panel.querySelector("[data-invite-close]")?.addEventListener("click", () => panel.close());
+
+  // A click on the backdrop lands on the dialog itself, since the backdrop is not an element of its
+  // own. Anything inside the panel hits a child, so this closes only when the panel is what was hit.
+  panel.addEventListener("click", (event) => {
+    if (event.target === panel) panel.close();
+  });
+
+  ways.get("device")?.addEventListener("click", async () => {
+    try {
+      await navigator.share({ title: document.title, text: INVITE_COPY.shareText, url });
+      panel.close();
+    } catch {
+      /* dismissed, or refused; the other ways are still on the screen */
+    }
+  });
+
+  ways.get("copy")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      say(INVITE_COPY.copied);
+    } catch {
+      // Clipboard access can be refused outright. The address is on the screen either way, so the
+      // honest thing is to say so and select it rather than to report a success that did not happen.
+      say(INVITE_COPY.copyFailed, true);
+      field?.select();
+    }
+  });
 }
 
 /*
