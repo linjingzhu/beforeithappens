@@ -756,6 +756,46 @@ test("이어서 points at the last question answered, and says nothing when ther
   assert.match(enhance, /aria-disabled"\) === "true"\) return/);
 });
 
+test("함께 풀기 opens the site's own panel, and every way out of it is an address", async () => {
+  const { INVITE_COPY } = await import("../site/invite-copy.js");
+  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  const panel = html.slice(html.indexOf("<dialog class=\"invite\""), html.indexOf("</dialog>"));
+
+  // A dialog, so `showModal` brings the focus trap, Escape and the backdrop rather than this file.
+  assert.ok(html.includes("<dialog class=\"invite\" data-invite-panel"));
+  assert.ok(panel.includes(INVITE_COPY.title) && panel.includes(INVITE_COPY.lead));
+  for (const way of ["device", "copy", "sms", "mail"]) {
+    assert.ok(panel.includes(`data-invite-way="${way}"`), `the panel offers ${way}`);
+  }
+  // The address is on the screen whatever the clipboard does, and the panel says what is in it.
+  assert.ok(panel.includes("data-invite-url"));
+  assert.ok(panel.includes(INVITE_COPY.note) && INVITE_COPY.note.includes("답이 담기지"));
+
+  // Pinterest's panel lists friends and searches people. There are no accounts here, so there is
+  // nobody to list — and no SDK, so no channel that needs one appears.
+  for (const forbidden of ["kakao", "sdk", "친구", "검색"]) {
+    assert.equal(panel.toLowerCase().includes(forbidden.toLowerCase()), false, `${forbidden} has no place here`);
+  }
+  assert.equal(/<script/.test(panel), false, "and the panel loads nothing");
+
+  // It ships where the script does, and not where it would be dead markup.
+  assert.equal(renderIndex(indexModel({ site }), site).includes("data-invite-panel"), false);
+  assert.ok(renderResultPage("marriage", published, site).includes("data-invite-panel"));
+
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  const bind = enhance.slice(enhance.indexOf("function bindInvite"), enhance.indexOf("\n}", enhance.indexOf("function bindInvite")));
+  // The device's sheet is offered only where it exists: on a phone it is where KakaoTalk lives, and
+  // on a desktop it would be a button that does nothing.
+  assert.match(bind, /toggleAttribute\("hidden", !navigator\.share\)/);
+  assert.match(bind, /panel\.showModal\(\)/);
+  assert.match(bind, /sms:\?&body=/);
+  assert.match(bind, /mailto:\?subject=/);
+  // A refused clipboard is reported, not reported as a success.
+  assert.match(bind, /INVITE_COPY\.copyFailed/);
+  // Closing: the button, and a click that lands on the dialog itself rather than on its contents.
+  assert.match(bind, /event\.target === panel\) panel\.close\(\)/);
+});
+
 test("nothing overrides the pager's shared key style from behind it", () => {
   // Third time this file has been bitten by the same rule, and the last one shipped a blank key:
   // `.pager a` is a class plus a type selector, so a bare `.pager-next` loses every property they

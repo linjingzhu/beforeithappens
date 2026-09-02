@@ -296,7 +296,6 @@ ${progressBar(total)}
           <a class="dock-together" href="${href}" data-invite>${escapeHtml(DOCK_COPY.together)}</a>
         </div>
         <p class="dock-state" data-save-state hidden></p>
-        <p class="cta-state" data-invite-state hidden></p>
       </aside>`;
 }
 
@@ -433,8 +432,49 @@ function callToAction(model) {
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
         <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
         <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
-        <p class="cta-state" data-invite-state hidden></p>
       </aside>`;
+}
+
+/**
+ * The invite panel: the site's own share sheet.
+ *
+ * The owner asked for what Pinterest does — its own panel of ways to send, rather than handing
+ * straight to the operating system's. Two of Pinterest's three parts do not apply here and are not
+ * built: there is no account, so there are no friends to list and nobody to search, and there is no
+ * third-party script on this site, so no channel that needs an SDK appears.
+ *
+ * What is left is the part that does apply. The device's own sheet is offered first where it exists
+ * — on a phone that is where KakaoTalk lives, which is the channel this will actually travel on —
+ * and beside it the three that need nothing: the clipboard, a text message, and mail. Every one of
+ * them is a real address or a browser API.
+ *
+ * A `<dialog>` rather than a div: `showModal` brings the focus trap, Escape, inert background and
+ * backdrop with it, and none of that is worth reimplementing. It renders closed and does nothing
+ * without scripting, where the control stays what it has always been — a link to the questions.
+ */
+function invitePanel() {
+  const way = (id, label, tag = "button") => (tag === "button"
+    ? `            <li><button type="button" class="invite-way" data-invite-way="${id}">${escapeHtml(label)}</button></li>`
+    : `            <li><a class="invite-way" data-invite-way="${id}" href="#">${escapeHtml(label)}</a></li>`);
+  return `  <dialog class="invite" data-invite-panel aria-labelledby="invite-title">
+    <div class="invite-head">
+      <h2 id="invite-title">${escapeHtml(INVITE_COPY.title)}</h2>
+      <button type="button" class="invite-close" data-invite-close aria-label="${escapeHtml(INVITE_COPY.close)}">${escapeHtml(INVITE_COPY.close)}</button>
+    </div>
+    <p class="invite-lead">${escapeHtml(INVITE_COPY.lead)}</p>
+    <ul class="invite-ways">
+${way("device", INVITE_COPY.device)}
+${way("copy", INVITE_COPY.copy)}
+${way("sms", INVITE_COPY.sms, "a")}
+${way("mail", INVITE_COPY.mail, "a")}
+    </ul>
+    <label class="invite-url">
+      <span>${escapeHtml(INVITE_COPY.urlLabel)}</span>
+      <input type="text" readonly data-invite-url>
+    </label>
+    <p class="invite-state" data-invite-state hidden></p>
+    <p class="invite-note">${escapeHtml(INVITE_COPY.note)}</p>
+  </dialog>`;
 }
 
 function enhancement() {
@@ -501,7 +541,7 @@ function footerNav(site) {
  * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
  * identity, not its layout. A page renderer below returns only its own content.
  */
-function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "" }) {
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "", invite = false }) {
   // Stated by the renderer rather than sniffed with `:has(.pager)`. The class reserves the room the
   // fixed furniture covers, so getting it wrong on a page that has some hides the footer behind it
   // — and a selector the browser may not support is the wrong place to put that. `:has` is used
@@ -536,7 +576,7 @@ ${footerNav(site)}
       </footer>
     </div>
   </div>
-${scripts}
+${invite ? invitePanel() + "\n" : ""}${scripts}
 </body>
 </html>
 `;
@@ -561,6 +601,7 @@ ${bottomDock(model)}`;
     scripts: enhancement(),
     currentSlug: model.slug,
     bottom: "dock",
+    invite: true,
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
@@ -634,7 +675,8 @@ ${sheetPager(slug)}
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
     currentSlug: slug,
-    bottom: "bar"
+    bottom: "bar",
+    invite: true
   });
 }
 

@@ -1269,6 +1269,155 @@ html { scroll-padding-top: 120px; }
 
 .dock-state.is-error { color: var(--ab-error); }
 
+/*
+ * The invite panel — the site's own share sheet.
+ *
+ * A bottom sheet on a phone and a centred card above it, because that is where each one's hand
+ * already is. `<dialog>` gives the focus trap, Escape and the backdrop; what is left here is the
+ * shape. `margin: auto` is what centres a modal dialog — it is absolutely positioned by the UA and
+ * would otherwise sit at the top left.
+ */
+.invite {
+  width: min(30rem, 100vw);
+  max-width: 100vw;
+  padding: 24px;
+  border: 0;
+  border-radius: 22px;
+  margin: auto;
+  background: var(--ab-surface);
+  color: var(--ab-ink);
+  box-shadow: var(--lift-card);
+}
+
+.invite::backdrop {
+  background: var(--ab-shadow-dark);
+}
+
+@media (max-width: 899px) {
+  /* A sheet, off the bottom edge: `margin: auto auto 0` pins it there and keeps it centred across. */
+  .invite {
+    width: 100vw;
+    margin: auto auto 0;
+    border-radius: 22px 22px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.invite-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invite-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.invite-close {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ab-soft);
+  color: var(--ab-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.invite-lead {
+  margin: 10px 0 20px;
+  color: var(--ab-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/*
+ * The ways out, as a row that wraps. Equal width so no one of them reads as the answer — which is
+ * the point: the right channel is the reader's to choose, and on a phone the first of them opens
+ * the sheet that has KakaoTalk in it.
+ */
+.invite-ways {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+}
+
+.invite-ways li { flex: 1 1 8rem; }
+
+.invite-way {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.invite-way:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
+
+/* The address itself, always on the screen: the clipboard can be refused, and then this is the way. */
+.invite-url {
+  display: block;
+  margin: 0 0 12px;
+}
+
+.invite-url span {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--ab-muted);
+  font-size: 13px;
+}
+
+.invite-url input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-soft);
+  box-shadow: var(--press);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.invite-state {
+  margin: 0 0 12px;
+  color: var(--ab-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.invite-state.is-error { color: var(--ab-error); }
+
+.invite-note {
+  margin: 0;
+  color: var(--ab-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .cta {
   background: var(--ab-soft);
   border-radius: 12px;
