@@ -124,6 +124,24 @@ export const SCENES = Object.freeze({
 });
 
 /**
+ * The 1200x630 cards a link carries into a chat or a search result, from
+ * `scripts/build-brand-assets.py`. One per published pack, plus the site's own.
+ *
+ * The site had no `og:image` at all, which for a service whose whole distribution is one person
+ * sending another a link meant the link arrived as a grey rectangle with a line of text. 1200x630
+ * is the size Open Graph, Twitter and KakaoTalk all read a large card at, and the numbers are
+ * declared here for the same reason the scenes' are: the markup states them, and a card that was
+ * re-cut to another shape would otherwise leave the page claiming the old one.
+ */
+const shareCard = (name) => Object.freeze({ src: `/brand/share-${name}.jpg`, width: 1200, height: 630 });
+
+export const SHARE_CARDS = Object.freeze({
+  /** Every page that is not a pack — the home page and the prose pages — shares this one. */
+  home: shareCard("home"),
+  marriage: shareCard("marriage")
+});
+
+/**
  * Packs that are coming, shown as a picture and nothing else.
  *
  * The owner's call, and the point of them is that they do nothing: a card with a title, a count and

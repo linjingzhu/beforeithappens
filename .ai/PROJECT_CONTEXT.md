@@ -49,6 +49,15 @@ Windows full build:
 Targeted tests:
 - `npm test`
 
+After changing anything a reader reads on the site — a question, a Part's name, the prose on a
+standing page, the home page's own words — regenerate the committed artefacts that are derived from
+it, and commit them with the change:
+- `node scripts/stamp-content.mjs` — the sitemap's `lastmod` dates (`site/content-stamp.json`)
+- `python3 scripts/build-brand-assets.py` — the subsetted fonts, the pack scenes and the share cards
+
+Both are checked by `npm test`, so a stale one fails the build rather than shipping quietly. The
+brand script needs `fontTools`, `brotli` and `pillow`, which is why it is not a build step.
+
 ## Important Paths / Symbols
 
 - `src/questions.js` — structured question content

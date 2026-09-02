@@ -4,7 +4,7 @@ import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks, NOT_FOUND_COPY } from "./pages.js";
-import { headTags, standaloneHead, structuredData } from "./seo.js";
+import { headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 // Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
 import { FEEDBACK_COPY } from "./feedback.js";
@@ -738,11 +738,14 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
   const contact = page.email
     ? `      <p class="prose-contact"><a href="mailto:${escapeHtml(page.email)}">${escapeHtml(page.email)}</a></p>\n`
     : "";
-  const head = standaloneHead({
-    title: `${page.title} · ${site.name}`,
-    description: page.description,
-    path: page.path
-  }, site);
+  const head = [
+    standaloneHead({
+      title: `${page.title} · ${site.name}`,
+      description: page.description,
+      path: page.path
+    }, site),
+    standingStructuredData(page, site)
+  ].filter(Boolean).join("\n  ");
   return document_({
     site,
     head,
@@ -788,12 +791,16 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
       </li>`))
     .join("\n");
   // `website` rather than `article`: this one is the site, the prose pages are documents on it.
-  const head = standaloneHead({
-    title: `${site.name} · ${site.tagline}`,
-    description: SITE_COPY.homeDescription,
-    path: "/",
-    type: "website"
-  }, site);
+  // The home page is also where the site says who publishes it, in the form a machine can read.
+  const head = [
+    standaloneHead({
+      title: `${site.name} · ${site.tagline}`,
+      description: SITE_COPY.homeDescription,
+      path: "/",
+      type: "website"
+    }, site),
+    siteStructuredData(site, SITE_COPY.homeDescription)
+  ].filter(Boolean).join("\n  ");
   return document_({
     site,
     head,

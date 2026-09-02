@@ -266,6 +266,143 @@ def write_pack_scenes() -> None:
             print(f"scene-{name}.jpg: {out.stat().st_size / 1024:.1f} KB, {width}x{SCENE_HEIGHT}")
 
 
+def share_cards() -> list[dict]:
+    """What each card says, read from the site's own config rather than typed here twice."""
+    import json
+    import subprocess
+
+    script = """
+Promise.all([import('./site/config.js'), import('./site/render.js')]).then(([config, render]) => {
+  const { SITE, PUBLISHED, SCENES } = config;
+  const { SITE_COPY } = render;
+  // The home card carries no scene on purpose: with more than one pack published there is no one
+  // picture that stands for the site, and a brand card that is the mark and the line is honest.
+  const cards = [{
+    file: 'share-home.jpg',
+    site: SITE.name,
+    title: SITE.tagline,
+    line: SITE_COPY.homeTagline
+  }];
+  for (const entry of PUBLISHED) {
+    cards.push({
+      file: `share-${entry.slug}.jpg`,
+      site: SITE.name,
+      title: entry.title,
+      line: entry.tagline || '',
+      scene: SCENES[entry.slug]?.src || ''
+    });
+  }
+  process.stdout.write(JSON.stringify(cards));
+});
+"""
+    out = subprocess.run(
+        ["node", "-e", script], cwd=ROOT, capture_output=True, text=True, check=True
+    )
+    return json.loads(out.stdout)
+
+
+# The share card's palette, from `src/design-tokens.js` — the site's page ground, its ink and its
+# muted text. Written out rather than parsed: three values that change when the palette does, and a
+# card whose colours have drifted from the site is obvious the moment anyone shares a link.
+SHARE = (1200, 630)
+SITE_PAPER = (233, 239, 248)   # --ab-paper
+SITE_INK = (42, 55, 67)        # --ab-ink
+SITE_MUTED = (87, 103, 122)    # --ab-muted
+
+
+def _font(name: str, size: int):
+    from PIL import ImageFont
+    return ImageFont.truetype(str(ROOT / "mobile" / "assets" / "fonts" / name), size)
+
+
+def _wrap(draw, text: str, font, width: int) -> list[str]:
+    """Break `text` to `width`, at spaces where there are any.
+
+    Korean can be broken between any two syllables, which is why the fallback below is per
+    character — but it should not be the first choice. Breaking `함께 준비하다` after `준` is legal
+    and reads as a mistake, and a share card is seen once, in a chat, at a glance.
+    """
+    lines, line = [], ""
+    for word in text.split(" "):
+        trial = f"{line} {word}" if line else word
+        if draw.textlength(trial, font=font) <= width:
+            line = trial
+            continue
+        if line:
+            lines.append(line)
+            line = ""
+        # A single word wider than the measure has to break somewhere; that is what this is for.
+        for char in word:
+            trial = line + char
+            if draw.textlength(trial, font=font) <= width or not line:
+                line = trial
+            else:
+                lines.append(line)
+                line = char
+    if line:
+        lines.append(line)
+    return lines
+
+
+def write_share_cards(cards) -> None:
+    """One 1200x630 card per published pack, plus the site's own.
+
+    Every page on this site had no `og:image` at all, which for a service whose whole distribution
+    is one person sending another a link meant the link arrived as a grey rectangle. 1200x630 is
+    what Open Graph, Twitter and KakaoTalk all read a large card at.
+
+    The card is the page's own palette with the pack's scene beside its name, so the thing that
+    arrives in a chat looks like the thing it opens.
+    """
+    from PIL import ImageDraw
+
+    mark = drawn_mark()
+    for card in cards:
+        image = Image.new("RGB", SHARE, SITE_PAPER)
+        draw = ImageDraw.Draw(image)
+
+        scene_right = SHARE[0] - 80
+        text_width = SHARE[0] - 160
+        scene_path = card.get("scene")
+        if scene_path:
+            scene = Image.open(ROOT / "site" / scene_path.lstrip("/")).convert("RGB")
+            height = 430
+            width = round(scene.width * height / scene.height)
+            scene = scene.resize((width, height), Image.LANCZOS)
+            # The scenes are drawn on white and the card's ground is not, so the tile would show as
+            # a bright rectangle. Its own white is keyed out instead, which is what leaves the clay
+            # figures standing on the page rather than in a box.
+            keyed = scene.convert("RGBA")
+            keyed.putalpha(scene.convert("L").point(lambda v: 0 if v > 244 else 255))
+            image.paste(keyed, (scene_right - width, (SHARE[1] - height) // 2), keyed)
+            text_width = scene_right - width - 120
+        else:
+            # No scene means the site's own card, and the words alone leave the right half empty.
+            # The mark fills it — the same drawing the rail carries, at the size a card can hold.
+            big = mark.resize((300, 300), Image.LANCZOS)
+            image.paste(big, (scene_right - 300, (SHARE[1] - 300) // 2), big)
+            text_width = scene_right - 300 - 90
+
+        # The mark, then the name, then the line under it. Same order as the page's own rail.
+        image.paste(mark.resize((72, 72), Image.LANCZOS), (80, 92), mark.resize((72, 72), Image.LANCZOS))
+        draw.text((172, 104), card["site"], font=_font("MaruBuri-SemiBold.ttf", 46), fill=SITE_INK)
+
+        title_font = _font("MaruBuri-SemiBold.ttf", 74)
+        body_font = _font("Pretendard-Regular.otf", 34)
+        y = 250
+        for line in _wrap(draw, card["title"], title_font, text_width):
+            draw.text((80, y), line, font=title_font, fill=SITE_INK)
+            y += 96
+        y += 16
+        for line in _wrap(draw, card["line"], body_font, text_width):
+            draw.text((80, y), line, font=body_font, fill=SITE_MUTED)
+            y += 50
+
+        out = OUT / card["file"]
+        image.save(out, "JPEG", quality=88, optimize=True, progressive=True)
+        print(f"{card['file']}: {out.stat().st_size / 1024:.1f} KB, {SHARE[0]}x{SHARE[1]}")
+
+
 def write_app_icons() -> None:
     """The same mark as the app's icons, in the four shapes the platforms each demand.
 
@@ -333,6 +470,7 @@ def main() -> int:
 
     write_marks()
     write_pack_scenes()
+    write_share_cards(share_cards())
     write_app_icons()
     return 0
 
