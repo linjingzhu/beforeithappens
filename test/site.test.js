@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, descriptionLines, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
+import { standingPages } from "../site/pages.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
 import { RESULT_COPY } from "../site/result-copy.js";
 import { headTags, pageDescription, pageTitle, robotsTxt, sitemapXml, structuredData } from "../site/seo.js";
@@ -1346,11 +1347,54 @@ test("the opening introduces the pack, so it is the same above every Part", () =
   assert.ok(headTags(model, site).includes(model.descriptionText));
 });
 
+test("the question map is a line of real anchors, one per question, on question pages only", () => {
+  // At the owner's word: a line down the right edge, a mark per question, the current one bold.
+  // The list is anchors so that without scripting it is still a table of contents that jumps.
+  const model = pageModel("marriage", 3, { site });
+  const html = renderQuestionPage(model, site);
+  const nav = html.slice(html.indexOf('<nav class="qmap"'), html.indexOf("</nav>", html.indexOf('<nav class="qmap"')));
+  assert.ok(nav.includes(`aria-label="${SITE_COPY.mapLabel}"`), "named for a screen reader");
+  const marks = [...nav.matchAll(/<a class="qmap-mark" href="#(q-[^"]+)" data-qmap-for="(q-[^"]+)" title="(\d+)\. [^"]+" aria-label="[^"]+"><span class="qmap-n">(\d+)<\/span><\/a>/g)];
+  assert.equal(marks.length, model.questions.length, "one mark per question");
+  model.questions.forEach((question, i) => {
+    assert.equal(marks[i][1], `q-${question.id}`, "the anchor points at the card");
+    assert.equal(marks[i][2], marks[i][1], "and the script finds the same card");
+    assert.equal(Number(marks[i][3]), question.number);
+    assert.equal(Number(marks[i][4]), question.number, "the mark shows the question's number");
+    assert.ok(html.includes(`<article class="q" id="q-${question.id}"`), "which exists on the page");
+  });
+  // Evenly spaced until the script measures the page: each item knows its index and the count.
+  assert.ok(nav.includes(`<ol style="--n: ${model.questions.length}">`));
+  assert.ok(nav.includes('<li style="--i: 0">'));
+  assert.ok(nav.includes(`<li style="--i: ${model.questions.length - 1}">`));
+
+  for (const other of [
+    renderIndex(indexModel({ site }), site),
+    renderResultPage("marriage", published, site),
+    renderStandingPage(standingPages({ site })[0], site)
+  ]) {
+    assert.equal(other.includes('class="qmap"'), false, "no map where there are no questions");
+  }
+
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.qmap \{[^}]*position: fixed;[^}]*right: 0;/s, "it overlays the right edge");
+  assert.match(css, /\.qmap \{[^}]*pointer-events: none;/s, "and only the marks take a press");
+  assert.match(css, /\.qmap-mark \{[^}]*pointer-events: auto;/s);
+  assert.match(css, /\.qmap-mark\.is-current \{[^}]*font-weight: 700;/s, "the current mark is bold");
+  assert.match(css, /\.qmap li \{[^}]*top: calc\(\(var\(--i, 0\) \+ 0\.5\) \/ var\(--n, 1\) \* 100%\);/s, "spaced by index without the script");
+  assert.match(css, /prefers-reduced-motion: no-preference\) \{\s*html \{ scroll-behavior: smooth; \}/s, "the jump glides only where motion is wanted");
+
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /function startQuestionMap\(/);
+  assert.match(enhance, /startQuestionMap\(questions\)/, "and the question page starts it");
+});
+
 test("a Part opens at the top, so the opening is on the screen every time", () => {
   // A `restorePinned` used to scroll a newly opened Part to where the tab bar pins. That cannot
   // coexist with the opening being visible on every Part: the name, the question and the
   // description sit above the bar, so scrolling far enough to pin it pushes them off the top —
-  // measured at -81px after a tab click. Nothing in the enhancement moves the page now.
+  // measured at -81px after a tab click. Nothing in the enhancement moves the page now — the
+  // question map's jumps are the anchors' own, not the script's.
   // On the code, not the prose: the note explaining the removal names both APIs.
   const enhance = readFileSync("site/enhance.js", "utf8")
     .replace(/\/\*[\s\S]*?\*\//g, "")

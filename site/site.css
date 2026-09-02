@@ -1670,6 +1670,123 @@ html { scroll-padding-top: 120px; }
   * { transition: none !important; animation: none !important; }
 }
 
+/* A jump from the question map glides where the reader has not asked for motion to be cut. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/*
+ * The question map: a line down the right edge with a mark per question, the current one bold.
+ *
+ * Fixed and centred on the viewport's height, at most 520px tall, so ten marks are 40–50px apart —
+ * a finger's width — on a phone and on a desktop alike. The line is the list's own edge and the
+ * marks are absolutely placed along it: `top` is the question's place on the page once the script
+ * has measured it, and until then an even spacing from `--i` and `--n` written into the markup.
+ *
+ * Nothing but the marks takes a press (`pointer-events: none` on the frame), so the strip does not
+ * steal taps from the card edge it overlays. The number is drawn only for the current mark and on
+ * hover — the line is a place to glance at, not a second list of headings.
+ */
+.qmap {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 64px;
+  height: min(60vh, 520px);
+  pointer-events: none;
+}
+
+.qmap ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  height: 100%;
+}
+
+.qmap ol::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 14px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ab-line);
+}
+
+.qmap li {
+  position: absolute;
+  right: 0;
+  top: calc((var(--i, 0) + 0.5) / var(--n, 1) * 100%);
+  transform: translateY(-50%);
+}
+
+.qmap-mark {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  height: 32px;
+  padding: 0 9px 0 6px;
+  pointer-events: auto;
+  text-decoration: none;
+  color: var(--ab-muted);
+  font-family: Pretendard, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The tick, crossing the line: 12px wide around the line's own centre. */
+.qmap-mark::after {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ab-accent-alt);
+  transition: width 0.15s, height 0.15s, background-color 0.15s;
+}
+
+/* On its own ground, so the number stays legible where the strip overlays a card's text. */
+.qmap-n {
+  opacity: 0;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--ab-paper);
+  transition: opacity 0.15s;
+}
+
+.qmap-mark:hover .qmap-n,
+.qmap-mark:focus-visible .qmap-n,
+.qmap-mark.is-current .qmap-n { opacity: 1; }
+
+.qmap-mark:hover::after,
+.qmap-mark:focus-visible::after { width: 16px; }
+
+.qmap-mark.is-current {
+  color: var(--ab-ink);
+  font-weight: 700;
+}
+
+.qmap-mark.is-current::after {
+  width: 22px;
+  height: 4px;
+  background: var(--ab-accent);
+}
+
+.qmap-mark:focus-visible {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+/* A jump lands the card a little below the top edge rather than flush against it. */
+.q { scroll-margin-top: 16px; }
+
 /* Answering. The choices are labels around real inputs, so the whole row is a target. */
 .q-choice {
   display: flex;

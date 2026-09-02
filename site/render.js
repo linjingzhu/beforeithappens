@@ -37,6 +37,12 @@ export const SITE_COPY = Object.freeze({
    * than becoming a control: there is still nothing here to press and still no date being promised.
    */
   comingLabel: "곧 만나요!",
+  /**
+   * The map down the right edge of a question page: one mark per question on the line, the
+   * current one bold. A screen reader gets the list by name; on the screen it is a line and ticks.
+   */
+  mapLabel: "이 쪽의 질문",
+  mapItem: (n) => `${n}번 질문`,
   /*
    * The home page's own words, given by the owner as one paragraph.
    *
@@ -306,6 +312,36 @@ ${progressBar(total)}
         </div>
         <p class="dock-state" data-save-state hidden></p>
       </aside>`;
+}
+
+/**
+ * The map: a line down the right edge of the screen with one mark per question on this page.
+ *
+ * At the owner's word. Ten questions with a scene, four answers and notes each is a long page, and
+ * the dock says how many are answered but not where the reader is. This says where: a mark for
+ * each question, spaced by where the question sits on the page, the one being read drawn bold.
+ * Press a mark and the page goes to that question.
+ *
+ * Rendered as a list of real anchors, so without scripting it is still a table of contents that
+ * jumps — the marks are then spaced evenly (`--i` and `--n` below), and the script replaces that
+ * spacing with each question's actual position and keeps the current one marked as the reader
+ * scrolls. `title` carries the question, so a hover names what a mark is for.
+ */
+function questionMap(model) {
+  const questions = model?.questions || [];
+  if (!questions.length) return "";
+  const marks = questions
+    .map((question, i) => {
+      const id = `q-${escapeHtml(question.id)}`;
+      const name = escapeHtml(SITE_COPY.mapItem(question.number));
+      return `          <li style="--i: ${i}"><a class="qmap-mark" href="#${id}" data-qmap-for="${id}" title="${question.number}. ${escapeHtml(question.title)}" aria-label="${name}"><span class="qmap-n">${question.number}</span></a></li>`;
+    })
+    .join("\n");
+  return `      <nav class="qmap" aria-label="${escapeHtml(SITE_COPY.mapLabel)}" data-qmap>
+        <ol style="--n: ${questions.length}">
+${marks}
+        </ol>
+      </nav>`;
 }
 
 /**
@@ -657,7 +693,8 @@ ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
 ${pager(model)}
       </main>
-${bottomDock(model)}`;
+${bottomDock(model)}
+${questionMap(model)}`;
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
