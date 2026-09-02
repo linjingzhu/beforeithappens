@@ -223,14 +223,18 @@ PACK_SCENES = {
         "birth": (1052, 160, 1408, 828),
     },
     "pack-scenes-2.jpg": {
-        # The whole panel, because the whole panel is the subject: the family with the picture book
-        # is the middle of it, and the alphabet blocks, the globe and the stack of books around them
-        # are what make it 교육 rather than a family portrait. Cutting in to the three figures was
-        # tried first and it costs both — the symbols go, and the mat they sit on runs unbroken from
-        # one side to the other, so any narrower cut slices it and the toys on it. Much wider than
-        # its siblings, which the cards can take: they stack one per row and centre the picture, and
-        # what holds the set together is the common height.
-        "education": (48, 38, 1252, 820),
+        # The family, the book and the toys at their feet. The whole panel was taken first — blocks,
+        # globe and book stack included — and at 277x180 on the card the owner called it too big,
+        # which it was: two and a half times the width of its neighbours in a column where every
+        # other picture is about a hundred wide.
+        #
+        # So the cut comes in to the three figures, and takes the panel's full height rather than
+        # stopping at their knees: the extra height is what brings the width down (161x180, the same
+        # as the bench beside it) and it is where the letter blocks and the open picture book are,
+        # which is what still says 교육 once the globe and the book stack are outside the frame.
+        # The mat runs unbroken from one side of the panel to the other, so the sides cut across it
+        # — at card size that reads as the edge of a picture, not as damage.
+        "education": (272, 40, 968, 816),
         # The whole bench, both arms inside the crop. Cutting it to the couple alone would end the
         # planks in mid-air on both sides.
         "later": (8, 868, 613, 1549),
