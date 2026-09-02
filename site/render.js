@@ -38,8 +38,8 @@ export const SITE_COPY = Object.freeze({
    */
   comingLabel: "곧 만나요!",
   /**
-   * The map down the right edge of a question page: one mark per question on the line, the
-   * current one bold. A screen reader gets the list by name; on the screen it is a line and ticks.
+   * The map at the right edge of a question page: one mark per question, the current one bold. A
+   * screen reader gets the list by name; on the screen it is a column of dashes.
    */
   mapLabel: "이 쪽의 질문",
   mapItem: (n) => `${n}번 질문`,
@@ -315,30 +315,29 @@ ${progressBar(total)}
 }
 
 /**
- * The map: a line down the right edge of the screen with one mark per question on this page.
+ * The map: a column of marks at the right edge of the screen, one per question on this page.
  *
- * At the owner's word. Ten questions with a scene, four answers and notes each is a long page, and
- * the dock says how many are answered but not where the reader is. This says where: a mark for
- * each question, spaced by where the question sits on the page, the one being read drawn bold.
- * Press a mark and the page goes to that question.
+ * At the owner's word, and then at the owner's second word: it began as a line with marks spaced
+ * by where each question sits, the current one bold with its number beside it; the line and the
+ * numbers went, and the marks closed up. What is left is the useful part — ten small dashes, in
+ * order, the one being read drawn longer and darker, each a press away from its question.
  *
  * Rendered as a list of real anchors, so without scripting it is still a table of contents that
- * jumps — the marks are then spaced evenly (`--i` and `--n` below), and the script replaces that
- * spacing with each question's actual position and keeps the current one marked as the reader
- * scrolls. `title` carries the question, so a hover names what a mark is for.
+ * jumps; the script only keeps the current mark moving as the reader scrolls. `title` carries the
+ * question, so a hover names what a mark is for, and `aria-label` names it for a screen reader.
  */
 function questionMap(model) {
   const questions = model?.questions || [];
   if (!questions.length) return "";
   const marks = questions
-    .map((question, i) => {
+    .map((question) => {
       const id = `q-${escapeHtml(question.id)}`;
       const name = escapeHtml(SITE_COPY.mapItem(question.number));
-      return `          <li style="--i: ${i}"><a class="qmap-mark" href="#${id}" data-qmap-for="${id}" title="${question.number}. ${escapeHtml(question.title)}" aria-label="${name}"><span class="qmap-n">${question.number}</span></a></li>`;
+      return `          <li><a class="qmap-mark" href="#${id}" data-qmap-for="${id}" title="${question.number}. ${escapeHtml(question.title)}" aria-label="${name}"></a></li>`;
     })
     .join("\n");
   return `      <nav class="qmap" aria-label="${escapeHtml(SITE_COPY.mapLabel)}" data-qmap>
-        <ol style="--n: ${questions.length}">
+        <ol>
 ${marks}
         </ol>
       </nav>`;

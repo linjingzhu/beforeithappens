@@ -1347,26 +1347,24 @@ test("the opening introduces the pack, so it is the same above every Part", () =
   assert.ok(headTags(model, site).includes(model.descriptionText));
 });
 
-test("the question map is a line of real anchors, one per question, on question pages only", () => {
+test("the question map is a column of real anchors, one per question, on question pages only", () => {
   // At the owner's word: a line down the right edge, a mark per question, the current one bold.
   // The list is anchors so that without scripting it is still a table of contents that jumps.
   const model = pageModel("marriage", 3, { site });
   const html = renderQuestionPage(model, site);
   const nav = html.slice(html.indexOf('<nav class="qmap"'), html.indexOf("</nav>", html.indexOf('<nav class="qmap"')));
   assert.ok(nav.includes(`aria-label="${SITE_COPY.mapLabel}"`), "named for a screen reader");
-  const marks = [...nav.matchAll(/<a class="qmap-mark" href="#(q-[^"]+)" data-qmap-for="(q-[^"]+)" title="(\d+)\. [^"]+" aria-label="[^"]+"><span class="qmap-n">(\d+)<\/span><\/a>/g)];
+  const marks = [...nav.matchAll(/<a class="qmap-mark" href="#(q-[^"]+)" data-qmap-for="(q-[^"]+)" title="(\d+)\. [^"]+" aria-label="[^"]+"><\/a>/g)];
   assert.equal(marks.length, model.questions.length, "one mark per question");
   model.questions.forEach((question, i) => {
     assert.equal(marks[i][1], `q-${question.id}`, "the anchor points at the card");
     assert.equal(marks[i][2], marks[i][1], "and the script finds the same card");
     assert.equal(Number(marks[i][3]), question.number);
-    assert.equal(Number(marks[i][4]), question.number, "the mark shows the question's number");
     assert.ok(html.includes(`<article class="q" id="q-${question.id}"`), "which exists on the page");
   });
-  // Evenly spaced until the script measures the page: each item knows its index and the count.
-  assert.ok(nav.includes(`<ol style="--n: ${model.questions.length}">`));
-  assert.ok(nav.includes('<li style="--i: 0">'));
-  assert.ok(nav.includes(`<li style="--i: ${model.questions.length - 1}">`));
+  // A dash and nothing else: no number on the screen, at the owner's word. The name is for the
+  // screen reader and the hover.
+  assert.equal(nav.includes("qmap-n"), false, "no number is drawn");
 
   for (const other of [
     renderIndex(indexModel({ site }), site),
@@ -1380,8 +1378,9 @@ test("the question map is a line of real anchors, one per question, on question 
   assert.match(css, /\.qmap \{[^}]*position: fixed;[^}]*right: 0;/s, "it overlays the right edge");
   assert.match(css, /\.qmap \{[^}]*pointer-events: none;/s, "and only the marks take a press");
   assert.match(css, /\.qmap-mark \{[^}]*pointer-events: auto;/s);
-  assert.match(css, /\.qmap-mark\.is-current \{[^}]*font-weight: 700;/s, "the current mark is bold");
-  assert.match(css, /\.qmap li \{[^}]*top: calc\(\(var\(--i, 0\) \+ 0\.5\) \/ var\(--n, 1\) \* 100%\);/s, "spaced by index without the script");
+  assert.match(css, /\.qmap-mark\.is-current::after \{[^}]*height: 4px;/s, "the current mark is drawn bold");
+  assert.equal(/\.qmap ol::before/.test(css), false, "no line — the marks stand on their own");
+  assert.match(css, /\.qmap-mark \{[^}]*height: 16px;/s, "the marks sit close");
   assert.match(css, /prefers-reduced-motion: no-preference\) \{\s*html \{ scroll-behavior: smooth; \}/s, "the jump glides only where motion is wanted");
 
   const enhance = readFileSync("site/enhance.js", "utf8");
