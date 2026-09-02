@@ -961,6 +961,8 @@ test("이어서 points at the last question answered, and says nothing when ther
 
 test("함께 풀기 opens the site's own panel, and every way out of it is an address", async () => {
   const { INVITE_COPY } = await import("../site/invite-copy.js");
+  const { standingPages } = await import("../site/pages.js");
+  const { renderStandingPage } = await import("../site/render.js");
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   const panel = html.slice(html.indexOf("<dialog class=\"invite\""), html.indexOf("</dialog>"));
 
@@ -981,12 +983,29 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   }
   assert.equal(/<script/.test(panel), false, "and the panel loads nothing");
 
-  // It ships where the script does, and not where it would be dead markup.
-  assert.equal(renderIndex(indexModel({ site }), site).includes("data-invite-panel"), false);
-  assert.ok(renderResultPage("marriage", published, site).includes("data-invite-panel"));
+  // Every page that offers the control ships the panel and something that binds it. This used to
+  // say the opposite for the home page — the control was there, the panel was not, and pressing
+  // 둘이 함께 해보기 on the home page reloaded the home page. Derived from the rendered pages
+  // rather than listed, so a page added later cannot quietly go back to being a dead link.
+  const offered = [
+    renderIndex(indexModel({ site }), site),
+    renderResultPage("marriage", published, site),
+    renderQuestionPage(pageModel("marriage", 3, { site }), site),
+    ...standingPages({ site }).map((page) => renderStandingPage(page, site))
+  ];
+  for (const page of offered) {
+    assert.ok(page.includes("data-invite"), "the control is offered");
+    assert.ok(page.includes("data-invite-panel"), "so the panel is here");
+    assert.match(page, /<script type="module" src="\/(enhance|invite)\.js"><\/script>/, "and something binds it");
+  }
+  // `enhance.js` imports `invite.js`, so a page loading the first must not also load the second.
+  for (const page of offered) {
+    const scripts = page.match(/src="\/(enhance|invite)\.js"/g) || [];
+    assert.equal(scripts.length, 1, `one binder per page, not ${scripts.length}`);
+  }
 
-  const enhance = readFileSync("site/enhance.js", "utf8");
-  const bind = enhance.slice(enhance.indexOf("function bindInvite"), enhance.indexOf("\n}", enhance.indexOf("function bindInvite")));
+  const invite = readFileSync("site/invite.js", "utf8");
+  const bind = invite.slice(invite.indexOf("function bindInvite"), invite.indexOf("\n}", invite.indexOf("function bindInvite")));
   // The device's sheet is offered only where it exists: on a phone it is where KakaoTalk lives, and
   // on a desktop it would be a button that does nothing.
   assert.match(bind, /toggleAttribute\("hidden", !navigator\.share\)/);
@@ -1638,13 +1657,21 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   assert.ok(sheet.includes(SITE_COPY.ctaAction));
   assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
   assert.match(sheet, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  // The panel calls this link a 질문집 주소, so from a page with no pack of its own it points at the
+  // pack while there is one — not at the list, which would cost the other person a step.
+  const home = renderIndex(indexModel({ site }), site);
+  assert.match(home, /<a class="cta-action" href="\/marriage\/" data-invite>/);
   assert.match(html, /data-invite/, "and the question page still offers it, from the dock");
   assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
 
-  const enhance = readFileSync("site/enhance.js", "utf8");
-  assert.match(enhance, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
-  assert.match(enhance, /navigator\.clipboard\.writeText\(url\)/);
+  const invite = readFileSync("site/invite.js", "utf8");
+  assert.match(invite, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
+  assert.match(invite, /navigator\.clipboard\.writeText\(url\)/);
   assert.ok(INVITE_COPY.shareText && INVITE_COPY.copied);
+  // It binds on import, which is what lets `enhance.js` have it by importing and nothing else.
+  assert.match(invite, /if \(typeof document !== "undefined"\) bindInvite\(\);/);
+  assert.match(readFileSync("site/enhance.js", "utf8"), /import "\.\/invite\.js";/);
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /"invite\.js"/, "and the build ships it");
 
   // This is the invite link, not the answer link: it holds the pack's address and nothing else, so
   // it is the one of the three that is safe to put anywhere.
