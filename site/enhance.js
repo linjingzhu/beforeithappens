@@ -122,6 +122,90 @@ function bindQuestionPage(root, draft) {
 }
 
 /**
+ * 이어서 — back to the last question that was answered.
+ *
+ * "Last" is the last one in reading order that carries a choice, not the most recently touched:
+ * someone who answers 1 to 40, then goes back and changes 12, is still at 40. Answers are a map
+ * with no order in them, so the order comes from the pack index the page embeds.
+ *
+ * It reads the draft rather than storage, so a question answered a moment ago and not yet saved is
+ * where it takes you. The link is a real URL with an anchor — `scroll-padding-top` already keeps a
+ * question from landing under the sticky strip — so it works as a page load, opens in a new tab,
+ * and needs nothing clever. With nothing answered there is nowhere to carry on from, and the key
+ * says so by going quiet rather than by disappearing and shortening the row.
+ */
+function bindResume(draft) {
+  const key = document.querySelector("[data-resume]");
+  const node = document.querySelector("[data-pack-index]");
+  if (!key || !node) return;
+  let index;
+  try {
+    index = JSON.parse(node.textContent);
+  } catch {
+    return;
+  }
+
+  const update = () => {
+    const items = draft.read().items || {};
+    let at = -1;
+    for (let i = index.ids.length - 1; i >= 0; i -= 1) {
+      if (items[index.ids[i]]?.choiceId) {
+        at = i;
+        break;
+      }
+    }
+    if (at < 0) {
+      key.removeAttribute("href");
+      key.setAttribute("aria-disabled", "true");
+      key.classList.add("is-off");
+      return;
+    }
+    const part = index.parts[at];
+    const page = part === 1 ? `/${index.slug}/` : `/${index.slug}/${part}/`;
+    key.setAttribute("href", `${page}#q-${index.ids[at]}`);
+    key.removeAttribute("aria-disabled");
+    key.classList.remove("is-off");
+  };
+
+  update();
+  document.querySelector(".questions")?.addEventListener("change", update);
+}
+
+/**
+ * Saving on the way out of a page.
+ *
+ * Ten Parts are ten documents, so turning a Part is a real navigation and used to lose whatever had
+ * not been saved. The owner's rule is that saving is an act the reader takes — and pressing 다음 is
+ * an act the reader takes. So every control that leaves this page for another page of this site
+ * writes the draft first, and the forward key says so on its face.
+ *
+ * This is not the automatic saving that was removed. That one wrote on every keystroke, unasked;
+ * this one runs because a person pressed something, and the thing they pressed says what it does.
+ *
+ * Every in-site link, not just 다음: 이전 loses the same work, 결과 reads from storage and would
+ * have shown an empty sheet, and the Part tabs at the top are navigations too. A rule that held for
+ * one control and not its neighbours would be a worse trap than no rule.
+ *
+ * `localStorage` is synchronous, so the write completes before the browser leaves. A failed write
+ * leaves the draft dirty, which is exactly right: `beforeunload` then asks, and the reader finds out
+ * rather than losing the answers quietly.
+ */
+function bindSaveOnNavigation(draft) {
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    const link = event.target?.closest?.("a[href]");
+    // The invitation is a share sheet rather than a navigation, and `bindInvite` owns it.
+    if (!link || link.hasAttribute("data-invite") || link.target === "_blank") return;
+    if (link.getAttribute("aria-disabled") === "true") return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin) return;
+    // A jump within this same document takes nothing with it.
+    if (url.pathname === location.pathname && url.search === location.search) return;
+    draft.commit();
+  });
+}
+
+/**
  * The warning before answers are lost.
  *
  * With nothing saving on its own, a reload or a closed tab takes the unsaved answers with it — so
@@ -130,9 +214,9 @@ function bindQuestionPage(root, draft) {
  * written. Calling `preventDefault` is what asks for it; `returnValue` is the older spelling that
  * some browsers still require.
  *
- * It fires on a page turn too, because a page turn is a real navigation on this site — ten Parts
- * are ten documents. That is the honest behaviour under this rule: leaving Part 3 with unsaved
- * answers loses them, so leaving Part 3 with unsaved answers asks.
+ * It no longer fires on a page turn: `bindSaveOnNavigation` above saves before those, so by the
+ * time the browser leaves there is nothing unsaved to warn about. What is left is what it was
+ * always for — a reload, a closed tab, a link off the site.
  */
 function bindLeaveWarning(draft) {
   addEventListener("beforeunload", (event) => {
@@ -692,6 +776,8 @@ function start() {
   showProgress(draft);
   bindInvite();
   bindSave(draft, questions);
+  bindResume(draft);
+  bindSaveOnNavigation(draft);
   bindLeaveWarning(draft);
   // Every answer moves the bar, including one made on this page a moment ago and not yet saved.
   questions.addEventListener("change", () => showProgress(draft));

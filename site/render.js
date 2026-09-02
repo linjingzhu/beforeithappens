@@ -23,13 +23,20 @@ import { FEEDBACK_COPY } from "./feedback.js";
  * so the page needs no session, no account, and no request.
  */
 export const SITE_COPY = Object.freeze({
-  next: "다음",
+  /* The forward key says what it does, at the owner's word: it saves before it turns the page. */
+  next: "저장하고 다음",
   previous: "이전",
   partsLabel: "파트",
   progressLabel: "답한 질문",
   /** Spelled out where there is room to spell it: the page's own heading. */
   partOrdinal: (n) => `Part ${n}`,
   partsUnit: "개 파트",
+  /*
+   * What a coming pack says. The card was the picture and nothing else, at the owner's word, and
+   * this is the owner adding one line to it — so it stays one line, and it stays a label rather
+   * than becoming a control: there is still nothing here to press and still no date being promised.
+   */
+  comingLabel: "곧 만나요!",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
@@ -37,7 +44,12 @@ export const SITE_COPY = Object.freeze({
   ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
   ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
-  resultAction: "결과 보기",
+  /*
+   * Not "저장하고 결과 보기". Measured at 360px it needs 126px in a 118px key, wraps to a second
+   * line, and takes the bar from 73px to 77 — which puts it back under the dock, whose offset is
+   * the bar's height. Two words say the same thing and fit.
+   */
+  resultAction: "저장하고 결과",
   /*
    * The bar's own words, and they are one word each. It used to say 질문집 목록 on Part 1, which is a
    * phrase rather than a label: measured at 360px it needed most of a slot that also has to hold
@@ -47,6 +59,12 @@ export const SITE_COPY = Object.freeze({
   navResult: "결과",
   navQuestions: "질문",
   navIndex: "목록",
+  /*
+   * Back to the last question that was answered. Three characters because the row is four keys
+   * wide on a phone and this is the one that can be shortest without losing its meaning — "이어서"
+   * is what the action is, where "마지막 문항" would be what it points at and would not fit.
+   */
+  navResume: "이어서",
   barLabel: "아래 이동 막대",
   /* What a reader writes beside a question. Every line here is the pack's own wording. */
   depthLead: "이 선택은 내게",
@@ -326,6 +344,25 @@ ${partTabs(chrome.parts)}
  * the Parts are otherwise reachable only by scrolling to an end — the strip at the top or this at
  * the bottom. Pinned, it is under the thumb the entire way down.
  */
+/**
+ * Where every question lives, in pack order, small enough to sit on every Part.
+ *
+ * The 이어서 key has to turn "the last question answered" into a page and an anchor, and answers are
+ * a map of question id to choice with no order and no page in them. A Part page knows its own ten
+ * questions and nothing about the other ninety, so the pack's shape has to travel with it: the ids
+ * in reading order, and the Part number each one belongs to.
+ *
+ * Ids and numbers only — no titles, no choices. The result sheet embeds the full index because it
+ * has to print the questions back; this one is about 1.6KB and exists so a control can build a URL.
+ */
+function packIndex(model) {
+  const ids = model.index?.ids || [];
+  const parts = model.index?.parts || [];
+  if (!ids.length) return "";
+  const data = JSON.stringify({ slug: model.slug, ids, parts }).replace(/</g, "\\u003c");
+  return `\n  <script type="application/json" data-pack-index>${data}</script>`;
+}
+
 function pager(model) {
   const nextPart = model.parts.find((part) => part.number === model.page + 1);
   const previous = model.previousPath
@@ -337,8 +374,13 @@ function pager(model) {
   const middle = model.nextPath
     ? `<a class="pager-mid" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.navResult)}</a>`
     : `<span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>`;
+  // Where the reader left off. The href here is the pack's own first page, which is where "carry on"
+  // means "start" — `enhance.js` rewrites it to the last answered question once it has read the
+  // draft, and marks it as doing nothing when there is nothing to carry on from.
+  const resume = `<a class="pager-resume" href="/${escapeHtml(model.slug)}/" data-resume>${escapeHtml(SITE_COPY.navResume)}</a>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
+        ${resume}
         ${middle}
         ${next}
       </nav>`;
@@ -493,7 +535,7 @@ export function renderQuestionPage(model, site = SITE) {
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
-${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
+${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
 ${pager(model)}
 ${callToAction(model)}
       </main>
@@ -623,7 +665,9 @@ ${contact}${callToAction()}
  *
  * The scene is `alt=""` on a published card because the heading beside it already names the pack,
  * and a screen reader reading the picture as well would say the same thing twice. On a coming card
- * the picture is the whole content, so it carries the description a sighted reader gets from it.
+ * the picture carries the description a sighted reader gets from it, and the label under it says
+ * the one thing the card is for — which is still not the pack's name, because the design withholds
+ * that from everyone equally.
  */
 export function renderIndex(model, site = SITE) {
   const cards = model.packs
@@ -639,6 +683,7 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
     })
     .concat(COMING.map((entry) => `      <li class="card is-coming">
         <img src="${escapeHtml(entry.scene)}" alt="${escapeHtml(entry.alt)}" width="234" height="440" loading="lazy" decoding="async">
+        <p class="card-coming">${escapeHtml(SITE_COPY.comingLabel)}</p>
       </li>`))
     .join("\n");
   const head = [

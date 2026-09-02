@@ -7,18 +7,18 @@
 
 :root {
   /* palette · ab (the AB web product) */
-  --ab-ink: #2e3a44;
-  --ab-muted: #5a6874;
-  --ab-surface: #eff2f9;
-  --ab-card: #eff2f9;
-  --ab-line: #b5bfc6;
-  --ab-accent: #4a5764;
-  --ab-accent-alt: #6e7f8d;
+  --ab-ink: #2a3743;
+  --ab-muted: #57677a;
+  --ab-surface: #f6f9fe;
+  --ab-card: #f6f9fe;
+  --ab-line: #ccd8e4;
+  --ab-accent: #445468;
+  --ab-accent-alt: #7b8da0;
   --ab-error: #8C3A44;
-  --ab-paper: #e4ebf1;
-  --ab-soft: #e4ebf1;
-  --ab-shadow-light: #fafbff;
-  --ab-shadow-dark: rgba(22, 27, 29, 0.23);
+  --ab-paper: #e9eff8;
+  --ab-soft: #e9eff8;
+  --ab-shadow-light: #ffffff;
+  --ab-shadow-dark: rgba(30, 48, 71, 0.15);
 
   /* palette · loveme (the native screens and their browser preview) */
   --loveme-ink: #3A3338;

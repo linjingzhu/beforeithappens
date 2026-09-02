@@ -88,6 +88,10 @@ import('./src/packs.js').then(async (packs) => {
   walk(INVITE_COPY);
   const { DOCK_COPY } = await import('./site/dock-copy.js');
   walk(DOCK_COPY);
+  // Alt text is text the page prints when an image does not arrive. The first two happened to be
+  // covered by other copy; 갓 was the first character that was not.
+  const { COMING } = await import('./site/config.js');
+  COMING.forEach((entry) => walk(entry.alt));
   const pages = await import('./site/pages.js');
   // The policy's text is fixed and known now; only whether it is emitted is gated on the owner's
   // details. Scanning only the emitted pages would leave it uncovered until the day it appears,
@@ -188,20 +192,29 @@ def write_marks() -> None:
 APP = ROOT / "mobile" / "assets"
 
 
-# The five vignettes on `brand/pack-scenes.jpg`, left to right, and the three the site uses.
+# The five vignettes on `brand/pack-scenes.jpg`, left to right, and what each one became.
 #
 # The source is one wide image the owner supplied: proposal, wedding, pregnancy, newborn, childcare.
-# Only three become pack scenes — the proposal is not a pack and the newborn's hospital panel is the
-# one vignette with a coloured background, which would sit on the card as a blue rectangle where the
-# others sit on white.
+# Four are named for the pack they serve and one — the bench — for what the owner reads in it.
+# Three were taken first and the other two were held back — the proposal because it was not a pack,
+# and the newborn because its hospital panel was judged to be a coloured background that would sit
+# among white cards as a blue rectangle. Rendered at the size a card actually draws, that was wrong:
+# the panel is pale and reads as a soft backdrop on white. Both are in now, as 연애 and 출산, which
+# are packs the site already plans — `docs/OWNER_ACTIONS.md` N7 and `docs/WEB_SERVICE_STRATEGY.md`.
 #
 # The boxes were measured rather than eyeballed: column density across the source falls to zero in
 # the gaps between figures, and each crop is taken inside its own gap with a little air left around
 # the figures so they are not trimmed against their own outline.
 PACK_SCENES = {
+    "dating": (17, 144, 349, 808),
     "marriage": (355, 140, 712, 810),
     "pregnancy": (718, 150, 1050, 810),
-    "childcare": (1414, 190, 1792, 820),
+    "birth": (1052, 160, 1408, 828),
+    # The bench. Named for what it is used as, like the others — and the owner reads it as 노후,
+    # which is what it shows: two people sitting close together, at rest. The book in her hands is
+    # labelled Childcare at full resolution and that is why it was first taken for 육아, but the card
+    # draws this scene 108x180, where the book is 34x31 and its lettering about 6px. Nobody reads it.
+    "later": (1414, 190, 1792, 820),
 }
 
 # Sized by height, not width: the figures stand, so the three crops differ in width and agree in

@@ -103,11 +103,17 @@ test("the page is readable with no JavaScript at all", () => {
   // hand it an empty shell. One script ships, and only as enhancement — what it adds is memory, so
   // scripting off costs the ability to record an answer, never the ability to read one.
   const scripts = html.match(/<script[^>]*>/g) || [];
-  assert.deepEqual(
-    scripts,
-    ['<script type="application/ld+json">', '<script type="module" src="/enhance.js">'],
-    "exactly one behavioural script, and it is the enhancement module"
-  );
+  // A `<script type="application/json">` block is data the browser does not run — structured data
+  // for a crawler, and the pack index the 이어서 key reads. The claim worth holding is about code:
+  // exactly one thing executes, and it is the enhancement module. Listing the tags verbatim made
+  // this fail the moment a data block was added, which is not the thing it is guarding.
+  const runs = scripts.filter((tag) => !/type="application\/(ld\+)?json"/.test(tag));
+  assert.deepEqual(runs, ['<script type="module" src="/enhance.js">'],
+    "exactly one behavioural script, and it is the enhancement module");
+  assert.ok(scripts.some((tag) => tag.includes('type="application/ld+json"')), "structured data is still there");
+  assert.ok(scripts.some((tag) => tag.includes("data-pack-index")), "and the pack index the resume key reads");
+  // Data, not code: it must carry no executable attribute.
+  assert.equal(/<script[^>]*data-pack-index[^>]*\ssrc=/.test(html), false);
   for (const question of published.slice(0, 10)) {
     assert.ok(has(html, question.title), question.id);
     for (const choice of question.choices) assert.ok(has(html, choice.label), choice.id);
@@ -703,6 +709,41 @@ test("the dock's words load without the pack registry behind them", async () => 
   assert.match(build, /"dock-copy\.js"/);
 });
 
+test("이어서 points at the last question answered, and says nothing when there is none", async () => {
+  const { SITE_COPY: copy } = await import("../site/render.js");
+  const model = pageModel("marriage", 4, { site });
+  const html = renderQuestionPage(model, site);
+
+  // Rendered on every Part, in the row, with the pack's own address as the fallback a reader
+  // without scripting gets — "carry on" where nothing is recorded is "start".
+  assert.ok(has(html, `class="pager-resume" href="/marriage/" data-resume>${copy.navResume}<`));
+
+  // It needs the pack's shape, because a Part page knows its own ten questions and nothing about
+  // the other ninety, and answers are a map with no order and no page in them.
+  const index = JSON.parse(html.match(/data-pack-index>(.*?)<\/script>/s)[1]);
+  assert.equal(index.slug, "marriage");
+  assert.equal(index.ids.length, published.length);
+  assert.equal(index.parts.length, index.ids.length);
+  assert.deepEqual(index.ids.slice(0, 3), published.slice(0, 3).map((q) => q.id), "in reading order");
+  assert.equal(index.parts[0], 1);
+  assert.equal(index.parts[index.parts.length - 1], LAST_PAGE, "and the last question is on the last Part");
+  // Ids and Part numbers only: the sheet embeds titles because it prints them back, this does not.
+  assert.equal(Object.keys(index).sort().join(","), "ids,parts,slug");
+  assert.equal(html.match(/data-pack-index>(.*?)<\/script>/s)[1].includes(published[0].title), false);
+
+  // The script resolves it against the draft, so an answer made a moment ago counts, and "last"
+  // means last in reading order rather than most recently touched.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  const resume = enhance.slice(enhance.indexOf("function bindResume"), enhance.indexOf("function bindSaveOnNavigation"));
+  assert.match(resume, /for \(let i = index\.ids\.length - 1; i >= 0; i -= 1\)/, "walks back from the end");
+  assert.match(resume, /draft\.read\(\)/, "reads the draft, not the store");
+  assert.match(resume, /aria-disabled/, "and goes quiet with nothing to carry on from");
+  assert.match(resume, /#q-\$\{index\.ids\[at\]\}/, "linking to the question's own anchor");
+
+  // A disabled key must not be treated as a navigation by the save-on-leave handler.
+  assert.match(enhance, /aria-disabled"\) === "true"\) return/);
+});
+
 test("nothing overrides the pager's shared key style from behind it", () => {
   // Third time this file has been bitten by the same rule, and the last one shipped a blank key:
   // `.pager a` is a class plus a type selector, so a bare `.pager-next` loses every property they
@@ -749,23 +790,61 @@ test("the home page shows what can be read now, and what is coming as a picture 
 
   // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
   // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
-  assert.equal(COMING.length, 2);
+  // Not a fixed count — holders come and go as artwork arrives. What has to hold is that each one
+  // is a picture and a label and nothing else, and that they name a scene the build actually ships.
+  assert.ok(COMING.length > 0);
   for (const entry of COMING) {
+    assert.ok(Object.values(SCENES).includes(entry.scene), `${entry.id} uses a declared scene`);
     const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
     const card = html.slice(start, html.indexOf("</li>", start));
     assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);
-    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it, since the picture is all there is");
+    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it for a reader who cannot see it");
     for (const interactive of ["<a ", "<button", "href=", "data-"]) {
       assert.equal(card.includes(interactive), false, `${entry.id} must not be a control: ${interactive}`);
     }
     assert.equal(/<h[1-6]/.test(card), false, "no heading");
-    // Strip the tags and a coming card has nothing left to read.
-    assert.equal(card.replace(/<[^>]*>/g, "").trim(), "", "no words on the card itself");
+    // The card was the picture and nothing else; the owner added one line to it. That line is all
+    // it says — no name, no count, no date — so strip the tags and exactly the label is left.
+    assert.equal(card.replace(/<[^>]*>/g, "").trim(), SITE_COPY.comingLabel, "one line, and only that");
   }
 
   // The names of the packs that are coming must not leak into the page anywhere else either —
   // the design withholds them on purpose.
   assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
+});
+
+test("the whole published card is the control, without swallowing the link's name", () => {
+  const html = renderIndex(indexModel({ site }), site);
+  const card = html.slice(html.indexOf('<li class="card">'), html.indexOf("</li>"));
+
+  // The anchor stays on the heading. Wrapping one around the card would look identical and read
+  // very differently: an anchor takes its accessible name from everything inside it, so a screen
+  // reader would announce the title, the whole description and the question count as one link.
+  assert.match(card, /<h2><a href="\/marriage\/">결혼 100제<\/a><\/h2>/);
+  assert.equal(/<li class="card">\s*<a /.test(card), false, "the card is not wrapped in a link");
+  assert.equal((card.match(/<a /g) || []).length, 1, "one link on the card, not one per element");
+
+  // The hit area is a stretched pseudo-element on that link, over a positioned card.
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.card \{[^}]*position: relative/s);
+  assert.match(css, /\.card h2 a::after \{[^}]*position: absolute[^}]*inset: 0/s);
+  assert.match(css, /\.card:has\(h2 a\) \{ cursor: pointer/);
+  assert.match(css, /\.card:has\(h2 a\):active \{[^}]*var\(--press\)/s, "and it presses like the other controls");
+  // The ring belongs to the card, since the card is what activates.
+  assert.match(css, /\.card:has\(h2 a:focus-visible\) \{[^}]*outline:/s);
+});
+
+test("a coming card stays inert even now the published one is a button", () => {
+  const html = renderIndex(indexModel({ site }), site);
+  for (const start of [...html.matchAll(/<li class="card is-coming">/g)].map((m) => m.index)) {
+    const card = html.slice(start, html.indexOf("</li>", start));
+    // No link means the stretched-hit-area rules never reach it — they are all scoped to `h2 a`.
+    assert.equal(/<a |<button/.test(card), false, "nothing to press");
+  }
+  const css = readFileSync("site/site.css", "utf8");
+  const coming = css.slice(css.indexOf(".card.is-coming {"), css.indexOf("}", css.indexOf(".card.is-coming {")));
+  assert.match(coming, /cursor: default/, "and it does not pretend otherwise");
+  assert.match(coming, /box-shadow: none/, "nor sit raised like something pressable");
 });
 
 test("every scene the site names is a file the build ships", async () => {
@@ -790,14 +869,26 @@ test("nothing is written to storage until the reader asks for it", async () => {
   // leaving a rule this consequential to a browser check nobody re-runs. Answering used to save as
   // it happened; the owner's rule is that saving is an act the reader takes.
   const enhance = readFileSync("site/enhance.js", "utf8");
-  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindLeaveWarning"));
+  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindSaveOnNavigation"));
   assert.ok(handlers.includes('addEventListener("input"'), "the draft still follows every keystroke");
   assert.ok(handlers.includes('addEventListener("change"'));
   assert.equal(/store\.write|\.commit\(\)/.test(handlers), false, "but neither handler touches storage");
   assert.ok(handlers.includes("draft.set("), "they update the draft instead");
 
-  // Only the button commits, and the warning is what stands between an unsaved draft and losing it.
+  // Typing does not commit; pressing something does. The button, and any control that leaves this
+  // page for another page of the site — ten Parts are ten documents, so turning one used to lose
+  // whatever was unsaved. That is not the automatic saving that was removed: it runs because a
+  // person pressed something, and the thing they pressed says on its face what it does.
   assert.match(enhance, /function bindSave[\s\S]*?draft\.commit\(\)/);
+  const onNav = enhance.slice(enhance.indexOf("function bindSaveOnNavigation"), enhance.indexOf("function bindLeaveWarning"));
+  assert.match(onNav, /addEventListener\("click"/);
+  assert.match(onNav, /draft\.commit\(\)/);
+  // Not the share control, not another site, not a jump inside this page: none of those lose work.
+  assert.match(onNav, /data-invite/);
+  assert.match(onNav, /url\.origin !== location\.origin/);
+  assert.match(onNav, /url\.pathname === location\.pathname/);
+  assert.match(enhance, /bindSaveOnNavigation\(draft\)/);
+
   assert.match(enhance, /addEventListener\("beforeunload"[\s\S]*?preventDefault\(\)/);
   assert.match(enhance, /bindLeaveWarning\(draft\)/);
 
@@ -808,6 +899,13 @@ test("nothing is written to storage until the reader asks for it", async () => {
   const { DOCK_COPY } = await import("../site/dock-copy.js");
   assert.equal(DOCK_COPY.saveAuto.includes("자동"), false, "it no longer says answers save automatically");
   assert.ok(DOCK_COPY.unsaved.includes("사라"), "and something says unsaved answers can be lost");
+  // A page turn saves now, so the warning must not still claim it loses answers.
+  assert.equal(DOCK_COPY.unsaved.includes("페이지를 옮기면"), false, "moving pages no longer loses work");
+
+  // The forward key carries the promise where it is acted on.
+  const { SITE_COPY: copy } = await import("../site/render.js");
+  assert.ok(copy.next.startsWith("저장하고"), "다음 says it saves first");
+  assert.ok(copy.resultAction.startsWith("저장하고"), "and so does the last Part's key");
 });
 
 test("the privacy policy waits for someone to be responsible for it", async () => {

@@ -100,6 +100,19 @@ export function pageModel(slug, pageNumber, { site = SITE, published = null } = 
     }))),
     // The number a reader sees is the question's own, so Part two starts at 11 rather than 1.
     questions: part.questions,
+    /**
+     * Every question in the pack as an id and the Part it lives on, in reading order.
+     *
+     * A page carries its own ten questions and knows nothing about the other ninety, and answers
+     * are a map of id to choice with no order and no page in them. The 이어서 control has to turn
+     * "the last one answered" into a page and an anchor, so the pack's shape travels with the page.
+     * Ids and Part numbers only — the sheet embeds titles and choices because it prints them back;
+     * this is here so a control can build a URL.
+     */
+    index: Object.freeze({
+      ids: Object.freeze(parts.flatMap((each) => each.questions.map((question) => question.id))),
+      parts: Object.freeze(parts.flatMap((each) => each.questions.map(() => each.number)))
+    }),
     path: pagePath(entry.slug, page),
     previousPath: page > 1 ? pagePath(entry.slug, page - 1) : "",
     nextPath: last ? "" : pagePath(entry.slug, page + 1),
