@@ -74,6 +74,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N5b | 웹 · **M1** | **AdSense publisher id and ad unit id** | 🔴 | `SITE.adsenseClient` (`ca-pub-…`) and `SITE.adsenseSlot`. Set both and the script, the unit and `ads.txt` all appear; empty, the site builds exactly as it does now. Google reviews the site first, and the review needs N5 | `site/config.js` |
 | N6 | 공통 · M2 | **Resend domain verification** | 🟢 | Until then `onboarding@resend.dev` reaches only the Resend account owner. Needed for login mail and later for the result sheet | `docs/DEPLOY.md` §4 |
 | N7 | 웹 · M1 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
+| N8 | 웹 · M1 | **교육·노후 홀더의 장면 그림** | 🟢 | 소유자가 홀더 추가를 요청했고, **그림이 없어 대기하기로 결정**했습니다(2026-09-02). 넷 중 둘만 그림이 있으면 고장난 것처럼 보이고, 남은 두 장면(청혼·병실 신생아)은 내용이 맞지 않습니다 — 신생아 장면은 유일하게 하늘색 병실 배경이라 흰 카드들 사이에서 튑니다. **필요한 것: 같은 클레이풍, 흰 배경, 서 있거나 앉은 두 사람, 기존 다섯 장면과 같은 프레이밍의 교육·노후 장면 두 컷.** 받으면 `brand/pack-scenes.jpg`에 이어 붙이거나 별도 파일로 주셔도 됩니다 — 자르는 좌표 두 줄과 `COMING` 두 줄이면 붙습니다. 홈은 세로로 계속 쌓기로 정했습니다 | `scripts/build-brand-assets.py`, `site/config.js` |
 
 ---
 
