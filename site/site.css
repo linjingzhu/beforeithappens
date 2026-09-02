@@ -942,10 +942,11 @@ html { scroll-padding-top: 120px; }
    * moved it from 67 to 73 and the dock, still offset by 67, sat on top of the bar. A variable is
    * what stops the next change to this row doing that again.
    *
-   * Measured at 360-430px: 52px keys in 10px of padding. The notch's inset is added where it is
+   * Measured at 360-430px: 52px keys in 10px of padding, and no top border since the bar
+   * became ink — a stale 73 here left a 1px seam of page showing between the dock and the bar. The notch's inset is added where it is
    * used, so the row clears the home indicator rather than sitting behind it.
    */
-  :root { --bar-h: 73px; }
+  :root { --bar-h: 72px; }
 
   .shell.has-bar { padding-bottom: calc(var(--bar-h) + 14px + env(safe-area-inset-bottom, 0px)); }
   .shell.has-dock { padding-bottom: calc(var(--bar-h) + 84px + env(safe-area-inset-bottom, 0px)); }
@@ -1000,9 +1001,22 @@ html { scroll-padding-top: 120px; }
    * Today's longest — 다투고 다시 손잡는 법 — needs 102px in a 106px slot at 360px and does not
    * truncate. These rules are what keep a longer one, in this pack or the next, inside the bar.
    */
+  /*
+   * The fixed bar is ink, and the keys on it are inverted.
+   *
+   * The page, the dock and the bar were all the same pale blue-grey, so the bottom of the screen
+   * read as one flat wash and the navigator did not look like a layer over the questions at all.
+   * Relief cannot fix that on its own — a raised surface-coloured key on a surface-coloured bar on
+   * a paper-coloured page is three shades of one thing. The one axis left is the ground.
+   *
+   * Only the fixed bar. On a desktop this nav sits in the reading column with whitespace around it
+   * and is not competing with anything; here it lies over the questions and has to say so.
+   */
   .pager {
     align-items: stretch;
     padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--ab-ink);
+    border-top: 0;
   }
 
   /* One height for all three, taken from the tallest — 다음 over a Part name — so the row is three
@@ -1010,6 +1024,45 @@ html { scroll-padding-top: 120px; }
   /* 10px rather than 6: at content width a two-character key would be 41px across, under the 44 a
      thumb wants. The height is 52 either way; this is the other axis. */
   .pager a { padding: 0 10px; overflow: hidden; }
+
+  /*
+   * On ink, the quiet keys are the bar itself with light words on them. The dual neumorphic shadow
+   * is dropped rather than adjusted: it models a light source falling on a pale surface, and on a
+   * dark one it renders as a smudge above and a halo below.
+   */
+  .pager .pager-prev,
+  .pager .pager-mid,
+  .pager .pager-resume {
+    background: transparent;
+    box-shadow: none;
+    color: var(--ab-surface);
+  }
+
+  .pager .pager-prev:active,
+  .pager .pager-mid:active,
+  .pager .pager-resume:active {
+    background: var(--ab-accent);
+    box-shadow: none;
+  }
+
+  /* Inverted: the forward key is now the bright one, which is what makes it the loudest thing in
+     the row on a dark ground exactly as ink did on a pale one. */
+  .pager .pager-next,
+  .pager .pager-next.is-result {
+    background: var(--ab-surface);
+    color: var(--ab-ink);
+    box-shadow: none;
+  }
+
+  .pager .pager-next:active {
+    background: var(--ab-paper);
+    box-shadow: none;
+  }
+
+  .pager .pager-resume.is-off {
+    background: transparent;
+    box-shadow: none;
+  }
   .pager > * { min-height: 52px; }
 
   /*
@@ -1045,24 +1098,25 @@ html { scroll-padding-top: 120px; }
   /* The sheet's own bar names the page the reader is on; it is a marker, not a dead link, so it is
      pressed into the surface rather than raised out of it — the one shape on the row that cannot
      be pushed any further. */
-  .pager-progress {
+  /*
+   * The slot that names where you are rather than linking anywhere — 10 / 10 on the last Part, 결과
+   * on the sheet. It kept the pale pressed pill it had when the bar was pale, and against the light
+   * text the ink bar wants that measured 1.07:1: the figure was there and unreadable. One rule for
+   * both now, a step lighter than the bar so it reads as set into the strip.
+   */
+  .pager .pager-progress {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 52px;
     border-radius: 20px;
-    background: var(--ab-soft);
-    box-shadow: var(--press);
+    background: var(--ab-accent);
+    color: var(--ab-surface);
+    box-shadow: none;
     font-weight: 600;
   }
 
-  .pager.is-sheet .pager-progress {
-    border-radius: 20px;
-    background: var(--ab-soft);
-    color: var(--ab-ink);
-    font-weight: 600;
-    box-shadow: var(--press);
-  }
+
 }
 
 /*
