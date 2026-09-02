@@ -51,7 +51,11 @@ test("the standing pages are on every page's footer, including their own and the
   for (const html of pages) {
     assert.ok(has(html, 'class="foot-nav"'));
     assert.ok(has(html, 'href="/about/"'));
-    assert.ok(has(html, site.name), "the footer names the site");
+    assert.ok(has(html, site.name), "the rail names the site");
+    // The footer signs with the publisher, on the owner's word, and no longer repeats the tagline.
+    assert.ok(has(html, `<footer class="foot">\n        <p>${site.publisher}</p>`), "the footer signs as the publisher");
+    const footer = html.slice(html.indexOf('<footer class="foot">'), html.indexOf("</footer>"));
+    assert.ok(!has(footer, site.tagline), "the footer does not repeat the rail's line");
   }
 });
 

@@ -635,7 +635,7 @@ ${rail(site, currentSlug)}
     <div class="stage">
 ${stageHead(chrome)}${body}
       <footer class="foot">
-        <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
+        <p>${escapeHtml(site.publisher)}</p>
 ${footerNav(site)}
       </footer>
     </div>

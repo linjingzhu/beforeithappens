@@ -62,6 +62,13 @@ export const SITE = Object.freeze({
    * who is not a registered business has neither, and a policy is not improved by an empty field.
    * They are printed when present and omitted when not.
    */
+  /**
+   * Who signs the page. The footer's first line, on every page, at the owner's word (2026-09-02):
+   * the studio's name, not the site's — `name` and `tagline` already stand in the rail and the
+   * browser tab, and a footer that repeated them said nothing new. Written as the owner writes it,
+   * with two capitals; `operator.business` keeps the registered spelling for the privacy policy.
+   */
+  publisher: "AfterScent",
   operator: Object.freeze({
     /** 상호. Given by the owner. */
     business: "afterscent",
