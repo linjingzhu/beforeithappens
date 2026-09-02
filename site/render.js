@@ -1,6 +1,7 @@
 import { escapeHtml } from "../src/html.js";
 import { publishedBySlug, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
+import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
@@ -235,10 +236,40 @@ ${tabs}
 function progressBar(total) {
   const max = Number(total) || 0;
   if (!max) return "";
-  return `        <div class="progress" role="progressbar" aria-label="${escapeHtml(SITE_COPY.progressLabel)}"
-          aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="0" data-progress-total="${max}">
-          <span class="progress-fill" data-progress-fill></span>
-        </div>`;
+  return `          <div class="progress" role="progressbar" aria-label="${escapeHtml(DOCK_COPY.countLabel)}"
+            aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="0" data-progress-total="${max}">
+            <span class="progress-fill" data-progress-fill></span>
+          </div>`;
+}
+
+/**
+ * The dock: a floating widget that stays on the screen for the whole of a Part.
+ *
+ * A Part is ten questions long and each one carries a scene, four answers and three notes, so
+ * everything a reader might want mid-page used to be at one end of it or the other. Three things
+ * now travel with them: how far they have got, the invitation, and a way to make the page say out
+ * loud that their answers are kept.
+ *
+ * It renders with the count at zero and works without scripting in the sense that matters — the
+ * invitation is a real link to the pack. The count and the save button need the script, because
+ * both are about storage, and with no script there is no storage to report on.
+ */
+function bottomDock(model) {
+  const href = model?.slug ? `/${escapeHtml(model.slug)}/` : "/";
+  const total = Number(model?.total) || 0;
+  if (!total) return "";
+  return `      <aside class="dock" aria-label="${escapeHtml(DOCK_COPY.label)}">
+        <div class="dock-progress">
+          <p class="dock-count"><b data-progress-count>0</b> / ${total}</p>
+${progressBar(total)}
+        </div>
+        <div class="dock-actions">
+          <a class="dock-together" href="${href}" data-invite>${escapeHtml(DOCK_COPY.together)}</a>
+          <button class="dock-save" type="button" data-save title="${escapeHtml(DOCK_COPY.saveAuto)}">${escapeHtml(DOCK_COPY.save)}</button>
+        </div>
+        <p class="dock-state" data-save-state hidden></p>
+        <p class="cta-state" data-invite-state hidden></p>
+      </aside>`;
 }
 
 /**
@@ -257,7 +288,6 @@ function stageHead(chrome) {
   const bar = chrome.parts?.length
     ? `\n      <div class="tabbar">
 ${partTabs(chrome.parts)}
-${progressBar(chrome.total)}
       </div>`
     : "";
   // A page says its name, and under it what the page is for. The whole opening is the same on every
@@ -414,12 +444,17 @@ function footerNav(site) {
  * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
  * identity, not its layout. A page renderer below returns only its own content.
  */
-function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottomBar = false }) {
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "" }) {
   // Stated by the renderer rather than sniffed with `:has(.pager)`. The class reserves the room the
-  // pinned bar covers, so getting it wrong on a page that has one hides the footer behind it — and
-  // a selector the browser may not support is the wrong place to put that. `:has` is used elsewhere
-  // in the sheet, but only where losing it costs a highlight.
-  const shell = bottomBar ? "shell has-bar" : "shell";
+  // fixed furniture covers, so getting it wrong on a page that has some hides the footer behind it
+  // — and a selector the browser may not support is the wrong place to put that. `:has` is used
+  // elsewhere in the sheet, but only where losing it costs a highlight.
+  //
+  // Two values, not a boolean, because two pages carry different furniture: a question page has the
+  // dock as well as the pager and needs room for both, while the sheet has only the pager and would
+  // otherwise end in a band of nothing. They are mutually exclusive so neither has to override the
+  // other on specificity.
+  const shell = bottom ? `shell has-${bottom}` : "shell";
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -461,14 +496,15 @@ ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
 ${pager(model)}
 ${callToAction(model)}
-      </main>`;
+      </main>
+${bottomDock(model)}`;
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
     body,
     scripts: enhancement(),
     currentSlug: model.slug,
-    bottomBar: true,
+    bottom: "dock",
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
@@ -542,7 +578,7 @@ ${sheetPager(slug)}
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
     currentSlug: slug,
-    bottomBar: true
+    bottom: "bar"
   });
 }
 

@@ -2,6 +2,7 @@ import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withNote } f
 // Debug only, and self-contained so that removing the block is removing this line and its uses.
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
+import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { reflect } from "./reflect.js";
 import { compareAnswers, decodeShare, encodeShare } from "./share.js";
@@ -543,7 +544,11 @@ function exportFeedback(store, slug) {
 
 /* ---- end of the review block ----------------------------------------------------------------- */
 
-/** The bar under the tabs: answers recorded across the whole pack, as a width and an aria value. */
+/**
+ * The dock's progress: answers recorded across the whole pack, as a width, a number and an aria
+ * value. The number is new — the bar used to carry none — and it is the same figure in all three
+ * places, read from the one store.
+ */
 function showProgress(store) {
   const bar = document.querySelector("[data-progress-total]");
   const fill = bar?.querySelector("[data-progress-fill]");
@@ -553,6 +558,34 @@ function showProgress(store) {
   const answered = Math.min(answeredCount(store.read()), total);
   fill.style.width = `${(answered / total) * 100}%`;
   bar.setAttribute("aria-valuenow", String(answered));
+  const count = document.querySelector("[data-progress-count]");
+  if (count) count.textContent = String(answered);
+}
+
+/**
+ * The save button, and what it is honestly for.
+ *
+ * Every choice and every keystroke is already written as it happens, so this cannot be the thing
+ * that saves — it would be a control that changes nothing. What it does is make the page say so,
+ * and, in the one case that matters, say the opposite: `createAnswerStore` swallows a storage
+ * failure and returns `false`, which is right for a keystroke and wrong as the whole story. A
+ * private window, blocked site data or a full quota means a reader can answer a hundred questions
+ * into a page keeping none of them, and until now nothing on the site would have told them.
+ *
+ * So the button writes what is held and reports the result: how many answers are stored, or that
+ * they are not being stored at all.
+ */
+function bindSave(store) {
+  const button = document.querySelector("[data-save]");
+  const state = document.querySelector("[data-save-state]");
+  if (!button || !state) return;
+  button.addEventListener("click", () => {
+    const answers = store.read();
+    const saved = store.write(answers);
+    state.hidden = false;
+    state.textContent = saved ? DOCK_COPY.saved(answeredCount(answers)) : DOCK_COPY.saveFailed;
+    state.classList.toggle("is-error", !saved);
+  });
 }
 
 function start() {
@@ -575,6 +608,7 @@ function start() {
   bindQuestionPage(questions, store);
   showProgress(store);
   bindInvite();
+  bindSave(store);
   // Every recorded answer moves the bar, including one made on this page a moment ago.
   questions.addEventListener("change", () => showProgress(store));
   startFeedback(slug);

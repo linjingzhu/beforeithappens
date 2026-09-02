@@ -86,6 +86,8 @@ import('./src/packs.js').then(async (packs) => {
   walk(FEEDBACK_COPY);
   const { INVITE_COPY } = await import('./site/invite-copy.js');
   walk(INVITE_COPY);
+  const { DOCK_COPY } = await import('./site/dock-copy.js');
+  walk(DOCK_COPY);
   const pages = await import('./site/pages.js');
   for (const page of pages.standingPages()) {
     parts.push(page.title, page.description);

@@ -632,18 +632,66 @@ test("the bottom bar is pinned on a phone, in the page on a desktop, and reserve
   assert.equal(/^\s*\.pager-next \{/m.test(block), false, "a bare class loses to .pager a");
 });
 
-test("only the pages that carry the bar reserve room for it", () => {
-  const withBar = [
-    renderQuestionPage(pageModel("marriage", 1, { site }), site),
-    renderResultPage("marriage", published, site)
-  ];
-  for (const html of withBar) assert.ok(has(html, '<div class="shell has-bar">'));
+test("each page reserves room for the furniture it actually carries, and no more", () => {
+  // Two classes rather than one flag: a question page floats the dock above the pinned pager and
+  // needs room for both, the sheet has only the pager, and the rest have neither. One shared class
+  // would have made the sheet end in a band of nothing the height of a widget it does not have.
+  const question = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  assert.ok(has(question, '<div class="shell has-dock">'));
 
-  const without = [renderIndex(indexModel({ site }), site)];
-  for (const html of without) {
+  const sheet = renderResultPage("marriage", published, site);
+  assert.ok(has(sheet, '<div class="shell has-bar">'));
+  assert.equal(has(sheet, "has-dock"), false, "the sheet has no questions left to answer");
+  assert.equal(has(sheet, 'class="dock"'), false);
+
+  for (const html of [renderIndex(indexModel({ site }), site)]) {
     assert.ok(has(html, '<div class="shell">'), "and the rest say plain shell");
     assert.equal(has(html, "has-bar"), false);
+    assert.equal(has(html, "has-dock"), false);
   }
+
+  // The two must not both apply: they carry different numbers at the same specificity, so a page
+  // holding both would get whichever the stylesheet happens to write last.
+  assert.equal(has(question, "has-bar"), false, "a page is one or the other, never both");
+});
+
+test("the dock carries the count, the invitation and the save, and is the only progress on the page", async () => {
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
+  const model = pageModel("marriage", 3, { site });
+  const html = renderQuestionPage(model, site);
+  const dock = html.slice(html.indexOf('<aside class="dock"'), html.indexOf("</aside>", html.indexOf('<aside class="dock"')));
+
+  // The number the owner asked for. It counts the whole pack, not the Part: the same figure on all
+  // ten pages, which is why it is measured against `total` rather than the ten questions in view.
+  assert.ok(dock.includes(`<b data-progress-count>0</b> / ${model.total}`), "0 until the script reads storage");
+  assert.ok(dock.includes(`aria-valuemax="${model.total}"`));
+  assert.equal(model.total, published.length);
+
+  assert.ok(dock.includes(`data-invite>${DOCK_COPY.together}<`), "함께 풀기 is the invitation");
+  assert.ok(dock.includes(`href="/marriage/"`), "which points at the pack and carries no answers");
+  assert.ok(dock.includes(`data-save`) && dock.includes(DOCK_COPY.save));
+  // A control that claims to save should say what already saves.
+  assert.ok(dock.includes(DOCK_COPY.saveAuto), "the button says answers are saved as they are made");
+
+  // Exactly one progress indicator. It used to live in the tab strip with no number; with the
+  // number now spelled out below, two would be two different-looking answers to one question.
+  assert.equal(html.split('class="progress"').length - 1, 1, "one progress bar, not two");
+  const bar = html.slice(html.indexOf('<div class="tabbar">'), html.indexOf("</div>", html.indexOf('<div class="tabbar">')));
+  assert.equal(bar.includes("progress"), false, "and it is not the strip's any more");
+});
+
+test("the dock's words load without the pack registry behind them", async () => {
+  // Third module of its kind, for the reason the other two exist: `enhance.js` runs in a browser and
+  // must not import `render.js`, which pulls the whole registry in behind it.
+  const source = readFileSync("site/dock-copy.js", "utf8");
+  assert.equal(/^\s*import /m.test(source), false, "dock-copy.js imports nothing");
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /from "\.\/dock-copy\.js"/);
+  assert.equal(enhance.includes('from "./render.js"'), false);
+
+  // And the build has to ship it, or the page loads a module that is not there.
+  const build = readFileSync("scripts/build-site.mjs", "utf8");
+  assert.match(build, /"dock-copy\.js"/);
 });
 
 test("the progress bar carries its value in aria and nothing on the screen", () => {
