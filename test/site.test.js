@@ -674,6 +674,9 @@ test("the dock carries the count, the invitation and the save, and is the only p
   assert.equal(model.total, published.length);
 
   assert.ok(dock.includes(`data-invite>${DOCK_COPY.together}<`), "함께 풀기 is the invitation");
+  // Save first, invite second, at the owner's word. It also puts the filled key on the right in
+  // both rows — 함께 풀기 over 다음 — so the two read as one column rather than two arrangements.
+  assert.ok(dock.indexOf("data-save") < dock.indexOf("data-invite"), "임시 저장 comes before 함께 풀기");
   assert.ok(dock.includes(`href="/marriage/"`), "which points at the pack and carries no answers");
   assert.ok(dock.includes(`data-save`) && dock.includes(DOCK_COPY.save));
   // A control that claims to save should say what already saves.
