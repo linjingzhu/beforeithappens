@@ -94,6 +94,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X5c | 웹 | ~~Enforce HTTPS~~ | ✅ | X5d | **`https://lovemedialogue.com` is live.** The canonicals the build writes are now true |
 | X5e | 웹 · **M1** | **Google Search Console: verify the property, submit the sitemap** | ✅ | X5c | 2026-09-02 완료. 도메인 속성 `lovemedialogue.com`을 후이즈 DNS TXT로 인증, `https://lovemedialogue.com/sitemap.xml` 제출, 홈 색인 요청. 실적·색인 보고서는 며칠 뒤부터 채워짐. `SITE.verification.google`은 비워 둠(DNS 인증이라 필요 없음) |
 | X5f | 웹 · **M1** | **Naver Search Advisor 등록** | ✅ | X5c | 2026-09-02 완료. 발급 토큰을 `SITE.verification.naver`에 넣어 배포(#88) → HTML 태그 방식으로 소유확인 통과. 남은 것: 사이트맵 제출과 웹 페이지 수집 요청(홈, `/marriage/`) — 소유자 화면에서 바로 |
+| X5g | 웹 · **M1** | **Daum 검색등록 신청** | ✅ | X5c | 2026-09-02 접수. register.search.daum.net 신규등록 — 제목 「러브미 다이얼로그」, 디렉토리 「생활, 건강>가정>가족문제, 상담」, 신청자 메일 `studio@afterscent.kr`. 소유확인 없음, 심사 결과는 메일로(며칠~2주). 코드 쪽 작업 없음 |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
 | X7 | 웹 | AdSense application | 🟢 | — | The site is live over HTTPS, carries a 소개 page, **and now publishes `/privacy/`** — N5 is done, so nothing blocks the application. Note the page count: ten Parts is on the low side for review, and publishing a second pack is one entry in `site/config.js`. In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
