@@ -98,6 +98,20 @@ export function headTags(model, site = SITE) {
 }
 
 /**
+ * The ownership tokens for the search consoles, on the home page only.
+ *
+ * Google reads `google-site-verification` and Naver reads `naver-site-verification`, both from the
+ * root page; a token on every page would be noise and a token on a Part would prove nothing. An
+ * empty token emits no tag, so a preview build carries none.
+ */
+export function verificationTags(site = SITE) {
+  const tokens = site.verification || {};
+  return [tag("google-site-verification", tokens.google), tag("naver-site-verification", tokens.naver)]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/**
  * The head of a page that is not a Part — the home page and the standing pages.
  *
  * `og:type` is `website` for the home page and `article` for the prose ones, which is what those
