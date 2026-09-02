@@ -307,6 +307,7 @@ function bottomDock(model) {
 ${progressBar(total)}
         </div>
         <div class="dock-actions">
+          <button class="dock-clear" type="button" data-clear title="${escapeHtml(DOCK_COPY.clearTitle)}">${escapeHtml(DOCK_COPY.clear)}</button>
           <button class="dock-save" type="button" data-save title="${escapeHtml(DOCK_COPY.saveAuto)}">${escapeHtml(DOCK_COPY.save)}</button>
           <a class="dock-together" href="${href}" data-invite>${escapeHtml(DOCK_COPY.together)}</a>
         </div>

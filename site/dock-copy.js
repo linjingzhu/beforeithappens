@@ -33,5 +33,16 @@ export const DOCK_COPY = Object.freeze({
    * On the button itself. It used to say the opposite — that answers save as they are made — which
    * was true of the old behaviour and is now exactly the thing that is not done.
    */
-  saveAuto: "이 버튼을 누를 때만 저장돼요. 저장한 답은 이 브라우저 안에만 남습니다."
+  saveAuto: "이 버튼을 누를 때만 저장돼요. 저장한 답은 이 브라우저 안에만 남습니다.",
+  /**
+   * The way to leave without a trace, on the page where the answers are made rather than only on
+   * the sheet at the end. It asks once, in the browser's own dialog, because one press wipes a
+   * hundred answers; then it clears the store, the page and the draft, so nothing is left to warn
+   * about on the way out.
+   */
+  clear: "지우기",
+  clearTitle: "이 브라우저에 저장된 답과 지금 화면의 답을 모두 지웁니다.",
+  clearConfirm: "이 브라우저에 저장된 답을 모두 지울까요? 되돌릴 수 없어요.",
+  cleared: "지웠어요 · 답 0개",
+  clearFailed: "지울 수 없어요. 브라우저에서 이 사이트의 저장이 막혀 있는지 확인해 주세요."
 });

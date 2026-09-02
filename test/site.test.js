@@ -1368,6 +1368,23 @@ test("the search consoles' ownership tokens appear on the home page only, and on
   }
 });
 
+test("the dock carries 지우기, the quiet way to leave without a trace from the question page", async () => {
+  // At the owner's word. Before this the only way to wipe answers was the sheet's button; now the
+  // dock has one too — text, not a pill, so it is findable without looking like the thing to press.
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
+  const html = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  const dock = html.slice(html.indexOf('<aside class="dock"'), html.indexOf("</aside>", html.indexOf('<aside class="dock"')));
+  assert.ok(dock.includes(`<button class="dock-clear" type="button" data-clear title="${DOCK_COPY.clearTitle}">${DOCK_COPY.clear}</button>`));
+  assert.ok(dock.indexOf("data-clear") < dock.indexOf("data-save"), "before the save, away from the primary action");
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.dock-clear \{[^}]*background: transparent;/s, "quiet");
+  assert.match(css, /\.dock-clear \{[^}]*min-height: 44px;/s, "but a full target");
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /function bindClear\(/);
+  assert.match(enhance, /confirm\?\.\(DOCK_COPY\.clearConfirm\)/, "asks first — one press wipes a hundred answers");
+  assert.match(enhance, /store\.clear\(\)[\s\S]*draft\.reset\(emptyAnswers\(slug\)\)/, "clears the store and the draft together");
+});
+
 test("the question map is a column of real anchors, one per question, on question pages only", () => {
   // At the owner's word: a line down the right edge, a mark per question, the current one bold.
   // The list is anchors so that without scripting it is still a table of contents that jumps.

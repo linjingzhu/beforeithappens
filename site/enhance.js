@@ -1,4 +1,4 @@
-import { answeredCount, createAnswerStore, NOTE_FIELDS, serializeAnswers, withAnswer, withNote } from "./answers.js";
+import { answeredCount, createAnswerStore, emptyAnswers, NOTE_FIELDS, serializeAnswers, withAnswer, withNote } from "./answers.js";
 // Debug only, and self-contained so that removing the block is removing this line and its uses.
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
@@ -60,6 +60,11 @@ function createDraft(store) {
       answers = next;
     },
     dirty: () => serializeAnswers(answers) !== kept,
+    /** After a clear: the draft is this and it is not unsaved — there is nothing left to warn about. */
+    reset(next) {
+      answers = next;
+      kept = serializeAnswers(next);
+    },
     /** Returns false when the browser refuses to store — the one thing the button exists to say. */
     commit() {
       const written = store.write(answers);
@@ -711,6 +716,36 @@ function exportFeedback(store, slug) {
 /* ---- end of the review block ----------------------------------------------------------------- */
 
 /**
+ * 지우기, on the question page — the way to leave without a trace, without going to the sheet.
+ *
+ * One press wipes everything in the store for this pack, so it asks first, in the browser's own
+ * dialog (the same voice as the leave warning). Then three things are cleared together, because
+ * clearing one and not the others leaves a page that lies: the store, so nothing survives a reload;
+ * the controls on the screen, so the page shows what the store holds; and the draft, so the leave
+ * warning does not fire for answers that no longer exist. The dock's line says what happened.
+ */
+function bindClear(draft, root, store, slug) {
+  const button = document.querySelector("[data-clear]");
+  const state = document.querySelector("[data-save-state]");
+  if (!button) return;
+  button.addEventListener("click", () => {
+    if (!globalThis.confirm?.(DOCK_COPY.clearConfirm)) return;
+    const cleared = store.clear();
+    for (const radio of root.querySelectorAll('.q-choices input[type="radio"]')) radio.checked = false;
+    for (const field of NOTE_FIELDS) {
+      for (const control of root.querySelectorAll(`[data-note="${field}"]`)) control.value = "";
+    }
+    draft.reset(emptyAnswers(slug));
+    showProgress(draft);
+    if (state) {
+      state.hidden = false;
+      state.textContent = cleared ? DOCK_COPY.cleared : DOCK_COPY.clearFailed;
+      state.classList.toggle("is-error", !cleared);
+    }
+  });
+}
+
+/**
  * The dock's progress: answers recorded across the whole pack, as a width, a number and an aria
  * value. The number is new — the bar used to carry none — and it is the same figure in all three
  * places, read from the one store.
@@ -800,6 +835,7 @@ function start() {
   bindQuestionPage(questions, draft);
   showProgress(draft);
   bindSave(draft, questions);
+  bindClear(draft, questions, store, slug);
   bindResume(draft);
   bindSaveOnNavigation(draft);
   bindLeaveWarning(draft);

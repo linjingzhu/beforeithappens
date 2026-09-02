@@ -1164,7 +1164,9 @@ html { scroll-padding-top: 120px; }
     gap: 8px 10px;
   }
 
-  .dock-progress { flex: 1 1 auto; }
+  /* Basis 0, not the 140px the wide rule sets later in the file — three buttons and a 140px column
+     do not fit in 366px. Two classes, so this wins over that later, equal-specificity rule. */
+  .dock .dock-progress { flex: 1 1 0; min-width: 88px; }
   .dock-count { margin: 0 0 4px; font-size: 12px; }
   .dock-count b { font-size: 14px; }
 
@@ -1174,6 +1176,16 @@ html { scroll-padding-top: 120px; }
     padding: 0 12px;
     font-size: 14px;
   }
+
+  .dock-clear { min-height: 40px; padding: 0 6px; font-size: 13px; }
+}
+
+/* 360px — the common Galaxy width: three buttons and the column fit in 336px only with less air. */
+@media (max-width: 374px) {
+  .dock-together,
+  .dock-save { padding: 0 10px; font-size: 13px; }
+  .dock-clear { padding: 0 4px; }
+  .dock .dock-progress { min-width: 72px; }
 }
 
 /*
@@ -1256,6 +1268,29 @@ html { scroll-padding-top: 120px; }
 
 .dock-together:active,
 .dock-save:active { box-shadow: var(--press); }
+
+/*
+ * The quiet one: text, no pill, muted — a control that erases a hundred answers should be findable
+ * and should not look like the thing to press. Same height as its neighbours for the finger.
+ */
+.dock-clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ab-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dock-clear:hover,
+.dock-clear:focus-visible { color: var(--ab-error); }
 
 /* What the press reports: how much is held, or that nothing is being held at all. */
 .dock-state,
