@@ -135,6 +135,85 @@ test("each page in the series says which page it is", () => {
   assert.notEqual(pageDescription(one), pageDescription(two));
 });
 
+test("every Part is named in its own title and described by its own blurb", async () => {
+  // Ten pages whose titles differed only by `(5/10)` gave a search engine nothing to tell them
+  // apart and a reader no reason to open one. The pack already names its Parts; this uses it.
+  const models = [];
+  for (let page = 1; page <= LAST_PAGE; page += 1) models.push(pageModel("marriage", page, { site }));
+
+  const titles = models.map((model) => pageTitle(model, site));
+  assert.equal(new Set(titles).size, titles.length, "ten Parts, ten titles");
+  for (const model of models) {
+    const title = pageTitle(model, site);
+    assert.ok(title.includes(model.part.title), `${model.page}: names its Part — ${title}`);
+    assert.ok(title.startsWith(model.title), "with the pack's own name still in front");
+    assert.ok(title.endsWith(site.name));
+  }
+
+  // Page one is the pack's front door, so it keeps the author's pitch. The rest describe the Part.
+  assert.equal(pageDescription(models[0]), models[0].descriptionText || models[0].description);
+  for (const model of models.slice(1)) {
+    assert.ok(pageDescription(model).startsWith(model.part.blurb), `${model.page}: leads with its blurb`);
+  }
+  const descriptions = models.map((model) => pageDescription(model));
+  assert.equal(new Set(descriptions).size, descriptions.length, "and no two are the same");
+});
+
+test("every public page carries the same head, so none can be built with half of one", async () => {
+  // The home page had no description and no Open Graph tags at all, because it wrote its own head
+  // by hand while the question pages called `headTags`. Three copies of a block is how that
+  // happens. The list is derived from a question page rather than typed out here — a hand-written
+  // list of expected tags has been wrong before, and it would pass while the real set shrank.
+  const { renderIndex, renderStandingPage } = await import("../site/render.js");
+  const { indexModel } = await import("../site/content.js");
+  const { standingPages } = await import("../site/pages.js");
+
+  const question = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  const names = [...question.matchAll(/<meta (?:property|name)="((?:og:|twitter:)[\w:]+)"/g)].map((m) => m[1]);
+  assert.ok(names.includes("og:title") && names.includes("og:description") && names.includes("og:url"));
+
+  const pages = [renderIndex(indexModel({ site }), site)]
+    .concat(standingPages({ site }).map((page) => renderStandingPage(page, site)));
+  for (const html of pages) {
+    for (const name of names) {
+      assert.ok(html.includes(`"${name}"`), `${name} is on every public page`);
+    }
+    assert.match(html, /<meta name="description" content="[^"]+">/, "and so is a description");
+    assert.match(html, /<link rel="canonical" href="https:\/\/ab\.example[^"]*">/);
+  }
+  // The home page is a site; the prose pages are documents on it.
+  assert.match(pages[0], /<meta property="og:type" content="website">/);
+});
+
+test("the home page's description is the owner's own words, not a new sentence", async () => {
+  const { SITE_COPY } = await import("../site/render.js");
+  const { homeDescription, homeTagline, homeBlurb } = SITE_COPY;
+  assert.ok(homeDescription.startsWith(homeTagline), "it opens with the headline as written");
+  const rest = homeDescription.slice(homeTagline.length).trim();
+  assert.ok(rest.length > 0 && homeBlurb.startsWith(rest), "and continues with the paragraph's own first sentence");
+});
+
+test("a wrong address lands on the site's own page, not the host's", async () => {
+  const { renderNotFoundPage } = await import("../site/render.js");
+  const { NOT_FOUND_COPY, footerLinks } = await import("../site/pages.js");
+  const html = renderNotFoundPage(site);
+
+  assert.ok(has(html, NOT_FOUND_COPY.title));
+  // A missing page is not a page to send anyone to: no canonical, and it stays out of the index.
+  assert.ok(has(html, '<meta name="robots" content="noindex">'));
+  assert.equal(has(html, "rel=\"canonical\""), false);
+  assert.equal(has(sitemapXml(allPages({ site }), site), "404"), false, "and out of the sitemap");
+  assert.equal(footerLinks({ site }).some((link) => link.path.includes("404")), false);
+
+  // The ways out, built from what the site actually publishes rather than typed in.
+  assert.ok(has(html, 'href="/"'));
+  for (const pack of indexModel({ site }).packs) {
+    assert.ok(has(html, `href="${pack.path}"`), `${pack.slug} is offered`);
+  }
+  // Its assets are absolute, so it renders the same served from any depth.
+  assert.equal(/(?:src|href)="(?!\/|https:|mailto:|#)/.test(html), false, "no relative asset paths");
+});
+
 test("structured data suggests answers and never accepts one", () => {
   const model = pageModel("marriage", 1, { site });
   const block = structuredData(model, site);
@@ -216,6 +295,13 @@ test("the sitemap lists every page, because nothing links to page seven from out
   assert.ok(has(xml, "http://www.sitemaps.org/schemas/sitemap/0.9"));
   assert.ok(has(xml, "<loc>https://ab.example/marriage/</loc>"));
   assert.ok(has(xml, "<loc>https://ab.example/marriage/2/</loc>"));
+
+  // The home page. It was missing for a while: the build passed in the question pages and the
+  // standing pages, and the root is in neither list, so the one page every other page links to was
+  // the one the sitemap left out. It is emitted here, from nothing, so no caller can forget it.
+  assert.ok(has(xml, "<loc>https://ab.example/</loc>"), "the root is listed");
+  assert.ok(has(sitemapXml([], site), "<loc>https://ab.example/</loc>"), "even with no pages at all");
+  assert.match(xml, /<urlset[^>]*>\n  <url><loc>https:\/\/ab\.example\/<\/loc><\/url>/, "and it is first");
   assert.ok(has(robotsTxt(site), "Sitemap: https://ab.example/sitemap.xml"));
   // The default SITE now carries the real origin, so the no-origin branch needs one made bare.
   const bare = siteWith({ origin: "" });

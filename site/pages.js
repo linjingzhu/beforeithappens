@@ -13,6 +13,34 @@ import { PUBLISHED, SITE } from "./config.js";
  * page appears when the facts it depends on are filled in, and until then it is absent from the
  * build, the footer and the sitemap alike, with nothing to remember to switch on.
  */
+/**
+ * The page a wrong address lands on.
+ *
+ * GitHub Pages serves `/404.html` with a 404 status for any path it does not have, and until now
+ * there was no such file, so a mistyped URL or a link that outlived its page got the host's own
+ * blank page: no name on it, no way back, and a reader gone. This one is the site's own shell with
+ * the footer and the way home already in it.
+ *
+ * It says what happened and nothing more. A 404 that apologises at length is still a 404, and the
+ * useful part of it is the link.
+ */
+export const NOT_FOUND_COPY = Object.freeze({
+  title: "찾을 수 없는 쪽이에요",
+  description: "주소가 잘못되었거나, 옮겨진 쪽입니다.",
+  sections: Object.freeze([
+    Object.freeze({
+      heading: "여기에는 아무것도 없어요",
+      paragraphs: Object.freeze([
+        "주소를 잘못 입력하셨거나, 예전에 있던 쪽이 옮겨졌을 수 있습니다.",
+        "아래 링크로 처음부터 둘러보실 수 있어요."
+      ])
+    })
+  ]),
+  /** The row of ways out. The pack links are built from what the site actually publishes. */
+  linksLabel: "돌아가기",
+  homeLabel: "홈으로"
+});
+
 export const ABOUT_COPY = Object.freeze({
   title: "소개",
   description: "다가올 삶을 앞둔 두 사람이 미리 나눠 두면 좋은 질문을 만듭니다. 정답을 주지 않고, 판정하지 않습니다.",

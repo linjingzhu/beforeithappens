@@ -1599,6 +1599,15 @@ html { scroll-padding-top: 120px; }
   font-size: 19px;
 }
 
+/* The ways out of a 404. A row of links, wrapping on a phone; nothing else on that page moves. */
+.notfound-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 32px;
+  font-size: 19px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

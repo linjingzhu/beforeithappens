@@ -3,8 +3,8 @@ import { COMING, publishedBySlug, SCENES, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
-import { footerLinks } from "./pages.js";
-import { headTags, structuredData } from "./seo.js";
+import { footerLinks, NOT_FOUND_COPY } from "./pages.js";
+import { headTags, standaloneHead, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 // Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
 import { FEEDBACK_COPY } from "./feedback.js";
@@ -47,6 +47,15 @@ export const SITE_COPY = Object.freeze({
    */
   homeTagline: "질문은 미처 알지 못했던 서로의 마음을 발견하게 합니다.",
   homeBlurb: "같은 답에서는 닮은 마음을, 다른 답에서는 새로운 모습을 만나게 됩니다. 중요한 것은 정답이 아니라 서로의 이유를 듣는 일입니다. 그렇게 질문과 대화가 쌓일수록 우리는 서로를 더 깊이 이해하고, 아직 오지 않은 순간들을 조금 더 다정하게 준비할 수 있습니다.",
+  /*
+   * The same words, cut to what a search result and a chat card actually show.
+   *
+   * Not new copy — `homeTagline` and the first sentence of `homeBlurb`, which is where the
+   * paragraph's own claim is made. It is written out as its own string rather than sliced off the
+   * paragraph at build time, because slicing Korean prose on a full stop is a guess about
+   * punctuation, and `test/site.test.js` holds the two together so this cannot drift from them.
+   */
+  homeDescription: "질문은 미처 알지 못했던 서로의 마음을 발견하게 합니다. 같은 답에서는 닮은 마음을, 다른 답에서는 새로운 모습을 만나게 됩니다.",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
@@ -681,6 +690,41 @@ ${sheetPager(slug)}
 }
 
 /**
+ * The page a wrong address lands on, written to `404.html` for GitHub Pages to serve.
+ *
+ * It is the site's own shell, so the mark, the footer and the way home are already on it. Two
+ * things set it apart from a standing page: it carries `noindex` and no canonical, because a
+ * missing page is not a page anyone should be sent to, and it lists what the site does publish —
+ * built from `indexModel`, so a pack that is added or unpublished changes this page with it.
+ */
+export function renderNotFoundPage(site = SITE) {
+  const copy = NOT_FOUND_COPY;
+  const packs = indexModel({ site }).packs;
+  const ways = [{ path: "/", label: copy.homeLabel }]
+    .concat(packs.map((pack) => ({ path: pack.path, label: pack.navTitle })));
+  const sections = copy.sections
+    .map((section) => `      <section class="prose">
+        <h2>${escapeHtml(section.heading)}</h2>
+${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>`).join("\n")}
+      </section>`)
+    .join("\n");
+  return document_({
+    site,
+    head: [
+      `  <title>${escapeHtml(copy.title)} · ${escapeHtml(site.name)}</title>`,
+      '  <meta name="robots" content="noindex">'
+    ].join("\n"),
+    chrome: { title: copy.title, description: copy.description },
+    body: `      <main class="page">
+${sections}
+        <nav class="notfound-links" aria-label="${escapeHtml(copy.linksLabel)}">
+${ways.map((way) => `          <a href="${escapeHtml(way.path)}">${escapeHtml(way.label)}</a>`).join("\n")}
+        </nav>
+      </main>`
+  });
+}
+
+/**
  * A standing page: 소개, 문의. Prose, not questions, so it carries no answer machinery and no
  * enhancement script — there is nothing on it to remember.
  */
@@ -694,11 +738,11 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
   const contact = page.email
     ? `      <p class="prose-contact"><a href="mailto:${escapeHtml(page.email)}">${escapeHtml(page.email)}</a></p>\n`
     : "";
-  const head = [
-    `  <title>${escapeHtml(page.title)} · ${escapeHtml(site.name)}</title>`,
-    `  <meta name="description" content="${escapeHtml(page.description)}">`,
-    site.origin ? `  <link rel="canonical" href="${escapeHtml(absoluteUrl(site.origin, page.path))}">` : ""
-  ].filter(Boolean).join("\n");
+  const head = standaloneHead({
+    title: `${page.title} · ${site.name}`,
+    description: page.description,
+    path: page.path
+  }, site);
   return document_({
     site,
     head,
@@ -743,10 +787,13 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
         <p class="card-coming">${escapeHtml(SITE_COPY.comingLabel)}</p>
       </li>`))
     .join("\n");
-  const head = [
-    `  <title>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</title>`,
-    site.origin ? `  <link rel="canonical" href="${escapeHtml(absoluteUrl(site.origin, "/"))}">` : ""
-  ].filter(Boolean).join("\n");
+  // `website` rather than `article`: this one is the site, the prose pages are documents on it.
+  const head = standaloneHead({
+    title: `${site.name} · ${site.tagline}`,
+    description: SITE_COPY.homeDescription,
+    path: "/",
+    type: "website"
+  }, site);
   return document_({
     site,
     head,
