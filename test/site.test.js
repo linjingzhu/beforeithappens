@@ -809,6 +809,40 @@ test("the home page shows what can be read now, and what is coming as a picture 
   assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
 });
 
+test("the whole published card is the control, without swallowing the link's name", () => {
+  const html = renderIndex(indexModel({ site }), site);
+  const card = html.slice(html.indexOf('<li class="card">'), html.indexOf("</li>"));
+
+  // The anchor stays on the heading. Wrapping one around the card would look identical and read
+  // very differently: an anchor takes its accessible name from everything inside it, so a screen
+  // reader would announce the title, the whole description and the question count as one link.
+  assert.match(card, /<h2><a href="\/marriage\/">결혼 100제<\/a><\/h2>/);
+  assert.equal(/<li class="card">\s*<a /.test(card), false, "the card is not wrapped in a link");
+  assert.equal((card.match(/<a /g) || []).length, 1, "one link on the card, not one per element");
+
+  // The hit area is a stretched pseudo-element on that link, over a positioned card.
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.card \{[^}]*position: relative/s);
+  assert.match(css, /\.card h2 a::after \{[^}]*position: absolute[^}]*inset: 0/s);
+  assert.match(css, /\.card:has\(h2 a\) \{ cursor: pointer/);
+  assert.match(css, /\.card:has\(h2 a\):active \{[^}]*var\(--press\)/s, "and it presses like the other controls");
+  // The ring belongs to the card, since the card is what activates.
+  assert.match(css, /\.card:has\(h2 a:focus-visible\) \{[^}]*outline:/s);
+});
+
+test("a coming card stays inert even now the published one is a button", () => {
+  const html = renderIndex(indexModel({ site }), site);
+  for (const start of [...html.matchAll(/<li class="card is-coming">/g)].map((m) => m.index)) {
+    const card = html.slice(start, html.indexOf("</li>", start));
+    // No link means the stretched-hit-area rules never reach it — they are all scoped to `h2 a`.
+    assert.equal(/<a |<button/.test(card), false, "nothing to press");
+  }
+  const css = readFileSync("site/site.css", "utf8");
+  const coming = css.slice(css.indexOf(".card.is-coming {"), css.indexOf("}", css.indexOf(".card.is-coming {")));
+  assert.match(coming, /cursor: default/, "and it does not pretend otherwise");
+  assert.match(coming, /box-shadow: none/, "nor sit raised like something pressable");
+});
+
 test("every scene the site names is a file the build ships", async () => {
   const { SCENES } = await import("../site/config.js");
   for (const [name, path] of Object.entries(SCENES)) {

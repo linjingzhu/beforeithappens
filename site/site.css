@@ -1299,15 +1299,56 @@ html { scroll-padding-top: 120px; }
 
 .cards { list-style: none; margin: 24px 0 0; padding: 0; }
 
+/*
+ * A published card is one control, and the whole of it is the hit area.
+ *
+ * The link stays on the heading and an empty pseudo-element stretches it over the card, rather than
+ * an `<a>` wrapped around everything. The two look identical and read very differently: a wrapping
+ * anchor takes its accessible name from everything inside it, so a screen reader announces the
+ * title, the whole description and the question count as one link. This way the link is still
+ * called 결혼 100제 and the hit area is still 300px tall.
+ *
+ * Raised rather than outlined, to match the questions and the keys: the sheet's light source is how
+ * this design says "pressable", and an outline said "region". Pressing it sinks the shadow and
+ * drops it a pixel, the same travel the nav keys have.
+ */
 .card {
+  position: relative;
   background: var(--ab-surface);
-  border: 1px solid var(--ab-line);
-  border-radius: 12px;
+  border-radius: 20px;
+  box-shadow: var(--lift-card);
   padding: 24px;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
+  transition: box-shadow 120ms ease, transform 120ms ease;
 }
 
 .card h2 { margin: 0 0 8px; font-size: 20px; }
+
+/* The hit area. `inset: 0` on the card's own box, and nothing drawn — the card is what is seen. */
+.card h2 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.card:has(h2 a) { cursor: pointer; }
+
+.card:has(h2 a):active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
+
+/*
+ * The focus ring belongs to the card, since the card is what is being activated. Without `:has` it
+ * lands on the heading text instead, which is where it used to be — a smaller ring, not a lost one.
+ */
+.card:has(h2 a:focus-visible) {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: 3px;
+}
+
+.card h2 a:focus-visible { outline: none; }
 .card p { margin: 0; }
 .card-meta { color: var(--ab-muted); font-size: 14px; margin-top: 8px !important; }
 
@@ -1346,8 +1387,11 @@ html { scroll-padding-top: 120px; }
   align-items: center;
   justify-content: center;
   background: #fff;
-  border-color: transparent;
   padding: 16px 0;
+  /* Nothing happens when it is pressed, so it is not raised, does not travel, and keeps the arrow
+     cursor. It holds no `<a>`, so the rules above never reach it — this is only what it looks like. */
+  box-shadow: none;
+  cursor: default;
 }
 
 .foot {
