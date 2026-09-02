@@ -13,12 +13,14 @@ test("문의 is built from the address, and not built without one", () => {
   // contact page carrying an address nobody reads invites a message into a void.
   assert.match(SITE.contactEmail, /^[^@\s]+@[^@\s]+$/, "there is an inbox");
   const pages = standingPages({ site });
-  assert.deepEqual(pages.map((page) => page.slug), ["about", "contact"]);
-  const contact = pages[1];
+  assert.ok(pages.map((page) => page.slug).includes("contact"), "the address puts 문의 in the list");
+  const contact = pages.find((page) => page.slug === "contact");
   assert.equal(contact.email, SITE.contactEmail);
   const html = renderStandingPage(contact, site);
   assert.ok(has(html, `href="mailto:${SITE.contactEmail}"`), "and it is reachable, not just printed");
 
+  // Taking the address away takes 문의 with it — and 처리방침 too, which prints the same address as
+  // the way to reach the 개인정보 보호책임자. 소개 is the only page that needs nothing.
   const withoutInbox = siteWith({ origin: site.origin, contactEmail: "" });
   assert.deepEqual(standingPages({ site: withoutInbox }).map((page) => page.slug), ["about"]);
 });

@@ -66,7 +66,7 @@ export const SITE = Object.freeze({
     /** 상호. Given by the owner. */
     business: "afterscent",
     /** 대표자 성명. Also stands as 개인정보 보호책임자 unless `officer` says otherwise. */
-    owner: "",
+    owner: "Jeongsu Lim",
     /** 주소 — 사업장 소재지. Given by the owner 2026-09-02. */
     address: "서울시 구로구 개봉로 20길 6",
     registration: "",
