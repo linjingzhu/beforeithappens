@@ -76,6 +76,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N7 | 웹 · M1 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
 | N8 | 웹 · M1 | **육아 홀더의 장면 그림** | 🟢 | 소유자가 두 번째 시트를 주셨습니다(2026-09-02) — 위: **교육**, 좌하단: **노년**. 둘 다 잘라 붙였습니다. 노후는 그동안 첫 시트의 벤치 그림을 빌려 쓰고 있었는데(소유자가 그렇게 짚어 주셨고, 달리 쓸 그림이 없었습니다) 이제 노후용으로 그려진 그림이 있어 그쪽으로 바꿨습니다. 시트의 우하단 칸은 소유자가 이름 붙이지 않아 쓰지 않았습니다. **남은 것은 육아 한 컷입니다** — 같은 클레이풍, 흰 배경, 같은 프레이밍. 자르는 좌표 한 줄과 `COMING` 한 줄로 붙습니다. (첫 시트의 벤치 그림은 이제 아무 데도 쓰이지 않습니다. 원본에서 그 책 라벨이 `Childcare`라 육아로 돌릴 수도 있는데, 카드 크기에서는 글자가 약 6px이라 읽히지 않습니다 — 소유자 판단이 필요합니다) | `scripts/build-brand-assets.py`, `site/config.js` |
 | N9 | 웹 · M2 | **뉴스레터 — 남은 결정과 선행 조건** | 🟢 | **D1은 정해졌습니다(2026-09-02): 자체 릴레이 + Resend.** 그래서 N6(Resend 도메인 인증)이 이 기능의 필수 선행이 됐습니다. 남은 결정: **D2** 엔드포인트 위치(권장 Cloudflare Worker + D1), **D3** 자문(광고성 판단, §28의8①3호 성립 여부, 제N조 문안, Resend 법인명·연락처), **D4** 메일 제목 수위, **D5** 「곧 만나요!」 홀더에 이름을 붙일지. 켜기 전에 처리방침 개정을 먼저 게시하고 30일을 기다립니다(명세 5-10) | `docs/proposals/newsletter-ko.md` §0-1 |
+| N11 | 웹 | **Kakao JavaScript key (optional)** | 🟢 | 초대 패널의 카카오톡 버튼이 링크를 담은 채 카카오톡 친구 선택 화면을 열게 하려면 필요. 없으면 버튼은 링크를 복사하고 카카오톡을 열기만 함(붙여넣기). 절차: developers.kakao.com → 내 애플리케이션 → 앱 추가(이름 Love Me Dialogue, 회사 afterscent) → 앱 키 「JavaScript 키」 복사 → 플랫폼 → Web → 사이트 도메인 `https://lovemedialogue.com` 등록 → 키를 `SITE.kakaoJsKey`에. 키는 페이지에 실리는 공개값. 이 키가 있을 때만, 패널이 열릴 때 카카오 스크립트(`t1.kakaocdn.net`)를 받아옴 — 페이지 로드 시에는 여전히 아무것도 안 받음 | `site/config.js` |
 
 ---
 
