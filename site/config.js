@@ -33,7 +33,7 @@ export const SITE = Object.freeze({
    * and its sitemap entry, and emits none of it when the address is empty — a contact page
    * carrying an address nobody reads is worse than no contact page.
    */
-  contactEmail: "loveme@afterscent.kr",
+  contactEmail: "studio@afterscent.kr",
   locale: "ko-KR",
   /**
    * AdSense, and the two facts it needs.
