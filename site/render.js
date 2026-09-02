@@ -37,6 +37,16 @@ export const SITE_COPY = Object.freeze({
    * than becoming a control: there is still nothing here to press and still no date being promised.
    */
   comingLabel: "곧 만나요!",
+  /*
+   * The home page's own words, given by the owner as one paragraph.
+   *
+   * Split where the paragraph turns: the first sentence says what a question does, and the rest say
+   * what happens as they accumulate. That split is what gives the page a headline and a body — the
+   * home had a headline and nothing under it before. `SITE.tagline` is untouched and still carries
+   * the footer, the rail and the browser tab, where a short line serves better than four sentences.
+   */
+  homeTagline: "질문은 미처 알지 못했던 서로의 마음을 발견하게 합니다.",
+  homeBlurb: "같은 답에서는 닮은 마음을, 다른 답에서는 새로운 모습을 만나게 됩니다. 중요한 것은 정답이 아니라 서로의 이유를 듣는 일입니다. 그렇게 질문과 대화가 쌓일수록 우리는 서로를 더 깊이 이해하고, 아직 오지 않은 순간들을 조금 더 다정하게 준비할 수 있습니다.",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
@@ -697,7 +707,7 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
   return document_({
     site,
     head,
-    chrome: { title: site.name, tagline: site.tagline },
+    chrome: { title: site.name, tagline: SITE_COPY.homeTagline, description: SITE_COPY.homeBlurb },
     body: `  <main class="page">
     <ul class="cards">
 ${cards}
