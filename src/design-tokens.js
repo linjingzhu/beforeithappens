@@ -20,27 +20,36 @@ export const PALETTES = Object.freeze({
     error: "#8C3A44"
   }),
   /*
-   * Cool greys, from the owner's palette: #EFF2F9 · #E4EBF1 · #B5BFC6 · #6E7F8D, over the two
-   * shadows that give the surfaces their relief (#FAFBFF at full strength, #161B1D at 23%).
+   * Cool greys, from the owner's palette — #EFF2F9 · #E4EBF1 · #B5BFC6 · #6E7F8D — lifted a step at
+   * the owner's word: brighter and fresher, the same hues and the same relationships.
    *
-   * Text is darker than any of the four. Measured against the ground it sits on, #6E7F8D reads at
-   * 3.69:1 on a card and 3.43:1 on the page — under the 4.5:1 a sentence needs — so `ink`, `muted`
-   * and `accent` are darker steps of the same hue, at 10.4:1, 5.1:1 and 6.6:1. The palette's own
+   * What moved and why. The grounds went up and slightly bluer, so the page reads as light rather
+   * than as grey: the page is `paper`, cards sit on `surface` above it, and that order is what
+   * makes a raised card read at all — it is kept, only both are higher now. `line` was heavy enough
+   * to look drawn on rather than to divide, and it lightens with them.
+   *
+   * The shadows did most of the muddiness. The drop was #161B1D at 23% — a near-black at a weight
+   * that greys whatever it falls on — and is now a blue-slate at 15%, so relief still reads and
+   * stops tinting the surface under it. The highlight goes to pure white.
+   *
+   * Text is darker than any of the four, and stayed put while the grounds rose, so every ratio
+   * improved rather than being spent: measured against the ground it sits on, `ink` reads 11.5:1 on
+   * a card and 10.5:1 on the page, `muted` 5.5:1 and 5.0:1, `accent` 7.3:1. The palette's own
    * #6E7F8D stays as `accentAlt`, where nothing has to be read out of it: a rule, a track, a mark.
    */
   ab: Object.freeze({
-    ink: "#2e3a44",
-    muted: "#5a6874",
-    surface: "#eff2f9",
-    card: "#eff2f9",
-    line: "#b5bfc6",
-    accent: "#4a5764",
-    accentAlt: "#6e7f8d",
+    ink: "#2a3743",
+    muted: "#57677a",
+    surface: "#f6f9fe",
+    card: "#f6f9fe",
+    line: "#ccd8e4",
+    accent: "#445468",
+    accentAlt: "#7b8da0",
     error: "#8C3A44",
-    paper: "#e4ebf1",
-    soft: "#e4ebf1",
-    shadowLight: "#fafbff",
-    shadowDark: "rgba(22, 27, 29, 0.23)"
+    paper: "#e9eff8",
+    soft: "#e9eff8",
+    shadowLight: "#ffffff",
+    shadowDark: "rgba(30, 48, 71, 0.15)"
   })
 });
 
