@@ -50,6 +50,14 @@ export const SITE = Object.freeze({
   adsenseClient: "",
   adsenseSlot: "",
   /**
+   * The tokens Google Search Console and Naver Search Advisor hand out to prove the site is the
+   * owner's. Each becomes one `<meta>` on the home page and nowhere else — that is where both
+   * services look — and an empty one emits nothing. DNS verification works too and needs no code;
+   * this is for the owner who would rather paste a token than edit a zone. (M1, `docs/OWNER_ACTIONS.md`
+   * X5e·X5f.)
+   */
+  verification: Object.freeze({ google: "", naver: "" }),
+  /**
    * Who operates the site, for the privacy policy — and the reason that page does or does not exist.
    *
    * `개인정보 보호법` 제30조 requires a policy to name a 개인정보 보호책임자 with a contact, and a

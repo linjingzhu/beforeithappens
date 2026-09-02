@@ -4,7 +4,7 @@ import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks, NOT_FOUND_COPY } from "./pages.js";
-import { headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData } from "./seo.js";
+import { headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData, verificationTags } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 // Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
 import { FEEDBACK_COPY } from "./feedback.js";
@@ -906,6 +906,8 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
       path: "/",
       type: "website"
     }, site),
+    // The search consoles' ownership tokens live here and only here — both read the root page.
+    verificationTags(site),
     siteStructuredData(site, SITE_COPY.homeDescription)
   ].filter(Boolean).join("\n  ");
   return document_({

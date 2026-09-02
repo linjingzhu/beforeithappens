@@ -1347,6 +1347,27 @@ test("the opening introduces the pack, so it is the same above every Part", () =
   assert.ok(headTags(model, site).includes(model.descriptionText));
 });
 
+test("the search consoles' ownership tokens appear on the home page only, and only when set", () => {
+  // Google and Naver both read the root page for their token. A preview build has none.
+  const none = renderIndex(indexModel({ site }), site);
+  assert.equal(none.includes("site-verification"), false, "empty tokens emit nothing");
+
+  const verified = siteWith({ ...site, verification: { google: "g-token-123", naver: "n-token-456" } });
+  const home = renderIndex(indexModel({ site: verified }), verified);
+  assert.ok(has(home, '<meta name="google-site-verification" content="g-token-123">'));
+  assert.ok(has(home, '<meta name="naver-site-verification" content="n-token-456">'));
+  const headEnd = home.indexOf("</head>");
+  assert.ok(home.indexOf("google-site-verification") < headEnd, "in the head");
+
+  for (const other of [
+    renderQuestionPage(pageModel("marriage", 1, { site: verified }), verified),
+    renderStandingPage(standingPages({ site: verified })[0], verified),
+    renderResultPage("marriage", published, verified)
+  ]) {
+    assert.equal(other.includes("site-verification"), false, "a token on any other page proves nothing");
+  }
+});
+
 test("the question map is a column of real anchors, one per question, on question pages only", () => {
   // At the owner's word: a line down the right edge, a mark per question, the current one bold.
   // The list is anchors so that without scripting it is still a table of contents that jumps.
