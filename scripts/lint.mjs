@@ -1,52 +1,36 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-const files = [
-  "index.html",
-  "src/app.js",
-  "src/auth.js",
-  "src/auth-ui.js",
-  "src/auth.css",
-  "src/install.js",
-  "src/state.js",
-  "src/questions.js",
-  "src/styles.css",
-  "src/accessibility.css",
-  "server/auth.mjs",
-  "server/oauth.mjs",
-  "server/app.mjs",
-  "server/store.mjs",
-  "server/http.mjs",
-  "server/mail.mjs",
-  "server/workspace.mjs",
-  "server/answers.mjs",
-  "server/entitlement.mjs",
-  "scripts/build-tokens.mjs",
-  "scripts/build-site.mjs",
-  "site/config.js",
-  "site/content.js",
-  "site/render.js",
-  "site/seo.js",
-  "site/answers.js",
-  "site/reflect.js",
-  "site/result.js",
-  "site/result-copy.js",
-  "site/enhance.js",
-  "site/site.css",
-  "server/audit.mjs",
-  "server/report.mjs",
-  "mobile/App.js",
-  "mobile/src/copy.js",
-  "mobile/src/session.js",
-  "mobile/src/screens.js",
-  "mobile/src/theme.js",
-  "mobile/src/host.js",
-  "mobile/src/s9-mount.js",
-  "mobile/paywall/screens.js",
-  "mobile/paywall/host-mount.js",
-  "mobile/paywall/contract/paywall-copy.js",
-  "mobile/paywall/contract/paywall-gate.js"
-];
-for (const file of files) {
+/**
+ * The cheapest checks worth running on every source file: it is not empty, and its line endings are
+ * not CRLF.
+ *
+ * The list of files used to be written out here by hand, and by the time it was replaced it was six
+ * files out of date — `site/pages.js`, the three copy modules the browser loads, and both halves of
+ * the content stamp were all outside it. That is the same shape of miss as the font scanner's, and
+ * the same fix: walk the directories rather than name what is in them, so a file added tomorrow is
+ * covered without anyone remembering this file exists.
+ */
+const ROOTS = ["src", "site", "server", "scripts", "mobile"];
+const EXTENSIONS = [".js", ".mjs", ".css", ".html"];
+// Generated, vendored or checked out — none of it is this repository's source to hold to a rule.
+const SKIP = new Set(["node_modules", "dist", "data", "assets", ".expo", "build"]);
+
+async function sources(directory) {
+  const found = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (entry.name.startsWith(".") || SKIP.has(entry.name)) continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) found.push(...await sources(path));
+    else if (EXTENSIONS.some((extension) => entry.name.endsWith(extension))) found.push(path);
+  }
+  return found;
+}
+
+const files = ["index.html"];
+for (const root of ROOTS) files.push(...await sources(root));
+
+for (const file of files.sort()) {
   const value = await readFile(file, "utf8");
   if (!value.trim()) throw new Error(`${file} is empty`);
   if (value.includes("\r\n")) throw new Error(`${file} uses CRLF line endings`);

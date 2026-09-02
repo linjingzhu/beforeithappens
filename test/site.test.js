@@ -16,6 +16,9 @@ const LAST_PAGE = PARTS.length;
 /** Two real questions from the published pack, so the ids are never hand-copied. */
 const [Q1, Q2] = published;
 const has = (html, text) => html.includes(text);
+/** Every JSON-LD document in a rendered block or page, parsed. */
+const blocks = (html) => [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/gs)]
+  .map((match) => JSON.parse(match[1].replace(/\\u003c/g, "<")));
 
 test("a page is a Part, so the pack's own structure decides where the pages cut", () => {
   assert.equal(PARTS.length, 10, "ten Parts, ten pages");
@@ -193,6 +196,118 @@ test("the home page's description is the owner's own words, not a new sentence",
   assert.ok(rest.length > 0 && homeBlurb.startsWith(rest), "and continues with the paragraph's own first sentence");
 });
 
+test("a link into a chat carries a card, not a grey rectangle", async () => {
+  // The site had no og:image at all, which for a service whose whole distribution is one person
+  // sending another a link is the most expensive thing missing from it.
+  const { SHARE_CARDS } = await import("../site/config.js");
+  const { renderIndex, renderStandingPage } = await import("../site/render.js");
+  const { indexModel } = await import("../site/content.js");
+  const { standingPages } = await import("../site/pages.js");
+
+  const pages = [
+    renderIndex(indexModel({ site }), site),
+    renderQuestionPage(pageModel("marriage", 4, { site }), site),
+    ...standingPages({ site }).map((page) => renderStandingPage(page, site))
+  ];
+  for (const html of pages) {
+    // Absolute, because the app fetching the page has no base to resolve a path against.
+    assert.match(html, /<meta property="og:image" content="https:\/\/ab\.example\/brand\/share-[a-z]+\.jpg">/);
+    assert.ok(has(html, '<meta property="og:image:width" content="1200">'));
+    assert.ok(has(html, '<meta property="og:image:height" content="630">'));
+    assert.ok(has(html, '<meta name="twitter:card" content="summary_large_image">'));
+    assert.match(html, /<meta property="og:image:alt" content="[^"]+">/);
+  }
+  // A pack shares its own card; everything else shares the site's.
+  assert.ok(has(pages[1], SHARE_CARDS.marriage.src));
+  assert.ok(has(pages[0], SHARE_CARDS.home.src));
+
+  // The numbers on the tag are the file's own, so a re-cut card cannot leave the page claiming the
+  // old shape — the same check the scenes get, for the same reason.
+  for (const [name, card] of Object.entries(SHARE_CARDS)) {
+    const file = `site${card.src}`;
+    assert.ok(existsSync(file), `${name}: ${file} is generated and committed`);
+    assert.deepEqual(jpegSize(file), { width: card.width, height: card.height },
+      `${name}: re-run \`python3 scripts/build-brand-assets.py\``);
+    // Big enough to be a card, small enough that a chat app will actually fetch it.
+    const bytes = statSync(file).size;
+    assert.ok(bytes > 8000 && bytes < 300_000, `${name} is ${bytes} bytes`);
+  }
+
+  // With no origin there is no absolute address, so the tag is left off rather than pointing at a
+  // path nothing can resolve — and the card falls back to the small layout it can actually fill.
+  const bare = siteWith({ origin: "" });
+  const html = renderIndex(indexModel({ site: bare }), bare);
+  assert.equal(has(html, "og:image"), false);
+  assert.ok(has(html, '<meta name="twitter:card" content="summary">'));
+});
+
+test("the site says who publishes it, and every page says where it sits", async () => {
+  const { renderIndex, renderStandingPage } = await import("../site/render.js");
+  const { indexModel } = await import("../site/content.js");
+  const { standingPages } = await import("../site/pages.js");
+
+  const [organization, website] = blocks(renderIndex(indexModel({ site }), site))
+    .flatMap((block) => block["@graph"] || [block]);
+  assert.equal(organization["@type"], "Organization");
+  assert.equal(website["@type"], "WebSite");
+  assert.equal(website.publisher["@id"], organization["@id"], "the site names its publisher");
+  assert.equal(website.inLanguage, site.locale);
+  // Everything in it is a fact the owner gave; nothing here is invented.
+  assert.equal(organization.legalName, SITE.operator.business);
+  assert.equal(organization.email, SITE.contactEmail);
+  assert.ok(organization.address.streetAddress.includes(SITE.operator.address));
+  // There is no site search, so claiming one would be a lie that costs nothing to tell.
+  assert.equal(has(JSON.stringify(website), "SearchAction"), false);
+  // A field the owner has not given is left out rather than guessed at.
+  const anonymous = siteWith({ operator: { business: "", owner: "", address: "" }, contactEmail: "" });
+  const bare = blocks(renderIndex(indexModel({ site: anonymous }), anonymous))[0]["@graph"][0];
+  assert.equal("address" in bare, false);
+  assert.equal("email" in bare, false);
+
+  // The trail a search result prints instead of the URL. Its crumbs are real pages.
+  const trails = [
+    [renderQuestionPage(pageModel("marriage", 1, { site }), site), [site.name, "결혼 100제"]],
+    [renderQuestionPage(pageModel("marriage", 6, { site }), site), [site.name, "결혼 100제", "6부 다투고 다시 손잡는 법"]],
+    [renderStandingPage(standingPages({ site })[0], site), [site.name, "소개"]]
+  ];
+  const built = new Set(["/", ...allPages({ site }).map((page) => page.path), ...standingPages({ site }).map((page) => page.path)]);
+  for (const [html, names] of trails) {
+    const trail = blocks(html).find((block) => block["@type"] === "BreadcrumbList");
+    assert.ok(trail, "there is a trail");
+    assert.deepEqual(trail.itemListElement.map((crumb) => crumb.name), names);
+    trail.itemListElement.forEach((crumb, index) => {
+      assert.equal(crumb.position, index + 1);
+      assert.ok(built.has(crumb.item.replace(site.origin, "")), `${crumb.item} is a page the build emits`);
+    });
+  }
+});
+
+test("the sitemap dates each page by its content, not by the build clock", async () => {
+  // A date that moves on every deploy is not a signal. The stamp is committed and this is what
+  // keeps it honest: change a question, and the build fails until the stamp is regenerated.
+  const { contentHashes } = await import("../site/stamp.js");
+  const stamp = JSON.parse(readFileSync("site/content-stamp.json", "utf8"));
+  const hashes = contentHashes({ site: SITE });
+  assert.deepEqual(
+    Object.keys(stamp).sort(),
+    Object.keys(hashes).sort(),
+    "every public page is stamped; run `node scripts/stamp-content.mjs`"
+  );
+  for (const [path, hash] of Object.entries(hashes)) {
+    assert.equal(stamp[path].hash, hash, `${path} changed; run \`node scripts/stamp-content.mjs\``);
+    assert.match(stamp[path].date, /^\d{4}-\d{2}-\d{2}$/);
+  }
+
+  // And the dates reach the sitemap, on the root as well as the pages.
+  const xml = sitemapXml(allPages({ site }), site);
+  assert.match(xml, /<loc>https:\/\/ab\.example\/<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+  assert.equal((xml.match(/<lastmod>/g) || []).length, (xml.match(/<url>/g) || []).length, "every URL is dated");
+
+  // The hash is of what a reader reads. Two runs of the same content agree, and a changed question
+  // moves exactly one page — if the shell were in the digest, every page would move together.
+  assert.deepEqual(contentHashes({ site: SITE }), hashes, "the same content hashes the same twice");
+});
+
 test("a wrong address lands on the site's own page, not the host's", async () => {
   const { renderNotFoundPage } = await import("../site/render.js");
   const { NOT_FOUND_COPY, footerLinks } = await import("../site/pages.js");
@@ -217,8 +332,10 @@ test("a wrong address lands on the site's own page, not the host's", async () =>
 test("structured data suggests answers and never accepts one", () => {
   const model = pageModel("marriage", 1, { site });
   const block = structuredData(model, site);
-  const json = JSON.parse(block.replace(/^<script[^>]*>/, "").replace(/<\/script>$/, "").replace(/\\u003c/g, "<"));
-  assert.equal(json["@type"], "ItemList");
+  // The block is more than one script now — the questions and the breadcrumb trail — so each is
+  // parsed on its own rather than the whole string being treated as one document.
+  const json = blocks(block).find((each) => each["@type"] === "ItemList");
+  assert.ok(json, "the questions are still there");
   assert.equal(json.numberOfItems, 10);
   const first = json.itemListElement[0].item;
   assert.equal(first["@type"], "Question");
@@ -233,7 +350,7 @@ test("structured data suggests answers and never accepts one", () => {
     questions: [{ ...model.questions[0], title: "</script><script>alert(1)</script>" }]
   };
   const escaped = structuredData(hostile, site);
-  assert.equal(escaped.match(/<\/script>/g).length, 1, "only the wrapper closes the block");
+  assert.equal(escaped.match(/<\/script>/g).length, blocks(escaped).length, "only the wrappers close");
   assert.ok(escaped.includes("\\u003c/script>"), "the data's angle bracket is escaped instead");
 });
 
@@ -301,7 +418,7 @@ test("the sitemap lists every page, because nothing links to page seven from out
   // the one the sitemap left out. It is emitted here, from nothing, so no caller can forget it.
   assert.ok(has(xml, "<loc>https://ab.example/</loc>"), "the root is listed");
   assert.ok(has(sitemapXml([], site), "<loc>https://ab.example/</loc>"), "even with no pages at all");
-  assert.match(xml, /<urlset[^>]*>\n  <url><loc>https:\/\/ab\.example\/<\/loc><\/url>/, "and it is first");
+  assert.match(xml, /<urlset[^>]*>\n  <url><loc>https:\/\/ab\.example\/<\/loc>/, "and it is first");
   assert.ok(has(robotsTxt(site), "Sitemap: https://ab.example/sitemap.xml"));
   // The default SITE now carries the real origin, so the no-origin branch needs one made bare.
   const bare = siteWith({ origin: "" });
@@ -844,6 +961,8 @@ test("이어서 points at the last question answered, and says nothing when ther
 
 test("함께 풀기 opens the site's own panel, and every way out of it is an address", async () => {
   const { INVITE_COPY } = await import("../site/invite-copy.js");
+  const { standingPages } = await import("../site/pages.js");
+  const { renderStandingPage } = await import("../site/render.js");
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   const panel = html.slice(html.indexOf("<dialog class=\"invite\""), html.indexOf("</dialog>"));
 
@@ -864,12 +983,29 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   }
   assert.equal(/<script/.test(panel), false, "and the panel loads nothing");
 
-  // It ships where the script does, and not where it would be dead markup.
-  assert.equal(renderIndex(indexModel({ site }), site).includes("data-invite-panel"), false);
-  assert.ok(renderResultPage("marriage", published, site).includes("data-invite-panel"));
+  // Every page that offers the control ships the panel and something that binds it. This used to
+  // say the opposite for the home page — the control was there, the panel was not, and pressing
+  // 둘이 함께 해보기 on the home page reloaded the home page. Derived from the rendered pages
+  // rather than listed, so a page added later cannot quietly go back to being a dead link.
+  const offered = [
+    renderIndex(indexModel({ site }), site),
+    renderResultPage("marriage", published, site),
+    renderQuestionPage(pageModel("marriage", 3, { site }), site),
+    ...standingPages({ site }).map((page) => renderStandingPage(page, site))
+  ];
+  for (const page of offered) {
+    assert.ok(page.includes("data-invite"), "the control is offered");
+    assert.ok(page.includes("data-invite-panel"), "so the panel is here");
+    assert.match(page, /<script type="module" src="\/(enhance|invite)\.js"><\/script>/, "and something binds it");
+  }
+  // `enhance.js` imports `invite.js`, so a page loading the first must not also load the second.
+  for (const page of offered) {
+    const scripts = page.match(/src="\/(enhance|invite)\.js"/g) || [];
+    assert.equal(scripts.length, 1, `one binder per page, not ${scripts.length}`);
+  }
 
-  const enhance = readFileSync("site/enhance.js", "utf8");
-  const bind = enhance.slice(enhance.indexOf("function bindInvite"), enhance.indexOf("\n}", enhance.indexOf("function bindInvite")));
+  const invite = readFileSync("site/invite.js", "utf8");
+  const bind = invite.slice(invite.indexOf("function bindInvite"), invite.indexOf("\n}", invite.indexOf("function bindInvite")));
   // The device's sheet is offered only where it exists: on a phone it is where KakaoTalk lives, and
   // on a desktop it would be a button that does nothing.
   assert.match(bind, /toggleAttribute\("hidden", !navigator\.share\)/);
@@ -1521,13 +1657,21 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   assert.ok(sheet.includes(SITE_COPY.ctaAction));
   assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
   assert.match(sheet, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  // The panel calls this link a 질문집 주소, so from a page with no pack of its own it points at the
+  // pack while there is one — not at the list, which would cost the other person a step.
+  const home = renderIndex(indexModel({ site }), site);
+  assert.match(home, /<a class="cta-action" href="\/marriage\/" data-invite>/);
   assert.match(html, /data-invite/, "and the question page still offers it, from the dock");
   assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
 
-  const enhance = readFileSync("site/enhance.js", "utf8");
-  assert.match(enhance, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
-  assert.match(enhance, /navigator\.clipboard\.writeText\(url\)/);
+  const invite = readFileSync("site/invite.js", "utf8");
+  assert.match(invite, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
+  assert.match(invite, /navigator\.clipboard\.writeText\(url\)/);
   assert.ok(INVITE_COPY.shareText && INVITE_COPY.copied);
+  // It binds on import, which is what lets `enhance.js` have it by importing and nothing else.
+  assert.match(invite, /if \(typeof document !== "undefined"\) bindInvite\(\);/);
+  assert.match(readFileSync("site/enhance.js", "utf8"), /import "\.\/invite\.js";/);
+  assert.match(readFileSync("scripts/build-site.mjs", "utf8"), /"invite\.js"/, "and the build ships it");
 
   // This is the invite link, not the answer link: it holds the pack's address and nothing else, so
   // it is the one of the three that is safe to put anywhere.

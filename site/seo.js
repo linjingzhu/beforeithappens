@@ -1,5 +1,8 @@
 import { escapeHtml } from "../src/html.js";
-import { SITE } from "./config.js";
+import { SHARE_CARDS, SITE } from "./config.js";
+// Imported rather than passed in, for the reason the root below is emitted rather than passed in:
+// a caller that can forget it will. `scripts/stamp-content.mjs` writes it; a test holds it current.
+import CONTENT_STAMP from "./content-stamp.json" with { type: "json" };
 import { absoluteUrl } from "./content.js";
 
 /**
@@ -50,7 +53,11 @@ function property(name, content) {
  * so a search result invented its own two lines and a link pasted into a chat opened as a bare
  * title. Three copies of the same block is how that happens; there is one now.
  */
-function metaBlock({ title, description, url, previousUrl, nextUrl, type = "article" }, site = SITE) {
+function metaBlock({ title, description, url, previousUrl, nextUrl, type = "article", card }, site = SITE) {
+  // A share card is only useful as an absolute address — a chat app fetching the page has no base
+  // to resolve a path against — so with no origin there is no image, and the card falls back to
+  // the small summary layout rather than pointing at nothing.
+  const image = card && site.origin ? absoluteUrl(site.origin, card.src) : "";
   const lines = [
     `  <title>${escapeHtml(title)}</title>`,
     tag("description", description),
@@ -64,7 +71,14 @@ function metaBlock({ title, description, url, previousUrl, nextUrl, type = "arti
     url ? property("og:url", url) : "",
     property("og:locale", site.locale),
     property("og:site_name", site.name),
-    tag("twitter:card", "summary")
+    image ? property("og:image", image) : "",
+    // Stated so a chat app can reserve the right shape before the picture arrives, and so a card
+    // that was re-cut cannot leave the page claiming the old one.
+    image ? property("og:image:width", String(card.width)) : "",
+    image ? property("og:image:height", String(card.height)) : "",
+    // The card's largest text is the title, so this is what it says, not a description of a layout.
+    image ? property("og:image:alt", title) : "",
+    tag("twitter:card", image ? "summary_large_image" : "summary")
   ];
   return lines.filter(Boolean).join("\n");
 }
@@ -76,7 +90,10 @@ export function headTags(model, site = SITE) {
     description: pageDescription(model),
     url: model ? at(model.path) : at("/"),
     previousUrl: at(model?.previousPath),
-    nextUrl: at(model?.nextPath)
+    nextUrl: at(model?.nextPath),
+    // A pack's own card, and the site's for anything without one — a pack published before its
+    // card is drawn should share as the site rather than share as nothing.
+    card: SHARE_CARDS[model?.slug] || SHARE_CARDS.home
   }, site);
 }
 
@@ -91,7 +108,8 @@ export function standaloneHead({ title, description, path, type = "article" }, s
     title,
     description,
     url: site.origin ? absoluteUrl(site.origin, path) : "",
-    type
+    type,
+    card: SHARE_CARDS.home
   }, site);
 }
 
@@ -100,6 +118,81 @@ export function standaloneHead({ title, description, path, type = "article" }, s
  * these has a right answer and marking one accepted would be a lie told to a search engine and to
  * anyone who read the snippet.
  */
+/** JSON inside a script element: the only escape that matters is a closing tag in the data. */
+function ldJson(payload) {
+  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, "\\u003c")}</script>`;
+}
+
+/**
+ * The trail a search result prints instead of the URL — `Love Me › 결혼 100제 › 5부`.
+ *
+ * Built from the same paths the page links to, so a crumb cannot point somewhere the site does not
+ * have. Takes `[{ name, path }]` from the site root inward; the last one is the page itself.
+ */
+function breadcrumbs(trail, site = SITE) {
+  if (!site.origin || trail.length < 2) return "";
+  return ldJson({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: absoluteUrl(site.origin, crumb.path)
+    }))
+  });
+}
+
+/**
+ * Who publishes this site, and what the site is — emitted on the home page only.
+ *
+ * `Organization` carries the details the privacy policy already prints, in the form a machine can
+ * read: it is the one path from a brand query to a knowledge panel, and every field in it is a
+ * fact the owner gave rather than a claim this file invents. A field the owner has not given is
+ * left out rather than guessed at.
+ *
+ * There is no `SearchAction`. The site has no search, and telling Google it does would be a lie
+ * that costs nothing to tell and everything to be caught at.
+ */
+export function siteStructuredData(site = SITE, description = "") {
+  if (!site.origin) return "";
+  const operator = site.operator || {};
+  const organization = {
+    "@type": "Organization",
+    "@id": `${site.origin}/#organization`,
+    name: site.name,
+    url: `${site.origin}/`,
+    logo: absoluteUrl(site.origin, "/brand/logo.png")
+  };
+  // 상호 — the operator's registered name, which is not the name the site is published under.
+  if (operator.business) organization.legalName = operator.business;
+  if (site.contactEmail) organization.email = site.contactEmail;
+  if (operator.address) {
+    organization.address = {
+      "@type": "PostalAddress",
+      addressCountry: "KR",
+      streetAddress: operator.address
+    };
+  }
+
+  const website = {
+    "@type": "WebSite",
+    "@id": `${site.origin}/#website`,
+    url: `${site.origin}/`,
+    name: site.name,
+    inLanguage: site.locale,
+    publisher: { "@id": organization["@id"] }
+  };
+  if (description) website.description = description;
+
+  return ldJson({ "@context": "https://schema.org", "@graph": [organization, website] });
+}
+
+/** The trail for a standing page: the site, then the page. */
+export function standingStructuredData({ title, path }, site = SITE) {
+  return breadcrumbs([{ name: site.name, path: "/" }, { name: title, path }], site);
+}
+
 export function structuredData(model, site = SITE) {
   if (!model) return "";
   const payload = {
@@ -124,8 +217,12 @@ export function structuredData(model, site = SITE) {
     }))
   };
   if (site.origin) payload.url = absoluteUrl(site.origin, model.path);
-  // JSON inside a script element: the only escape that matters is a closing tag in the data.
-  return `<script type="application/ld+json">${JSON.stringify(payload).replace(/</g, "\\u003c")}</script>`;
+
+  // The pack's front door is the pack in the trail, so page one has two crumbs and the rest three.
+  const trail = [{ name: site.name, path: "/" }, { name: model.title, path: `/${model.slug}/` }];
+  if (model.page > 1) trail.push({ name: `${model.page}부 ${model.part.title}`, path: model.path });
+
+  return [ldJson(payload), breadcrumbs(trail, site)].filter(Boolean).join("\n  ");
 }
 
 const SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9";
@@ -141,7 +238,13 @@ const SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9";
 export function sitemapXml(pages, site = SITE) {
   const paths = ["/", ...pages.map((model) => model.path)];
   const urls = paths
-    .map((path) => `  <url><loc>${escapeHtml(absoluteUrl(site.origin, path))}</loc></url>`)
+    .map((path) => {
+      const loc = `<loc>${escapeHtml(absoluteUrl(site.origin, path))}</loc>`;
+      // `lastmod` is the date this page's content last moved, not the date of this build — see
+      // `site/stamp.js`. A page with no stamp gets no date rather than a guessed one.
+      const date = CONTENT_STAMP[path]?.date;
+      return `  <url>${loc}${date ? `<lastmod>${escapeHtml(date)}</lastmod>` : ""}</url>`;
+    })
     .join("\n");
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

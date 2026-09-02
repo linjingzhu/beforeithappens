@@ -4,7 +4,7 @@ import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks, NOT_FOUND_COPY } from "./pages.js";
-import { headTags, standaloneHead, structuredData } from "./seo.js";
+import { headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 // Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
 import { FEEDBACK_COPY } from "./feedback.js";
@@ -435,8 +435,15 @@ function sheetPager(slug) {
  * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
  * own address, which is exactly what the invitation is anyway.
  */
-function callToAction(model) {
-  const href = model?.slug ? `/${escapeHtml(model.slug)}/` : "/";
+function callToAction(model, site = SITE) {
+  // What the invitation points at. On a pack's own page it is that pack; elsewhere — the home page
+  // and the prose pages — it is the pack itself while there is only one, and the list once there is
+  // more than one. The panel says this link is a 질문집 주소, and pointing it at a page that merely
+  // lists question packs would make that a half-truth and cost the other person a step.
+  const packs = indexModel({ site }).packs;
+  const href = model?.slug
+    ? `/${escapeHtml(model.slug)}/`
+    : (packs.length === 1 ? escapeHtml(packs[0].path) : "/");
   return `      <aside class="cta">
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
         <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
@@ -488,6 +495,17 @@ ${way("mail", INVITE_COPY.mail, "a")}
 
 function enhancement() {
   return `  <script type="module" src="/enhance.js"></script>`;
+}
+
+/**
+ * The invitation alone, for a page that has nothing to remember.
+ *
+ * `enhance.js` imports `invite.js`, so a page that loads the first must not also load the second —
+ * it would be one more request for a module the graph already has. A page with no questions on it
+ * loads this instead, which is about a fortieth of the size.
+ */
+function inviteScript() {
+  return `  <script type="module" src="/invite.js"></script>`;
 }
 
 /**
@@ -738,15 +756,21 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
   const contact = page.email
     ? `      <p class="prose-contact"><a href="mailto:${escapeHtml(page.email)}">${escapeHtml(page.email)}</a></p>\n`
     : "";
-  const head = standaloneHead({
-    title: `${page.title} · ${site.name}`,
-    description: page.description,
-    path: page.path
-  }, site);
+  const head = [
+    standaloneHead({
+      title: `${page.title} · ${site.name}`,
+      description: page.description,
+      path: page.path
+    }, site),
+    standingStructuredData(page, site)
+  ].filter(Boolean).join("\n  ");
   return document_({
     site,
     head,
     chrome: { title: page.title, description: page.description },
+    // Same as the home page: the prose pages end on the invitation, so they carry it.
+    scripts: inviteScript(),
+    invite: true,
     body: `      <main class="page">
 ${sections}
 ${contact}${callToAction()}
@@ -788,16 +812,24 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
       </li>`))
     .join("\n");
   // `website` rather than `article`: this one is the site, the prose pages are documents on it.
-  const head = standaloneHead({
-    title: `${site.name} · ${site.tagline}`,
-    description: SITE_COPY.homeDescription,
-    path: "/",
-    type: "website"
-  }, site);
+  // The home page is also where the site says who publishes it, in the form a machine can read.
+  const head = [
+    standaloneHead({
+      title: `${site.name} · ${site.tagline}`,
+      description: SITE_COPY.homeDescription,
+      path: "/",
+      type: "website"
+    }, site),
+    siteStructuredData(site, SITE_COPY.homeDescription)
+  ].filter(Boolean).join("\n  ");
   return document_({
     site,
     head,
     chrome: { title: site.name, tagline: SITE_COPY.homeTagline, description: SITE_COPY.homeBlurb },
+    // The home page carries the invitation too. It had the button and neither the panel nor the
+    // script, so pressing 둘이 함께 해보기 here reloaded this page.
+    scripts: inviteScript(),
+    invite: true,
     body: `  <main class="page">
     <ul class="cards">
 ${cards}
