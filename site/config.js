@@ -77,11 +77,14 @@ export const SITE = Object.freeze({
   /**
    * The question-review block under every question, and the switch that takes it away.
    *
-   * It is scaffolding: the owner asked for it while the pack is being read through, and said it
-   * comes out afterwards. `false` removes it from every page on the next build — no other file
-   * needs editing — and `site/feedback.js` is then the only thing left to delete.
+   * It was scaffolding: the owner asked for it while the pack was being read through, and turned it
+   * off on 2026-09-02. Off, no page carries the block or loads `site/feedback.js`; measured on a
+   * question page, that took 980 of 4,396 visible characters (22%) of text that was not about the
+   * question — and the word DEBUG — off every one of the ten. `true` brings it back for another
+   * read-through with no other file touched. `site/feedback.js` and `startFeedback` in
+   * `site/enhance.js` are what is left to delete once it is certain not to come back.
    */
-  debugFeedback: true,
+  debugFeedback: false,
   /** Ten to a page, per the strategy. A hundred questions is ten pages. */
   pageSize: 10
 });
