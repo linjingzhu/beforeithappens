@@ -728,8 +728,9 @@ ${contact}${callToAction()}
 export function renderIndex(model, site = SITE) {
   const cards = model.packs
     .map((pack) => {
-      const scene = SCENES[pack.slug]
-        ? `        <p class="card-scene"><img src="${escapeHtml(SCENES[pack.slug])}" alt="" width="234" height="440" loading="lazy" decoding="async"></p>\n`
+      const art = SCENES[pack.slug];
+      const scene = art
+        ? `        <p class="card-scene"><img src="${escapeHtml(art.src)}" alt="" width="${art.width}" height="${art.height}" loading="lazy" decoding="async"></p>\n`
         : "";
       return `      <li class="card">
 ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
@@ -738,7 +739,7 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
       </li>`;
     })
     .concat(COMING.map((entry) => `      <li class="card is-coming">
-        <img src="${escapeHtml(entry.scene)}" alt="${escapeHtml(entry.alt)}" width="234" height="440" loading="lazy" decoding="async">
+        <img src="${escapeHtml(entry.scene.src)}" alt="${escapeHtml(entry.alt)}" width="${entry.scene.width}" height="${entry.scene.height}" loading="lazy" decoding="async">
         <p class="card-coming">${escapeHtml(SITE_COPY.comingLabel)}</p>
       </li>`))
     .join("\n");

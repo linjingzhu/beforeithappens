@@ -192,10 +192,11 @@ def write_marks() -> None:
 APP = ROOT / "mobile" / "assets"
 
 
-# The five vignettes on `brand/pack-scenes.jpg`, left to right, and what each one became.
+# The vignettes on the owner's scene sheets, and what each one became.
 #
-# The source is one wide image the owner supplied: proposal, wedding, pregnancy, newborn, childcare.
-# Four are named for the pack they serve and one — the bench — for what the owner reads in it.
+# The first sheet is one wide image: proposal, wedding, pregnancy, newborn, childcare. Four are cut
+# from it, each named for the pack it serves; the fifth — the bench with the childcare book — stood
+# in for 노후 until a drawing made for 노후 arrived, and is now cut by nothing.
 # Three were taken first and the other two were held back — the proposal because it was not a pack,
 # and the newborn because its hospital panel was judged to be a coloured background that would sit
 # among white cards as a blue rectangle. Rendered at the size a card actually draws, that was wrong:
@@ -205,16 +206,39 @@ APP = ROOT / "mobile" / "assets"
 # The boxes were measured rather than eyeballed: column density across the source falls to zero in
 # the gaps between figures, and each crop is taken inside its own gap with a little air left around
 # the figures so they are not trimmed against their own outline.
+#
+# A second sheet arrived later — `brand/pack-scenes-2.jpg`, three panels: a family reading a
+# picture book across the top, an old couple on a bench at bottom left, and a third at bottom right
+# the owner did not name, which is therefore not cut. It carries 교육 and, now, 노후: the bench on
+# the first sheet stood in for 노후 while nothing else did, and this one is drawn for it.
+#
+# So the boxes are grouped by the sheet they are cut from, and a name appearing under two sheets
+# would be a silent overwrite — `write_pack_scenes` refuses that rather than letting file order
+# decide which picture wins.
 PACK_SCENES = {
-    "dating": (17, 144, 349, 808),
-    "marriage": (355, 140, 712, 810),
-    "pregnancy": (718, 150, 1050, 810),
-    "birth": (1052, 160, 1408, 828),
-    # The bench. Named for what it is used as, like the others — and the owner reads it as 노후,
-    # which is what it shows: two people sitting close together, at rest. The book in her hands is
-    # labelled Childcare at full resolution and that is why it was first taken for 육아, but the card
-    # draws this scene 108x180, where the book is 34x31 and its lettering about 6px. Nobody reads it.
-    "later": (1414, 190, 1792, 820),
+    "pack-scenes.jpg": {
+        "dating": (17, 144, 349, 808),
+        "marriage": (355, 140, 712, 810),
+        "pregnancy": (718, 150, 1050, 810),
+        "birth": (1052, 160, 1408, 828),
+    },
+    "pack-scenes-2.jpg": {
+        # The family, the book and the toys at their feet. The whole panel was taken first — blocks,
+        # globe and book stack included — and at 277x180 on the card the owner called it too big,
+        # which it was: two and a half times the width of its neighbours in a column where every
+        # other picture is about a hundred wide.
+        #
+        # So the cut comes in to the three figures, and takes the panel's full height rather than
+        # stopping at their knees: the extra height is what brings the width down (161x180, the same
+        # as the bench beside it) and it is where the letter blocks and the open picture book are,
+        # which is what still says 교육 once the globe and the book stack are outside the frame.
+        # The mat runs unbroken from one side of the panel to the other, so the sides cut across it
+        # — at card size that reads as the edge of a picture, not as damage.
+        "education": (272, 40, 968, 816),
+        # The whole bench, both arms inside the crop. Cutting it to the couple alone would end the
+        # planks in mid-air on both sides.
+        "later": (8, 868, 613, 1549),
+    },
 }
 
 # Sized by height, not width: the figures stand, so the three crops differ in width and agree in
@@ -224,21 +248,28 @@ SCENE_HEIGHT = 440
 
 
 def write_pack_scenes() -> None:
-    """Crop the owner's scene sheet into one image per pack card."""
-    source = ROOT / "brand" / "pack-scenes.jpg"
-    if not source.exists():
-        print("brand/pack-scenes.jpg missing; skipping pack scenes")
-        return
-    sheet = Image.open(source).convert("RGB")
-    for name, box in PACK_SCENES.items():
-        tile = sheet.crop(box)
-        width = round(tile.width * SCENE_HEIGHT / tile.height)
-        tile = tile.resize((width, SCENE_HEIGHT), Image.LANCZOS)
-        out = ROOT / "site" / "brand" / f"scene-{name}.jpg"
-        # JPEG rather than PNG: these are renders on a white ground with no transparency to keep,
-        # and the same picture is four times the bytes as a PNG.
-        tile.save(out, "JPEG", quality=86, optimize=True, progressive=True)
-        print(f"scene-{name}.jpg: {out.stat().st_size / 1024:.1f} KB, {width}x{SCENE_HEIGHT}")
+    """Crop the owner's scene sheets into one image per pack card."""
+    written: dict[str, str] = {}
+    for sheet_name, boxes in PACK_SCENES.items():
+        source = ROOT / "brand" / sheet_name
+        if not source.exists():
+            print(f"brand/{sheet_name} missing; skipping its pack scenes")
+            continue
+        sheet = Image.open(source).convert("RGB")
+        for name, box in boxes.items():
+            if name in written:
+                raise SystemExit(
+                    f"scene-{name}.jpg is cut from both {written[name]} and {sheet_name}"
+                )
+            written[name] = sheet_name
+            tile = sheet.crop(box)
+            width = round(tile.width * SCENE_HEIGHT / tile.height)
+            tile = tile.resize((width, SCENE_HEIGHT), Image.LANCZOS)
+            out = ROOT / "site" / "brand" / f"scene-{name}.jpg"
+            # JPEG rather than PNG: these are renders on a white ground with no transparency to
+            # keep, and the same picture is four times the bytes as a PNG.
+            tile.save(out, "JPEG", quality=86, optimize=True, progressive=True)
+            print(f"scene-{name}.jpg: {out.stat().st_size / 1024:.1f} KB, {width}x{SCENE_HEIGHT}")
 
 
 def write_app_icons() -> None:

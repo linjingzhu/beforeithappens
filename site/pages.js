@@ -79,6 +79,11 @@ export function privacyCopy({ site = SITE } = {}) {
   const ads = Boolean(site.adsenseClient);
   const officer = op.officer || op.owner;
 
+  // Who "운영자" refers to, said once and briefly. The full identity block belongs under
+  // 개인정보 보호책임자, where a reader looks for it; folding it into a defining clause produced
+  // `주소: … 20길 6(이하 "운영자")는` — an address with a parenthetical stapled to its house number.
+  const trading = op.business || op.owner;
+
   const identity = [
     op.business ? `상호: ${op.business}` : "",
     op.owner ? `대표자: ${op.owner}` : "",
@@ -96,7 +101,7 @@ export function privacyCopy({ site = SITE } = {}) {
         paragraphs: Object.freeze([
           "질문에 고른 답과 옆에 적은 메모는 서버로 전송되지 않습니다. 이 사이트에는 답을 받는 서버가 없습니다.",
           "회원가입도, 로그인도, 이름·연락처 입력도 없습니다. 접속 통계 도구나 행동 분석 도구를 넣지 않았습니다.",
-          `${identity ? identity + "(이하 \"운영자\")" : "운영자"}는 여러분이 이 질문들에 무엇이라고 답했는지 알지 못하며, 알 수 있는 방법도 두지 않았습니다.`
+          `${trading ? `${trading}(이하 "운영자")` : "운영자"}는 여러분이 이 질문들에 무엇이라고 답했는지 알지 못하며, 알 수 있는 방법도 두지 않았습니다.`
         ])
       }),
       Object.freeze({
