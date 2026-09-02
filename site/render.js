@@ -468,26 +468,63 @@ function callToAction(model, site = SITE) {
  * backdrop with it, and none of that is worth reimplementing. It renders closed and does nothing
  * without scripting, where the control stays what it has always been — a link to the questions.
  */
+/**
+ * The marks on the four app buttons. Inline SVG, so the panel loads nothing and the marks take the
+ * page's own colours. They are drawn as glyphs the apps are recognised by — a speech bubble, a
+ * rounded frame with a lens — rather than copies of the companies' logotypes, which are theirs.
+ */
+const INVITE_MARKS = Object.freeze({
+  kakao: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4C7 4 3 7.1 3 10.9c0 2.4 1.6 4.5 4 5.7l-.9 3.3c-.1.3.2.5.5.3l3.9-2.6c.5.1 1 .1 1.5.1 5 0 9-3.1 9-6.9S17 4 12 4z"/></svg>',
+  line: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5C6.8 3.5 2.5 6.9 2.5 11c0 3.7 3.3 6.8 7.7 7.4.3.1.7.2.8.5.1.2.1.6 0 .9l-.1.8c0 .2-.2.9.8.5s5.2-3.1 7.1-5.3c1.3-1.4 1.9-2.9 1.9-4.8 0-4.1-4.3-7.5-9.5-7.5zM8.4 13.4H6.6a.5.5 0 0 1-.5-.5V9.4a.5.5 0 0 1 1 0v3h1.3a.5.5 0 0 1 0 1zm1.9-.5a.5.5 0 0 1-1 0V9.4a.5.5 0 0 1 1 0v3.5zm4.3 0a.5.5 0 0 1-.9.3l-1.8-2.5v2.2a.5.5 0 0 1-1 0V9.4a.5.5 0 0 1 .9-.3l1.8 2.5V9.4a.5.5 0 0 1 1 0v3.5zm3.1-2.3a.5.5 0 0 1 0 1h-1.3v.8h1.3a.5.5 0 0 1 0 1h-1.8a.5.5 0 0 1-.5-.5V9.4a.5.5 0 0 1 .5-.5h1.8a.5.5 0 0 1 0 1h-1.3v.7h1.3z"/></svg>',
+  instagram: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H8zm4 3.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6zm0 2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zm4.3-3.1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>',
+  sms: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-6.8l-4.6 3.2a.6.6 0 0 1-.9-.5V18H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm2 5a1 1 0 0 0 0 2h10a1 1 0 0 0 0-2H7zm0 4a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2H7z"/></svg>'
+});
+
+const COPY_MARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h9a3 3 0 0 1 3 3v9a1 1 0 0 1-2 0V6a1 1 0 0 0-1-1H9a1 1 0 0 1 0-2zM6 7h9a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-8a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1H6z"/></svg>';
+
+/**
+ * The invitation panel, at the owner's word: the address first with a copy control beside it,
+ * then the four apps the link will actually travel on, each as an icon button with its name.
+ *
+ * The old panel was four text keys — the device's sheet, copy, a text, mail — and the owner asked
+ * for the sheet to be unfolded into the apps that are in it. Two of the four are real addresses
+ * (`sms:`, LINE's share URL) and two are not: KakaoTalk and Instagram publish nothing a page can
+ * open without loading their script, and this site loads no third-party script. So on a phone
+ * those two open the device's sheet, where both apps are, and on a desktop they copy the link and
+ * say which app to paste it into — see `site/invite.js`. Mail went with the sheet: it was not in
+ * the owner's list.
+ *
+ * The address is an input the reader can select, because the clipboard can be refused and then
+ * the address on the screen is the way. The copy control is a button with the mark on it and its
+ * name in `aria-label`; the name is also the tooltip.
+ */
 function invitePanel() {
-  const way = (id, label, tag = "button") => (tag === "button"
-    ? `            <li><button type="button" class="invite-way" data-invite-way="${id}">${escapeHtml(label)}</button></li>`
-    : `            <li><a class="invite-way" data-invite-way="${id}" href="#">${escapeHtml(label)}</a></li>`);
+  const app = (id, tag) => {
+    const label = escapeHtml(INVITE_COPY[id]);
+    const inner = `${INVITE_MARKS[id]}<span>${label}</span>`;
+    return tag === "a"
+      ? `      <li><a class="invite-app is-${id}" data-invite-way="${id}" href="#">${inner}</a></li>`
+      : `      <li><button type="button" class="invite-app is-${id}" data-invite-way="${id}">${inner}</button></li>`;
+  };
   return `  <dialog class="invite" data-invite-panel aria-labelledby="invite-title">
     <div class="invite-head">
       <h2 id="invite-title">${escapeHtml(INVITE_COPY.title)}</h2>
       <button type="button" class="invite-close" data-invite-close aria-label="${escapeHtml(INVITE_COPY.close)}">${escapeHtml(INVITE_COPY.close)}</button>
     </div>
     <p class="invite-lead">${escapeHtml(INVITE_COPY.lead)}</p>
-    <ul class="invite-ways">
-${way("device", INVITE_COPY.device)}
-${way("copy", INVITE_COPY.copy)}
-${way("sms", INVITE_COPY.sms, "a")}
-${way("mail", INVITE_COPY.mail, "a")}
+    <div class="invite-url">
+      <label for="invite-url">${escapeHtml(INVITE_COPY.urlLabel)}</label>
+      <div class="invite-url-row">
+        <input type="text" id="invite-url" readonly data-invite-url>
+        <button type="button" class="invite-copy" data-invite-copy aria-label="${escapeHtml(INVITE_COPY.copy)}" title="${escapeHtml(INVITE_COPY.copy)}">${COPY_MARK}</button>
+      </div>
+    </div>
+    <ul class="invite-apps">
+${app("kakao", "button")}
+${app("line", "a")}
+${app("instagram", "button")}
+${app("sms", "a")}
     </ul>
-    <label class="invite-url">
-      <span>${escapeHtml(INVITE_COPY.urlLabel)}</span>
-      <input type="text" readonly data-invite-url>
-    </label>
     <p class="invite-state" data-invite-state hidden></p>
     <p class="invite-note">${escapeHtml(INVITE_COPY.note)}</p>
   </dialog>`;

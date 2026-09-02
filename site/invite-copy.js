@@ -18,19 +18,31 @@ export const INVITE_COPY = Object.freeze({
    */
   note: "이 링크에는 답이 담기지 않아요. 질문집 주소일 뿐이에요.",
 
-  /** The ways out. Each is a real address or a browser API — no third-party script is loaded. */
-  device: "다른 앱으로",
-  copy: "링크 복사",
+  /**
+   * The apps, by name, at the owner's word. Each is one button with the app's mark on it.
+   *
+   * Two of them are real addresses: a text message is a `sms:` URL and LINE publishes a share URL.
+   * KakaoTalk and Instagram publish nothing a page can open without loading their script, so on a
+   * phone those two open the device's own sheet — which is where both apps live — and on a desktop
+   * they copy the link and say which app to paste it into. The button is named for where the link
+   * is going, not for the mechanism that gets it there.
+   */
+  kakao: "카카오톡",
+  line: "라인",
+  instagram: "인스타그램",
   sms: "문자",
-  mail: "메일",
+
+  /** The copy control beside the address. An icon on the screen; this is its name. */
+  copy: "링크 복사",
+  urlLabel: "초대 링크",
 
   /** What the message says when a share sheet or a message app fills one in. */
   shareText: "같은 질문에 답해 볼래요? 두 사람 다 답한 질문만 서로에게 열려요.",
-  mailSubject: "같은 질문에 답해 볼래요?",
 
   copied: "링크를 복사했어요. 상대에게 보내 주세요.",
+  /** Copied on the way to an app that cannot be handed a link directly. */
+  pasteInto: (app) => `링크를 복사했어요. ${app}에 붙여 넣어 보내 주세요.`,
   /** Clipboard access can be refused outright, and then the address itself is the fallback. */
-  copyFailed: "복사가 안 됐어요. 아래 주소를 직접 보내 주세요.",
-  urlLabel: "초대 링크",
+  copyFailed: "복사가 안 됐어요. 위 주소를 직접 보내 주세요.",
   close: "닫기"
 });

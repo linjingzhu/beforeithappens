@@ -1336,61 +1336,29 @@ html { scroll-padding-top: 120px; }
 }
 
 /*
- * The ways out, as a row that wraps. Equal width so no one of them reads as the answer — which is
- * the point: the right channel is the reader's to choose, and on a phone the first of them opens
- * the sheet that has KakaoTalk in it.
+ * The address, first, with the copy control beside it. The clipboard can be refused, and then the
+ * address on the screen is the way — so it is an input the reader can select, not a line of text.
  */
-.invite-ways {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  margin: 0 0 20px;
-  padding: 0;
-}
-
-.invite-ways li { flex: 1 1 8rem; }
-
-.invite-way {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 18px;
-  background: var(--ab-surface);
-  box-shadow: var(--lift);
-  color: var(--ab-ink);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: box-shadow 120ms ease, transform 120ms ease;
-}
-
-.invite-way:active {
-  box-shadow: var(--press);
-  transform: translateY(1px);
-}
-
-/* The address itself, always on the screen: the clipboard can be refused, and then this is the way. */
 .invite-url {
-  display: block;
-  margin: 0 0 12px;
+  margin: 0 0 20px;
 }
 
-.invite-url span {
+.invite-url label {
   display: block;
   margin: 0 0 6px;
   color: var(--ab-muted);
   font-size: 13px;
 }
 
+.invite-url-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
 .invite-url input {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 44px;
   padding: 0 14px;
   border: 0;
@@ -1401,6 +1369,93 @@ html { scroll-padding-top: 120px; }
   font-family: inherit;
   font-size: 14px;
 }
+
+.invite-copy {
+  flex: 0 0 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.invite-copy svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.invite-copy:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
+
+/*
+ * The apps, as a row of four. Each is its mark on a disc in the app's own colour with its name
+ * under it — the disc is what a thumb finds, the name is what a screen reader says. Equal width so
+ * no one of them reads as the answer: which app is the reader's to choose.
+ */
+.invite-apps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.invite-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 4px 8px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  /* Two of the four are anchors and two are buttons, and the two elements inherit different line
+     heights — measured 89px against 97px in one row. Stated once so all four are the same height. */
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.invite-app:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
+
+.invite-app svg {
+  width: 48px;
+  height: 48px;
+  padding: 11px;
+  border-radius: 50%;
+  fill: #fff;
+}
+
+/*
+ * The discs take the apps' own colours, so a reader finds them the way they find them on a phone.
+ * KakaoTalk's yellow needs a dark glyph; the other three carry white.
+ */
+.invite-app.is-kakao svg { background: #fee500; fill: #191919; }
+.invite-app.is-line svg { background: #06c755; }
+.invite-app.is-instagram svg { background: #e1306c; }
+.invite-app.is-sms svg { background: var(--ab-accent); }
 
 .invite-state {
   margin: 0 0 12px;
