@@ -58,6 +58,16 @@ export const SITE = Object.freeze({
    */
   verification: Object.freeze({ google: "", naver: "786e0c020098433c2ff2652ed05a5b539d326ce1" }),
   /**
+   * Kakao's JavaScript key, for the KakaoTalk button on the invite panel.
+   *
+   * KakaoTalk can be handed a link only through Kakao's own script, and the script needs a key
+   * from developers.kakao.com with this site's domain registered as its Web platform
+   * (`docs/OWNER_ACTIONS.md` N11). With the key, the button opens KakaoTalk's picker with the
+   * link in the message; empty, the button copies the link and opens the app, and no script of
+   * Kakao's is ever fetched. The key is public by design — it is meant to sit in a page.
+   */
+  kakaoJsKey: "",
+  /**
    * Who operates the site, for the privacy policy — and the reason that page does or does not exist.
    *
    * `개인정보 보호법` 제30조 requires a policy to name a 개인정보 보호책임자 with a contact, and a

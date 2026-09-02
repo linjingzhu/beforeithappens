@@ -990,6 +990,12 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   assert.match(panel, /<button[^>]*data-invite-copy[^>]*aria-label="링크 복사"[^>]*title="링크 복사"/);
   assert.ok(panel.indexOf("data-invite-url") < panel.indexOf("invite-apps"), "the address comes first");
   assert.ok(panel.includes(INVITE_COPY.note) && INVITE_COPY.note.includes("답이 담기지"));
+  // Kakao's key rides on the panel only when the owner has one; without it nothing names Kakao.
+  assert.equal(panel.includes("data-kakao-key"), Boolean(site.kakaoJsKey));
+  const keyed = siteWith({ ...site, kakaoJsKey: "abc123" });
+  const keyedHtml = renderQuestionPage(pageModel("marriage", 1, { site: keyed }), keyed);
+  assert.ok(keyedHtml.includes('data-invite-panel data-kakao-key="abc123"'));
+  assert.equal(keyedHtml.includes("kakaocdn"), false, "and the page itself still loads nothing of Kakao's");
 
   // Pinterest's panel lists friends and searches people. There are no accounts here, so there is
   // nobody to list — and no SDK, so nothing here loads one: the apps are buttons, not embeds.
@@ -1026,18 +1032,31 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   // Two of the apps are real addresses.
   assert.match(bind, /sms:\?&body=/);
   assert.match(bind, /https:\/\/line\.me\/R\/share\?text=/);
-  // The other two are not: no third-party script, so on a phone they open the device's sheet and
-  // on a desktop they copy the link, then open the app, and say the link is ready to paste.
-  assert.match(bind, /\["kakao", "instagram"\]/);
-  assert.match(bind, /if \(navigator\.share\)/);
-  // Copy before open: the clipboard needs the document focused, and opening the app takes it.
-  const copyAt = bind.indexOf("await copy(INVITE_COPY.pasteInto(INVITE_COPY[id]))");
-  const openAt = bind.indexOf("openDesktop(id)");
-  assert.ok(copyAt > 0 && openAt > copyAt, "the link is on the clipboard before the app opens");
-  assert.match(invite, /kakao: \{ scheme: "kakaotalk:\/\/" \}/, "KakaoTalk by the scheme its client registers");
-  assert.match(invite, /instagram: \{ url: "https:\/\/www\.instagram\.com\/direct\/inbox\/" \}/, "Instagram by its web inbox");
+  // Never the device's sheet: the owner pressed the buttons on a desktop and got a list of
+  // Microsoft services. Every button copies the link and opens its app.
+  assert.equal(bind.includes("navigator.share"), false, "the operating system's sheet is not offered");
+  assert.match(bind, /for \(const id of \["sms", "line"\]\)/, "the two addresses copy on the way");
+  assert.match(bind, /openApp\(\{ scheme: "kakaotalk:\/\/" \}\)/, "KakaoTalk by the scheme it registers");
+  assert.match(bind, /instagram:\/\/sharesheet\?text=/, "Instagram's own sheet on a phone");
+  assert.match(bind, /openApp\(\{ url: "https:\/\/www\.instagram\.com\/direct\/new\/" \}\)/, "and its new-message screen on a desktop");
+  // Copy before open, and not awaited: the write starts inside the click, and the app opens
+  // inside the click too, which a desktop browser requires of a window.
+  for (const [copyLine, openLine] of [
+    ["copy(INVITE_COPY.pasteInto(INVITE_COPY.kakao))", 'openApp({ scheme: "kakaotalk://" })'],
+    ["copy(INVITE_COPY.pasteInto(INVITE_COPY.instagram))", 'openApp({ url: "https://www.instagram.com/direct/new/" })']
+  ]) {
+    const copyAt = bind.indexOf(copyLine);
+    assert.ok(copyAt > 0 && bind.indexOf(openLine) > copyAt, `${openLine} after the copy`);
+    assert.equal(bind.includes(`await ${copyLine}`), false, "and the copy is not awaited first");
+  }
   assert.match(invite, /window\.open\(target\.url, "_blank", "noopener"\)/);
-  assert.equal(/<script|sdk|kakao\.com/i.test(invite), false, "nothing of theirs is loaded — addresses are opened, not scripts");
+  assert.match(invite, /if \(isPhone\(\)\) \{\s*location\.href = target\.scheme;/, "a phone navigates to the scheme");
+  // KakaoTalk's picker needs Kakao's script, and that is fetched on a press, only with a key, and
+  // never with a page: the page's own scripts are still exactly one (see the no-JavaScript test).
+  assert.match(invite, /const KAKAO_SDK = "https:\/\/t1\.kakaocdn\.net\/kakao_js_sdk\/2\.7\.4\/kakao\.min\.js"/);
+  assert.match(bind, /if \(kakaoKey\) loadKakao\(kakaoKey\)/, "fetched when the panel opens, so the press is still a press");
+  assert.match(bind, /kakaoKey && window\.Kakao\?\.Share/);
+  assert.match(invite, /objectType: "text"/);
   // A refused clipboard is reported, not reported as a success.
   assert.match(bind, /INVITE_COPY\.copyFailed/);
   // Closing: the button, and a click that lands on the dialog itself rather than on its contents.
@@ -1822,7 +1841,7 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
 
   const invite = readFileSync("site/invite.js", "utf8");
-  assert.match(invite, /navigator\.share\(\{ title: document\.title, text: INVITE_COPY\.shareText, url \}\)/);
+  assert.equal(invite.includes("navigator.share"), false, "the device's sheet was tried and rejected");
   assert.match(invite, /navigator\.clipboard\.writeText\(url\)/);
   assert.ok(INVITE_COPY.shareText && INVITE_COPY.copied);
   // It binds on import, which is what lets `enhance.js` have it by importing and nothing else.

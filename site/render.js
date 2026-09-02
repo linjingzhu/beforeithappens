@@ -505,8 +505,9 @@ function callToAction(model, site = SITE) {
  *
  * The owner asked for what Pinterest does — its own panel of ways to send, rather than handing
  * straight to the operating system's. Two of Pinterest's three parts do not apply here and are not
- * built: there is no account, so there are no friends to list and nobody to search, and there is no
- * third-party script on this site, so no channel that needs an SDK appears.
+ * built: there is no account, so there are no friends to list and nobody to search, and no script
+ * of anyone else's loads with a page — KakaoTalk's picker, the one channel that needs one, fetches
+ * it on a press and only once the owner has registered the site with Kakao.
  *
  * What is left is the part that does apply. The device's own sheet is offered first where it exists
  * — on a phone that is where KakaoTalk lives, which is the channel this will actually travel on —
@@ -535,19 +536,20 @@ const COPY_MARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h9a3
  * The invitation panel, at the owner's word: the address first with a copy control beside it,
  * then the four apps the link will actually travel on, each as an icon button with its name.
  *
- * The old panel was four text keys — the device's sheet, copy, a text, mail — and the owner asked
- * for the sheet to be unfolded into the apps that are in it. Two of the four are real addresses
- * (`sms:`, LINE's share URL) and two are not: KakaoTalk and Instagram publish nothing a page can
- * open without loading their script, and this site loads no third-party script. So on a phone
- * those two open the device's sheet, where both apps are, and on a desktop they copy the link,
- * open the app and say the link is ready to paste — see `site/invite.js`. Mail went with the
- * sheet: it was not in the owner's list.
+ * Each button copies the link and opens that app — the app itself, never the device's share
+ * sheet, which the owner tried and did not want. Two of the four are addresses (`sms:`, LINE's
+ * share URL) and carry the link in. KakaoTalk carries it in through its own picker when the owner
+ * has registered the site with Kakao and put the JavaScript key in `site/config.js`; the panel
+ * then names the key in `data-kakao-key` and `site/invite.js` fetches Kakao's script when the
+ * panel opens — on a press, not on a page load. With no key the app is opened and the link is on
+ * the clipboard to paste. Instagram takes text on a phone and opens its new-message screen on a
+ * desktop. See `site/invite.js`.
  *
  * The address is an input the reader can select, because the clipboard can be refused and then
  * the address on the screen is the way. The copy control is a button with the mark on it and its
  * name in `aria-label`; the name is also the tooltip.
  */
-function invitePanel() {
+function invitePanel(site) {
   const app = (id, tag) => {
     const label = escapeHtml(INVITE_COPY[id]);
     const inner = `${INVITE_MARKS[id]}<span>${label}</span>`;
@@ -555,7 +557,8 @@ function invitePanel() {
       ? `      <li><a class="invite-app is-${id}" data-invite-way="${id}" href="#">${inner}</a></li>`
       : `      <li><button type="button" class="invite-app is-${id}" data-invite-way="${id}">${inner}</button></li>`;
   };
-  return `  <dialog class="invite" data-invite-panel aria-labelledby="invite-title">
+  const kakao = site?.kakaoJsKey ? ` data-kakao-key="${escapeHtml(site.kakaoJsKey)}"` : "";
+  return `  <dialog class="invite" data-invite-panel${kakao} aria-labelledby="invite-title">
     <div class="invite-head">
       <h2 id="invite-title">${escapeHtml(INVITE_COPY.title)}</h2>
       <button type="button" class="invite-close" data-invite-close aria-label="${escapeHtml(INVITE_COPY.close)}">${escapeHtml(INVITE_COPY.close)}</button>
@@ -689,7 +692,7 @@ ${footerNav(site)}
       </footer>
     </div>
   </div>
-${invite ? invitePanel() + "\n" : ""}${scripts}
+${invite ? invitePanel(site) + "\n" : ""}${scripts}
 </body>
 </html>
 `;
