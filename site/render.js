@@ -1,6 +1,7 @@
 import { escapeHtml } from "../src/html.js";
-import { publishedBySlug, SITE } from "./config.js";
+import { COMING, publishedBySlug, SCENES, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
+import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks } from "./pages.js";
 import { headTags, structuredData } from "./seo.js";
@@ -24,7 +25,6 @@ import { FEEDBACK_COPY } from "./feedback.js";
 export const SITE_COPY = Object.freeze({
   next: "다음",
   previous: "이전",
-  backToIndex: "질문집 목록",
   partsLabel: "파트",
   progressLabel: "답한 질문",
   /** Spelled out where there is room to spell it: the page's own heading. */
@@ -37,8 +37,17 @@ export const SITE_COPY = Object.freeze({
   ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
   ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
-  notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
+  /*
+   * The bar's own words, and they are one word each. It used to say 질문집 목록 on Part 1, which is a
+   * phrase rather than a label: measured at 360px it needed most of a slot that also has to hold
+   * 이전 on the other nine Parts. 목록 says the same thing in a bar, and it is what the sheet's bar
+   * already says, so the two read as one control in two places.
+   */
+  navResult: "결과",
+  navQuestions: "질문",
+  navIndex: "목록",
+  barLabel: "아래 이동 막대",
   /* What a reader writes beside a question. Every line here is the pack's own wording. */
   depthLead: "이 선택은 내게",
   importancePlaceholder: "중요도를 선택해요",
@@ -148,11 +157,7 @@ function questionArticle(question, site = SITE) {
         <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>${scene}${intent}${example}
         <ul class="q-choices">
 ${choices}
-        </ul>
-        <label class="q-undiscussed">
-          <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
-          <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
+        </ul>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
       </article>`;
 }
 
@@ -231,10 +236,40 @@ ${tabs}
 function progressBar(total) {
   const max = Number(total) || 0;
   if (!max) return "";
-  return `        <div class="progress" role="progressbar" aria-label="${escapeHtml(SITE_COPY.progressLabel)}"
-          aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="0" data-progress-total="${max}">
-          <span class="progress-fill" data-progress-fill></span>
-        </div>`;
+  return `          <div class="progress" role="progressbar" aria-label="${escapeHtml(DOCK_COPY.countLabel)}"
+            aria-valuemin="0" aria-valuemax="${max}" aria-valuenow="0" data-progress-total="${max}">
+            <span class="progress-fill" data-progress-fill></span>
+          </div>`;
+}
+
+/**
+ * The dock: a floating widget that stays on the screen for the whole of a Part.
+ *
+ * A Part is ten questions long and each one carries a scene, four answers and three notes, so
+ * everything a reader might want mid-page used to be at one end of it or the other. Three things
+ * now travel with them: how far they have got, the invitation, and a way to make the page say out
+ * loud that their answers are kept.
+ *
+ * It renders with the count at zero and works without scripting in the sense that matters — the
+ * invitation is a real link to the pack. The count and the save button need the script, because
+ * both are about storage, and with no script there is no storage to report on.
+ */
+function bottomDock(model) {
+  const href = model?.slug ? `/${escapeHtml(model.slug)}/` : "/";
+  const total = Number(model?.total) || 0;
+  if (!total) return "";
+  return `      <aside class="dock" aria-label="${escapeHtml(DOCK_COPY.label)}">
+        <div class="dock-progress">
+          <p class="dock-count"><b data-progress-count>0</b> / ${total}</p>
+${progressBar(total)}
+        </div>
+        <div class="dock-actions">
+          <button class="dock-save" type="button" data-save title="${escapeHtml(DOCK_COPY.saveAuto)}">${escapeHtml(DOCK_COPY.save)}</button>
+          <a class="dock-together" href="${href}" data-invite>${escapeHtml(DOCK_COPY.together)}</a>
+        </div>
+        <p class="dock-state" data-save-state hidden></p>
+        <p class="cta-state" data-invite-state hidden></p>
+      </aside>`;
 }
 
 /**
@@ -253,7 +288,6 @@ function stageHead(chrome) {
   const bar = chrome.parts?.length
     ? `\n      <div class="tabbar">
 ${partTabs(chrome.parts)}
-${progressBar(chrome.total)}
       </div>`
     : "";
   // A page says its name, and under it what the page is for. The whole opening is the same on every
@@ -274,23 +308,58 @@ ${progressBar(chrome.total)}
 }
 
 /**
- * The bottom control. Forward is the prominent one because forward is what a reader is doing; the
- * last Part offers the sheet instead, since there is no next Part to promise. The next Part is named
- * rather than counted — "다음 · 감정과 애정" tells you what you are about to be asked.
+ * The bottom control — and on a phone, the bar that stays at the bottom of the screen.
+ *
+ * Forward is the prominent one because forward is what a reader is doing; the last Part offers the
+ * sheet instead, since there is no next Part to promise. The next Part is named rather than counted
+ * — "다음 · 감정과 애정" tells you what you are about to be asked.
+ *
+ * **The middle slot offers the sheet whenever the forward control does not.** It used to hold
+ * "3 / 10", which the tab strip above already says by marking a numbered tab, and the cost of that
+ * duplication was real: the sheet was linked from Part 10 and nowhere else, so a reader who had
+ * answered thirty questions and wanted to see them had to walk to the end of the pack to find the
+ * only door. Now every Part has one route to it, and never two — on the last Part the forward
+ * control *is* the sheet, so the middle goes back to saying where you are.
+ *
+ * On a phone this whole nav is pinned to the bottom of the viewport (`site.css`, the narrow block).
+ * The page it sits on is ten questions long, each with a scene, four answers and three notes, so
+ * the Parts are otherwise reachable only by scrolling to an end — the strip at the top or this at
+ * the bottom. Pinned, it is under the thumb the entire way down.
  */
 function pager(model) {
   const nextPart = model.parts.find((part) => part.number === model.page + 1);
   const previous = model.previousPath
     ? `<a class="pager-prev" href="${escapeHtml(model.previousPath)}" rel="prev">${escapeHtml(SITE_COPY.previous)}</a>`
-    : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.backToIndex)}</a>`;
+    : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.navIndex)}</a>`;
   const next = model.nextPath
     ? `<a class="pager-next" href="${escapeHtml(model.nextPath)}" rel="next">${escapeHtml(SITE_COPY.next)}<span class="pager-next-part">${escapeHtml(nextPart ? nextPart.title : "")}</span></a>`
     : `<a class="pager-next is-result" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.resultAction)}</a>`;
+  const middle = model.nextPath
+    ? `<a class="pager-mid" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.navResult)}</a>`
+    : `<span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
-        <span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>
+        ${middle}
         ${next}
       </nav>`;
+}
+
+/**
+ * The same bar on the sheet, because the sheet is a page of the pack too.
+ *
+ * Without it the sheet was a room with no door back. The invitation at its foot points at the
+ * pack's address, but `enhance.js` turns that control into a share sheet, so with scripting on
+ * there was no way back to the questions at all — only the mark in the corner, which goes to the
+ * index and needs a second tap to return. The middle slot names the page the reader is on rather
+ * than linking to it: a bar whose current position is also a link is a control that does nothing.
+ */
+function sheetPager(slug) {
+  const pack = slug ? `/${escapeHtml(slug)}/` : "/";
+  return `    <nav class="pager is-sheet" aria-label="${escapeHtml(SITE_COPY.barLabel)}">
+      <a class="pager-prev" href="${pack}">${escapeHtml(SITE_COPY.navQuestions)}</a>
+      <span class="pager-progress" aria-current="page">${escapeHtml(SITE_COPY.navResult)}</span>
+      <a class="pager-prev" href="/">${escapeHtml(SITE_COPY.navIndex)}</a>
+    </nav>`;
 }
 
 /**
@@ -375,7 +444,17 @@ function footerNav(site) {
  * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
  * identity, not its layout. A page renderer below returns only its own content.
  */
-function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null }) {
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "" }) {
+  // Stated by the renderer rather than sniffed with `:has(.pager)`. The class reserves the room the
+  // fixed furniture covers, so getting it wrong on a page that has some hides the footer behind it
+  // — and a selector the browser may not support is the wrong place to put that. `:has` is used
+  // elsewhere in the sheet, but only where losing it costs a highlight.
+  //
+  // Two values, not a boolean, because two pages carry different furniture: a question page has the
+  // dock as well as the pager and needs room for both, while the sheet has only the pager and would
+  // otherwise end in a band of nothing. They are mutually exclusive so neither has to override the
+  // other on specificity.
+  const shell = bottom ? `shell has-${bottom}` : "shell";
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -390,7 +469,7 @@ ${head}
   <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${adsenseScript(site)}
 </head>
 <body>
-  <div class="shell">
+  <div class="${shell}">
 ${rail(site, currentSlug)}
     <div class="stage">
 ${stageHead(chrome)}${body}
@@ -417,13 +496,15 @@ ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
 ${pager(model)}
 ${callToAction(model)}
-      </main>`;
+      </main>
+${bottomDock(model)}`;
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,
     body,
     scripts: enhancement(),
     currentSlug: model.slug,
+    bottom: "dock",
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
@@ -492,10 +573,12 @@ export function renderResultPage(slug, questions, site = SITE) {
     <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
     <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
 ${callToAction({ slug })}
+${sheetPager(slug)}
   </main>
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
-    currentSlug: slug
+    currentSlug: slug,
+    bottom: "bar"
   });
 }
 
@@ -529,13 +612,34 @@ ${contact}${callToAction()}
   });
 }
 
+/**
+ * The home page's cards: what can be read now, and what is coming.
+ *
+ * A published card carries its scene above its own words. A coming one carries the scene and
+ * nothing else — no title, no count, no link, nothing to press. That is the owner's design and it
+ * is the honest shape for it: a card with a name and a link is a promise with a date attached, and
+ * there is no date. The picture says what is coming without saying when, and there is nothing to
+ * click that could disappoint.
+ *
+ * The scene is `alt=""` on a published card because the heading beside it already names the pack,
+ * and a screen reader reading the picture as well would say the same thing twice. On a coming card
+ * the picture is the whole content, so it carries the description a sighted reader gets from it.
+ */
 export function renderIndex(model, site = SITE) {
   const cards = model.packs
-    .map((pack) => `      <li class="card">
-        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
+    .map((pack) => {
+      const scene = SCENES[pack.slug]
+        ? `        <p class="card-scene"><img src="${escapeHtml(SCENES[pack.slug])}" alt="" width="234" height="440" loading="lazy" decoding="async"></p>\n`
+        : "";
+      return `      <li class="card">
+${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
         <p>${escapeHtml(pack.description)}</p>
         <p class="card-meta">${pack.total}개의 질문 · ${pack.pages}${escapeHtml(SITE_COPY.partsUnit)}</p>
-      </li>`)
+      </li>`;
+    })
+    .concat(COMING.map((entry) => `      <li class="card is-coming">
+        <img src="${escapeHtml(entry.scene)}" alt="${escapeHtml(entry.alt)}" width="234" height="440" loading="lazy" decoding="async">
+      </li>`))
     .join("\n");
   const head = [
     `  <title>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</title>`,

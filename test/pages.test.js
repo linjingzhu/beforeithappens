@@ -77,7 +77,7 @@ test("a standing page is prose, so it ships none of the answer machinery", () =>
   // No enhancement module: there is nothing on the page to remember, and a script that stores
   // nothing is still a request and still a thing that can break.
   assert.equal(has(html, "enhance.js"), false);
-  for (const marker of ['type="radio"', "data-undiscussed", 'class="q"', "data-question-index"]) {
+  for (const marker of ['type="radio"', 'class="q"', "data-question-index"]) {
     assert.equal(has(html, marker), false, `${marker} has no business on a prose page`);
   }
   assert.ok(has(html, 'class="prose"'));

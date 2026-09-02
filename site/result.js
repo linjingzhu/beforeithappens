@@ -27,7 +27,6 @@ export function resultModel(slug, answers, { questions = null } = {}) {
       chapter: bucket.chapter,
       answers: Object.freeze(bucket.answers.map((row) => Object.freeze(row)))
     }))),
-    notDiscussed: Object.freeze(model.notDiscussed.map((row) => Object.freeze(row))),
     path: `/${entry.slug}/result/`
   });
 }

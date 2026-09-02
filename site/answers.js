@@ -9,11 +9,7 @@
  * collects no personal data at all until someone opts into delivery, which defers the entire
  * privacy burden to the step that actually earns it.
  *
- * A choice alone can only be aggregated, not reflected on. `notDiscussed` is the one extra fact
- * worth capturing: it is observable rather than a self-rating, and it is exactly what turns a list
- * of answers into "these are the ones to bring to the other person".
- *
- * A question also holds what the reader wrote beside it: how much the choice matters to them, why
+ * A question holds what the reader wrote beside it: how much the choice matters to them, why
  * they chose it, and what they think the other person will choose. Those are notes, not data about
  * a person: they never leave the browser either, and
  * `importance` is the only one with fixed values, so it is the only one checked against a list.
@@ -33,7 +29,15 @@ function validNote(field, value) {
   return value.slice(0, NOTE_MAX);
 }
 
-/** Bumped only if the stored shape changes incompatibly; an unknown version is discarded, not guessed at. */
+/**
+ * Bumped only if the stored shape changes incompatibly; an unknown version is discarded, not
+ * guessed at.
+ *
+ * Still 1 after `notDiscussed` was removed, deliberately. Answers already in a reader's browser
+ * carry that field; `validItem` now builds an item from the fields it knows and simply does not
+ * read it, so an old set loads with every choice and every note intact. Bumping the version would
+ * have discarded the answers of anyone mid-pack to remove a field nothing reads.
+ */
 export const ANSWERS_VERSION = 1;
 
 export function storageKey(slug) {
@@ -47,7 +51,7 @@ export function emptyAnswers(slug) {
 function validItem(value) {
   if (!value || typeof value !== "object") return null;
   const choiceId = typeof value.choiceId === "string" ? value.choiceId : "";
-  const item = { choiceId, notDiscussed: choiceId ? value.notDiscussed === true : false };
+  const item = { choiceId };
   let written = false;
   for (const field of NOTE_FIELDS) {
     const note = validNote(field, value[field]);
@@ -93,7 +97,7 @@ export function serializeAnswers(answers) {
 }
 
 /** Returns a new set; the input is not mutated, so a caller can compare before and after. */
-export function withAnswer(answers, questionId, choiceId, notDiscussed = null) {
+export function withAnswer(answers, questionId, choiceId) {
   const id = String(questionId || "");
   if (!id || !String(choiceId || "")) return answers;
   const previous = answers.items[id];
@@ -104,8 +108,7 @@ export function withAnswer(answers, questionId, choiceId, notDiscussed = null) {
       [id]: {
         // Whatever was written beside the question survives a change of mind about the answer.
         ...previous,
-        choiceId: String(choiceId),
-        notDiscussed: notDiscussed === null ? Boolean(previous?.notDiscussed) : Boolean(notDiscussed)
+        choiceId: String(choiceId)
       }
     }
   };
@@ -120,7 +123,7 @@ export function withNote(answers, questionId, field, value) {
   const id = String(questionId || "");
   if (!id || !NOTE_FIELDS.includes(field)) return answers;
   const note = validNote(field, typeof value === "string" ? value : "");
-  const previous = answers.items[id] || { choiceId: "", notDiscussed: false };
+  const previous = answers.items[id] || { choiceId: "" };
   const next = { ...previous };
   if (note) next[field] = note;
   else delete next[field];
@@ -130,17 +133,6 @@ export function withNote(answers, questionId, field, value) {
   if (empty) delete items[id];
   else items[id] = next;
   return { ...answers, items };
-}
-
-/** Marking a question undiscussed before answering it is meaningless, so it is refused. */
-export function withDiscussionFlag(answers, questionId, notDiscussed) {
-  const id = String(questionId || "");
-  const previous = answers.items[id];
-  if (!previous) return answers;
-  return {
-    ...answers,
-    items: { ...answers.items, [id]: { ...previous, notDiscussed: Boolean(notDiscussed) } }
-  };
 }
 
 export function clearAnswers(slug) {

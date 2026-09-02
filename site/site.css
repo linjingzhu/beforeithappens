@@ -788,7 +788,6 @@ html { scroll-padding-top: 120px; }
  * platform's blue, which is the one saturated thing left on the page and reads as a link.
  */
 .q-choices input,
-.q-undiscussed input,
 .q-stars input {
   accent-color: var(--ab-accent);
 }
@@ -823,25 +822,59 @@ html { scroll-padding-top: 120px; }
   margin: 32px 0;
 }
 
+/*
+ * Plump, soft-cornered keys rather than flat outlines.
+ *
+ * The surface already has a light source — cards catch #FAFBFF above and drop #161B1D below — and
+ * the nav was the one place still drawing a hairline border instead of using it. Raised on that
+ * light, a control looks like something to press; outlined, it looks like a region.
+ *
+ * A 20px radius rather than a full round: at this height a fully round pill is a lozenge, and a
+ * generous corner on a squarish key is what reads as chunky rather than as a capsule. `--lift` is
+ * the control-sized shadow the sheet already defines — 5px at 10px blur — so this borrows the
+ * page's own depth rather than inventing a second one.
+ */
 .pager a {
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   padding: 0 20px;
-  border-radius: 999px;
+  border-radius: 20px;
+  font-weight: 600;
   text-decoration: none;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  transition: box-shadow 120ms ease, transform 120ms ease;
 }
 
-.pager-prev { border: 1px solid var(--ab-line); }
+/* Pressed in, and a hair lower. The travel is what makes it feel like a key rather than a picture
+   of one; 1px is enough to read and small enough not to shift the row. */
+.pager a:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
 
-.pager-next {
+/*
+ * Two classes, not one. `.pager a` above is a class plus a type selector and outranks a bare class,
+ * so written as `.pager-next` this rule lost `background` to it and the key rendered as a blank
+ * light slab with light text on it — invisible. That is the third time this file has been bitten by
+ * the same rule; anything overriding `.pager a` is written with the parent in front of it.
+ */
+.pager .pager-next {
   flex-direction: column;
-  padding: 8px 24px;
+  padding: 8px 22px;
   background: var(--ab-ink);
   color: var(--ab-surface);
-  font-weight: 600;
   line-height: 1.3;
   text-align: center;
+  /* Ink is darker than the light source can model, so this one takes a plain soft drop rather than
+     the dual neumorphic pair, which on a dark fill reads as a smudge above and a halo below. */
+  box-shadow: 0 6px 14px var(--ab-shadow-dark);
+}
+
+.pager .pager-next:active {
+  box-shadow: 0 2px 6px var(--ab-shadow-dark);
+  transform: translateY(1px);
 }
 
 .pager-next-part {
@@ -854,7 +887,7 @@ html { scroll-padding-top: 120px; }
  * The end of the pack is a different destination, not a further page. It is also the only accent
  * control on that screen: reaching the sheet is the reader's own goal, and it outranks ours.
  */
-.pager-next.is-result {
+.pager .pager-next.is-result {
   justify-content: center;
   background: var(--ab-accent);
 }
@@ -864,6 +897,300 @@ html { scroll-padding-top: 120px; }
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+/* The quiet slot. It is a real destination, so it is a link, but it does not compete with 다음. */
+.pager-mid {
+  color: var(--ab-muted);
+  font-size: 14px;
+}
+
+/*
+ * On a phone the pager is the bottom navigator: pinned to the viewport rather than waiting at the
+ * end of ten questions.
+ *
+ * The page it sits on is long — ten questions, each with a scene, four answers and three notes —
+ * and both ways out were at an end of it: the tab strip at the top, this at the bottom. Pinned, the
+ * Parts and the sheet are under the thumb the whole way down, which is where a thumb already is.
+ *
+ * It is the same nav, moved. Not a second control: a fixed bar plus the in-flow pager would put two
+ * 이전/다음 pairs on screen together at the foot of the page, and nothing about the markup changes
+ * between the two layouts — only where it sits.
+ *
+ * `100vw` is deliberately not used: with a scrollbar it is wider than the viewport and the document
+ * scrolls sideways. `left: 0; right: 0` is the width of the containing block, which is what is
+ * wanted. The bar is fixed, so no ancestor may take `transform`, `filter` or `contain` without
+ * becoming its containing block and dropping it back into the page.
+ */
+@media (max-width: 899px) {
+  /*
+   * The pager's height, written once.
+   *
+   * Three things depend on it — the room the sheet reserves, the room a question page reserves, and
+   * where the dock sits — and it was written into all three as a literal. Making the keys chunkier
+   * moved it from 67 to 73 and the dock, still offset by 67, sat on top of the bar. A variable is
+   * what stops the next change to this row doing that again.
+   *
+   * Measured at 360-430px: 52px keys in 10px of padding. The notch's inset is added where it is
+   * used, so the row clears the home indicator rather than sitting behind it.
+   */
+  :root { --bar-h: 73px; }
+
+  .shell.has-bar { padding-bottom: calc(var(--bar-h) + 14px + env(safe-area-inset-bottom, 0px)); }
+  .shell.has-dock { padding-bottom: calc(var(--bar-h) + 84px + env(safe-area-inset-bottom, 0px)); }
+
+  .pager {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    margin: 0;
+    gap: 8px;
+    background: var(--ab-surface);
+    border-top: 1px solid var(--ab-line);
+  }
+
+  /*
+   * Three slots, sized by one ratio each, so the bar does not reshuffle between Parts as the labels
+   * change. Forward is the wider one: it is the only slot carrying two lines, and the second is a
+   * Part name. Measured at 360px, the narrowest phone worth designing for — an even split gave it
+   * 90px of room for a name that needs 102, so every long Part truncated; 1.3 gives it 117.
+   */
+  .pager > * {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .pager .pager-next { flex-grow: 1.3; }
+
+  /*
+   * A Part name is up to twelve characters and a third of a phone is not twelve characters, so a
+   * label that will not fit is cut with an ellipsis rather than pushed out of the bar.
+   *
+   * Making that actually happen took two changes, both measured rather than assumed. `.pager a` is
+   * `inline-flex` with `align-items: center`, and `.pager-next` turns it into a *column* — so
+   * "center" was centring on the cross axis, which in a column is the width: the Part name was
+   * sized to its own text and centred, and `text-overflow` had nothing to act on. A 260px name in a
+   * 106px slot was measured spilling out of the bar entirely. `stretch` gives the name the slot's
+   * width; `display: block` on the flat labels keeps them out of a flex context where an ellipsis
+   * cannot reach an anonymous text item at all.
+   *
+   * Today's longest — 다투고 다시 손잡는 법 — needs 102px in a 106px slot at 360px and does not
+   * truncate. These rules are what keep a longer one, in this pack or the next, inside the bar.
+   */
+  .pager {
+    align-items: stretch;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* One height for all three, taken from the tallest — 다음 over a Part name — so the row is three
+     keys of one size rather than two short ones beside a tall one. */
+  .pager a { padding: 0 6px; overflow: hidden; }
+  .pager > * { min-height: 52px; }
+
+  /*
+   * Written as `.pager .pager-prev` rather than `.pager-prev` on purpose. `.pager a` above is a
+   * class plus a type selector, which outranks a bare class — so the first attempt at these rules
+   * lost every property it shared with it, and `display` and `align-items` silently kept the wide
+   * layout's values. Two classes win. Verified in a browser rather than by reading: with the bare
+   * selectors, a 260px Part name still sat in a 106px slot.
+   */
+  .pager .pager-prev,
+  .pager .pager-mid {
+    display: block;
+    line-height: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pager .pager-next {
+    padding: 6px 6px;
+    align-items: stretch;
+  }
+
+  .pager .pager-next-part {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The sheet's own bar names the page the reader is on; it is a marker, not a dead link, so it is
+     pressed into the surface rather than raised out of it — the one shape on the row that cannot
+     be pushed any further. */
+  .pager-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    border-radius: 20px;
+    background: var(--ab-soft);
+    box-shadow: var(--press);
+    font-weight: 600;
+  }
+
+  .pager.is-sheet .pager-progress {
+    border-radius: 20px;
+    background: var(--ab-soft);
+    color: var(--ab-ink);
+    font-weight: 600;
+    box-shadow: var(--press);
+  }
+}
+
+/*
+ * The dock: a floating widget that stays on the screen for the whole of a Part.
+ *
+ * A Part is ten questions long, each with a scene, four answers and three notes, so what a reader
+ * wants mid-page — how far they have got, the invitation, and the reassurance that the answers are
+ * kept — used to be at one end of the page or the other. It floats on every width, because "always
+ * on screen" is what it is for; on a phone it rides above the pinned pager rather than fighting it
+ * for the same edge.
+ *
+ * `left: 0; right: 0` and never `100vw`, for the reason written against the pager: `100vw` includes
+ * the scrollbar and takes the document sideways with it.
+ */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0 auto;
+  max-width: 40rem;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--ab-surface);
+  border-top: 1px solid var(--ab-line);
+}
+
+/*
+ * Narrow: the dock rides above the pinned pager rather than fighting it for the same edge, and it
+ * holds one row.
+ *
+ * Two rows cost 114px, which with the pager's 67 is 181px — a quarter of a 780px phone given over
+ * to furniture before a single question. One row is 64. `flex: 1 1 auto` with `min-width: 0` is
+ * what lets the progress column give way to the buttons instead of wrapping them onto their own
+ * line; the state text still takes a row of its own, but only once something has been pressed.
+ */
+@media (max-width: 899px) {
+  .dock {
+    bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
+    padding: 8px 12px;
+    gap: 8px 10px;
+  }
+
+  .dock-progress { flex: 1 1 auto; }
+  .dock-count { margin: 0 0 4px; font-size: 12px; }
+  .dock-count b { font-size: 14px; }
+
+  .dock-together,
+  .dock-save {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+}
+
+/*
+ * Wide: a real floating card, lifted off the bottom edge and away from the page.
+ *
+ * The room it needs is reserved here rather than on a bare `.shell.has-dock`, because an unscoped
+ * rule written later in the file beats an equal one inside the narrow block — which is exactly how
+ * the phone layout ended up reserving the desktop's 120px and hiding its own footer behind the
+ * dock. Each width states its own number inside its own query, so neither can win the other's.
+ */
+@media (min-width: 900px) {
+  .shell.has-dock { padding-bottom: 120px; }
+
+  .dock {
+    bottom: 20px;
+    /* Past the rail, so the card centres on the column being read rather than on the window. The
+       rail is the shell's first grid track at this width; a viewport-centred card sits visibly left
+       of the questions. `15rem` is that track, written once in `.shell` and matched here. */
+    left: calc(15rem + 20px);
+    right: 20px;
+    border: 1px solid var(--ab-line);
+    border-radius: 16px;
+    padding: 12px 16px;
+    box-shadow: var(--lift-card);
+  }
+}
+
+.dock-progress {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/* The number the owner asked for. Tabular, so it does not jitter as it counts up. */
+.dock-count {
+  margin: 0 0 6px;
+  color: var(--ab-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dock-count b {
+  color: var(--ab-ink);
+  font-size: 15px;
+}
+
+.dock-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.dock-together,
+.dock-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.dock-together {
+  background: var(--ab-ink);
+  color: var(--ab-surface);
+  border: 0;
+}
+
+.dock-save {
+  background: var(--ab-surface);
+  color: var(--ab-ink);
+  border: 1px solid var(--ab-line);
+}
+
+.dock-together:active,
+.dock-save:active { box-shadow: var(--press); }
+
+/* What the press reports: how much is held, or that nothing is being held at all. */
+.dock-state,
+.dock .cta-state {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--ab-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dock-state.is-error { color: var(--ab-error); }
 
 .cta {
   background: var(--ab-soft);
@@ -906,6 +1233,45 @@ html { scroll-padding-top: 120px; }
 .card h2 { margin: 0 0 8px; font-size: 20px; }
 .card p { margin: 0; }
 .card-meta { color: var(--ab-muted); font-size: 14px; margin-top: 8px !important; }
+
+/*
+ * The scene on a card. The three crops differ in width and agree in height, so they are drawn to a
+ * common height and left to be whatever width that makes — which is what makes them read as one set
+ * rather than three pictures that happen to be near each other.
+ *
+ * The ground stays white because the figures were rendered on white and have no cut-out: a panel is
+ * honest about that, where a transparent PNG would have had to eat the bride's dress to get there.
+ */
+.card-scene {
+  margin: 0 0 16px !important;
+  text-align: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 0;
+}
+
+.card-scene img,
+.card.is-coming img {
+  height: 180px;
+  width: auto;
+  max-width: 100%;
+}
+
+/*
+ * A pack that is coming: the picture, centred, and nothing else.
+ *
+ * No heading, no count, no link — so the card is not a control and must not look like one. It is
+ * quieter than a real card by design: no border, a flatter ground, and it does not respond to being
+ * pointed at, because nothing happens when it is pressed.
+ */
+.card.is-coming {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-color: transparent;
+  padding: 16px 0;
+}
 
 .foot {
   padding: 24px 16px 48px;
@@ -961,30 +1327,9 @@ html { scroll-padding-top: 120px; }
 
 .q-choice input { margin-top: 6px; flex: none; }
 
-.q-undiscussed {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  color: var(--ab-muted);
-  font-size: 15px;
-  cursor: pointer;
-}
-
 /* The sheet. A reflection: no score, no verdict, nothing that ranks. */
 .result-count { font-weight: 600; margin: 24px 0 8px; }
 .result-note { color: var(--ab-muted); margin: 0 0 24px; }
-
-.result-undiscussed {
-  background: var(--ab-soft);
-  border-radius: 12px;
-  padding: 24px;
-  margin: 0 0 32px;
-}
-
-.result-undiscussed h2 { margin: 0 0 4px; font-size: 18px; }
-.result-undiscussed p { margin: 0 0 12px; color: var(--ab-muted); }
-.result-undiscussed ul { margin: 0; padding-left: 20px; }
 
 .result-chapter { margin: 0 0 32px; }
 .result-chapter h2 { font-size: 18px; margin: 0 0 12px; }

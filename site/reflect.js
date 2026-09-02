@@ -7,8 +7,8 @@
  * registry questions into the same shape rather than repeating the logic.
  *
  * A reflection, never a verdict. There is no number here that could be read as a rating: `answered`
- * and the length of `notDiscussed` are facts about what a person did, not judgements about their
- * relationship. See `docs/WEB_SERVICE_STRATEGY.md`.
+ * is a fact about what a person did, not a judgement about their relationship. See
+ * `docs/WEB_SERVICE_STRATEGY.md`.
  */
 
 /**
@@ -19,7 +19,6 @@ export function reflect(questions = [], answers = { items: {} }) {
   const items = answers?.items || {};
   const chapters = [];
   const byChapter = new Map();
-  const notDiscussed = [];
 
   for (const question of questions) {
     const item = items[question.id];
@@ -33,15 +32,12 @@ export function reflect(questions = [], answers = { items: {} }) {
       byChapter.set(question.c, bucket);
       chapters.push(bucket);
     }
-    const row = {
+    byChapter.get(question.c).answers.push({
       questionId: question.id,
       number: question.n,
       title: question.t,
-      choice: choice.l,
-      notDiscussed: item.notDiscussed === true
-    };
-    byChapter.get(question.c).answers.push(row);
-    if (row.notDiscussed) notDiscussed.push(row);
+      choice: choice.l
+    });
   }
 
   const answered = chapters.reduce((total, bucket) => total + bucket.answers.length, 0);
@@ -50,8 +46,7 @@ export function reflect(questions = [], answers = { items: {} }) {
     answered,
     complete: questions.length > 0 && answered === questions.length,
     empty: answered === 0,
-    chapters,
-    notDiscussed
+    chapters
   };
 }
 

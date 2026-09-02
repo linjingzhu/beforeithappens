@@ -86,7 +86,14 @@ import('./src/packs.js').then(async (packs) => {
   walk(FEEDBACK_COPY);
   const { INVITE_COPY } = await import('./site/invite-copy.js');
   walk(INVITE_COPY);
+  const { DOCK_COPY } = await import('./site/dock-copy.js');
+  walk(DOCK_COPY);
   const pages = await import('./site/pages.js');
+  // The policy's text is fixed and known now; only whether it is emitted is gated on the owner's
+  // details. Scanning only the emitted pages would leave it uncovered until the day it appears,
+  // which is the day a missing glyph would first be seen. Its identity lines carry the owner's own
+  // name and address, which no subset can anticipate — regenerate after filling those in.
+  walk(pages.privacyCopy());
   for (const page of pages.standingPages()) {
     parts.push(page.title, page.description);
     for (const section of page.sections) parts.push(section.heading, ...section.paragraphs);
@@ -181,6 +188,46 @@ def write_marks() -> None:
 APP = ROOT / "mobile" / "assets"
 
 
+# The five vignettes on `brand/pack-scenes.jpg`, left to right, and the three the site uses.
+#
+# The source is one wide image the owner supplied: proposal, wedding, pregnancy, newborn, childcare.
+# Only three become pack scenes — the proposal is not a pack and the newborn's hospital panel is the
+# one vignette with a coloured background, which would sit on the card as a blue rectangle where the
+# others sit on white.
+#
+# The boxes were measured rather than eyeballed: column density across the source falls to zero in
+# the gaps between figures, and each crop is taken inside its own gap with a little air left around
+# the figures so they are not trimmed against their own outline.
+PACK_SCENES = {
+    "marriage": (355, 140, 712, 810),
+    "pregnancy": (718, 150, 1050, 810),
+    "childcare": (1414, 190, 1792, 820),
+}
+
+# Sized by height, not width: the figures stand, so the three crops differ in width and agree in
+# height, and a card that draws them to a common height is what makes them read as one set. Twice
+# the height the card draws them at, so they stay sharp on a phone.
+SCENE_HEIGHT = 440
+
+
+def write_pack_scenes() -> None:
+    """Crop the owner's scene sheet into one image per pack card."""
+    source = ROOT / "brand" / "pack-scenes.jpg"
+    if not source.exists():
+        print("brand/pack-scenes.jpg missing; skipping pack scenes")
+        return
+    sheet = Image.open(source).convert("RGB")
+    for name, box in PACK_SCENES.items():
+        tile = sheet.crop(box)
+        width = round(tile.width * SCENE_HEIGHT / tile.height)
+        tile = tile.resize((width, SCENE_HEIGHT), Image.LANCZOS)
+        out = ROOT / "site" / "brand" / f"scene-{name}.jpg"
+        # JPEG rather than PNG: these are renders on a white ground with no transparency to keep,
+        # and the same picture is four times the bytes as a PNG.
+        tile.save(out, "JPEG", quality=86, optimize=True, progressive=True)
+        print(f"scene-{name}.jpg: {out.stat().st_size / 1024:.1f} KB, {width}x{SCENE_HEIGHT}")
+
+
 def write_app_icons() -> None:
     """The same mark as the app's icons, in the four shapes the platforms each demand.
 
@@ -247,6 +294,7 @@ def main() -> int:
     (OUT / "COVERAGE.txt").write_text(text, encoding="utf8")
 
     write_marks()
+    write_pack_scenes()
     write_app_icons()
     return 0
 

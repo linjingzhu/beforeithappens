@@ -10,8 +10,6 @@ export const RESULT_COPY = Object.freeze({
   title: "내가 답한 것들",
   lead: "고른 답을 그대로 모았어요. 점수도, 판정도 없습니다.",
   answeredLabel: "답한 질문",
-  notDiscussedLabel: "아직 이야기해 본 적 없다고 표시한 질문",
-  notDiscussedLead: "여기부터 꺼내 보면 좋겠어요.",
   emptyTitle: "아직 답한 질문이 없어요.",
   emptyBody: "질문을 하나씩 보면서 지금의 생각을 골라 보세요.",
   incompleteNote: "아직 답하지 않은 질문이 남아 있어요. 지금까지 답한 것만 모았습니다.",

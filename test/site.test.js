@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, descriptionLines, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
@@ -218,7 +218,7 @@ test("nothing rendered from content escapes into markup", () => {
 // ── Answering and the result sheet ────────────────────────────────────────────────────────────
 
 test("answers are stored in a shape that refuses to be half-understood", async () => {
-  const { ANSWERS_VERSION, emptyAnswers, parseAnswers, serializeAnswers, withAnswer, withDiscussionFlag } =
+  const { ANSWERS_VERSION, emptyAnswers, parseAnswers, serializeAnswers, withAnswer } =
     await import("../site/answers.js");
 
   const built = withAnswer(emptyAnswers("marriage"), "home-01", "home-rest");
@@ -235,14 +235,22 @@ test("answers are stored in a shape that refuses to be half-understood", async (
   );
 
   // A stored item without a choice is dropped, not rendered as a blank answer.
-  const partial = JSON.stringify({ version: ANSWERS_VERSION, slug: "marriage", items: { "home-01": { notDiscussed: true } } });
+  const partial = JSON.stringify({ version: ANSWERS_VERSION, slug: "marriage", items: { "home-01": {} } });
   assert.deepEqual(parseAnswers(partial, "marriage").items, {});
 
-  // Marking a question undiscussed before answering it is meaningless.
-  assert.deepEqual(withDiscussionFlag(emptyAnswers("marriage"), "home-01", true).items, {});
-  const flagged = withDiscussionFlag(built, "home-01", true);
-  assert.equal(flagged.items["home-01"].notDiscussed, true);
-  assert.equal(built.items["home-01"].notDiscussed, false, "the input is not mutated");
+  // Answers written before `notDiscussed` was removed still load. The version was deliberately not
+  // bumped for that deletion: a bump discards, and discarding a reader's ninety answers to drop a
+  // field nothing reads is a worse trade than carrying an ignored key. The field does not survive
+  // the read, but everything the reader actually chose and wrote does.
+  const older = JSON.stringify({
+    version: ANSWERS_VERSION,
+    slug: "marriage",
+    items: { "home-01": { choiceId: "home-rest", notDiscussed: true, reason: "우리 집은 조용한 편이에요" } }
+  });
+  const loaded = parseAnswers(older, "marriage").items["home-01"];
+  assert.equal(loaded.choiceId, "home-rest", "the choice survives");
+  assert.equal(loaded.reason, "우리 집은 조용한 편이에요", "and so does the note beside it");
+  assert.equal("notDiscussed" in loaded, false, "the removed field is not carried forward");
 });
 
 test("a browser that cannot store anything still reads every question", async () => {
@@ -259,13 +267,12 @@ test("a browser that cannot store anything still reads every question", async ()
 });
 
 test("the sheet reflects what was said and never scores it", async () => {
-  const { emptyAnswers, withAnswer, withDiscussionFlag } = await import("../site/answers.js");
+  const { emptyAnswers, withAnswer } = await import("../site/answers.js");
   const { RESULT_COPY, RESULT_FORBIDDEN, resultModel } = await import("../site/result.js");
 
   let answers = emptyAnswers("marriage");
   answers = withAnswer(answers, Q1.id, Q1.choices[0].id);
   answers = withAnswer(answers, Q2.id, Q2.choices[0].id);
-  answers = withDiscussionFlag(answers, Q2.id, true);
 
   const model = resultModel("marriage", answers);
   assert.equal(model.total, published.length);
@@ -276,7 +283,6 @@ test("the sheet reflects what was said and never scores it", async () => {
   // Grouped under the chapter, in pack order, with the person's own words given back.
   assert.deepEqual(model.chapters.map((c) => c.chapter), [Q1.chapter]);
   assert.equal(model.chapters[0].answers[0].choice, Q1.choices[0].label);
-  assert.deepEqual(model.notDiscussed.map((r) => r.questionId), [Q2.id]);
 
   // The pull toward a score is constant; this is what stops the computed sheet becoming a verdict.
   // The check is on the model, not the copy: the lead promises "점수도, 판정도 없습니다", and a naive
@@ -323,7 +329,6 @@ test("the build and the browser share one reflection rather than two that drift"
   const viaModel = resultModel("marriage", answers);
   assert.equal(direct.answered, viaModel.answered);
   assert.deepEqual(direct.chapters.map((c) => c.chapter), viaModel.chapters.map((c) => c.chapter));
-  assert.deepEqual(direct.notDiscussed, viaModel.notDiscussed.map((r) => ({ ...r })));
 
   assert.deepEqual(reflect([], answers).chapters, []);
   assert.equal(reflect([], answers).complete, false, "no questions is not a completed set");
@@ -332,7 +337,6 @@ test("the build and the browser share one reflection rather than two that drift"
 test("the questions are answerable, and readable without answering", async () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.ok(has(html, `type="radio" name="q-${Q1.id}"`), "the choices are a real form control");
-  assert.ok(has(html, `data-undiscussed="${Q1.id}"`));
   // Enhancement, not requirement: every word is in the HTML whether or not the script runs.
   assert.ok(has(html, '<script type="module" src="/enhance.js"></script>'));
   for (const question of published.slice(0, 10)) {
@@ -355,11 +359,16 @@ test("a site pack has no guidance copy, so the page omits those elements rather 
   assert.ok(has(html, 'class="q-choices"'), "what the reader came for is still there");
 });
 
-test("the last page offers the sheet instead of a page that is not there", () => {
+test("the last page's forward control offers the sheet instead of a page that is not there", () => {
   const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
-  assert.ok(has(last, 'href="/marriage/result/"'));
+  assert.ok(has(last, 'class="pager-next is-result" href="/marriage/result/"'));
+
+  // This used to assert that Part 1 did not link to the sheet at all — "only at the end" — which
+  // was true and was the bug: the sheet had one door, and it was behind the other ninety questions.
+  // Every Part now offers it, from the middle slot, and never twice on one page.
   const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
-  assert.equal(has(first, 'href="/marriage/result/"'), false, "only at the end");
+  assert.ok(has(first, 'class="pager-mid" href="/marriage/result/"'), "and so does every other Part");
+  assert.equal(has(first, "is-result"), false, "but it is not the forward control until the end");
 });
 
 test("the sheet is a shell, is not indexed, and offers the way out", async () => {
@@ -559,6 +568,300 @@ test("the bar is a sibling of the header, which is what lets it stay", () => {
   assert.match(sticky, /z-index/);
   // And an in-page link must not land a question underneath it.
   assert.match(css, /scroll-padding-top/);
+});
+
+test("the sheet is reachable from every Part, by exactly one control", () => {
+  // The gap this bar closes: the sheet used to be linked from Part 10's forward control and nowhere
+  // else, so a reader who had answered thirty questions and wanted to see them had to walk to the
+  // end of the pack to find the only door.
+  for (const part of PARTS) {
+    const html = renderQuestionPage(pageModel("marriage", part.number, { site }), site);
+    const nav = html.slice(html.indexOf('<nav class="pager"'), html.indexOf("</nav>", html.indexOf('<nav class="pager"')));
+    const routes = nav.split('href="/marriage/result/"').length - 1;
+    assert.equal(routes, 1, `Part ${part.number} offers the sheet once, not ${routes} times`);
+  }
+});
+
+test("the middle slot offers the sheet only where the forward control does not", () => {
+  // One rule, not two special cases: on the last Part the forward control *is* the sheet, so the
+  // middle goes back to saying where the reader is rather than repeating the destination beside it.
+  const middle = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  assert.ok(has(middle, 'class="pager-mid" href="/marriage/result/"'));
+  assert.equal(has(middle, "pager-progress"), false, "the tab strip already says which Part this is");
+
+  const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
+  assert.equal(has(last, "pager-mid"), false, "the forward control is the sheet here");
+  assert.ok(has(last, `<span class="pager-progress">${SITE_COPY.progress(LAST_PAGE, LAST_PAGE)}</span>`));
+});
+
+test("the sheet has a way back to the questions", () => {
+  // Its invitation points at the pack, but `enhance.js` turns that control into a share sheet — so
+  // with scripting on the sheet was a room with no door back.
+  const html = renderResultPage("marriage", published, site);
+  const nav = html.slice(html.indexOf('<nav class="pager is-sheet"'), html.indexOf("</nav>", html.indexOf('<nav class="pager is-sheet"')));
+  assert.ok(nav.includes('href="/marriage/"'), "back to the questions");
+  assert.ok(nav.includes('href="/"'), "and out to the index");
+  assert.ok(nav.includes('aria-current="page"'), "the slot for this page names it rather than linking to it");
+  assert.equal(nav.includes('href="/marriage/result/"'), false, "a bar does not link to the page it is on");
+});
+
+test("the bottom bar is pinned on a phone, in the page on a desktop, and reserves its own room", () => {
+  const css = readFileSync("site/site.css", "utf8");
+  const flow = css.slice(css.indexOf(".pager {"), css.indexOf("}", css.indexOf(".pager {")));
+  assert.equal(/position:/.test(flow), false, "the wide layout leaves it where it is written");
+
+  const narrow = css.slice(css.indexOf("@media (max-width: 899px)", css.indexOf(".pager-mid")));
+  const block = narrow.slice(0, narrow.indexOf("\n}\n"));
+  assert.match(block, /position: fixed/);
+  assert.match(block, /bottom: 0/);
+  assert.match(block, /z-index/);
+  assert.match(block, /env\(safe-area-inset-bottom/, "it clears the home indicator rather than hiding behind it");
+  // `100vw` includes the scrollbar and would take the document sideways with it — measured 0 at
+  // 360, 390 and 430px with left/right instead.
+  assert.equal(/\.pager \{[^}]*100vw/s.test(block), false, "width comes from left/right, not 100vw");
+
+  // A fixed bar covers the end of the page, so the page ends above it — but only where there is a
+  // bar, or the index and the standing pages would end in 80px of nothing.
+  // The pager's height is written once as `--bar-h` and read by both reservations and by the dock's
+  // offset. It was a literal in all three, and making the keys chunkier moved it from 67 to 73 —
+  // the dock, still offset by 67, sat on top of the bar.
+  assert.match(block, /--bar-h: \d+px/, "the height is named once");
+  assert.match(block, /\.shell\.has-bar \{ padding-bottom: calc\(var\(--bar-h\)/);
+  assert.match(block, /\.shell\.has-dock \{ padding-bottom: calc\(var\(--bar-h\)/);
+  assert.match(block, /bottom: calc\(var\(--bar-h\)/, "and the dock sits on top of it");
+
+  // The name of the next Part must be able to shrink, or it leaves the bar entirely: measured, a
+  // 260px name sat in a 106px slot and painted outside it. Both halves of the fix are load-bearing.
+  assert.match(block, /\.pager \.pager-next \{[^}]*align-items: stretch/s, "a column's cross axis is its width");
+  assert.match(block, /\.pager \.pager-next-part \{[^}]*text-overflow: ellipsis/s);
+  // Written with two classes on purpose: `.pager a` is a class plus a type and outranks a bare one.
+  assert.equal(/^\s*\.pager-next \{/m.test(block), false, "a bare class loses to .pager a");
+});
+
+test("each page reserves room for the furniture it actually carries, and no more", () => {
+  // Two classes rather than one flag: a question page floats the dock above the pinned pager and
+  // needs room for both, the sheet has only the pager, and the rest have neither. One shared class
+  // would have made the sheet end in a band of nothing the height of a widget it does not have.
+  const question = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  assert.ok(has(question, '<div class="shell has-dock">'));
+
+  const sheet = renderResultPage("marriage", published, site);
+  assert.ok(has(sheet, '<div class="shell has-bar">'));
+  assert.equal(has(sheet, "has-dock"), false, "the sheet has no questions left to answer");
+  assert.equal(has(sheet, 'class="dock"'), false);
+
+  for (const html of [renderIndex(indexModel({ site }), site)]) {
+    assert.ok(has(html, '<div class="shell">'), "and the rest say plain shell");
+    assert.equal(has(html, "has-bar"), false);
+    assert.equal(has(html, "has-dock"), false);
+  }
+
+  // The two must not both apply: they carry different numbers at the same specificity, so a page
+  // holding both would get whichever the stylesheet happens to write last.
+  assert.equal(has(question, "has-bar"), false, "a page is one or the other, never both");
+});
+
+test("the dock carries the count, the invitation and the save, and is the only progress on the page", async () => {
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
+  const model = pageModel("marriage", 3, { site });
+  const html = renderQuestionPage(model, site);
+  const dock = html.slice(html.indexOf('<aside class="dock"'), html.indexOf("</aside>", html.indexOf('<aside class="dock"')));
+
+  // The number the owner asked for. It counts the whole pack, not the Part: the same figure on all
+  // ten pages, which is why it is measured against `total` rather than the ten questions in view.
+  assert.ok(dock.includes(`<b data-progress-count>0</b> / ${model.total}`), "0 until the script reads storage");
+  assert.ok(dock.includes(`aria-valuemax="${model.total}"`));
+  assert.equal(model.total, published.length);
+
+  assert.ok(dock.includes(`data-invite>${DOCK_COPY.together}<`), "함께 풀기 is the invitation");
+  // Save first, invite second, at the owner's word. It also puts the filled key on the right in
+  // both rows — 함께 풀기 over 다음 — so the two read as one column rather than two arrangements.
+  assert.ok(dock.indexOf("data-save") < dock.indexOf("data-invite"), "임시 저장 comes before 함께 풀기");
+  assert.ok(dock.includes(`href="/marriage/"`), "which points at the pack and carries no answers");
+  assert.ok(dock.includes(`data-save`) && dock.includes(DOCK_COPY.save));
+  // A control that claims to save should say what already saves.
+  assert.ok(dock.includes(DOCK_COPY.saveAuto), "the button says answers are saved as they are made");
+
+  // Exactly one progress indicator. It used to live in the tab strip with no number; with the
+  // number now spelled out below, two would be two different-looking answers to one question.
+  assert.equal(html.split('class="progress"').length - 1, 1, "one progress bar, not two");
+  const bar = html.slice(html.indexOf('<div class="tabbar">'), html.indexOf("</div>", html.indexOf('<div class="tabbar">')));
+  assert.equal(bar.includes("progress"), false, "and it is not the strip's any more");
+});
+
+test("the dock's words load without the pack registry behind them", async () => {
+  // Third module of its kind, for the reason the other two exist: `enhance.js` runs in a browser and
+  // must not import `render.js`, which pulls the whole registry in behind it.
+  const source = readFileSync("site/dock-copy.js", "utf8");
+  assert.equal(/^\s*import /m.test(source), false, "dock-copy.js imports nothing");
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /from "\.\/dock-copy\.js"/);
+  assert.equal(enhance.includes('from "./render.js"'), false);
+
+  // And the build has to ship it, or the page loads a module that is not there.
+  const build = readFileSync("scripts/build-site.mjs", "utf8");
+  assert.match(build, /"dock-copy\.js"/);
+});
+
+test("nothing overrides the pager's shared key style from behind it", () => {
+  // Third time this file has been bitten by the same rule, and the last one shipped a blank key:
+  // `.pager a` is a class plus a type selector, so a bare `.pager-next` loses every property they
+  // share. It lost `background`, and a dark key with light text became light-on-light — invisible.
+  const css = readFileSync("site/site.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  // Derived from the rule itself rather than listed by hand: a hand-written list was wrong twice
+  // over — it named `color`, which `.pager a` does not set, and would have missed anything added to
+  // that rule later, which is exactly how this bug arrives.
+  const base = css.match(/\.pager a \{([^}]*)\}/);
+  assert.ok(base, ".pager a is the shared key style");
+  const shared = new Set([...base[1].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]));
+
+  for (const match of css.matchAll(/(^|\n)([^\n{}]+)\{([^}]*)\}/g)) {
+    const selector = match[2].trim();
+    // Only the classes that land on an `<a>` inside `.pager` can collide with `.pager a`.
+    // `.pager-progress` is a span and `.pager-next-part` sits inside the anchor; neither is
+    // reached by that selector, so neither is at risk.
+    // `(?![\w-])` rather than `\b`: a word boundary matches at the hyphen, so `\b` caught
+    // `.pager-next-part` — a span inside the anchor, which `.pager a` never reaches.
+    if (!/(^|,|\s)\.pager-(prev|mid|next)(?![\w-])/.test(selector)) continue;
+    // A selector that names the parent, or pairs two classes, already outranks `.pager a`.
+    const scoped = selector.split(",").every((one) => /\.pager[\s.]/.test(one.trim()));
+    if (scoped) continue;
+    const properties = [...match[3].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+    const clashes = properties.filter((name) => shared.has(name));
+    assert.deepEqual(clashes, [], `"${selector}" sets ${clashes.join(", ")} and will lose to .pager a`);
+  }
+
+  // And the key that carries the loss most visibly is written the safe way.
+  assert.match(css, /\.pager \.pager-next \{[^}]*background: var\(--ab-ink\)/s);
+});
+
+test("the home page shows what can be read now, and what is coming as a picture only", async () => {
+  const { COMING, SCENES } = await import("../site/config.js");
+  const html = renderIndex(indexModel({ site }), site);
+
+  // The published pack keeps everything it had, with its scene above it. The picture is alt="" on
+  // purpose: the heading beside it already names the pack, and a screen reader should not say the
+  // same thing twice.
+  const published = html.slice(html.indexOf('<li class="card">'), html.indexOf('<li class="card is-coming">'));
+  assert.ok(published.includes(SCENES.marriage));
+  assert.ok(published.includes('alt=""'));
+  assert.ok(published.includes('href="/marriage/"') && published.includes("100개의 질문"));
+
+  // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
+  // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
+  assert.equal(COMING.length, 2);
+  for (const entry of COMING) {
+    const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
+    const card = html.slice(start, html.indexOf("</li>", start));
+    assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);
+    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it, since the picture is all there is");
+    for (const interactive of ["<a ", "<button", "href=", "data-"]) {
+      assert.equal(card.includes(interactive), false, `${entry.id} must not be a control: ${interactive}`);
+    }
+    assert.equal(/<h[1-6]/.test(card), false, "no heading");
+    // Strip the tags and a coming card has nothing left to read.
+    assert.equal(card.replace(/<[^>]*>/g, "").trim(), "", "no words on the card itself");
+  }
+
+  // The names of the packs that are coming must not leak into the page anywhere else either —
+  // the design withholds them on purpose.
+  assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
+});
+
+test("every scene the site names is a file the build ships", async () => {
+  const { SCENES } = await import("../site/config.js");
+  for (const [name, path] of Object.entries(SCENES)) {
+    const file = `site${path}`;
+    assert.ok(existsSync(file), `${name}: ${file} is generated and committed`);
+    // Big enough to be a picture, small enough not to be the uncropped sheet.
+    const bytes = statSync(file).size;
+    assert.ok(bytes > 4000 && bytes < 120_000, `${name} is ${bytes} bytes`);
+  }
+  // And the generator that made them keeps the source it cut them from.
+  assert.ok(existsSync("brand/pack-scenes.jpg"), "the scene sheet stays in the repo");
+  const build = readFileSync("scripts/build-brand-assets.py", "utf8");
+  for (const name of Object.keys(SCENES)) {
+    assert.match(build, new RegExp(`"${name}": \\(`), `${name} has measured crop bounds`);
+  }
+});
+
+test("nothing is written to storage until the reader asks for it", async () => {
+  // The behaviour is in the DOM layer, so this holds the shape of it at the source rather than
+  // leaving a rule this consequential to a browser check nobody re-runs. Answering used to save as
+  // it happened; the owner's rule is that saving is an act the reader takes.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindLeaveWarning"));
+  assert.ok(handlers.includes('addEventListener("input"'), "the draft still follows every keystroke");
+  assert.ok(handlers.includes('addEventListener("change"'));
+  assert.equal(/store\.write|\.commit\(\)/.test(handlers), false, "but neither handler touches storage");
+  assert.ok(handlers.includes("draft.set("), "they update the draft instead");
+
+  // Only the button commits, and the warning is what stands between an unsaved draft and losing it.
+  assert.match(enhance, /function bindSave[\s\S]*?draft\.commit\(\)/);
+  assert.match(enhance, /addEventListener\("beforeunload"[\s\S]*?preventDefault\(\)/);
+  assert.match(enhance, /bindLeaveWarning\(draft\)/);
+
+  // The draft is seeded from what was saved, so a reload brings back exactly that and nothing else.
+  assert.match(enhance, /function createDraft[\s\S]*?store\.read\(\)/);
+
+  // And the button must not claim the old behaviour.
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
+  assert.equal(DOCK_COPY.saveAuto.includes("자동"), false, "it no longer says answers save automatically");
+  assert.ok(DOCK_COPY.unsaved.includes("사라"), "and something says unsaved answers can be lost");
+});
+
+test("the privacy policy waits for someone to be responsible for it", async () => {
+  const { standingPages, privacyCopy } = await import("../site/pages.js");
+  const bare = siteWith({ operator: { business: "afterscent", owner: "", address: "" } });
+  assert.equal(standingPages({ site: bare }).some((page) => page.slug === "privacy"), false,
+    "제30조 requires a named 개인정보 보호책임자; a policy naming nobody is not one");
+
+  const named = siteWith({ operator: { business: "afterscent", owner: "홍길동", address: "서울특별시 ..." } });
+  const page = standingPages({ site: named }).find((each) => each.slug === "privacy");
+  assert.ok(page, "two values turn it on");
+  assert.equal(page.path, "/privacy/");
+  // Derived, not declared: the footer and the sitemap are built from the same list.
+  const { footerLinks } = await import("../site/pages.js");
+  assert.ok(footerLinks({ site: named }).some((link) => link.path === "/privacy/"), "so the footer links it");
+
+  const copy = privacyCopy({ site: named });
+  const headings = copy.sections.map((section) => section.heading).join(" | ");
+  for (const required of ["권리", "보호책임자", "권익침해", "제3자 제공", "쿠키", "바뀔 때"]) {
+    assert.ok(headings.includes(required), `제30조: ${required} — ${headings}`);
+  }
+  const body = JSON.stringify(copy);
+  assert.ok(body.includes("홍길동") && body.includes("서울특별시"), "it names who is responsible");
+});
+
+test("the policy describes the storage the site actually has, and the ads it actually serves", async () => {
+  const { privacyCopy } = await import("../site/pages.js");
+  const base = { business: "afterscent", owner: "홍길동", address: "서울특별시 ..." };
+
+  const off = JSON.stringify(privacyCopy({ site: siteWith({ operator: base }) }));
+  assert.ok(off.includes("쿠키를 사용하지 않"), "with no publisher id there are no cookies to declare");
+  assert.equal(off.includes("adssettings"), false);
+
+  const on = JSON.stringify(privacyCopy({ site: siteWith({ operator: base, adsenseClient: "ca-pub-1" }) }));
+  assert.ok(on.includes("AdSense") && on.includes("adssettings"), "and with one, the cookies and the way out");
+  assert.ok(on.includes("Google LLC"), "named as a processor");
+
+  // The claim the whole page rests on, and the one the save model just changed.
+  assert.ok(off.includes("임시 저장"), "it says storage happens when the reader presses the button");
+  assert.ok(off.includes("localStorage"));
+  assert.ok(off.includes("사라집니다"), "and that unsaved answers are lost");
+
+  // Scoped to what the policy claims about today, not to the words it uses. A naive scan for
+  // "서버에 저장" matched the section that promises to announce it *before* that ever happens —
+  // the same shape of mistake as scanning the result copy for 점수 and hitting its own disclaimer.
+  const now = privacyCopy({ site: siteWith({ operator: base }) }).sections
+    .filter((section) => !section.heading.includes("바뀔 때"))
+    .map((section) => section.paragraphs.join(" "))
+    .join(" ");
+  assert.ok(now.includes("서버로 전송되지 않습니다"), "it says answers are not sent");
+  assert.ok(now.includes("답을 받는 서버가 없습니다"), "and that there is no server to receive them");
+  for (const claim of ["서버에 저장합니다", "서버에 보관", "수집합니다"]) {
+    assert.equal(now.includes(claim), false, `it must not claim to ${claim}`);
+  }
 });
 
 test("the progress bar carries its value in aria and nothing on the screen", () => {

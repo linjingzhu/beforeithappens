@@ -50,6 +50,31 @@ export const SITE = Object.freeze({
   adsenseClient: "",
   adsenseSlot: "",
   /**
+   * Who operates the site, for the privacy policy — and the reason that page does or does not exist.
+   *
+   * `개인정보 보호법` 제30조 requires a policy to name a 개인정보 보호책임자 with a contact, and a
+   * policy that names nobody is not a policy. `상호` and the contact address are known; the rest is
+   * the owner's to give (`docs/OWNER_ACTIONS.md` N5). So the page is emitted only once `owner` and
+   * `address` are set, exactly as 문의 waits on `contactEmail` — an unfinished legal document is
+   * worse than an absent one, and there is nothing to remember to switch on.
+   *
+   * `registration` (사업자등록번호) and `mailOrder` (통신판매업 신고번호) are optional: an operator
+   * who is not a registered business has neither, and a policy is not improved by an empty field.
+   * They are printed when present and omitted when not.
+   */
+  operator: Object.freeze({
+    /** 상호. Given by the owner. */
+    business: "afterscent",
+    /** 대표자 성명. Also stands as 개인정보 보호책임자 unless `officer` says otherwise. */
+    owner: "",
+    /** 주소 — 사업장 소재지. Given by the owner 2026-09-02. */
+    address: "서울시 구로구 개봉로 20길 6",
+    registration: "",
+    mailOrder: "",
+    /** 개인정보 보호책임자, when it is not the 대표자. */
+    officer: ""
+  }),
+  /**
    * The question-review block under every question, and the switch that takes it away.
    *
    * It is scaffolding: the owner asked for it while the pack is being read through, and said it
@@ -73,6 +98,33 @@ export const SITE = Object.freeze({
  * having content; being in this list is being published, and the second is a decision. Putting it
  * back is one entry — which is the whole reason this list is written out rather than derived.
  */
+/**
+ * The scenes on the home page, one per pack, cropped from `brand/pack-scenes.jpg` by
+ * `scripts/build-brand-assets.py`. Named here so a card and its picture cannot drift apart.
+ */
+export const SCENES = Object.freeze({
+  marriage: "/brand/scene-marriage.jpg",
+  pregnancy: "/brand/scene-pregnancy.jpg",
+  childcare: "/brand/scene-childcare.jpg"
+});
+
+/**
+ * Packs that are coming, shown as a picture and nothing else.
+ *
+ * The owner's call, and the point of them is that they do nothing: a card with a title, a count and
+ * a link would be a promise with a date attached, and there is no date. A picture of two people
+ * holding a pregnancy test says what is coming without claiming when, and there is nothing to click
+ * that could disappoint.
+ *
+ * `alt` is what the picture shows, not what the pack will be called. A reader who cannot see it
+ * gets the same thing a reader who can gets — the situation — rather than a name the design is
+ * deliberately withholding.
+ */
+export const COMING = Object.freeze([
+  Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
+  Object.freeze({ id: "childcare", scene: SCENES.childcare, alt: "아이를 키우는 두 사람" })
+]);
+
 export const PUBLISHED = Object.freeze([
   Object.freeze({
     packId: "marriage-100",
