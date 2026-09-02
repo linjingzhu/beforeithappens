@@ -490,9 +490,9 @@ const COPY_MARK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h9a3
  * for the sheet to be unfolded into the apps that are in it. Two of the four are real addresses
  * (`sms:`, LINE's share URL) and two are not: KakaoTalk and Instagram publish nothing a page can
  * open without loading their script, and this site loads no third-party script. So on a phone
- * those two open the device's sheet, where both apps are, and on a desktop they copy the link and
- * say which app to paste it into — see `site/invite.js`. Mail went with the sheet: it was not in
- * the owner's list.
+ * those two open the device's sheet, where both apps are, and on a desktop they copy the link,
+ * open the app and say the link is ready to paste — see `site/invite.js`. Mail went with the
+ * sheet: it was not in the owner's list.
  *
  * The address is an input the reader can select, because the clipboard can be refused and then
  * the address on the screen is the way. The copy control is a button with the mark on it and its

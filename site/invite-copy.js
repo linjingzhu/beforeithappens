@@ -22,10 +22,11 @@ export const INVITE_COPY = Object.freeze({
    * The apps, by name, at the owner's word. Each is one button with the app's mark on it.
    *
    * Two of them are real addresses: a text message is a `sms:` URL and LINE publishes a share URL.
-   * KakaoTalk and Instagram publish nothing a page can open without loading their script, so on a
-   * phone those two open the device's own sheet — which is where both apps live — and on a desktop
-   * they copy the link and say which app to paste it into. The button is named for where the link
-   * is going, not for the mechanism that gets it there.
+   * KakaoTalk and Instagram publish nothing a page can open with a link in it without loading their
+   * script, so on a phone those two open the device's own sheet — which is where both apps live —
+   * and on a desktop they copy the link, open the app (the KakaoTalk client, Instagram's web inbox)
+   * and say the link is ready to paste. The button is named for where the link is going, not for
+   * the mechanism that gets it there.
    */
   kakao: "카카오톡",
   line: "라인",
@@ -40,8 +41,8 @@ export const INVITE_COPY = Object.freeze({
   shareText: "같은 질문에 답해 볼래요? 두 사람 다 답한 질문만 서로에게 열려요.",
 
   copied: "링크를 복사했어요. 상대에게 보내 주세요.",
-  /** Copied on the way to an app that cannot be handed a link directly. */
-  pasteInto: (app) => `링크를 복사했어요. ${app}에 붙여 넣어 보내 주세요.`,
+  /** Copied on the way to an app that cannot be handed a link directly; the app is opened next. */
+  pasteInto: (app) => `링크를 복사했어요. ${app}이 열리면 붙여 넣어 보내 주세요.`,
   /** Clipboard access can be refused outright, and then the address itself is the fallback. */
   copyFailed: "복사가 안 됐어요. 위 주소를 직접 보내 주세요.",
   close: "닫기"
