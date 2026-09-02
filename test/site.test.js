@@ -1385,6 +1385,22 @@ test("the dock carries 지우기, the quiet way to leave without a trace from th
   assert.match(enhance, /store\.clear\(\)[\s\S]*draft\.reset\(emptyAnswers\(slug\)\)/, "clears the store and the draft together");
 });
 
+test("the sheet's share address carries a copy button beside it, like the invite panel's", () => {
+  // At the owner's word. The address was a bare field under the button that made it; now it has
+  // the same 44px icon the invite panel has, so the link can be copied again without being remade.
+  const html = renderResultPage("marriage", published, site);
+  const block = html.slice(html.indexOf('class="result-share-link"'), html.indexOf("</section>", html.indexOf('class="result-share-link"')));
+  assert.ok(block.includes('<label for="share-url">'), "a real label, not a wrapper — a button inside a label would fire it");
+  assert.ok(block.includes('<input type="text" id="share-url" readonly data-share-url>'));
+  assert.match(block, /<button type="button" class="result-share-copy" data-share-copy aria-label="링크 복사" title="링크 복사"><svg /);
+  assert.ok(block.indexOf("data-share-url") < block.indexOf("data-share-copy"), "the button sits to the right of the field");
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.result-share-row \{[^}]*display: flex;/s);
+  assert.match(css, /\.result-share-copy \{[^}]*width: 44px;[^}]*min-height: 44px;/s, "a full target");
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /\[data-share-copy\]/);
+});
+
 test("the question map is a column of real anchors, one per question, on question pages only", () => {
   // At the owner's word: a line down the right edge, a mark per question, the current one bold.
   // The list is anchors so that without scripting it is still a table of contents that jumps.
@@ -1590,11 +1606,16 @@ test("a link carries the choices to the other person, and nothing else", async (
   mine = withNote(mine, questions[0].id, "guess", "상대는 B를 고를 것 같아요");
 
   const payload = encodeShare("marriage", questions, mine);
-  assert.equal(payload, `${SHARE_VERSION}.marriage.${"c----a".padEnd(questions.length, "-")}`);
+  // v2, at the owner's word: the choices packed three to a byte and written as base64url, so the
+  // link reads as a token rather than a hundred-character stripe. Three states of five in a byte:
+  // c, -, - → 3 + 0·5 + 0·25 = 3; then -, -, a → 0 + 0 + 1·25 = 25; the rest blank.
+  assert.equal(SHARE_VERSION, "v2");
+  assert.match(payload, /^v2\.marriage\.[A-Za-z0-9_-]+$/);
+  const expectedLength = 12 + Math.ceil((Math.ceil(questions.length / 3) * 4) / 3);
+  assert.equal(payload.length, expectedLength, `${payload.length} characters for ${questions.length} questions`);
+  assert.ok(payload.length <= 60, "a hundred questions is under sixty characters");
   assert.equal(payload.includes("늦잠"), false, "no note travels");
   assert.equal(payload.includes("m100-"), false, "and no ids, so a link cannot name its build");
-  // A hundred questions is a hundred characters, which fits any browser's address bar.
-  assert.ok(payload.length < 200, `${payload.length} characters`);
 
   const decoded = decodeShare(payload, "marriage", questions);
   assert.deepEqual(decoded.items, {
@@ -1602,17 +1623,35 @@ test("a link carries the choices to the other person, and nothing else", async (
     [questions[5].id]: questions[5].o[0].id
   });
 
+  // Every question answered, every choice position, round-trips exactly.
+  let full = emptyAnswers("marriage");
+  questions.forEach((question, i) => { full = withAnswer(full, question.id, question.o[i % question.o.length].id); });
+  const fullDecoded = decodeShare(encodeShare("marriage", questions, full), "marriage", questions);
+  questions.forEach((question, i) => assert.equal(fullDecoded.items[question.id], question.o[i % question.o.length].id));
+
+  // A link already sent as v1 still opens: a link is a promise to the person holding it.
+  const legacy = `v1.marriage.${"c----a".padEnd(questions.length, "-")}`;
+  assert.deepEqual(decodeShare(legacy, "marriage", questions).items, decoded.items);
+
   // Nothing answered is nothing to send.
   assert.equal(encodeShare("marriage", questions, emptyAnswers("marriage")), "");
 
   // Everything that does not match exactly is refused rather than repaired: a comparison lined up
   // against the wrong questions is worse than one that says it cannot be read.
-  const body = "a".repeat(questions.length);
+  const body = payload.split(".")[2];
+  const legacyBody = "a".repeat(questions.length);
   for (const [what, text] of [
-    ["another version", `v2.marriage.${body}`],
-    ["another pack", `${SHARE_VERSION}.pregnancy.${body}`],
-    ["another length", `${SHARE_VERSION}.marriage.${body.slice(0, 40)}`],
-    ["a choice that does not exist", `${SHARE_VERSION}.marriage.${"z".repeat(questions.length)}`],
+    ["another version", `v3.marriage.${body}`],
+    ["another pack", `v2.pregnancy.${body}`],
+    ["another length", `v2.marriage.${body.slice(0, 20)}`],
+    ["a byte past the five states", `v2.marriage.${"__".repeat(Math.ceil(questions.length / 3)).slice(0, body.length)}`],
+    // 100 = 33·3 + 1: the last byte holds question 100 and two padding slots. Byte value 5 is
+    // question 100 blank and the first padding slot set — encoded alone as the two characters "BQ".
+    ["padding that is not blank", (assert.equal(questions.length % 3, 1), `v2.marriage.${body.slice(0, -2)}BQ`)],
+    ["not base64url", `v2.marriage.${body.slice(0, -1)}!`],
+    ["v1 of another pack", `v1.pregnancy.${legacyBody}`],
+    ["v1 of another length", `v1.marriage.${legacyBody.slice(0, 40)}`],
+    ["v1 with a choice that does not exist", `v1.marriage.${"z".repeat(questions.length)}`],
     ["nonsense", "hello"]
   ]) {
     assert.equal(decodeShare(text, "marriage", questions), null, `refuses ${what}`);

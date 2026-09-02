@@ -12,35 +12,120 @@
  * written in. A choice is what the two of them are here to compare; a note is a private thought
  * about the person who is about to read it.
  *
- * The encoding is positional against the question index the result page already embeds: one
- * character per question, in the pack's own order, `a`–`d` for the choice and `-` for unanswered.
- * A hundred questions is a hundred characters, which fits any browser's URL with room to spare, and
- * it holds no ids — so a link cannot leak which build it came from or be replayed as an answer set
- * for a different pack. The version and slug in front of it are the two things worth refusing on.
+ * The encoding is positional against the question index the result page already embeds, so it
+ * holds no ids — a link cannot leak which build it came from or be replayed as an answer set for a
+ * different pack. The version and slug in front of it are the two things worth refusing on.
+ *
+ * Two versions are read and one is written. `v1` was one character per question, `a`–`d` for the
+ * choice and `-` for unanswered: a hundred questions, a hundred characters, plain enough to read by
+ * eye. `v2` packs the same five states three to a byte (5³ = 125 fits one byte) and writes the
+ * bytes as base64url, so a hundred questions is 46 characters rather than a hundred and the link
+ * reads as a token rather than a stripe of dashes — at the owner's word, the address should look
+ * clean. It is still only the choices, still only in the fragment, still refused if anything about
+ * it does not match. Links already sent as `v1` keep working: a link is a promise made to the
+ * person holding it.
  *
  * There is no imports line on purpose: the browser loads this without the pack registry, exactly
  * like `reflect.js`.
  */
-
-export const SHARE_VERSION = "v1";
+export const SHARE_VERSION = "v2";
+const LEGACY_VERSION = "v1";
 const BLANK = "-";
 const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+/** v2 holds five states per question: 0 for unanswered, 1–4 for the choice. */
+const STATES = 5;
+const PER_BYTE = 3;
+const BASE64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-/** `v1.<slug>.<one character per question>`, or "" when there is nothing worth sending. */
-export function encodeShare(slug, questions = [], answers = { items: {} }) {
+function toBase64url(bytes) {
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i];
+    const b = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const c = i + 2 < bytes.length ? bytes[i + 2] : 0;
+    const n = (a << 16) | (b << 8) | c;
+    out += BASE64URL[(n >> 18) & 63] + BASE64URL[(n >> 12) & 63];
+    if (i + 1 < bytes.length) out += BASE64URL[(n >> 6) & 63];
+    if (i + 2 < bytes.length) out += BASE64URL[n & 63];
+  }
+  return out;
+}
+
+/** Bytes, or null for anything that is not base64url of the length base64url would produce. */
+function fromBase64url(text) {
+  if (!/^[A-Za-z0-9_-]*$/.test(text) || text.length % 4 === 1) return null;
+  const bytes = [];
+  for (let i = 0; i < text.length; i += 4) {
+    const chunk = text.slice(i, i + 4);
+    let n = 0;
+    for (let j = 0; j < 4; j += 1) n = (n << 6) | (j < chunk.length ? BASE64URL.indexOf(chunk[j]) : 0);
+    bytes.push((n >> 16) & 255);
+    if (chunk.length > 2) bytes.push((n >> 8) & 255);
+    if (chunk.length > 3) bytes.push(n & 255);
+  }
+  return bytes;
+}
+
+/** The state of each question in pack order: 0 unanswered, 1–4 the choice. Counts what is answered. */
+function states(questions, answers) {
   const items = answers?.items || {};
   let written = 0;
-  const body = questions
-    .map((question) => {
-      const choiceId = items[question.id]?.choiceId;
-      const index = (question.o || []).findIndex((option) => option.id === choiceId);
-      if (index < 0 || index >= LETTERS.length) return BLANK;
-      written += 1;
-      return LETTERS[index];
-    })
-    .join("");
+  const list = questions.map((question) => {
+    const choiceId = items[question.id]?.choiceId;
+    const index = (question.o || []).findIndex((option) => option.id === choiceId);
+    if (index < 0 || index >= STATES - 1) return 0;
+    written += 1;
+    return index + 1;
+  });
+  return { list, written };
+}
+
+/** `v2.<slug>.<base64url of the choices, three to a byte>`, or "" when there is nothing worth sending. */
+export function encodeShare(slug, questions = [], answers = { items: {} }) {
+  const { list, written } = states(questions, answers);
   if (!written) return "";
-  return `${SHARE_VERSION}.${String(slug || "")}.${body}`;
+  const bytes = [];
+  for (let i = 0; i < list.length; i += PER_BYTE) {
+    let value = 0;
+    for (let j = PER_BYTE - 1; j >= 0; j -= 1) value = value * STATES + (list[i + j] || 0);
+    bytes.push(value);
+  }
+  return `${SHARE_VERSION}.${String(slug || "")}.${toBase64url(bytes)}`;
+}
+
+/** The v1 body: one letter or dash per question. Null for anything that does not fit exactly. */
+function decodeLegacyBody(body, questions) {
+  if (body.length !== questions.length) return null;
+  const indices = [];
+  for (let i = 0; i < questions.length; i += 1) {
+    const character = body[i];
+    if (character === BLANK) {
+      indices.push(-1);
+      continue;
+    }
+    const index = LETTERS.indexOf(character);
+    if (index < 0) return null;
+    indices.push(index);
+  }
+  return indices;
+}
+
+/** The v2 body: bytes of three states each. Null when the byte count or any digit is wrong. */
+function decodeBody(body, questions) {
+  const bytes = fromBase64url(body);
+  if (!bytes || bytes.length !== Math.ceil(questions.length / PER_BYTE)) return null;
+  const indices = [];
+  for (const byte of bytes) {
+    if (byte >= STATES ** PER_BYTE) return null;
+    let value = byte;
+    for (let j = 0; j < PER_BYTE; j += 1) {
+      indices.push((value % STATES) - 1);
+      value = Math.floor(value / STATES);
+    }
+  }
+  // The last byte may carry padding past the last question, and that padding must be blank.
+  if (indices.slice(questions.length).some((index) => index !== -1)) return null;
+  return indices.slice(0, questions.length);
 }
 
 /**
@@ -55,17 +140,18 @@ export function decodeShare(text, slug, questions = []) {
   const parts = String(text || "").split(".");
   if (parts.length !== 3) return null;
   const [version, from, body] = parts;
-  if (version !== SHARE_VERSION) return null;
-  if (from !== String(slug || "")) return null;
-  if (body.length !== questions.length || !questions.length) return null;
+  if (from !== String(slug || "") || !questions.length) return null;
+  const indices = version === SHARE_VERSION
+    ? decodeBody(body, questions)
+    : version === LEGACY_VERSION ? decodeLegacyBody(body, questions) : null;
+  if (!indices) return null;
 
   const items = {};
   for (let i = 0; i < questions.length; i += 1) {
-    const character = body[i];
-    if (character === BLANK) continue;
-    const index = LETTERS.indexOf(character);
+    const index = indices[i];
+    if (index < 0) continue;
     const option = (questions[i].o || [])[index];
-    if (index < 0 || !option) return null;
+    if (!option) return null;
     items[questions[i].id] = option.id;
   }
   return { slug: String(slug || ""), items };

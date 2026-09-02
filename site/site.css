@@ -433,8 +433,11 @@ html { scroll-padding-top: 120px; }
 .q-depth textarea,
 .q-feedback textarea,
 .result-share-link input {
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
-  padding: 12px;
+  min-height: 44px;
+  padding: 0 12px;
   border: 0;
   border-radius: 14px;
   background: var(--ab-soft);
@@ -583,11 +586,46 @@ html { scroll-padding-top: 120px; }
   margin-top: 10px;
 }
 
-.result-share-link span {
+.result-share-link label {
   display: block;
   margin-bottom: 6px;
   color: var(--ab-muted);
   font-size: 13px;
+}
+
+/* The address with its copy control beside it — the same pair the invite panel draws. */
+.result-share-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.result-share-copy {
+  flex: 0 0 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  color: var(--ab-ink);
+  cursor: pointer;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.result-share-copy svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.result-share-copy:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
 }
 
 .result-mail {
