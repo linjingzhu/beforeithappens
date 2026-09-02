@@ -969,19 +969,26 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   // A dialog, so `showModal` brings the focus trap, Escape and the backdrop rather than this file.
   assert.ok(html.includes("<dialog class=\"invite\" data-invite-panel"));
   assert.ok(panel.includes(INVITE_COPY.title) && panel.includes(INVITE_COPY.lead));
-  for (const way of ["device", "copy", "sms", "mail"]) {
+  // The four apps, at the owner's word, each an icon button with its name on it.
+  for (const way of ["kakao", "line", "instagram", "sms"]) {
     assert.ok(panel.includes(`data-invite-way="${way}"`), `the panel offers ${way}`);
+    assert.ok(panel.includes(`<span>${INVITE_COPY[way]}</span>`), `${way} is named`);
+    assert.match(panel, new RegExp(`data-invite-way="${way}"[^>]*>\\s*<svg`), `${way} carries a mark`);
   }
-  // The address is on the screen whatever the clipboard does, and the panel says what is in it.
+  // The address is on the screen whatever the clipboard does, with the copy control beside it —
+  // an icon, so its name is what a screen reader gets and what the pointer's tooltip shows.
   assert.ok(panel.includes("data-invite-url"));
+  assert.match(panel, /<button[^>]*data-invite-copy[^>]*aria-label="링크 복사"[^>]*title="링크 복사"/);
+  assert.ok(panel.indexOf("data-invite-url") < panel.indexOf("invite-apps"), "the address comes first");
   assert.ok(panel.includes(INVITE_COPY.note) && INVITE_COPY.note.includes("답이 담기지"));
 
   // Pinterest's panel lists friends and searches people. There are no accounts here, so there is
-  // nobody to list — and no SDK, so no channel that needs one appears.
-  for (const forbidden of ["kakao", "sdk", "친구", "검색"]) {
+  // nobody to list — and no SDK, so nothing here loads one: the apps are buttons, not embeds.
+  for (const forbidden of ["sdk", "친구", "검색"]) {
     assert.equal(panel.toLowerCase().includes(forbidden.toLowerCase()), false, `${forbidden} has no place here`);
   }
   assert.equal(/<script/.test(panel), false, "and the panel loads nothing");
+  assert.equal(/<img/.test(panel), false, "the marks are inline, so nothing is fetched");
 
   // Every page that offers the control ships the panel and something that binds it. This used to
   // say the opposite for the home page — the control was there, the panel was not, and pressing
@@ -1006,12 +1013,16 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
 
   const invite = readFileSync("site/invite.js", "utf8");
   const bind = invite.slice(invite.indexOf("function bindInvite"), invite.indexOf("\n}", invite.indexOf("function bindInvite")));
-  // The device's sheet is offered only where it exists: on a phone it is where KakaoTalk lives, and
-  // on a desktop it would be a button that does nothing.
-  assert.match(bind, /toggleAttribute\("hidden", !navigator\.share\)/);
   assert.match(bind, /panel\.showModal\(\)/);
+  // Two of the apps are real addresses.
   assert.match(bind, /sms:\?&body=/);
-  assert.match(bind, /mailto:\?subject=/);
+  assert.match(bind, /https:\/\/line\.me\/R\/share\?text=/);
+  // The other two are not: no third-party script, so on a phone they open the device's sheet and
+  // on a desktop they copy the link and name the app to paste it into.
+  assert.match(bind, /\["kakao", "instagram"\]/);
+  assert.match(bind, /if \(navigator\.share\)/);
+  assert.match(bind, /INVITE_COPY\.pasteInto\(INVITE_COPY\[id\]\)/);
+  assert.equal(/kakao\.com|instagram\.com|sdk/i.test(bind), false, "nothing of theirs is loaded");
   // A refused clipboard is reported, not reported as a success.
   assert.match(bind, /INVITE_COPY\.copyFailed/);
   // Closing: the button, and a click that lands on the dialog itself rather than on its contents.

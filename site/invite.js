@@ -32,10 +32,6 @@ export function bindInvite() {
   const ways = new Map([...panel.querySelectorAll("[data-invite-way]")].map((el) => [el.getAttribute("data-invite-way"), el]));
   let url = "";
 
-  // The device's own sheet is the first way where it exists, and absent where it does not: on a
-  // phone it is where KakaoTalk lives, and on a desktop it would be a button that does nothing.
-  ways.get("device")?.toggleAttribute("hidden", !navigator.share);
-
   const say = (text, error = false) => {
     if (!state) return;
     state.hidden = !text;
@@ -43,14 +39,29 @@ export function bindInvite() {
     state.classList.toggle("is-error", Boolean(error));
   };
 
+  // The clipboard can be refused outright. The address is on the screen either way, so the honest
+  // thing is to say so and select it rather than to report a success that did not happen.
+  const copy = async (done = INVITE_COPY.copied) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      say(done);
+      return true;
+    } catch {
+      say(INVITE_COPY.copyFailed, true);
+      field?.select();
+      return false;
+    }
+  };
+
   const open = (href) => {
     url = new URL(href, location.href).href;
     if (field) field.value = url;
-    // Addresses, not scripts. A message app and a mail app are both a URL scheme away, and the text
-    // is the same sentence the share sheet would have carried.
+    // Addresses, not scripts. A text message is a URL scheme away, and LINE publishes a share URL
+    // that opens the app on a phone and the web on a desktop. The text is the same sentence the
+    // device's sheet would have carried.
     const body = `${INVITE_COPY.shareText}\n${url}`;
     ways.get("sms")?.setAttribute("href", `sms:?&body=${encodeURIComponent(body)}`);
-    ways.get("mail")?.setAttribute("href", `mailto:?subject=${encodeURIComponent(INVITE_COPY.mailSubject)}&body=${encodeURIComponent(body)}`);
+    ways.get("line")?.setAttribute("href", `https://line.me/R/share?text=${encodeURIComponent(body)}`);
     say("");
     panel.showModal();
   };
@@ -70,26 +81,26 @@ export function bindInvite() {
     if (event.target === panel) panel.close();
   });
 
-  ways.get("device")?.addEventListener("click", async () => {
-    try {
-      await navigator.share({ title: document.title, text: INVITE_COPY.shareText, url });
-      panel.close();
-    } catch {
-      /* dismissed, or refused; the other ways are still on the screen */
-    }
-  });
+  panel.querySelector("[data-invite-copy]")?.addEventListener("click", () => copy());
 
-  ways.get("copy")?.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      say(INVITE_COPY.copied);
-    } catch {
-      // Clipboard access can be refused outright. The address is on the screen either way, so the
-      // honest thing is to say so and select it rather than to report a success that did not happen.
-      say(INVITE_COPY.copyFailed, true);
-      field?.select();
-    }
-  });
+  // KakaoTalk and Instagram publish nothing a page can open with a link in it without loading their
+  // script, and this site loads no third-party script. On a phone the device's own sheet has both
+  // apps in it, so the button opens that; on a desktop, where there is no sheet, it copies the link
+  // and names the app to paste it into. Either way the button is named for where the link is going.
+  for (const id of ["kakao", "instagram"]) {
+    ways.get(id)?.addEventListener("click", async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: document.title, text: INVITE_COPY.shareText, url });
+          panel.close();
+        } catch {
+          /* dismissed, or refused; the other ways are still on the screen */
+        }
+        return;
+      }
+      await copy(INVITE_COPY.pasteInto(INVITE_COPY[id]));
+    });
+  }
 }
 
 // Bound on import: every page that carries the control also carries this module, and the function
