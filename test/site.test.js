@@ -790,8 +790,11 @@ test("the home page shows what can be read now, and what is coming as a picture 
 
   // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
   // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
-  assert.equal(COMING.length, 2);
+  // Not a fixed count — holders come and go as artwork arrives. What has to hold is that each one
+  // is a picture and a label and nothing else, and that they name a scene the build actually ships.
+  assert.ok(COMING.length > 0);
   for (const entry of COMING) {
+    assert.ok(Object.values(SCENES).includes(entry.scene), `${entry.id} uses a declared scene`);
     const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
     const card = html.slice(start, html.indexOf("</li>", start));
     assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);

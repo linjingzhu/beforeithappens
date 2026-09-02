@@ -9,6 +9,7 @@ import { RESULT_COPY } from "../site/result-copy.js";
 import { FEEDBACK_COPY } from "../site/feedback.js";
 import { DOCK_COPY } from "../site/dock-copy.js";
 import { privacyCopy } from "../site/pages.js";
+import { COMING } from "../site/config.js";
 import { INVITE_COPY } from "../site/invite-copy.js";
 import { findPack } from "../src/packs.js";
 
@@ -53,6 +54,8 @@ function renderedCharacters() {
   // The policy is written but gated on the owner's details, so it is scanned directly rather than
   // through `standingPages` — otherwise it would first be checked on the day it goes live.
   walk(privacyCopy());
+  // Alt text is printed when an image fails to load, so it is text the subset has to carry.
+  for (const entry of COMING) walk(entry.alt);
   return new Set(parts.join(""));
 }
 
