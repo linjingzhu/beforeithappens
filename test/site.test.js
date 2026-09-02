@@ -836,7 +836,7 @@ test("the home page shows what can be read now, and what is coming as a picture 
   // purpose: the heading beside it already names the pack, and a screen reader should not say the
   // same thing twice.
   const published = html.slice(html.indexOf('<li class="card">'), html.indexOf('<li class="card is-coming">'));
-  assert.ok(published.includes(SCENES.marriage));
+  assert.ok(published.includes(SCENES.marriage.src));
   assert.ok(published.includes('alt=""'));
   assert.ok(published.includes('href="/marriage/"') && published.includes("100개의 질문"));
 
@@ -847,9 +847,9 @@ test("the home page shows what can be read now, and what is coming as a picture 
   assert.ok(COMING.length > 0);
   for (const entry of COMING) {
     assert.ok(Object.values(SCENES).includes(entry.scene), `${entry.id} uses a declared scene`);
-    const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
+    const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene.src) - 200);
     const card = html.slice(start, html.indexOf("</li>", start));
-    assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);
+    assert.ok(card.includes(entry.scene.src), `${entry.id} shows its scene`);
     assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it for a reader who cannot see it");
     for (const interactive of ["<a ", "<button", "href=", "data-"]) {
       assert.equal(card.includes(interactive), false, `${entry.id} must not be a control: ${interactive}`);
@@ -899,18 +899,45 @@ test("a coming card stays inert even now the published one is a button", () => {
   assert.match(coming, /box-shadow: none/, "nor sit raised like something pressable");
 });
 
-test("every scene the site names is a file the build ships", async () => {
+/** A JPEG's own idea of its size, from the frame header. Twelve lines against a dependency. */
+function jpegSize(file) {
+  const buf = readFileSync(file);
+  let at = 2; // past SOI
+  while (at < buf.length) {
+    if (buf[at] !== 0xff) throw new Error(`${file}: not a JPEG segment at ${at}`);
+    const marker = buf[at + 1];
+    const length = buf.readUInt16BE(at + 2);
+    // SOF0..SOF15, minus the four that are not frame headers (DHT, JPG, DAC, RST).
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      return { height: buf.readUInt16BE(at + 5), width: buf.readUInt16BE(at + 7) };
+    }
+    at += 2 + length;
+  }
+  throw new Error(`${file}: no frame header`);
+}
+
+test("every scene the site names is a file the build ships, at the size the card declares", async () => {
   const { SCENES } = await import("../site/config.js");
-  for (const [name, path] of Object.entries(SCENES)) {
-    const file = `site${path}`;
+  for (const [name, art] of Object.entries(SCENES)) {
+    const file = `site${art.src}`;
     assert.ok(existsSync(file), `${name}: ${file} is generated and committed`);
     // Big enough to be a picture, small enough not to be the uncropped sheet.
     const bytes = statSync(file).size;
     assert.ok(bytes > 4000 && bytes < 120_000, `${name} is ${bytes} bytes`);
+    // The numbers on the `<img>` are what the browser reserves room with, so a re-crop that
+    // changed the picture's shape and left them behind would shift the row as the page loads.
+    assert.deepEqual(jpegSize(file), { width: art.width, height: art.height },
+      `${name}: re-run \`python3 scripts/build-brand-assets.py\` and update SCENES`);
   }
-  // And the generator that made them keeps the source it cut them from.
-  assert.ok(existsSync("brand/pack-scenes.jpg"), "the scene sheet stays in the repo");
+  // Every scene is cut to one height, which is what makes crops of different widths read as a set.
+  assert.equal(new Set(Object.values(SCENES).map((art) => art.height)).size, 1);
+
+  // And the generator that made them keeps the sources it cut them from.
   const build = readFileSync("scripts/build-brand-assets.py", "utf8");
+  for (const sheet of build.matchAll(/^ {4}"(pack-scenes[\w-]*\.jpg)": \{$/gm)) {
+    assert.ok(existsSync(`brand/${sheet[1]}`), `${sheet[1]} stays in the repo`);
+  }
+  assert.ok(existsSync("brand/pack-scenes.jpg"), "the first scene sheet stays in the repo");
   for (const name of Object.keys(SCENES)) {
     assert.match(build, new RegExp(`"${name}": \\(`), `${name} has measured crop bounds`);
   }

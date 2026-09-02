@@ -99,15 +99,28 @@ export const SITE = Object.freeze({
  * back is one entry — which is the whole reason this list is written out rather than derived.
  */
 /**
- * The scenes on the home page, one per pack, cropped from `brand/pack-scenes.jpg` by
+ * The scenes on the home page, one per pack, cropped from the owner's sheets in `brand/` by
  * `scripts/build-brand-assets.py`. Named here so a card and its picture cannot drift apart.
+ *
+ * Each carries its own size because the card declares it on the `<img>`, and that declaration is
+ * how the browser reserves the right space before the picture arrives. They were all written as
+ * one number for a while, which was near enough while every crop was a narrow portrait — the real
+ * widths ran 220 to 264 against a declared 234. The family reading a book is 677 wide, and a card
+ * reserving half the room it needs shoves the row sideways the moment the picture loads.
+ *
+ * The height is the same for every scene on purpose: `SCENE_HEIGHT` in the generator crops to it,
+ * and a common height is what makes crops of different widths read as one set. `test/site.test.js`
+ * measures the shipped files against these numbers, so a re-crop cannot quietly leave them behind.
  */
+const scene = (name, width) => Object.freeze({ src: `/brand/scene-${name}.jpg`, width, height: 440 });
+
 export const SCENES = Object.freeze({
-  dating: "/brand/scene-dating.jpg",
-  marriage: "/brand/scene-marriage.jpg",
-  pregnancy: "/brand/scene-pregnancy.jpg",
-  birth: "/brand/scene-birth.jpg",
-  later: "/brand/scene-later.jpg"
+  dating: scene("dating", 220),
+  marriage: scene("marriage", 234),
+  pregnancy: scene("pregnancy", 221),
+  birth: scene("birth", 234),
+  education: scene("education", 677),
+  later: scene("later", 391)
 });
 
 /**
@@ -124,19 +137,19 @@ export const SCENES = Object.freeze({
  *
  * In the order the stages arrive, after the one pack that can actually be read.
  *
- * The bench scene is 노후, at the owner's word and on the evidence. It was first taken for 육아
- * because at full resolution the book in her hands is labelled Childcare — but the card draws that
- * scene 108x180, where the book is 34x31 and its lettering about 6px. What anyone actually sees is
- * two people sitting close together at rest, which is the stage the owner named.
+ * 노후 stood on a borrowed picture for a while — a bench scene from the first sheet, which the
+ * owner read as 노후 when it was the closest thing there was. The second sheet carries one drawn
+ * for it, so the holder now shows what it means and the borrowed one is not cut at all.
  *
- * The holders name nothing, so each promises whatever its picture shows. 육아 and 교육 are the two
- * left without one — `docs/OWNER_ACTIONS.md` N8.
+ * The holders name nothing, so each promises whatever its picture shows. 육아 is the one still
+ * without a picture — `docs/OWNER_ACTIONS.md` N8.
  */
 export const COMING = Object.freeze([
   Object.freeze({ id: "dating", scene: SCENES.dating, alt: "반지를 사이에 둔 두 사람" }),
   Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
   Object.freeze({ id: "birth", scene: SCENES.birth, alt: "갓 태어난 아이를 안은 두 사람" }),
-  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 두 사람" })
+  Object.freeze({ id: "education", scene: SCENES.education, alt: "아이와 함께 그림책을 펼친 두 사람" }),
+  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 나이 든 두 사람" })
 ]);
 
 export const PUBLISHED = Object.freeze([
