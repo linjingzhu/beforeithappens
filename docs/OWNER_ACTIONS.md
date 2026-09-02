@@ -74,7 +74,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N5b | 웹 · **M1** | **AdSense publisher id and ad unit id** | 🔴 | `SITE.adsenseClient` (`ca-pub-…`) and `SITE.adsenseSlot`. Set both and the script, the unit and `ads.txt` all appear; empty, the site builds exactly as it does now. Google reviews the site first, and the review needs N5 | `site/config.js` |
 | N6 | 공통 · M2 | **Resend domain verification** | 🟢 | Until then `onboarding@resend.dev` reaches only the Resend account owner. Needed for login mail and later for the result sheet | `docs/DEPLOY.md` §4 |
 | N7 | 웹 · M1 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
-| N8 | 웹 · M1 | **교육·노후 홀더의 장면 그림** | 🟢 | 소유자 요청으로 홀더를 늘리며 시트에서 **골라 쓰기로** 했고(2026-09-02), 남아 있던 두 장면을 **연애·출산**으로 붙였습니다 — 둘 다 이미 계획된 팩입니다. 병실 신생아는 처음에 "하늘색 배경이라 흰 카드 사이에서 튄다"고 보류했었는데, **카드 크기로 그려 보니 패널이 옅어 흰 바탕에서 부드러운 배경으로 읽혀** 판단을 뒤집었습니다. 시트는 이제 다섯 장면을 다 씁니다. **교육·노후는 여전히 그림이 없습니다** — 같은 클레이풍, 흰 배경, 서 있거나 앉은 두 사람, 같은 프레이밍으로 두 컷 주시면 자르는 좌표 두 줄과 `COMING` 두 줄로 붙습니다 | `scripts/build-brand-assets.py`, `site/config.js` |
+| N8 | 웹 · M1 | **육아·교육 홀더의 장면 그림** | 🟢 | 시트 다섯 장면을 **연애·결혼·임신·출산·노후**로 다 썼습니다. 벤치 장면은 처음에 육아로 넣었었는데(원본에서 책 라벨이 `Childcare`), 소유자가 노후라고 짚어 주셨고 근거도 그쪽입니다 — **카드는 그 장면을 108×180으로 그리고 거기서 책은 34×31, 글자는 약 6px이라 아무도 못 읽습니다.** 실제로 보이는 것은 나란히 앉은 두 사람입니다. **이제 그림이 없는 것은 육아와 교육 둘입니다** — 같은 클레이풍, 흰 배경, 서 있거나 앉은 두 사람, 같은 프레이밍으로 두 컷 주시면 자르는 좌표 두 줄과 `COMING` 두 줄로 붙습니다 | `scripts/build-brand-assets.py`, `site/config.js` |
 
 ---
 

@@ -107,7 +107,7 @@ export const SCENES = Object.freeze({
   marriage: "/brand/scene-marriage.jpg",
   pregnancy: "/brand/scene-pregnancy.jpg",
   birth: "/brand/scene-birth.jpg",
-  childcare: "/brand/scene-childcare.jpg"
+  later: "/brand/scene-later.jpg"
 });
 
 /**
@@ -122,17 +122,21 @@ export const SCENES = Object.freeze({
  * gets the same thing a reader who can gets — the situation — rather than a name the design is
  * deliberately withholding.
  *
- * In the order the stages arrive, after the one pack that can actually be read. The owner asked for
- * 교육 and 노후 holders and, shown that the sheet had nothing for either, said to pick from what it
- * had. What it had was a proposal and a newborn, which are 연애 and 출산 — both packs this site
- * already plans, and neither of them 교육 or 노후. The holders name nothing, so what they promise is
- * whatever the picture shows: these promise those two. 교육 and 노후 still need artwork.
+ * In the order the stages arrive, after the one pack that can actually be read.
+ *
+ * The bench scene is 노후, at the owner's word and on the evidence. It was first taken for 육아
+ * because at full resolution the book in her hands is labelled Childcare — but the card draws that
+ * scene 108x180, where the book is 34x31 and its lettering about 6px. What anyone actually sees is
+ * two people sitting close together at rest, which is the stage the owner named.
+ *
+ * The holders name nothing, so each promises whatever its picture shows. 육아 and 교육 are the two
+ * left without one — `docs/OWNER_ACTIONS.md` N8.
  */
 export const COMING = Object.freeze([
   Object.freeze({ id: "dating", scene: SCENES.dating, alt: "반지를 사이에 둔 두 사람" }),
   Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
   Object.freeze({ id: "birth", scene: SCENES.birth, alt: "갓 태어난 아이를 안은 두 사람" }),
-  Object.freeze({ id: "childcare", scene: SCENES.childcare, alt: "아이를 키우는 두 사람" })
+  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 두 사람" })
 ]);
 
 export const PUBLISHED = Object.freeze([

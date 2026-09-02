@@ -195,6 +195,7 @@ APP = ROOT / "mobile" / "assets"
 # The five vignettes on `brand/pack-scenes.jpg`, left to right, and what each one became.
 #
 # The source is one wide image the owner supplied: proposal, wedding, pregnancy, newborn, childcare.
+# Four are named for the pack they serve and one — the bench — for what the owner reads in it.
 # Three were taken first and the other two were held back — the proposal because it was not a pack,
 # and the newborn because its hospital panel was judged to be a coloured background that would sit
 # among white cards as a blue rectangle. Rendered at the size a card actually draws, that was wrong:
@@ -209,7 +210,11 @@ PACK_SCENES = {
     "marriage": (355, 140, 712, 810),
     "pregnancy": (718, 150, 1050, 810),
     "birth": (1052, 160, 1408, 828),
-    "childcare": (1414, 190, 1792, 820),
+    # The bench. Named for what it is used as, like the others — and the owner reads it as 노후,
+    # which is what it shows: two people sitting close together, at rest. The book in her hands is
+    # labelled Childcare at full resolution and that is why it was first taken for 육아, but the card
+    # draws this scene 108x180, where the book is 34x31 and its lettering about 6px. Nobody reads it.
+    "later": (1414, 190, 1792, 820),
 }
 
 # Sized by height, not width: the figures stand, so the three crops differ in width and agree in
