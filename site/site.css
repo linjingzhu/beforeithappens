@@ -1368,6 +1368,21 @@ html { scroll-padding-top: 120px; }
   padding: 12px 0;
 }
 
+/*
+ * The label under a coming scene. A pill, because that shape already means "a state" on this site
+ * and never "a button": no relief, no travel, nothing to press. It says when in the loosest possible
+ * terms on purpose — a date would be a promise, and there is no date.
+ */
+.card-coming {
+  margin: 0 !important;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--ab-soft);
+  color: var(--ab-accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .card-scene img,
 .card.is-coming img {
   height: 180px;
@@ -1384,10 +1399,12 @@ html { scroll-padding-top: 120px; }
  */
 .card.is-coming {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   background: #fff;
-  padding: 16px 0;
+  padding: 20px 0;
   /* Nothing happens when it is pressed, so it is not raised, does not travel, and keeps the arrow
      cursor. It holds no `<a>`, so the rules above never reach it — this is only what it looks like. */
   box-shadow: none;

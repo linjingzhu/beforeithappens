@@ -31,6 +31,12 @@ export const SITE_COPY = Object.freeze({
   /** Spelled out where there is room to spell it: the page's own heading. */
   partOrdinal: (n) => `Part ${n}`,
   partsUnit: "개 파트",
+  /*
+   * What a coming pack says. The card was the picture and nothing else, at the owner's word, and
+   * this is the owner adding one line to it — so it stays one line, and it stays a label rather
+   * than becoming a control: there is still nothing here to press and still no date being promised.
+   */
+  comingLabel: "곧 만나요!",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
   progress: (page, pages) => `${page} / ${pages}`,
@@ -659,7 +665,9 @@ ${contact}${callToAction()}
  *
  * The scene is `alt=""` on a published card because the heading beside it already names the pack,
  * and a screen reader reading the picture as well would say the same thing twice. On a coming card
- * the picture is the whole content, so it carries the description a sighted reader gets from it.
+ * the picture carries the description a sighted reader gets from it, and the label under it says
+ * the one thing the card is for — which is still not the pack's name, because the design withholds
+ * that from everyone equally.
  */
 export function renderIndex(model, site = SITE) {
   const cards = model.packs
@@ -675,6 +683,7 @@ ${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}
     })
     .concat(COMING.map((entry) => `      <li class="card is-coming">
         <img src="${escapeHtml(entry.scene)}" alt="${escapeHtml(entry.alt)}" width="234" height="440" loading="lazy" decoding="async">
+        <p class="card-coming">${escapeHtml(SITE_COPY.comingLabel)}</p>
       </li>`))
     .join("\n");
   const head = [

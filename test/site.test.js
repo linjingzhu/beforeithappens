@@ -795,13 +795,14 @@ test("the home page shows what can be read now, and what is coming as a picture 
     const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
     const card = html.slice(start, html.indexOf("</li>", start));
     assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);
-    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it, since the picture is all there is");
+    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it for a reader who cannot see it");
     for (const interactive of ["<a ", "<button", "href=", "data-"]) {
       assert.equal(card.includes(interactive), false, `${entry.id} must not be a control: ${interactive}`);
     }
     assert.equal(/<h[1-6]/.test(card), false, "no heading");
-    // Strip the tags and a coming card has nothing left to read.
-    assert.equal(card.replace(/<[^>]*>/g, "").trim(), "", "no words on the card itself");
+    // The card was the picture and nothing else; the owner added one line to it. That line is all
+    // it says — no name, no count, no date — so strip the tags and exactly the label is left.
+    assert.equal(card.replace(/<[^>]*>/g, "").trim(), SITE_COPY.comingLabel, "one line, and only that");
   }
 
   // The names of the packs that are coming must not leak into the page anywhere else either —
