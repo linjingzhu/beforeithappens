@@ -694,6 +694,85 @@ test("the dock's words load without the pack registry behind them", async () => 
   assert.match(build, /"dock-copy\.js"/);
 });
 
+test("nothing is written to storage until the reader asks for it", async () => {
+  // The behaviour is in the DOM layer, so this holds the shape of it at the source rather than
+  // leaving a rule this consequential to a browser check nobody re-runs. Answering used to save as
+  // it happened; the owner's rule is that saving is an act the reader takes.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindLeaveWarning"));
+  assert.ok(handlers.includes('addEventListener("input"'), "the draft still follows every keystroke");
+  assert.ok(handlers.includes('addEventListener("change"'));
+  assert.equal(/store\.write|\.commit\(\)/.test(handlers), false, "but neither handler touches storage");
+  assert.ok(handlers.includes("draft.set("), "they update the draft instead");
+
+  // Only the button commits, and the warning is what stands between an unsaved draft and losing it.
+  assert.match(enhance, /function bindSave[\s\S]*?draft\.commit\(\)/);
+  assert.match(enhance, /addEventListener\("beforeunload"[\s\S]*?preventDefault\(\)/);
+  assert.match(enhance, /bindLeaveWarning\(draft\)/);
+
+  // The draft is seeded from what was saved, so a reload brings back exactly that and nothing else.
+  assert.match(enhance, /function createDraft[\s\S]*?store\.read\(\)/);
+
+  // And the button must not claim the old behaviour.
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
+  assert.equal(DOCK_COPY.saveAuto.includes("자동"), false, "it no longer says answers save automatically");
+  assert.ok(DOCK_COPY.unsaved.includes("사라"), "and something says unsaved answers can be lost");
+});
+
+test("the privacy policy waits for someone to be responsible for it", async () => {
+  const { standingPages, privacyCopy } = await import("../site/pages.js");
+  const bare = siteWith({ operator: { business: "afterscent", owner: "", address: "" } });
+  assert.equal(standingPages({ site: bare }).some((page) => page.slug === "privacy"), false,
+    "제30조 requires a named 개인정보 보호책임자; a policy naming nobody is not one");
+
+  const named = siteWith({ operator: { business: "afterscent", owner: "홍길동", address: "서울특별시 ..." } });
+  const page = standingPages({ site: named }).find((each) => each.slug === "privacy");
+  assert.ok(page, "two values turn it on");
+  assert.equal(page.path, "/privacy/");
+  // Derived, not declared: the footer and the sitemap are built from the same list.
+  const { footerLinks } = await import("../site/pages.js");
+  assert.ok(footerLinks({ site: named }).some((link) => link.path === "/privacy/"), "so the footer links it");
+
+  const copy = privacyCopy({ site: named });
+  const headings = copy.sections.map((section) => section.heading).join(" | ");
+  for (const required of ["권리", "보호책임자", "권익침해", "제3자 제공", "쿠키", "바뀔 때"]) {
+    assert.ok(headings.includes(required), `제30조: ${required} — ${headings}`);
+  }
+  const body = JSON.stringify(copy);
+  assert.ok(body.includes("홍길동") && body.includes("서울특별시"), "it names who is responsible");
+});
+
+test("the policy describes the storage the site actually has, and the ads it actually serves", async () => {
+  const { privacyCopy } = await import("../site/pages.js");
+  const base = { business: "afterscent", owner: "홍길동", address: "서울특별시 ..." };
+
+  const off = JSON.stringify(privacyCopy({ site: siteWith({ operator: base }) }));
+  assert.ok(off.includes("쿠키를 사용하지 않"), "with no publisher id there are no cookies to declare");
+  assert.equal(off.includes("adssettings"), false);
+
+  const on = JSON.stringify(privacyCopy({ site: siteWith({ operator: base, adsenseClient: "ca-pub-1" }) }));
+  assert.ok(on.includes("AdSense") && on.includes("adssettings"), "and with one, the cookies and the way out");
+  assert.ok(on.includes("Google LLC"), "named as a processor");
+
+  // The claim the whole page rests on, and the one the save model just changed.
+  assert.ok(off.includes("임시 저장"), "it says storage happens when the reader presses the button");
+  assert.ok(off.includes("localStorage"));
+  assert.ok(off.includes("사라집니다"), "and that unsaved answers are lost");
+
+  // Scoped to what the policy claims about today, not to the words it uses. A naive scan for
+  // "서버에 저장" matched the section that promises to announce it *before* that ever happens —
+  // the same shape of mistake as scanning the result copy for 점수 and hitting its own disclaimer.
+  const now = privacyCopy({ site: siteWith({ operator: base }) }).sections
+    .filter((section) => !section.heading.includes("바뀔 때"))
+    .map((section) => section.paragraphs.join(" "))
+    .join(" ");
+  assert.ok(now.includes("서버로 전송되지 않습니다"), "it says answers are not sent");
+  assert.ok(now.includes("답을 받는 서버가 없습니다"), "and that there is no server to receive them");
+  for (const claim of ["서버에 저장합니다", "서버에 보관", "수집합니다"]) {
+    assert.equal(now.includes(claim), false, `it must not claim to ${claim}`);
+  }
+});
+
 test("the progress bar carries its value in aria and nothing on the screen", () => {
   const model = pageModel("marriage", 3, { site });
   const html = renderQuestionPage(model, site);

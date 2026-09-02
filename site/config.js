@@ -50,6 +50,31 @@ export const SITE = Object.freeze({
   adsenseClient: "",
   adsenseSlot: "",
   /**
+   * Who operates the site, for the privacy policy — and the reason that page does or does not exist.
+   *
+   * `개인정보 보호법` 제30조 requires a policy to name a 개인정보 보호책임자 with a contact, and a
+   * policy that names nobody is not a policy. `상호` and the contact address are known; the rest is
+   * the owner's to give (`docs/OWNER_ACTIONS.md` N5). So the page is emitted only once `owner` and
+   * `address` are set, exactly as 문의 waits on `contactEmail` — an unfinished legal document is
+   * worse than an absent one, and there is nothing to remember to switch on.
+   *
+   * `registration` (사업자등록번호) and `mailOrder` (통신판매업 신고번호) are optional: an operator
+   * who is not a registered business has neither, and a policy is not improved by an empty field.
+   * They are printed when present and omitted when not.
+   */
+  operator: Object.freeze({
+    /** 상호. Given by the owner. */
+    business: "afterscent",
+    /** 대표자 성명. Also stands as 개인정보 보호책임자 unless `officer` says otherwise. */
+    owner: "",
+    /** 주소 — 사업장 소재지. */
+    address: "",
+    registration: "",
+    mailOrder: "",
+    /** 개인정보 보호책임자, when it is not the 대표자. */
+    officer: ""
+  }),
+  /**
    * The question-review block under every question, and the switch that takes it away.
    *
    * It is scaffolding: the owner asked for it while the pack is being read through, and said it

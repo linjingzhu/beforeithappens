@@ -8,6 +8,7 @@ import { RESULT_COPY } from "../site/result-copy.js";
 // Debug only; it is on the page until `SITE.debugFeedback` comes off, so its words are covered too.
 import { FEEDBACK_COPY } from "../site/feedback.js";
 import { DOCK_COPY } from "../site/dock-copy.js";
+import { privacyCopy } from "../site/pages.js";
 import { INVITE_COPY } from "../site/invite-copy.js";
 import { findPack } from "../src/packs.js";
 
@@ -49,6 +50,9 @@ function renderedCharacters() {
     } else if (value && typeof value === "object") Object.values(value).forEach(walk);
   };
   for (const copy of [SITE_COPY, RESULT_COPY, FEEDBACK_COPY, INVITE_COPY, DOCK_COPY]) walk(copy);
+  // The policy is written but gated on the owner's details, so it is scanned directly rather than
+  // through `standingPages` — otherwise it would first be checked on the day it goes live.
+  walk(privacyCopy());
   return new Set(parts.join(""));
 }
 

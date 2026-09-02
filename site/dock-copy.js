@@ -13,8 +13,15 @@ export const DOCK_COPY = Object.freeze({
   countLabel: "답한 질문",
   together: "함께 풀기",
   save: "임시 저장",
-  /** What the press reports back: not "saved" as news, but how much is being held. */
+  /** What the press reports back: not "saved" as news, but how much is now being held. */
   saved: (n) => `저장했어요 · 답 ${n}개`,
+  /** Pressed again with nothing new to keep. Saying "저장했어요" again would be a lie about work. */
+  alreadySaved: (n) => `이미 저장돼 있어요 · 답 ${n}개`,
+  /**
+   * Shown the moment there is something unsaved, rather than at the leave dialog. Being told at the
+   * dialog is being told too late: by then the reader has already decided to go.
+   */
+  unsaved: "저장하지 않은 답이 있어요. 새로고침하거나 페이지를 옮기면 사라집니다.",
   /**
    * The case the button exists for. `createAnswerStore` swallows a storage failure and returns
    * `false`, which is right for a keystroke and wrong as the whole story: a private window, blocked
@@ -22,6 +29,9 @@ export const DOCK_COPY = Object.freeze({
    * keeping none of them, and nothing else on the site would ever say so.
    */
   saveFailed: "저장할 수 없어요. 브라우저에서 이 사이트의 저장이 막혀 있는지 확인해 주세요.",
-  /** On the button itself, because a control that claims to save should say what already saves. */
-  saveAuto: "답은 고를 때마다 자동으로 저장돼요. 이 브라우저 안에만 남습니다."
+  /**
+   * On the button itself. It used to say the opposite — that answers save as they are made — which
+   * was true of the old behaviour and is now exactly the thing that is not done.
+   */
+  saveAuto: "이 버튼을 누를 때만 저장돼요. 저장한 답은 이 브라우저 안에만 남습니다."
 });

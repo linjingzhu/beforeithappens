@@ -1,4 +1,4 @@
-import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withNote } from "./answers.js";
+import { answeredCount, createAnswerStore, NOTE_FIELDS, serializeAnswers, withAnswer, withNote } from "./answers.js";
 // Debug only, and self-contained so that removing the block is removing this line and its uses.
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
@@ -36,8 +36,40 @@ function isFeedbackControl(target) {
   return Boolean(target?.closest?.("[data-feedback]"));
 }
 
-function restoreQuestionPage(root, store) {
-  const answers = store.read();
+/**
+ * The draft: the answers being made now, held in memory and written only when asked.
+ *
+ * Nothing on this page writes to storage on its own any more. Answering used to save as it
+ * happened — every choice, every keystroke — which is the usual thing to build and was the wrong
+ * thing here: it stored a person's answers about their marriage in their browser without ever being
+ * told to. The owner's rule is that saving is something the reader does, and this is the shape that
+ * makes it true rather than merely says it.
+ *
+ * So there are two states, not one. The draft is what is on the screen; the store is what the
+ * reader chose to keep. `dirty()` is the difference between them, and it is what the leave warning
+ * and the dock's line are both read from. Comparing the serialized forms rather than the objects
+ * means a note typed and then deleted again correctly reads as no change at all.
+ */
+function createDraft(store) {
+  let answers = store.read();
+  let kept = serializeAnswers(answers);
+  return {
+    read: () => answers,
+    set(next) {
+      answers = next;
+    },
+    dirty: () => serializeAnswers(answers) !== kept,
+    /** Returns false when the browser refuses to store — the one thing the button exists to say. */
+    commit() {
+      const written = store.write(answers);
+      if (written) kept = serializeAnswers(answers);
+      return written;
+    }
+  };
+}
+
+function restoreQuestionPage(root, draft) {
+  const answers = draft.read();
   for (const article of root.querySelectorAll("[data-question]")) {
     const id = article.getAttribute("data-question");
     const item = answers.items[id];
@@ -46,7 +78,8 @@ function restoreQuestionPage(root, store) {
     if (radio) radio.checked = true;
   }
   // Notes are restored for every question, answered or not: someone may have written before
-  // choosing, and losing that on a page reload is losing the part that took thought.
+  // choosing. Only what was saved comes back — a note typed and never saved is gone, which is the
+  // point of the rule rather than a gap in it.
   for (const article of root.querySelectorAll("[data-question]")) {
     const item = answers.items[article.getAttribute("data-question")];
     if (!item) continue;
@@ -57,16 +90,19 @@ function restoreQuestionPage(root, store) {
   }
 }
 
-function bindQuestionPage(root, store) {
-  // Typing is saved as it happens rather than on blur: a reader who closes the tab mid-sentence
-  // should still find the sentence. `change` alone would drop it.
+/**
+ * Choices and notes go into the draft, and no further. `input` still fires on every keystroke so
+ * that the draft is always what is on the screen — that is what makes the leave warning accurate —
+ * but nothing here touches storage.
+ */
+function bindQuestionPage(root, draft) {
   root.addEventListener("input", (event) => {
     const target = event.target;
     if (isFeedbackControl(target)) return;
     const note = target?.getAttribute?.("data-note");
     const article = target?.closest?.("[data-question]");
     if (!note || !article) return;
-    store.write(withNote(store.read(), article.getAttribute("data-question"), note, target.value));
+    draft.set(withNote(draft.read(), article.getAttribute("data-question"), note, target.value));
   });
 
   root.addEventListener("change", (event) => {
@@ -77,11 +113,32 @@ function bindQuestionPage(root, store) {
     const id = article.getAttribute("data-question");
 
     if (target.type === "radio") {
-      store.write(withAnswer(store.read(), id, target.value));
+      draft.set(withAnswer(draft.read(), id, target.value));
       return;
     }
     const note = target.getAttribute?.("data-note");
-    if (note) store.write(withNote(store.read(), id, note, target.value));
+    if (note) draft.set(withNote(draft.read(), id, note, target.value));
+  });
+}
+
+/**
+ * The warning before answers are lost.
+ *
+ * With nothing saving on its own, a reload or a closed tab takes the unsaved answers with it — so
+ * the reader is asked first. The words are the browser's own and cannot be set: every current
+ * browser ignores a custom string here and shows its own "leave site?" dialog, which is why none is
+ * written. Calling `preventDefault` is what asks for it; `returnValue` is the older spelling that
+ * some browsers still require.
+ *
+ * It fires on a page turn too, because a page turn is a real navigation on this site — ten Parts
+ * are ten documents. That is the honest behaviour under this rule: leaving Part 3 with unsaved
+ * answers loses them, so leaving Part 3 with unsaved answers asks.
+ */
+function bindLeaveWarning(draft) {
+  addEventListener("beforeunload", (event) => {
+    if (!draft.dirty()) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
 }
 
@@ -549,13 +606,15 @@ function exportFeedback(store, slug) {
  * value. The number is new — the bar used to carry none — and it is the same figure in all three
  * places, read from the one store.
  */
-function showProgress(store) {
+function showProgress(draft) {
   const bar = document.querySelector("[data-progress-total]");
   const fill = bar?.querySelector("[data-progress-fill]");
   if (!bar || !fill) return;
   const total = Number(bar.getAttribute("data-progress-total")) || 0;
   if (!total) return;
-  const answered = Math.min(answeredCount(store.read()), total);
+  // The draft, not the store: the bar is about how far through the questions the reader is, which
+  // is true the moment they choose, not the moment they save.
+  const answered = Math.min(answeredCount(draft.read()), total);
   fill.style.width = `${(answered / total) * 100}%`;
   bar.setAttribute("aria-valuenow", String(answered));
   const count = document.querySelector("[data-progress-count]");
@@ -575,17 +634,40 @@ function showProgress(store) {
  * So the button writes what is held and reports the result: how many answers are stored, or that
  * they are not being stored at all.
  */
-function bindSave(store) {
+function bindSave(draft, root) {
   const button = document.querySelector("[data-save]");
   const state = document.querySelector("[data-save-state]");
   if (!button || !state) return;
+
+  // The line says which of the two states the page is in, so that "saved" is something the reader
+  // can see rather than assume. Unsaved is stated as soon as there is something unsaved, because
+  // being told at the leave dialog is being told too late.
+  const show = (text, error = false) => {
+    state.hidden = !text;
+    state.textContent = text || "";
+    state.classList.toggle("is-error", Boolean(error));
+  };
+  const showPending = () => {
+    if (draft.dirty()) show(DOCK_COPY.unsaved);
+    else show("");
+  };
+
   button.addEventListener("click", () => {
-    const answers = store.read();
-    const saved = store.write(answers);
-    state.hidden = false;
-    state.textContent = saved ? DOCK_COPY.saved(answeredCount(answers)) : DOCK_COPY.saveFailed;
-    state.classList.toggle("is-error", !saved);
+    const answers = draft.read();
+    if (!draft.dirty()) {
+      show(DOCK_COPY.alreadySaved(answeredCount(answers)));
+      return;
+    }
+    const written = draft.commit();
+    show(written ? DOCK_COPY.saved(answeredCount(answers)) : DOCK_COPY.saveFailed, !written);
   });
+
+  for (const type of ["change", "input"]) {
+    root.addEventListener(type, (event) => {
+      if (isFeedbackControl(event.target)) return;
+      showPending();
+    });
+  }
 }
 
 function start() {
@@ -604,13 +686,15 @@ function start() {
 
   const questions = document.querySelector(".questions");
   if (!questions) return;
-  restoreQuestionPage(questions, store);
-  bindQuestionPage(questions, store);
-  showProgress(store);
+  const draft = createDraft(store);
+  restoreQuestionPage(questions, draft);
+  bindQuestionPage(questions, draft);
+  showProgress(draft);
   bindInvite();
-  bindSave(store);
-  // Every recorded answer moves the bar, including one made on this page a moment ago.
-  questions.addEventListener("change", () => showProgress(store));
+  bindSave(draft, questions);
+  bindLeaveWarning(draft);
+  // Every answer moves the bar, including one made on this page a moment ago and not yet saved.
+  questions.addEventListener("change", () => showProgress(draft));
   startFeedback(slug);
 }
 

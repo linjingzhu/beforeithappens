@@ -89,6 +89,11 @@ import('./src/packs.js').then(async (packs) => {
   const { DOCK_COPY } = await import('./site/dock-copy.js');
   walk(DOCK_COPY);
   const pages = await import('./site/pages.js');
+  // The policy's text is fixed and known now; only whether it is emitted is gated on the owner's
+  // details. Scanning only the emitted pages would leave it uncovered until the day it appears,
+  // which is the day a missing glyph would first be seen. Its identity lines carry the owner's own
+  // name and address, which no subset can anticipate — regenerate after filling those in.
+  walk(pages.privacyCopy());
   for (const page of pages.standingPages()) {
     parts.push(page.title, page.description);
     for (const section of page.sections) parts.push(section.heading, ...section.paragraphs);
