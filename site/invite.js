@@ -85,8 +85,15 @@ export function bindInvite() {
 
   // KakaoTalk and Instagram publish nothing a page can open with a link in it without loading their
   // script, and this site loads no third-party script. On a phone the device's own sheet has both
-  // apps in it, so the button opens that; on a desktop, where there is no sheet, it copies the link
-  // and names the app to paste it into. Either way the button is named for where the link is going.
+  // apps in it, so the button opens that. On a desktop, where there is no sheet, the button does
+  // the two things that are possible: it puts the link on the clipboard, then opens the app — the
+  // KakaoTalk client through the scheme it registers on Windows and macOS, Instagram through its
+  // web inbox, which is where a desktop sends a message — and says the link is ready to paste.
+  //
+  // Copy first, then open. The clipboard needs this document focused, and opening the app takes
+  // the focus with it; the other order copies nothing and reports a success that did not happen.
+  // If the app is not installed the scheme opens nothing, and the copied link and the sentence
+  // saying so are still on the screen — the button is named for where the link is going.
   for (const id of ["kakao", "instagram"]) {
     ways.get(id)?.addEventListener("click", async () => {
       if (navigator.share) {
@@ -99,8 +106,32 @@ export function bindInvite() {
         return;
       }
       await copy(INVITE_COPY.pasteInto(INVITE_COPY[id]));
+      openDesktop(id);
     });
   }
+}
+
+/**
+ * How a desktop reaches each app. A scheme is opened in a hidden frame so an unhandled one leaves
+ * the page where it is rather than navigating it to an error; a web address is opened in a new tab.
+ */
+const DESKTOP_APPS = Object.freeze({
+  kakao: { scheme: "kakaotalk://" },
+  instagram: { url: "https://www.instagram.com/direct/inbox/" }
+});
+
+function openDesktop(id) {
+  const target = DESKTOP_APPS[id];
+  if (!target) return;
+  if (target.url) {
+    window.open(target.url, "_blank", "noopener");
+    return;
+  }
+  const frame = document.createElement("iframe");
+  frame.hidden = true;
+  frame.src = target.scheme;
+  document.body.append(frame);
+  setTimeout(() => frame.remove(), 2000);
 }
 
 // Bound on import: every page that carries the control also carries this module, and the function

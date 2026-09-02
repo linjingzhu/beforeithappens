@@ -1018,11 +1018,17 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   assert.match(bind, /sms:\?&body=/);
   assert.match(bind, /https:\/\/line\.me\/R\/share\?text=/);
   // The other two are not: no third-party script, so on a phone they open the device's sheet and
-  // on a desktop they copy the link and name the app to paste it into.
+  // on a desktop they copy the link, then open the app, and say the link is ready to paste.
   assert.match(bind, /\["kakao", "instagram"\]/);
   assert.match(bind, /if \(navigator\.share\)/);
-  assert.match(bind, /INVITE_COPY\.pasteInto\(INVITE_COPY\[id\]\)/);
-  assert.equal(/kakao\.com|instagram\.com|sdk/i.test(bind), false, "nothing of theirs is loaded");
+  // Copy before open: the clipboard needs the document focused, and opening the app takes it.
+  const copyAt = bind.indexOf("await copy(INVITE_COPY.pasteInto(INVITE_COPY[id]))");
+  const openAt = bind.indexOf("openDesktop(id)");
+  assert.ok(copyAt > 0 && openAt > copyAt, "the link is on the clipboard before the app opens");
+  assert.match(invite, /kakao: \{ scheme: "kakaotalk:\/\/" \}/, "KakaoTalk by the scheme its client registers");
+  assert.match(invite, /instagram: \{ url: "https:\/\/www\.instagram\.com\/direct\/inbox\/" \}/, "Instagram by its web inbox");
+  assert.match(invite, /window\.open\(target\.url, "_blank", "noopener"\)/);
+  assert.equal(/<script|sdk|kakao\.com/i.test(invite), false, "nothing of theirs is loaded — addresses are opened, not scripts");
   // A refused clipboard is reported, not reported as a success.
   assert.match(bind, /INVITE_COPY\.copyFailed/);
   // Closing: the button, and a click that lands on the dialog itself rather than on its contents.
