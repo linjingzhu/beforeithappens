@@ -37,6 +37,12 @@ export const SITE_COPY = Object.freeze({
    * than becoming a control: there is still nothing here to press and still no date being promised.
    */
   comingLabel: "곧 만나요!",
+  /**
+   * The map at the right edge of a question page: one mark per question, the current one bold. A
+   * screen reader gets the list by name; on the screen it is a column of dashes.
+   */
+  mapLabel: "이 쪽의 질문",
+  mapItem: (n) => `${n}번 질문`,
   /*
    * The home page's own words, given by the owner as one paragraph.
    *
@@ -309,6 +315,35 @@ ${progressBar(total)}
 }
 
 /**
+ * The map: a column of marks at the right edge of the screen, one per question on this page.
+ *
+ * At the owner's word, and then at the owner's second word: it began as a line with marks spaced
+ * by where each question sits, the current one bold with its number beside it; the line and the
+ * numbers went, and the marks closed up. What is left is the useful part — ten small dashes, in
+ * order, the one being read drawn longer and darker, each a press away from its question.
+ *
+ * Rendered as a list of real anchors, so without scripting it is still a table of contents that
+ * jumps; the script only keeps the current mark moving as the reader scrolls. `title` carries the
+ * question, so a hover names what a mark is for, and `aria-label` names it for a screen reader.
+ */
+function questionMap(model) {
+  const questions = model?.questions || [];
+  if (!questions.length) return "";
+  const marks = questions
+    .map((question) => {
+      const id = `q-${escapeHtml(question.id)}`;
+      const name = escapeHtml(SITE_COPY.mapItem(question.number));
+      return `          <li><a class="qmap-mark" href="#${id}" data-qmap-for="${id}" title="${question.number}. ${escapeHtml(question.title)}" aria-label="${name}"></a></li>`;
+    })
+    .join("\n");
+  return `      <nav class="qmap" aria-label="${escapeHtml(SITE_COPY.mapLabel)}" data-qmap>
+        <ol>
+${marks}
+        </ol>
+      </nav>`;
+}
+
+/**
  * The chrome above the reading column: the pack's name, and its Parts.
  *
  * It lives in the shell rather than in the page renderer because it is the same on all ten Parts —
@@ -435,6 +470,19 @@ function sheetPager(slug) {
  * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
  * own address, which is exactly what the invitation is anyway.
  */
+/**
+ * A paragraph set one sentence to a line, at the owner's word for the invitation block. The copy
+ * stays one string — it is read aloud, hashed and scanned as one — and only the markup breaks it,
+ * at sentence ends, so a sentence that is too long for the column still wraps inside its own line.
+ */
+function sentenceLines(text) {
+  return String(text)
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean)
+    .map((sentence) => `<span class="line">${escapeHtml(sentence)}</span>`)
+    .join("");
+}
+
 function callToAction(model, site = SITE) {
   // What the invitation points at. On a pack's own page it is that pack; elsewhere — the home page
   // and the prose pages — it is the pack itself while there is only one, and the list once there is
@@ -446,7 +494,7 @@ function callToAction(model, site = SITE) {
     : (packs.length === 1 ? escapeHtml(packs[0].path) : "/");
   return `      <aside class="cta">
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
-        <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
+        <p>${sentenceLines(SITE_COPY.ctaBody)}</p>
         <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
       </aside>`;
 }
@@ -635,7 +683,7 @@ ${rail(site, currentSlug)}
     <div class="stage">
 ${stageHead(chrome)}${body}
       <footer class="foot">
-        <p>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</p>
+        <p>${escapeHtml(site.publisher)}</p>
 ${footerNav(site)}
       </footer>
     </div>
@@ -657,7 +705,8 @@ ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
 ${pager(model)}
       </main>
-${bottomDock(model)}`;
+${bottomDock(model)}
+${questionMap(model)}`;
   return document_({
     site,
     head: `${headTags(model, site)}\n  ${structuredData(model, site)}`,

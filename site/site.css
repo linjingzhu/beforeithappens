@@ -1476,15 +1476,18 @@ html { scroll-padding-top: 120px; }
   line-height: 1.6;
 }
 
+/* Centred, one sentence to a line, at the owner's word. `.line` is what `sentenceLines` emits. */
 .cta {
   background: var(--ab-soft);
   border-radius: 12px;
   padding: 24px;
   margin: 48px 0 0;
+  text-align: center;
 }
 
-.cta h2 { margin: 0 0 8px; font-size: 20px; }
+.cta h2 { margin: 0 0 8px; font-size: 20px; text-wrap: balance; }
 .cta p { margin: 0 0 16px; }
+.cta .line { display: block; }
 
 /*
  * Ink, not accent. On the last Part this sits a few lines under 결과 보기, and two accent pills
@@ -1669,6 +1672,74 @@ html { scroll-padding-top: 120px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* A jump from the question map glides where the reader has not asked for motion to be cut. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+/*
+ * The question map: a column of dashes at the right edge, one per question, the current one bold.
+ *
+ * Fixed and centred on the viewport's height. The marks sit close — a 16px pitch, so ten of them
+ * are a 160px column that reads as one control rather than as furniture down the whole edge. Each
+ * anchor is the full 16px tall for the finger, and draws a 2px dash; the current one draws longer,
+ * thicker and in the accent. Nothing but the anchors takes a press (`pointer-events: none` on the
+ * frame), so the column does not steal taps from the card edge it overlays.
+ */
+.qmap {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  pointer-events: none;
+}
+
+.qmap ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.qmap-mark {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 16px;
+  padding: 0 10px 0 12px;
+  pointer-events: auto;
+}
+
+.qmap-mark::after {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ab-accent-alt);
+  transition: width 0.15s, height 0.15s, background-color 0.15s;
+}
+
+.qmap-mark:hover::after,
+.qmap-mark:focus-visible::after { width: 16px; }
+
+.qmap-mark.is-current::after {
+  width: 22px;
+  height: 4px;
+  background: var(--ab-accent);
+}
+
+.qmap-mark:focus-visible {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+
+/* A jump lands the card a little below the top edge rather than flush against it. */
+.q { scroll-margin-top: 16px; }
 
 /* Answering. The choices are labels around real inputs, so the whole row is a target. */
 .q-choice {

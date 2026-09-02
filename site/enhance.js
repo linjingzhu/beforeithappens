@@ -561,6 +561,67 @@ function pinCurrentTab() {
   strip.scrollLeft += left - padding;
 }
 
+/**
+ * The question map: the column of marks at the right edge, one per question.
+ *
+ * The marks are in the markup, in order; this keeps the one being read marked as the reader
+ * scrolls. "Being read" is the last card whose top has passed a reading line a third of the way
+ * down the viewport, which is where a heading sits once the reader has scrolled to it; before the
+ * first card that is the first, and at the end of the page it is the last.
+ *
+ * A press is the anchor's own jump — nothing here scrolls the page, which is a rule of this file
+ * (see the note on `restorePinned` below) — and the mark is moved at once rather than after the
+ * scroll settles. `bindSaveOnNavigation` already ignores same-document links, and the sheet's
+ * `scroll-behavior` decides whether the jump glides, honouring the reduced-motion setting there.
+ */
+function startQuestionMap(questions) {
+  const map = document.querySelector("[data-qmap]");
+  if (!map) return;
+  const marks = [...map.querySelectorAll("[data-qmap-for]")];
+  const cards = marks.map((mark) => document.getElementById(mark.getAttribute("data-qmap-for")));
+  if (!marks.length || cards.some((card) => !card)) return;
+
+  const top = (node) => node.getBoundingClientRect().top + scrollY;
+
+  let current = -1;
+  const mark = (index) => {
+    if (index === current) return;
+    current = index;
+    marks.forEach((node, i) => {
+      node.classList.toggle("is-current", i === index);
+      if (i === index) node.setAttribute("aria-current", "true");
+      else node.removeAttribute("aria-current");
+    });
+  };
+
+  const reading = () => {
+    const line = scrollY + innerHeight / 3;
+    const atEnd = Math.ceil(scrollY + innerHeight) >= document.documentElement.scrollHeight - 1;
+    if (atEnd) return cards.length - 1;
+    let index = 0;
+    cards.forEach((card, i) => {
+      if (top(card) <= line) index = i;
+    });
+    return index;
+  };
+
+  let ticking = false;
+  const follow = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      mark(reading());
+    });
+  };
+
+  marks.forEach((node, i) => node.addEventListener("click", () => mark(i)));
+
+  mark(reading());
+  addEventListener("scroll", follow, { passive: true });
+  addEventListener("resize", follow);
+}
+
 /*
  * There was a `rememberPinned` / `restorePinned` pair here that scrolled a newly opened Part to
  * where the tab bar pins, so turning a Part while scrolled kept the bar in place. It is gone,
@@ -742,6 +803,7 @@ function start() {
   bindResume(draft);
   bindSaveOnNavigation(draft);
   bindLeaveWarning(draft);
+  startQuestionMap(questions);
   // Every answer moves the bar, including one made on this page a moment ago and not yet saved.
   questions.addEventListener("change", () => showProgress(draft));
   startFeedback(slug);

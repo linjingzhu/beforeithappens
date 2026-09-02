@@ -62,13 +62,20 @@ export const SITE = Object.freeze({
    * who is not a registered business has neither, and a policy is not improved by an empty field.
    * They are printed when present and omitted when not.
    */
+  /**
+   * Who signs the page. The footer's first line, on every page, at the owner's word (2026-09-02):
+   * the studio's name, not the site's — `name` and `tagline` already stand in the rail and the
+   * browser tab, and a footer that repeated them said nothing new. Written as the owner writes it,
+   * with two capitals; `operator.business` keeps the registered spelling for the privacy policy.
+   */
+  publisher: "AfterScent",
   operator: Object.freeze({
     /** 상호. Given by the owner. */
     business: "afterscent",
     /** 대표자 성명. Also stands as 개인정보 보호책임자 unless `officer` says otherwise. */
     owner: "Jeongsu Lim",
-    /** 주소 — 사업장 소재지. Given by the owner 2026-09-02. */
-    address: "서울시 구로구 개봉로 20길 6",
+    /** 주소 — 사업장 소재지, 지번으로. Given by the owner 2026-09-02 as "481, Gaebong-dong, Guro-gu, Seoul". */
+    address: "서울특별시 구로구 개봉동 481",
     registration: "",
     mailOrder: "",
     /** 개인정보 보호책임자, when it is not the 대표자. */
