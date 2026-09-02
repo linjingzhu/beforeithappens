@@ -87,11 +87,12 @@ test("the emergency appendix is not published, and cannot be by accident", async
   assert.ok(RESULT_FORBIDDEN.length > 0, "the sheet still forbids a verdict vocabulary");
 });
 
-test("the pack is built and ready, and the site does not publish it today", async () => {
+test("the pack is built, and since the owner's word on 2026-09-02 the site publishes it", async () => {
   const { PUBLISHED } = await import("../site/config.js");
-  assert.equal(PUBLISHED.some((entry) => entry.packId === "pregnancy-100"), false);
-  assert.equal(pageModel("pregnancy", 1, {}), null, "no page is emitted for it");
-  // Registered all the same, so publishing is adding one entry.
+  const entry = PUBLISHED.find((candidate) => candidate.packId === "pregnancy-100");
+  assert.ok(entry, "one entry in the published list — the whole reason that list is written out");
+  assert.equal(entry.slug, "pregnancy");
+  assert.equal(pageModel("pregnancy", 1, {})?.questions.length, 10, "and Part 1 is emitted for it");
   const { findPack } = await import("../src/packs.js");
   assert.equal(findPack("pregnancy-100")?.questions.length, 100);
 });

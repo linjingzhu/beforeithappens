@@ -112,9 +112,11 @@ export const SITE = Object.freeze({
  * that shelf. `marriage-100` is the site's own pack — a hundred questions, free — and is a
  * different pack from the app's twelve-question `marriage`, which stays sold and stays private.
  *
- * `pregnancy-100` is registered and built and deliberately **not** here. Being in the registry is
- * having content; being in this list is being published, and the second is a decision. Putting it
- * back is one entry — which is the whole reason this list is written out rather than derived.
+ * Being in the registry is having content; being in this list is being published, and the second
+ * is a decision — which is the whole reason this list is written out rather than derived.
+ * `pregnancy-100` sat registered and unpublished until the owner decided, on 2026-09-02, to open
+ * it in the same shape as the first. The three that remain in `COMING` below are the ones still
+ * waiting on that decision (and, for most of them, on the writing).
  */
 /**
  * The scenes on the home page, one per pack, cropped from the owner's sheets in `brand/` by
@@ -156,7 +158,8 @@ const shareCard = (name) => Object.freeze({ src: `/brand/share-${name}.jpg`, wid
 export const SHARE_CARDS = Object.freeze({
   /** Every page that is not a pack — the home page and the prose pages — shares this one. */
   home: shareCard("home"),
-  marriage: shareCard("marriage")
+  marriage: shareCard("marriage"),
+  pregnancy: shareCard("pregnancy")
 });
 
 /**
@@ -182,7 +185,6 @@ export const SHARE_CARDS = Object.freeze({
  */
 export const COMING = Object.freeze([
   Object.freeze({ id: "dating", scene: SCENES.dating, alt: "반지를 사이에 둔 두 사람" }),
-  Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
   Object.freeze({ id: "birth", scene: SCENES.birth, alt: "갓 태어난 아이를 안은 두 사람" }),
   Object.freeze({ id: "education", scene: SCENES.education, alt: "아이와 함께 그림책을 펼친 두 사람" }),
   Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 나이 든 두 사람" })
@@ -208,6 +210,23 @@ export const PUBLISHED = Object.freeze([
       "그 다름을 하나씩 알아가는 순간, 결혼은 조금 더 따뜻하고 선명한 약속이 되지 않을까요?"
     ]),
     /** Shown above the questions, before the first one. */
+    lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
+  }),
+  /**
+   * The second pack, published 2026-09-02 at the owner's word, in the same shape as the first. Its
+   * questions come from `src/questions-pregnancy-100.js` — the editorial build converted to the
+   * schema, without its emergency appendix (see the note at the top of that file).
+   */
+  Object.freeze({
+    packId: "pregnancy-100",
+    slug: "pregnancy",
+    title: "임신 100제",
+    navTitle: "임신 100제",
+    tagline: "열 달 동안, 우리는 어떤 두 사람이 되어 갈까요?",
+    description: Object.freeze([
+      "아이가 오는 소식은 두 사람의 몸과 일상, 돈과 관계를 한꺼번에 흔듭니다.",
+      "그 흔들림 속에서 무엇을 지키고 싶은지 미리 말해 두면, 열 달이 조금 덜 두렵지 않을까요?"
+    ]),
     lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
   })
 ]);

@@ -76,6 +76,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | N7 | 웹 · M1 | **Write `혼자만의 연애` 100문항** | 🔄 | The long pole, and it is writing, not code. ~31,000자. Everything in step 7 below waits on it | `docs/WEB_SERVICE_STRATEGY.md` |
 | N8 | 웹 · M1 | **육아 홀더의 장면 그림** | 🟢 | 소유자가 두 번째 시트를 주셨습니다(2026-09-02) — 위: **교육**, 좌하단: **노년**. 둘 다 잘라 붙였습니다. 노후는 그동안 첫 시트의 벤치 그림을 빌려 쓰고 있었는데(소유자가 그렇게 짚어 주셨고, 달리 쓸 그림이 없었습니다) 이제 노후용으로 그려진 그림이 있어 그쪽으로 바꿨습니다. 시트의 우하단 칸은 소유자가 이름 붙이지 않아 쓰지 않았습니다. **남은 것은 육아 한 컷입니다** — 같은 클레이풍, 흰 배경, 같은 프레이밍. 자르는 좌표 한 줄과 `COMING` 한 줄로 붙습니다. (첫 시트의 벤치 그림은 이제 아무 데도 쓰이지 않습니다. 원본에서 그 책 라벨이 `Childcare`라 육아로 돌릴 수도 있는데, 카드 크기에서는 글자가 약 6px이라 읽히지 않습니다 — 소유자 판단이 필요합니다) | `scripts/build-brand-assets.py`, `site/config.js` |
 | N9 | 웹 · M2 | **뉴스레터 — 남은 결정과 선행 조건** | 🟢 | **D1은 정해졌습니다(2026-09-02): 자체 릴레이 + Resend.** 그래서 N6(Resend 도메인 인증)이 이 기능의 필수 선행이 됐습니다. 남은 결정: **D2** 엔드포인트 위치(권장 Cloudflare Worker + D1), **D3** 자문(광고성 판단, §28의8①3호 성립 여부, 제N조 문안, Resend 법인명·연락처), **D4** 메일 제목 수위, **D5** 「곧 만나요!」 홀더에 이름을 붙일지. 켜기 전에 처리방침 개정을 먼저 게시하고 30일을 기다립니다(명세 5-10) | `docs/proposals/newsletter-ko.md` §0-1 |
+| N10 | 웹 · **M1** | **임신 100제 문안 편집 검토** | 🟢 | 소유자 결정(2026-09-02)으로 `pregnancy-100`을 결혼 100제와 같은 형식으로 공개했습니다. 공개하면서 잰 것: 질문 제목 100개와 예시 100개는 전부 다르지만, **선택지 400개 중 서로 다른 문안은 136개, 첫 문장은 36가지, 가치 이름도 36가지**이고 파트 소개문은 3가지가 돌아가며 쓰입니다 — 같은 네 답이 뒤쪽 문장만 바뀌어 여러 질문에 되풀이됩니다. 읽는 사람에게는 틀 안에서 찍어 낸 것으로 보일 수 있고, 애드센스의 「콘텐츠 부족」 판정에도 불리합니다. `question-packs/README.md`가 요구하는 문항별 편집 검토를 거쳐 `question-packs/pregnancy.html`을 고치고 `node scripts/build-pregnancy-100.mjs`로 다시 생성하면 사이트에 반영됩니다 | `src/questions-pregnancy-100.js`, `question-packs/pregnancy.html` |
 
 ---
 
@@ -95,7 +96,7 @@ So the order is: write, publish, then decide whether to monetise — not the oth
 | X5e | 웹 · **M1** | **Google Search Console: verify the property, submit the sitemap** | 🟢 | X5c | The build emits `/sitemap.xml` and a `robots.txt` that points at it. 인증은 둘 중 하나: DNS TXT(후이즈의 A 레코드와 같은 화면) **또는 `SITE.verification.google`에 토큰 한 줄** — 홈 `<head>`에 `google-site-verification` 메타가 붙습니다(2026-09-02 추가). 인증 뒤 사이트맵 제출: `https://lovemedialogue.com/sitemap.xml` |
 | X5f | 웹 · **M1** | **Naver Search Advisor 등록** | 🟢 | X5c | searchadvisor.naver.com에서 사이트 추가 → 발급 토큰을 `SITE.verification.naver`에 넣어 배포 → 「사이트 소유 확인」 → 사이트맵 제출(같은 주소). 한국어 서비스에서 네이버를 빼면 유입 경로 하나를 닫아 두는 것(`docs/proposals/seo-ko.md` 2-2) |
 | X6 | 웹 | Result sheet delivery by email | ⏳ | N6, X4 | Show on screen first, delivery opt-in, neutral subject line by default |
-| X7 | 웹 | AdSense application | 🟢 | — | The site is live over HTTPS, carries a 소개 page, **and now publishes `/privacy/`** — N5 is done, so nothing blocks the application. Note the page count: ten Parts is on the low side for review, and publishing a second pack is one entry in `site/config.js`. In-page units only, never on the page turn |
+| X7 | 웹 | AdSense application | 🟢 | — | The site is live over HTTPS, carries a 소개 page, **and now publishes `/privacy/`** — N5 is done, so nothing blocks the application. 두 번째 팩(임신 100제)이 2026-09-02에 공개되어 열 쪽이 스무 쪽이 됐습니다 — 심사에 유리하나 N10의 문안 반복은 불리합니다. In-page units only, never on the page turn |
 | X8 | 웹 | KakaoTalk delivery | ⏳ | X6 | Needs a 비즈니스 채널, a 발신프로필, and per-template review. A lead time, not a task |
 
 ---

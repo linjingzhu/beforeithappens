@@ -1216,6 +1216,14 @@ html { scroll-padding-top: 120px; }
   }
 
   .dock-clear { min-height: 40px; padding: 0 6px; font-size: 13px; }
+
+  /* The page's own right padding is 16px; the marks stay inside it so they never sit on a word.
+     Two classes, because the wide rules are written later in the file and would win otherwise. */
+  .qmap .qmap-mark { padding: 0 4px 0 8px; }
+  .qmap .qmap-mark::after { width: 8px; }
+  .qmap .qmap-mark:hover::after,
+  .qmap .qmap-mark:focus-visible::after { width: 10px; }
+  .qmap .qmap-mark.is-current::after { width: 12px; }
 }
 
 /* 360px — the common Galaxy width: three buttons and the column fit in 336px only with less air. */

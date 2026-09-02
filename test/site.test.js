@@ -62,14 +62,14 @@ test("an unpublished pack, or a page past the end, is a definite no", () => {
 test("the site publishes only what it names, never whatever the registry happens to hold", () => {
   // The registry holds the app's content too. A site that published everything it found would put
   // a pack in front of the public the first time someone registered one.
-  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100"]);
-  // Registered and built, and deliberately not published — the registry is content, this is a
-  // decision, and the two are not the same thing.
+  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100", "pregnancy-100"]);
+  // The registry is content, this list is a decision, and the two are not the same thing: the
+  // pregnancy pack sat registered and unpublished until the owner decided (2026-09-02).
   assert.equal(questionsFor("pregnancy-100").length, 100, "the pack exists");
-  assert.equal(pageModel("pregnancy", 1, { site }), null, "and the site emits no page for it");
+  assert.equal(pageModel("pregnancy", 1, { site })?.questions.length, 10, "and the site emits its pages");
   assert.equal(pageModel("marriage-preparation", 1, { site }), null, "the app's pack is not on the site");
   assert.equal(pageModel("dating", 1, { site }), null);
-  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage"]);
+  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage", "pregnancy"]);
 });
 
 test("the model knows where it is in the series", () => {
@@ -650,7 +650,7 @@ test("only the site is deployed to Pages, never the app", async () => {
   assert.ok(workflow.includes("npm test"), "a broken generator fails before it publishes");
 });
 
-test("the rail carries the mark on every kind of page, and no nav while there is one pack", () => {
+test("the rail carries the mark on every kind of page, and a nav now that there are two packs", () => {
   // Checked on all three page kinds because the shell is where that usually rots.
   const pages = [
     renderQuestionPage(pageModel("marriage", 1, { site }), site),
@@ -663,15 +663,20 @@ test("the rail carries the mark on every kind of page, and no nav while there is
     assert.ok(has(html, 'src="/brand/logo.png"'), "and the mark");
   }
 
-  // With one pack published the nav would name the page the reader is already on, under a heading
-  // for a category with one member. So the rail carries the mark alone; the nav returns at two.
-  assert.equal(indexModel({ site }).packs.length, 1, "one pack today");
+  // With one pack the nav would have named the page the reader was already on, so the rail carried
+  // the mark alone. At two the nav is a list worth having: one entry per published pack, in order,
+  // the current one marked on a pack's own pages.
+  assert.equal(indexModel({ site }).packs.length, 2, "two packs since 2026-09-02");
   for (const html of pages) {
-    assert.equal(has(html, "rail-nav"), false, "no nav for a list of one");
-    assert.equal(has(html, "rail-item"), false);
-    // On the markup, not the word: "질문집" is also the label on the first page's back link.
-    assert.equal(has(html, "rail-label"), false, "and no heading for it either");
+    assert.ok(has(html, "rail-nav"), "a nav for a list of two");
+    assert.ok(has(html, 'class="rail-item is-current"') || has(html, 'class="rail-item"'), "with items");
+    assert.ok(has(html, 'href="/marriage/"') && has(html, 'href="/pregnancy/"'), "one per pack");
+    assert.ok(has(html, "rail-label"), "under its heading");
   }
+  const question = pages[0];
+  assert.equal((question.match(/class="rail-item is-current"/g) || []).length, 1, "the current pack is marked once");
+  const home = pages[1];
+  assert.equal(has(home, "rail-item is-current"), false, "and nothing is current on the home page");
 });
 
 test("the Part tabs are links to real pages, one per Part, with exactly one marked current", () => {
@@ -1077,8 +1082,11 @@ test("the home page shows what can be read now, and what is coming as a picture 
   // same thing twice.
   const published = html.slice(html.indexOf('<li class="card">'), html.indexOf('<li class="card is-coming">'));
   assert.ok(published.includes(SCENES.marriage.src));
+  assert.ok(published.includes(SCENES.pregnancy.src), "the second pack carries its scene too");
   assert.ok(published.includes('alt=""'));
   assert.ok(published.includes('href="/marriage/"') && published.includes("100개의 질문"));
+  assert.ok(published.includes('href="/pregnancy/"') && published.includes("임신 100제"));
+  assert.ok(published.indexOf('href="/marriage/"') < published.indexOf('href="/pregnancy/"'), "in the published order");
 
   // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
   // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
@@ -1101,13 +1109,16 @@ test("the home page shows what can be read now, and what is coming as a picture 
   }
 
   // The names of the packs that are coming must not leak into the page anywhere else either —
-  // the design withholds them on purpose.
-  assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
+  // the design withholds them on purpose. (임신 is published now and named; 육아 is still coming.)
+  assert.equal(html.includes("육아 100제") || html.includes("출산 100제"), false);
+  assert.equal(COMING.some((entry) => entry.id === "pregnancy"), false, "a published pack is no longer a holder");
 });
 
 test("the whole published card is the control, without swallowing the link's name", () => {
   const html = renderIndex(indexModel({ site }), site);
-  const card = html.slice(html.indexOf('<li class="card">'), html.indexOf("</li>"));
+  // From the card's own start: the rail's nav puts list items on the page before the cards now.
+  const start = html.indexOf('<li class="card">');
+  const card = html.slice(start, html.indexOf("</li>", start));
 
   // The anchor stays on the heading. Wrapping one around the card would look identical and read
   // very differently: an anchor takes its accessible name from everything inside it, so a screen
@@ -1115,6 +1126,11 @@ test("the whole published card is the control, without swallowing the link's nam
   assert.match(card, /<h2><a href="\/marriage\/">결혼 100제<\/a><\/h2>/);
   assert.equal(/<li class="card">\s*<a /.test(card), false, "the card is not wrapped in a link");
   assert.equal((card.match(/<a /g) || []).length, 1, "one link on the card, not one per element");
+  // The second published card is built by the same code and holds to the same rule.
+  const secondStart = html.indexOf('<li class="card">', html.indexOf('<li class="card">') + 1);
+  const second = html.slice(secondStart, html.indexOf("</li>", secondStart));
+  assert.match(second, /<h2><a href="\/pregnancy\/">임신 100제<\/a><\/h2>/);
+  assert.equal((second.match(/<a /g) || []).length, 1);
 
   // The hit area is a stretched pseudo-element on that link, over a positioned card.
   const css = readFileSync("site/site.css", "utf8");
@@ -1794,10 +1810,12 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   assert.ok(sheet.includes(SITE_COPY.ctaAction));
   assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
   assert.match(sheet, /<a class="cta-action" href="\/marriage\/" data-invite>/);
-  // The panel calls this link a 질문집 주소, so from a page with no pack of its own it points at the
-  // pack while there is one — not at the list, which would cost the other person a step.
+  // The panel calls this link a 질문집 주소. On a pack's own sheet it is that pack; from a page with
+  // no pack of its own it pointed at the pack while there was one, and now that there are two it
+  // points at the list, where the other person chooses.
+  assert.match(renderResultPage("pregnancy", published, site), /<a class="cta-action" href="\/pregnancy\/" data-invite>/);
   const home = renderIndex(indexModel({ site }), site);
-  assert.match(home, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.match(home, /<a class="cta-action" href="\/" data-invite>/);
 
   // Centred and one sentence to a line, at the owner's word: the body's two sentences are two
   // block lines, and the copy itself is still one string.
