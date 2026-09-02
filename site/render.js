@@ -24,7 +24,6 @@ import { FEEDBACK_COPY } from "./feedback.js";
 export const SITE_COPY = Object.freeze({
   next: "다음",
   previous: "이전",
-  backToIndex: "질문집 목록",
   partsLabel: "파트",
   progressLabel: "답한 질문",
   /** Spelled out where there is room to spell it: the page's own heading. */
@@ -39,6 +38,16 @@ export const SITE_COPY = Object.freeze({
   whyLabel: "왜 묻는 질문인가요",
   notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
+  /*
+   * The bar's own words, and they are one word each. It used to say 질문집 목록 on Part 1, which is a
+   * phrase rather than a label: measured at 360px it needed most of a slot that also has to hold
+   * 이전 on the other nine Parts. 목록 says the same thing in a bar, and it is what the sheet's bar
+   * already says, so the two read as one control in two places.
+   */
+  navResult: "결과",
+  navQuestions: "질문",
+  navIndex: "목록",
+  barLabel: "아래 이동 막대",
   /* What a reader writes beside a question. Every line here is the pack's own wording. */
   depthLead: "이 선택은 내게",
   importancePlaceholder: "중요도를 선택해요",
@@ -274,23 +283,58 @@ ${progressBar(chrome.total)}
 }
 
 /**
- * The bottom control. Forward is the prominent one because forward is what a reader is doing; the
- * last Part offers the sheet instead, since there is no next Part to promise. The next Part is named
- * rather than counted — "다음 · 감정과 애정" tells you what you are about to be asked.
+ * The bottom control — and on a phone, the bar that stays at the bottom of the screen.
+ *
+ * Forward is the prominent one because forward is what a reader is doing; the last Part offers the
+ * sheet instead, since there is no next Part to promise. The next Part is named rather than counted
+ * — "다음 · 감정과 애정" tells you what you are about to be asked.
+ *
+ * **The middle slot offers the sheet whenever the forward control does not.** It used to hold
+ * "3 / 10", which the tab strip above already says by marking a numbered tab, and the cost of that
+ * duplication was real: the sheet was linked from Part 10 and nowhere else, so a reader who had
+ * answered thirty questions and wanted to see them had to walk to the end of the pack to find the
+ * only door. Now every Part has one route to it, and never two — on the last Part the forward
+ * control *is* the sheet, so the middle goes back to saying where you are.
+ *
+ * On a phone this whole nav is pinned to the bottom of the viewport (`site.css`, the narrow block).
+ * The page it sits on is ten questions long, each with a scene, four answers and three notes, so
+ * the Parts are otherwise reachable only by scrolling to an end — the strip at the top or this at
+ * the bottom. Pinned, it is under the thumb the entire way down.
  */
 function pager(model) {
   const nextPart = model.parts.find((part) => part.number === model.page + 1);
   const previous = model.previousPath
     ? `<a class="pager-prev" href="${escapeHtml(model.previousPath)}" rel="prev">${escapeHtml(SITE_COPY.previous)}</a>`
-    : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.backToIndex)}</a>`;
+    : `<a class="pager-prev" href="/">${escapeHtml(SITE_COPY.navIndex)}</a>`;
   const next = model.nextPath
     ? `<a class="pager-next" href="${escapeHtml(model.nextPath)}" rel="next">${escapeHtml(SITE_COPY.next)}<span class="pager-next-part">${escapeHtml(nextPart ? nextPart.title : "")}</span></a>`
     : `<a class="pager-next is-result" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.resultAction)}</a>`;
+  const middle = model.nextPath
+    ? `<a class="pager-mid" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.navResult)}</a>`
+    : `<span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
-        <span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>
+        ${middle}
         ${next}
       </nav>`;
+}
+
+/**
+ * The same bar on the sheet, because the sheet is a page of the pack too.
+ *
+ * Without it the sheet was a room with no door back. The invitation at its foot points at the
+ * pack's address, but `enhance.js` turns that control into a share sheet, so with scripting on
+ * there was no way back to the questions at all — only the mark in the corner, which goes to the
+ * index and needs a second tap to return. The middle slot names the page the reader is on rather
+ * than linking to it: a bar whose current position is also a link is a control that does nothing.
+ */
+function sheetPager(slug) {
+  const pack = slug ? `/${escapeHtml(slug)}/` : "/";
+  return `    <nav class="pager is-sheet" aria-label="${escapeHtml(SITE_COPY.barLabel)}">
+      <a class="pager-prev" href="${pack}">${escapeHtml(SITE_COPY.navQuestions)}</a>
+      <span class="pager-progress" aria-current="page">${escapeHtml(SITE_COPY.navResult)}</span>
+      <a class="pager-prev" href="/">${escapeHtml(SITE_COPY.navIndex)}</a>
+    </nav>`;
 }
 
 /**
@@ -375,7 +419,12 @@ function footerNav(site) {
  * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
  * identity, not its layout. A page renderer below returns only its own content.
  */
-function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null }) {
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottomBar = false }) {
+  // Stated by the renderer rather than sniffed with `:has(.pager)`. The class reserves the room the
+  // pinned bar covers, so getting it wrong on a page that has one hides the footer behind it — and
+  // a selector the browser may not support is the wrong place to put that. `:has` is used elsewhere
+  // in the sheet, but only where losing it costs a highlight.
+  const shell = bottomBar ? "shell has-bar" : "shell";
   return `<!doctype html>
 <html lang="${escapeHtml(site.locale.split("-")[0])}">
 <head>
@@ -390,7 +439,7 @@ ${head}
   <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${adsenseScript(site)}
 </head>
 <body>
-  <div class="shell">
+  <div class="${shell}">
 ${rail(site, currentSlug)}
     <div class="stage">
 ${stageHead(chrome)}${body}
@@ -424,6 +473,7 @@ ${callToAction(model)}
     body,
     scripts: enhancement(),
     currentSlug: model.slug,
+    bottomBar: true,
     // The pack's title, and its Parts' own labels — both straight from the pack.
     chrome: {
       title: model.title,
@@ -492,10 +542,12 @@ export function renderResultPage(slug, questions, site = SITE) {
     <p class="result-clear-note">${escapeHtml(RESULT_COPY.clearNote)}</p>
     <button class="result-clear" type="button" data-result-clear hidden>${escapeHtml(RESULT_COPY.clearAction)}</button>
 ${callToAction({ slug })}
+${sheetPager(slug)}
   </main>
   <script type="application/json" data-question-index>${data}</script>`,
     scripts: enhancement(),
-    currentSlug: slug
+    currentSlug: slug,
+    bottomBar: true
   });
 }
 

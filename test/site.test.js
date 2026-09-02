@@ -355,11 +355,16 @@ test("a site pack has no guidance copy, so the page omits those elements rather 
   assert.ok(has(html, 'class="q-choices"'), "what the reader came for is still there");
 });
 
-test("the last page offers the sheet instead of a page that is not there", () => {
+test("the last page's forward control offers the sheet instead of a page that is not there", () => {
   const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
-  assert.ok(has(last, 'href="/marriage/result/"'));
+  assert.ok(has(last, 'class="pager-next is-result" href="/marriage/result/"'));
+
+  // This used to assert that Part 1 did not link to the sheet at all — "only at the end" — which
+  // was true and was the bug: the sheet had one door, and it was behind the other ninety questions.
+  // Every Part now offers it, from the middle slot, and never twice on one page.
   const first = renderQuestionPage(pageModel("marriage", 1, { site }), site);
-  assert.equal(has(first, 'href="/marriage/result/"'), false, "only at the end");
+  assert.ok(has(first, 'class="pager-mid" href="/marriage/result/"'), "and so does every other Part");
+  assert.equal(has(first, "is-result"), false, "but it is not the forward control until the end");
 });
 
 test("the sheet is a shell, is not indexed, and offers the way out", async () => {
@@ -559,6 +564,82 @@ test("the bar is a sibling of the header, which is what lets it stay", () => {
   assert.match(sticky, /z-index/);
   // And an in-page link must not land a question underneath it.
   assert.match(css, /scroll-padding-top/);
+});
+
+test("the sheet is reachable from every Part, by exactly one control", () => {
+  // The gap this bar closes: the sheet used to be linked from Part 10's forward control and nowhere
+  // else, so a reader who had answered thirty questions and wanted to see them had to walk to the
+  // end of the pack to find the only door.
+  for (const part of PARTS) {
+    const html = renderQuestionPage(pageModel("marriage", part.number, { site }), site);
+    const nav = html.slice(html.indexOf('<nav class="pager"'), html.indexOf("</nav>", html.indexOf('<nav class="pager"')));
+    const routes = nav.split('href="/marriage/result/"').length - 1;
+    assert.equal(routes, 1, `Part ${part.number} offers the sheet once, not ${routes} times`);
+  }
+});
+
+test("the middle slot offers the sheet only where the forward control does not", () => {
+  // One rule, not two special cases: on the last Part the forward control *is* the sheet, so the
+  // middle goes back to saying where the reader is rather than repeating the destination beside it.
+  const middle = renderQuestionPage(pageModel("marriage", 2, { site }), site);
+  assert.ok(has(middle, 'class="pager-mid" href="/marriage/result/"'));
+  assert.equal(has(middle, "pager-progress"), false, "the tab strip already says which Part this is");
+
+  const last = renderQuestionPage(pageModel("marriage", LAST_PAGE, { site }), site);
+  assert.equal(has(last, "pager-mid"), false, "the forward control is the sheet here");
+  assert.ok(has(last, `<span class="pager-progress">${SITE_COPY.progress(LAST_PAGE, LAST_PAGE)}</span>`));
+});
+
+test("the sheet has a way back to the questions", () => {
+  // Its invitation points at the pack, but `enhance.js` turns that control into a share sheet — so
+  // with scripting on the sheet was a room with no door back.
+  const html = renderResultPage("marriage", published, site);
+  const nav = html.slice(html.indexOf('<nav class="pager is-sheet"'), html.indexOf("</nav>", html.indexOf('<nav class="pager is-sheet"')));
+  assert.ok(nav.includes('href="/marriage/"'), "back to the questions");
+  assert.ok(nav.includes('href="/"'), "and out to the index");
+  assert.ok(nav.includes('aria-current="page"'), "the slot for this page names it rather than linking to it");
+  assert.equal(nav.includes('href="/marriage/result/"'), false, "a bar does not link to the page it is on");
+});
+
+test("the bottom bar is pinned on a phone, in the page on a desktop, and reserves its own room", () => {
+  const css = readFileSync("site/site.css", "utf8");
+  const flow = css.slice(css.indexOf(".pager {"), css.indexOf("}", css.indexOf(".pager {")));
+  assert.equal(/position:/.test(flow), false, "the wide layout leaves it where it is written");
+
+  const narrow = css.slice(css.indexOf("@media (max-width: 899px)", css.indexOf(".pager-mid")));
+  const block = narrow.slice(0, narrow.indexOf("\n}\n"));
+  assert.match(block, /position: fixed/);
+  assert.match(block, /bottom: 0/);
+  assert.match(block, /z-index/);
+  assert.match(block, /env\(safe-area-inset-bottom/, "it clears the home indicator rather than hiding behind it");
+  // `100vw` includes the scrollbar and would take the document sideways with it — measured 0 at
+  // 360, 390 and 430px with left/right instead.
+  assert.equal(/\.pager \{[^}]*100vw/s.test(block), false, "width comes from left/right, not 100vw");
+
+  // A fixed bar covers the end of the page, so the page ends above it — but only where there is a
+  // bar, or the index and the standing pages would end in 80px of nothing.
+  assert.match(block, /\.shell\.has-bar \{ padding-bottom: calc\(80px \+ env\(safe-area-inset-bottom/);
+
+  // The name of the next Part must be able to shrink, or it leaves the bar entirely: measured, a
+  // 260px name sat in a 106px slot and painted outside it. Both halves of the fix are load-bearing.
+  assert.match(block, /\.pager \.pager-next \{[^}]*align-items: stretch/s, "a column's cross axis is its width");
+  assert.match(block, /\.pager \.pager-next-part \{[^}]*text-overflow: ellipsis/s);
+  // Written with two classes on purpose: `.pager a` is a class plus a type and outranks a bare one.
+  assert.equal(/^\s*\.pager-next \{/m.test(block), false, "a bare class loses to .pager a");
+});
+
+test("only the pages that carry the bar reserve room for it", () => {
+  const withBar = [
+    renderQuestionPage(pageModel("marriage", 1, { site }), site),
+    renderResultPage("marriage", published, site)
+  ];
+  for (const html of withBar) assert.ok(has(html, '<div class="shell has-bar">'));
+
+  const without = [renderIndex(indexModel({ site }), site)];
+  for (const html of without) {
+    assert.ok(has(html, '<div class="shell">'), "and the rest say plain shell");
+    assert.equal(has(html, "has-bar"), false);
+  }
 });
 
 test("the progress bar carries its value in aria and nothing on the screen", () => {
