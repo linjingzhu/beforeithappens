@@ -8,7 +8,7 @@ import { RESULT_COPY } from "../site/result-copy.js";
 // Debug only; it is on the page until `SITE.debugFeedback` comes off, so its words are covered too.
 import { FEEDBACK_COPY } from "../site/feedback.js";
 import { DOCK_COPY } from "../site/dock-copy.js";
-import { privacyCopy } from "../site/pages.js";
+import * as pages from "../site/pages.js";
 import { COMING } from "../site/config.js";
 import { INVITE_COPY } from "../site/invite-copy.js";
 import { findPack } from "../src/packs.js";
@@ -51,9 +51,13 @@ function renderedCharacters() {
     } else if (value && typeof value === "object") Object.values(value).forEach(walk);
   };
   for (const copy of [SITE_COPY, RESULT_COPY, FEEDBACK_COPY, INVITE_COPY, DOCK_COPY]) walk(copy);
-  // The policy is written but gated on the owner's details, so it is scanned directly rather than
-  // through `standingPages` — otherwise it would first be checked on the day it goes live.
-  walk(privacyCopy());
+  // Every export of `site/pages.js`, not a list of the copies in it — the same surface the
+  // generator scans, so this check cannot be looser than the subset it is checking. A list is how
+  // the 404 page's copy went uncovered on the day it was written: `홈` was missing from the subset
+  // and every test still passed. Walking the namespace also reaches the policy while it is still
+  // gated on the owner's details, which is the point — a gap found on the day a page goes live is
+  // found too late.
+  walk(pages);
   // Alt text is printed when an image fails to load, so it is text the subset has to carry.
   for (const entry of COMING) walk(entry.alt);
   return new Set(parts.join(""));

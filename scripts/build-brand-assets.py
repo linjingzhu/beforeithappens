@@ -92,21 +92,15 @@ import('./src/packs.js').then(async (packs) => {
   // covered by other copy; 갓 was the first character that was not.
   const { COMING } = await import('./site/config.js');
   COMING.forEach((entry) => walk(entry.alt));
-  const pages = await import('./site/pages.js');
-  // The policy's text is fixed and known now; only whether it is emitted is gated on the owner's
-  // details. Scanning only the emitted pages would leave it uncovered until the day it appears,
-  // which is the day a missing glyph would first be seen. Its identity lines carry the owner's own
-  // name and address, which no subset can anticipate — regenerate after filling those in.
-  walk(pages.privacyCopy());
-  for (const page of pages.standingPages()) {
-    parts.push(page.title, page.description);
-    for (const section of page.sections) parts.push(section.heading, ...section.paragraphs);
-  }
-  // The pages that are not built yet still have copy, and it should be covered before it ships.
-  for (const copy of [pages.ABOUT_COPY, pages.CONTACT_COPY]) {
-    parts.push(copy.title, copy.description);
-    for (const section of copy.sections) parts.push(section.heading, ...section.paragraphs);
-  }
+  // The whole module, rather than a list of the copies in it. The list was the bug: 처리방침 was
+  // added and not listed, then the 404 page was added and not listed, and each time the miss is
+  // silent — the subset simply lacks a glyph and one character on a live page renders in another
+  // face. Walking the namespace covers what is there now and what is added next. `walk` calls the
+  // exported builders (privacyCopy, standingPages) and they are copy builders, which is the whole
+  // module. The policy in particular is scanned even while it is gated on the owner's details:
+  // scanning only what is emitted would first reveal a gap on the day the page goes live. Its
+  // identity lines carry a name and address no subset can anticipate — regenerate after a change.
+  walk(await import('./site/pages.js'));
   process.stdout.write(JSON.stringify(parts.join('')));
 });
 """

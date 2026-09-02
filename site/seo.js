@@ -12,16 +12,25 @@ import { absoluteUrl } from "./content.js";
  */
 export function pageTitle(model, site = SITE) {
   if (!model) return site.name;
-  const base = model.page === 1 ? model.title : `${model.title} (${model.page}/${model.pages})`;
+  // The Part's own name, because the ten pages of a pack are otherwise told apart by a number.
+  // `결혼 100제 (5/10)` and `결혼 100제 (6/10)` give a search engine nothing to distinguish, and give
+  // a reader no reason to open one rather than the other; `결혼 100제 5부 우리 사이의 경계` gives both.
+  // The pack's name stays in front so the pack's own query still matches at the strongest position.
+  const base = model.part?.title
+    ? `${model.title} ${model.part.number}부 ${model.part.title}`
+    : model.title;
   return `${base} · ${site.name}`;
 }
 
 export function pageDescription(model) {
   if (!model) return "";
+  // Page one is the pack's front door — the home page links to it and it is what should answer the
+  // pack's own name — so it keeps the author's pitch. The others describe the Part they are.
   if (model.page === 1) return model.descriptionText || model.description;
   const first = model.questions[0];
   const last = model.questions[model.questions.length - 1];
-  return `${model.title} ${model.page}쪽. ${first.number}번부터 ${last.number}번까지의 질문입니다.`;
+  const where = `${model.title} ${model.page}부, ${first.number}번부터 ${last.number}번까지의 질문입니다.`;
+  return model.part?.blurb ? `${model.part.blurb} ${where}` : where;
 }
 
 function tag(name, content) {
@@ -32,26 +41,58 @@ function property(name, content) {
   return content ? `  <meta property="${name}" content="${escapeHtml(content)}">` : "";
 }
 
-export function headTags(model, site = SITE) {
-  const url = model ? absoluteUrl(site.origin, model.path) : site.origin;
-  const title = pageTitle(model, site);
-  const description = pageDescription(model);
+/**
+ * One head for every public page, so a page cannot be built with half of one.
+ *
+ * It was not always shared: the question pages called `headTags` and the home page and the three
+ * standing pages each wrote their own `<title>` and canonical by hand. The result was that the home
+ * page — the one every other page links to — carried no description and no Open Graph tags at all,
+ * so a search result invented its own two lines and a link pasted into a chat opened as a bare
+ * title. Three copies of the same block is how that happens; there is one now.
+ */
+function metaBlock({ title, description, url, previousUrl, nextUrl, type = "article" }, site = SITE) {
   const lines = [
     `  <title>${escapeHtml(title)}</title>`,
     tag("description", description),
-    site.origin ? `  <link rel="canonical" href="${escapeHtml(url)}">` : "",
+    url ? `  <link rel="canonical" href="${escapeHtml(url)}">` : "",
     // Prev/next tell a crawler this is one series rather than nine near-duplicates.
-    model?.previousPath && site.origin ? `  <link rel="prev" href="${escapeHtml(absoluteUrl(site.origin, model.previousPath))}">` : "",
-    model?.nextPath && site.origin ? `  <link rel="next" href="${escapeHtml(absoluteUrl(site.origin, model.nextPath))}">` : "",
-    property("og:type", "article"),
+    previousUrl ? `  <link rel="prev" href="${escapeHtml(previousUrl)}">` : "",
+    nextUrl ? `  <link rel="next" href="${escapeHtml(nextUrl)}">` : "",
+    property("og:type", type),
     property("og:title", title),
     property("og:description", description),
-    site.origin ? property("og:url", url) : "",
+    url ? property("og:url", url) : "",
     property("og:locale", site.locale),
     property("og:site_name", site.name),
     tag("twitter:card", "summary")
   ];
   return lines.filter(Boolean).join("\n");
+}
+
+export function headTags(model, site = SITE) {
+  const at = (path) => (site.origin && path ? absoluteUrl(site.origin, path) : "");
+  return metaBlock({
+    title: pageTitle(model, site),
+    description: pageDescription(model),
+    url: model ? at(model.path) : at("/"),
+    previousUrl: at(model?.previousPath),
+    nextUrl: at(model?.nextPath)
+  }, site);
+}
+
+/**
+ * The head of a page that is not a Part — the home page and the standing pages.
+ *
+ * `og:type` is `website` for the home page and `article` for the prose ones, which is what those
+ * two values mean: one is a site, the others are documents on it.
+ */
+export function standaloneHead({ title, description, path, type = "article" }, site = SITE) {
+  return metaBlock({
+    title,
+    description,
+    url: site.origin ? absoluteUrl(site.origin, path) : "",
+    type
+  }, site);
 }
 
 /**
@@ -89,10 +130,18 @@ export function structuredData(model, site = SITE) {
 
 const SITEMAP_NS = "http://www.sitemaps.org/schemas/sitemap/0.9";
 
-/** A sitemap is how a crawler finds page seven, which nothing links to from outside. */
+/**
+ * A sitemap is how a crawler finds page seven, which nothing links to from outside.
+ *
+ * The root is emitted here rather than passed in, because it was passed in and then it was not:
+ * the build handed this function the question pages and the standing pages, and the home page is
+ * in neither list, so the one page every other page links to was the one page the sitemap left
+ * out. A site always has a root; there is nothing for a caller to decide and so nothing to forget.
+ */
 export function sitemapXml(pages, site = SITE) {
-  const urls = pages
-    .map((model) => `  <url><loc>${escapeHtml(absoluteUrl(site.origin, model.path))}</loc></url>`)
+  const paths = ["/", ...pages.map((model) => model.path)];
+  const urls = paths
+    .map((path) => `  <url><loc>${escapeHtml(absoluteUrl(site.origin, path))}</loc></url>`)
     .join("\n");
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

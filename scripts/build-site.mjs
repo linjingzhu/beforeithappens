@@ -2,7 +2,7 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SITE, siteWith } from "../site/config.js";
 import { allPages, indexModel } from "../site/content.js";
-import { renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
+import { renderIndex, renderNotFoundPage, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
 import { standingPages } from "../site/pages.js";
 import { questionsFor } from "../src/packs.js";
 import { PUBLISHED } from "../site/config.js";
@@ -83,8 +83,14 @@ for (const page of standing) {
   await writeFile(join(dir, "index.html"), renderStandingPage(page, site));
 }
 
+// Served by GitHub Pages for any path it does not have, with a 404 status. Not a standing page:
+// it has no URL of its own, so it is not in the sitemap and carries noindex rather than a canonical.
+await writeFile(join(OUT, "404.html"), renderNotFoundPage(site));
+
 // The sheet is personal and carries noindex, so it is deliberately absent from the sitemap. The
-// standing pages are not: they are what a reader or a reviewer looks for.
+// standing pages are not: they are what a reader or a reviewer looks for. The home page is not
+// passed in — `sitemapXml` emits the root itself, because leaving it to a caller is how it came to
+// be missing.
 await writeFile(join(OUT, "sitemap.xml"), sitemapXml([...pages, ...standing], site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
 
