@@ -1385,6 +1385,22 @@ test("the dock carries 지우기, the quiet way to leave without a trace from th
   assert.match(enhance, /store\.clear\(\)[\s\S]*draft\.reset\(emptyAnswers\(slug\)\)/, "clears the store and the draft together");
 });
 
+test("the sheet's share address carries a copy button beside it, like the invite panel's", () => {
+  // At the owner's word. The address was a bare field under the button that made it; now it has
+  // the same 44px icon the invite panel has, so the link can be copied again without being remade.
+  const html = renderResultPage("marriage", published, site);
+  const block = html.slice(html.indexOf('class="result-share-link"'), html.indexOf("</section>", html.indexOf('class="result-share-link"')));
+  assert.ok(block.includes('<label for="share-url">'), "a real label, not a wrapper — a button inside a label would fire it");
+  assert.ok(block.includes('<input type="text" id="share-url" readonly data-share-url>'));
+  assert.match(block, /<button type="button" class="result-share-copy" data-share-copy aria-label="링크 복사" title="링크 복사"><svg /);
+  assert.ok(block.indexOf("data-share-url") < block.indexOf("data-share-copy"), "the button sits to the right of the field");
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.result-share-row \{[^}]*display: flex;/s);
+  assert.match(css, /\.result-share-copy \{[^}]*width: 44px;[^}]*min-height: 44px;/s, "a full target");
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /\[data-share-copy\]/);
+});
+
 test("the question map is a column of real anchors, one per question, on question pages only", () => {
   // At the owner's word: a line down the right edge, a mark per question, the current one bold.
   // The list is anchors so that without scripting it is still a table of contents that jumps.

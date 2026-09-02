@@ -27,6 +27,8 @@ export const RESULT_COPY = Object.freeze({
   shareNote: "고른 답만 담깁니다. 옆에 적은 메모는 이 브라우저에만 남아요.",
   shareCopied: "링크를 복사했어요. 상대에게 보내 주세요.",
   shareManual: "복사가 안 되면 아래 주소를 직접 보내 주세요.",
+  /** The icon button beside the address, at the owner's word — the same control the invite panel has. */
+  shareCopy: "링크 복사",
   shareEmpty: "먼저 질문에 답해야 보낼 답이 생겨요.",
   compareTitle: "상대가 보낸 답",
   compareLead: "같은 질문에 두 사람이 무엇을 골랐는지 나란히 봅니다.",

@@ -767,10 +767,13 @@ export function renderResultPage(slug, questions, site = SITE) {
       <p>${escapeHtml(RESULT_COPY.shareNote)}</p>
       <button class="result-share-action" type="button" data-share-action>${escapeHtml(RESULT_COPY.shareAction)}</button>
       <p class="result-share-state" data-share-state hidden></p>
-      <label class="result-share-link" data-share-link hidden>
-        <span>${escapeHtml(RESULT_COPY.shareManual)}</span>
-        <input type="text" readonly data-share-url>
-      </label>
+      <div class="result-share-link" data-share-link hidden>
+        <label for="share-url">${escapeHtml(RESULT_COPY.shareManual)}</label>
+        <div class="result-share-row">
+          <input type="text" id="share-url" readonly data-share-url>
+          <button type="button" class="result-share-copy" data-share-copy aria-label="${escapeHtml(RESULT_COPY.shareCopy)}" title="${escapeHtml(RESULT_COPY.shareCopy)}">${COPY_MARK}</button>
+        </div>
+      </div>
     </section>
     <section class="result-mail" data-mail hidden>
       <h2>${escapeHtml(RESULT_COPY.mailAction)}</h2>

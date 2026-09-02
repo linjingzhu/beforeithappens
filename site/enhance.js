@@ -430,6 +430,21 @@ function showShare(root, index, store) {
     }
     field?.select?.();
   });
+
+  // The icon beside the address: the same copy again, for the reader who has the link on the
+  // screen and wants it in the clipboard without making it anew. The clipboard can be refused, and
+  // then the address is selected so the reader can take it by hand.
+  const copy = root.querySelector("[data-share-copy]");
+  copy?.addEventListener("click", async () => {
+    if (!field?.value) return;
+    try {
+      await navigator.clipboard.writeText(field.value);
+      say(state, RESULT_COPY.shareCopied);
+    } catch {
+      say(state, RESULT_COPY.shareManual);
+    }
+    field.select?.();
+  });
 }
 
 function say(node, text) {
