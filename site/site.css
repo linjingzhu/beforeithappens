@@ -788,7 +788,6 @@ html { scroll-padding-top: 120px; }
  * platform's blue, which is the one saturated thing left on the page and reads as a link.
  */
 .q-choices input,
-.q-undiscussed input,
 .q-stars input {
   accent-color: var(--ab-accent);
 }
@@ -1084,30 +1083,9 @@ html { scroll-padding-top: 120px; }
 
 .q-choice input { margin-top: 6px; flex: none; }
 
-.q-undiscussed {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  color: var(--ab-muted);
-  font-size: 15px;
-  cursor: pointer;
-}
-
 /* The sheet. A reflection: no score, no verdict, nothing that ranks. */
 .result-count { font-weight: 600; margin: 24px 0 8px; }
 .result-note { color: var(--ab-muted); margin: 0 0 24px; }
-
-.result-undiscussed {
-  background: var(--ab-soft);
-  border-radius: 12px;
-  padding: 24px;
-  margin: 0 0 32px;
-}
-
-.result-undiscussed h2 { margin: 0 0 4px; font-size: 18px; }
-.result-undiscussed p { margin: 0 0 12px; color: var(--ab-muted); }
-.result-undiscussed ul { margin: 0; padding-left: 20px; }
 
 .result-chapter { margin: 0 0 32px; }
 .result-chapter h2 { font-size: 18px; margin: 0 0 12px; }

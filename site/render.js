@@ -36,7 +36,6 @@ export const SITE_COPY = Object.freeze({
   ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
   ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
-  notDiscussed: "아직 상대와 이야기해 본 적 없어요",
   resultAction: "결과 보기",
   /*
    * The bar's own words, and they are one word each. It used to say 질문집 목록 on Part 1, which is a
@@ -157,11 +156,7 @@ function questionArticle(question, site = SITE) {
         <h2><span class="q-number">${question.number}</span> ${escapeHtml(question.title)}</h2>${scene}${intent}${example}
         <ul class="q-choices">
 ${choices}
-        </ul>
-        <label class="q-undiscussed">
-          <input type="checkbox" data-undiscussed="${escapeHtml(question.id)}">
-          <span>${escapeHtml(SITE_COPY.notDiscussed)}</span>
-        </label>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
+        </ul>${depthBlock(question)}${site?.debugFeedback ? feedbackBlock(question) : ""}${why}
       </article>`;
 }
 

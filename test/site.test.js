@@ -218,7 +218,7 @@ test("nothing rendered from content escapes into markup", () => {
 // ── Answering and the result sheet ────────────────────────────────────────────────────────────
 
 test("answers are stored in a shape that refuses to be half-understood", async () => {
-  const { ANSWERS_VERSION, emptyAnswers, parseAnswers, serializeAnswers, withAnswer, withDiscussionFlag } =
+  const { ANSWERS_VERSION, emptyAnswers, parseAnswers, serializeAnswers, withAnswer } =
     await import("../site/answers.js");
 
   const built = withAnswer(emptyAnswers("marriage"), "home-01", "home-rest");
@@ -235,14 +235,22 @@ test("answers are stored in a shape that refuses to be half-understood", async (
   );
 
   // A stored item without a choice is dropped, not rendered as a blank answer.
-  const partial = JSON.stringify({ version: ANSWERS_VERSION, slug: "marriage", items: { "home-01": { notDiscussed: true } } });
+  const partial = JSON.stringify({ version: ANSWERS_VERSION, slug: "marriage", items: { "home-01": {} } });
   assert.deepEqual(parseAnswers(partial, "marriage").items, {});
 
-  // Marking a question undiscussed before answering it is meaningless.
-  assert.deepEqual(withDiscussionFlag(emptyAnswers("marriage"), "home-01", true).items, {});
-  const flagged = withDiscussionFlag(built, "home-01", true);
-  assert.equal(flagged.items["home-01"].notDiscussed, true);
-  assert.equal(built.items["home-01"].notDiscussed, false, "the input is not mutated");
+  // Answers written before `notDiscussed` was removed still load. The version was deliberately not
+  // bumped for that deletion: a bump discards, and discarding a reader's ninety answers to drop a
+  // field nothing reads is a worse trade than carrying an ignored key. The field does not survive
+  // the read, but everything the reader actually chose and wrote does.
+  const older = JSON.stringify({
+    version: ANSWERS_VERSION,
+    slug: "marriage",
+    items: { "home-01": { choiceId: "home-rest", notDiscussed: true, reason: "우리 집은 조용한 편이에요" } }
+  });
+  const loaded = parseAnswers(older, "marriage").items["home-01"];
+  assert.equal(loaded.choiceId, "home-rest", "the choice survives");
+  assert.equal(loaded.reason, "우리 집은 조용한 편이에요", "and so does the note beside it");
+  assert.equal("notDiscussed" in loaded, false, "the removed field is not carried forward");
 });
 
 test("a browser that cannot store anything still reads every question", async () => {
@@ -259,13 +267,12 @@ test("a browser that cannot store anything still reads every question", async ()
 });
 
 test("the sheet reflects what was said and never scores it", async () => {
-  const { emptyAnswers, withAnswer, withDiscussionFlag } = await import("../site/answers.js");
+  const { emptyAnswers, withAnswer } = await import("../site/answers.js");
   const { RESULT_COPY, RESULT_FORBIDDEN, resultModel } = await import("../site/result.js");
 
   let answers = emptyAnswers("marriage");
   answers = withAnswer(answers, Q1.id, Q1.choices[0].id);
   answers = withAnswer(answers, Q2.id, Q2.choices[0].id);
-  answers = withDiscussionFlag(answers, Q2.id, true);
 
   const model = resultModel("marriage", answers);
   assert.equal(model.total, published.length);
@@ -276,7 +283,6 @@ test("the sheet reflects what was said and never scores it", async () => {
   // Grouped under the chapter, in pack order, with the person's own words given back.
   assert.deepEqual(model.chapters.map((c) => c.chapter), [Q1.chapter]);
   assert.equal(model.chapters[0].answers[0].choice, Q1.choices[0].label);
-  assert.deepEqual(model.notDiscussed.map((r) => r.questionId), [Q2.id]);
 
   // The pull toward a score is constant; this is what stops the computed sheet becoming a verdict.
   // The check is on the model, not the copy: the lead promises "점수도, 판정도 없습니다", and a naive
@@ -323,7 +329,6 @@ test("the build and the browser share one reflection rather than two that drift"
   const viaModel = resultModel("marriage", answers);
   assert.equal(direct.answered, viaModel.answered);
   assert.deepEqual(direct.chapters.map((c) => c.chapter), viaModel.chapters.map((c) => c.chapter));
-  assert.deepEqual(direct.notDiscussed, viaModel.notDiscussed.map((r) => ({ ...r })));
 
   assert.deepEqual(reflect([], answers).chapters, []);
   assert.equal(reflect([], answers).complete, false, "no questions is not a completed set");
@@ -332,7 +337,6 @@ test("the build and the browser share one reflection rather than two that drift"
 test("the questions are answerable, and readable without answering", async () => {
   const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
   assert.ok(has(html, `type="radio" name="q-${Q1.id}"`), "the choices are a real form control");
-  assert.ok(has(html, `data-undiscussed="${Q1.id}"`));
   // Enhancement, not requirement: every word is in the HTML whether or not the script runs.
   assert.ok(has(html, '<script type="module" src="/enhance.js"></script>'));
   for (const question of published.slice(0, 10)) {

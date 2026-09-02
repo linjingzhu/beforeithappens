@@ -1,4 +1,4 @@
-import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withDiscussionFlag, withNote } from "./answers.js";
+import { answeredCount, createAnswerStore, NOTE_FIELDS, withAnswer, withNote } from "./answers.js";
 // Debug only, and self-contained so that removing the block is removing this line and its uses.
 import { createFeedbackStore, FEEDBACK_COPY, feedbackCount, withFeedback } from "./feedback.js";
 import { RESULT_COPY } from "./result-copy.js";
@@ -43,8 +43,6 @@ function restoreQuestionPage(root, store) {
     if (!item) continue;
     const radio = article.querySelector(`.q-choices input[value="${CSS.escape(item.choiceId)}"]`);
     if (radio) radio.checked = true;
-    const flag = article.querySelector("[data-undiscussed]");
-    if (flag) flag.checked = item.notDiscussed === true;
   }
   // Notes are restored for every question, answered or not: someone may have written before
   // choosing, and losing that on a page reload is losing the part that took thought.
@@ -82,18 +80,7 @@ function bindQuestionPage(root, store) {
       return;
     }
     const note = target.getAttribute?.("data-note");
-    if (note) {
-      store.write(withNote(store.read(), id, note, target.value));
-      return;
-    }
-    if (target.hasAttribute?.("data-undiscussed")) {
-      // Marking a question undiscussed before answering it is meaningless; the model refuses it,
-      // so reflect that refusal back rather than leaving a checkbox that silently did nothing.
-      const next = withDiscussionFlag(store.read(), id, target.checked);
-      const accepted = Boolean(next.items[id]) && next.items[id].notDiscussed === target.checked;
-      if (!accepted) target.checked = false;
-      else store.write(next);
-    }
+    if (note) store.write(withNote(store.read(), id, note, target.value));
   });
 }
 
@@ -122,20 +109,6 @@ function renderResult(body, model, copy = RESULT_COPY) {
   const summary = element("p", "result-count", `${copy.answeredLabel} ${model.answered} / ${model.total}`);
   body.append(summary);
   if (!model.complete) body.append(element("p", "result-note", copy.incompleteNote));
-
-  if (model.notDiscussed.length) {
-    const section = element("section", "result-undiscussed");
-    section.append(
-      element("h2", null, `${copy.notDiscussedLabel} ${model.notDiscussed.length}`),
-      element("p", null, copy.notDiscussedLead)
-    );
-    const list = element("ul");
-    for (const row of model.notDiscussed) {
-      list.append(element("li", null, `${row.number}. ${row.title}`));
-    }
-    section.append(list);
-    body.append(section);
-  }
 
   for (const bucket of model.chapters) {
     const section = element("section", "result-chapter");

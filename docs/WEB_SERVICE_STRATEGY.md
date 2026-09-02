@@ -34,9 +34,14 @@ verdict on their relationship; what is actually scarce is seeing your own answer
 place. That is the same discipline the app already runs on, applied to one person instead of two —
 and it is the honest version, because no 100-question form is entitled to a verdict.
 
-Concretely, the sheet may say: 이 열 가지에는 확신이 있었고, 이 여섯 가지에서는 망설였고, 이
-세 가지는 아직 상대와 이야기해 본 적이 없다고 답하셨어요. It may not say: 이 관계는 건강합니다,
-헤어지는 것이 좋겠습니다, 궁합 72점, or anything shaped like those.
+Concretely, the sheet may say: 답한 질문 62 / 100, 이 장에서는 이렇게 고르셨어요, 두 사람이
+서로 다르게 고른 질문은 이 열한 개예요. It may not say: 이 관계는 건강합니다, 헤어지는 것이
+좋겠습니다, 궁합 72점, or anything shaped like those.
+
+The example used to include 아직 상대와 이야기해 본 적이 없다고 답하셨어요, from a per-question
+checkbox the owner had removed. It is worth keeping the deletion in view rather than only the
+sentence: the line between the two lists above is about *shape*, not about which particular facts
+are collected, and it holds whatever the sheet happens to be built from.
 
 ## Safety, which is not optional here
 
