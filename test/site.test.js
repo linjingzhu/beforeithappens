@@ -102,7 +102,10 @@ test("every page is emitted, in order, once", () => {
 });
 
 test("the page is readable with no JavaScript at all", () => {
-  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  // Rendered without the publisher id: the AdSense loader is the one third-party script the site
+  // carries, and the owner set it on 2026-09-02. The claim here is about the site's own code.
+  const bare = siteWith({ ...site, adsenseClient: "", adsenseSlot: "" });
+  const html = renderQuestionPage(pageModel("marriage", 1, { site: bare }), bare);
   // A crawler that runs nothing must still see the questions; the app's innerHTML approach would
   // hand it an empty shell. One script ships, and only as enhancement — what it adds is memory, so
   // scripting off costs the ability to record an answer, never the ability to read one.
@@ -356,12 +359,14 @@ test("structured data suggests answers and never accepts one", () => {
 });
 
 test("the ad slot is present, positioned, and empty", () => {
-  const html = renderQuestionPage(pageModel("marriage", 1, { site }), site);
+  // With no publisher id the slot holds space and nothing else: a placeholder that already loads a
+  // network would get a preview build reviewed before it is ready. The real config names a
+  // publisher since 2026-09-02; what it renders is the next test's subject.
+  const bare = siteWith({ ...site, adsenseClient: "", adsenseSlot: "" });
+  const html = renderQuestionPage(pageModel("marriage", 1, { site: bare }), bare);
   assert.ok(has(html, 'data-ad-slot="after-questions"'));
-  // Ads are step 7. A placeholder that already loads a network gets the site reviewed before it is
-  // ready, so the slot holds space and nothing else.
   for (const network of ["adsbygoogle", "googlesyndication", "pagead"]) {
-    assert.equal(has(html, network), false, `${network} must not be wired yet`);
+    assert.equal(has(html, network), false, `${network} must not be wired without a publisher`);
   }
   const slotAt = html.indexOf('data-ad-slot');
   assert.ok(slotAt > html.indexOf('class="questions"'), "the slot sits after the questions");
@@ -614,7 +619,10 @@ test("nothing on the sheet can break out of the embedded JSON", async () => {
     index === 0 ? { ...question, title: "</script><script>alert(1)</script>" } : question);
   const html = renderResultPage("marriage", hostile, site);
   const closers = html.match(/<\/script>/g) || [];
-  assert.equal(closers.length, 2, "one for the JSON block, one for the module tag — none from data");
+  // The benign render sets the count (the JSON block, the module tag, the ad loader when a publisher
+  // is set); the hostile title must not add one.
+  const benign = renderResultPage("marriage", questionsFor("marriage"), site).match(/<\/script>/g) || [];
+  assert.equal(closers.length, benign.length, "none from data");
 });
 
 test("the build carries the custom domain and keeps Jekyll out of it", async () => {
@@ -1254,7 +1262,7 @@ test("the policy describes the storage the site actually has, and the ads it act
   const { privacyCopy } = await import("../site/pages.js");
   const base = { business: "afterscent", owner: "홍길동", address: "서울특별시 ..." };
 
-  const off = JSON.stringify(privacyCopy({ site: siteWith({ operator: base }) }));
+  const off = JSON.stringify(privacyCopy({ site: siteWith({ operator: base, adsenseClient: "" }) }));
   assert.ok(off.includes("쿠키를 사용하지 않"), "with no publisher id there are no cookies to declare");
   assert.equal(off.includes("adssettings"), false);
 
@@ -1270,7 +1278,7 @@ test("the policy describes the storage the site actually has, and the ads it act
   // Scoped to what the policy claims about today, not to the words it uses. A naive scan for
   // "서버에 저장" matched the section that promises to announce it *before* that ever happens —
   // the same shape of mistake as scanning the result copy for 점수 and hitting its own disclaimer.
-  const now = privacyCopy({ site: siteWith({ operator: base }) }).sections
+  const now = privacyCopy({ site: siteWith({ operator: base, adsenseClient: "" }) }).sections
     .filter((section) => !section.heading.includes("바뀔 때"))
     .map((section) => section.paragraphs.join(" "))
     .join(" ");
@@ -1773,7 +1781,8 @@ test("AdSense is two ids away, and absent until they are set", () => {
   assert.ok(on.indexOf('class="adsbygoogle"') < on.indexOf('class="pager"'));
 
   // Nothing at all until a publisher is named — no script, no unit, and the empty box stays hidden.
-  const off = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
+  const bare = siteWith({ ...site, adsenseClient: "", adsenseSlot: "" });
+  const off = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site: bare }), bare);
   assert.equal(off.includes("adsbygoogle"), false);
   assert.equal(off.includes("googlesyndication"), false);
   assert.match(off, /<div class="ad-slot" data-ad-slot="after-questions" aria-hidden="true">/);

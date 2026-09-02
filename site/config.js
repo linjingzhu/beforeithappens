@@ -47,7 +47,7 @@ export const SITE = Object.freeze({
    * keeps answers in the reader's own browser, but AdSense itself sets cookies, so that page has
    * to exist and has to say so — `docs/OWNER_ACTIONS.md` N5.
    */
-  adsenseClient: "",
+  adsenseClient: "ca-pub-4555236770786194",
   adsenseSlot: "",
   /**
    * The tokens Google Search Console and Naver Search Advisor hand out to prove the site is the
