@@ -122,6 +122,56 @@ function bindQuestionPage(root, draft) {
 }
 
 /**
+ * 이어서 — back to the last question that was answered.
+ *
+ * "Last" is the last one in reading order that carries a choice, not the most recently touched:
+ * someone who answers 1 to 40, then goes back and changes 12, is still at 40. Answers are a map
+ * with no order in them, so the order comes from the pack index the page embeds.
+ *
+ * It reads the draft rather than storage, so a question answered a moment ago and not yet saved is
+ * where it takes you. The link is a real URL with an anchor — `scroll-padding-top` already keeps a
+ * question from landing under the sticky strip — so it works as a page load, opens in a new tab,
+ * and needs nothing clever. With nothing answered there is nowhere to carry on from, and the key
+ * says so by going quiet rather than by disappearing and shortening the row.
+ */
+function bindResume(draft) {
+  const key = document.querySelector("[data-resume]");
+  const node = document.querySelector("[data-pack-index]");
+  if (!key || !node) return;
+  let index;
+  try {
+    index = JSON.parse(node.textContent);
+  } catch {
+    return;
+  }
+
+  const update = () => {
+    const items = draft.read().items || {};
+    let at = -1;
+    for (let i = index.ids.length - 1; i >= 0; i -= 1) {
+      if (items[index.ids[i]]?.choiceId) {
+        at = i;
+        break;
+      }
+    }
+    if (at < 0) {
+      key.removeAttribute("href");
+      key.setAttribute("aria-disabled", "true");
+      key.classList.add("is-off");
+      return;
+    }
+    const part = index.parts[at];
+    const page = part === 1 ? `/${index.slug}/` : `/${index.slug}/${part}/`;
+    key.setAttribute("href", `${page}#q-${index.ids[at]}`);
+    key.removeAttribute("aria-disabled");
+    key.classList.remove("is-off");
+  };
+
+  update();
+  document.querySelector(".questions")?.addEventListener("change", update);
+}
+
+/**
  * Saving on the way out of a page.
  *
  * Ten Parts are ten documents, so turning a Part is a real navigation and used to lose whatever had
@@ -146,6 +196,7 @@ function bindSaveOnNavigation(draft) {
     const link = event.target?.closest?.("a[href]");
     // The invitation is a share sheet rather than a navigation, and `bindInvite` owns it.
     if (!link || link.hasAttribute("data-invite") || link.target === "_blank") return;
+    if (link.getAttribute("aria-disabled") === "true") return;
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
     // A jump within this same document takes nothing with it.
@@ -725,6 +776,7 @@ function start() {
   showProgress(draft);
   bindInvite();
   bindSave(draft, questions);
+  bindResume(draft);
   bindSaveOnNavigation(draft);
   bindLeaveWarning(draft);
   // Every answer moves the bar, including one made on this page a moment ago and not yet saved.

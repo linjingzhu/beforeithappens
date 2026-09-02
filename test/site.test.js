@@ -103,11 +103,17 @@ test("the page is readable with no JavaScript at all", () => {
   // hand it an empty shell. One script ships, and only as enhancement — what it adds is memory, so
   // scripting off costs the ability to record an answer, never the ability to read one.
   const scripts = html.match(/<script[^>]*>/g) || [];
-  assert.deepEqual(
-    scripts,
-    ['<script type="application/ld+json">', '<script type="module" src="/enhance.js">'],
-    "exactly one behavioural script, and it is the enhancement module"
-  );
+  // A `<script type="application/json">` block is data the browser does not run — structured data
+  // for a crawler, and the pack index the 이어서 key reads. The claim worth holding is about code:
+  // exactly one thing executes, and it is the enhancement module. Listing the tags verbatim made
+  // this fail the moment a data block was added, which is not the thing it is guarding.
+  const runs = scripts.filter((tag) => !/type="application\/(ld\+)?json"/.test(tag));
+  assert.deepEqual(runs, ['<script type="module" src="/enhance.js">'],
+    "exactly one behavioural script, and it is the enhancement module");
+  assert.ok(scripts.some((tag) => tag.includes('type="application/ld+json"')), "structured data is still there");
+  assert.ok(scripts.some((tag) => tag.includes("data-pack-index")), "and the pack index the resume key reads");
+  // Data, not code: it must carry no executable attribute.
+  assert.equal(/<script[^>]*data-pack-index[^>]*\ssrc=/.test(html), false);
   for (const question of published.slice(0, 10)) {
     assert.ok(has(html, question.title), question.id);
     for (const choice of question.choices) assert.ok(has(html, choice.label), choice.id);
@@ -701,6 +707,41 @@ test("the dock's words load without the pack registry behind them", async () => 
   // And the build has to ship it, or the page loads a module that is not there.
   const build = readFileSync("scripts/build-site.mjs", "utf8");
   assert.match(build, /"dock-copy\.js"/);
+});
+
+test("이어서 points at the last question answered, and says nothing when there is none", async () => {
+  const { SITE_COPY: copy } = await import("../site/render.js");
+  const model = pageModel("marriage", 4, { site });
+  const html = renderQuestionPage(model, site);
+
+  // Rendered on every Part, in the row, with the pack's own address as the fallback a reader
+  // without scripting gets — "carry on" where nothing is recorded is "start".
+  assert.ok(has(html, `class="pager-resume" href="/marriage/" data-resume>${copy.navResume}<`));
+
+  // It needs the pack's shape, because a Part page knows its own ten questions and nothing about
+  // the other ninety, and answers are a map with no order and no page in them.
+  const index = JSON.parse(html.match(/data-pack-index>(.*?)<\/script>/s)[1]);
+  assert.equal(index.slug, "marriage");
+  assert.equal(index.ids.length, published.length);
+  assert.equal(index.parts.length, index.ids.length);
+  assert.deepEqual(index.ids.slice(0, 3), published.slice(0, 3).map((q) => q.id), "in reading order");
+  assert.equal(index.parts[0], 1);
+  assert.equal(index.parts[index.parts.length - 1], LAST_PAGE, "and the last question is on the last Part");
+  // Ids and Part numbers only: the sheet embeds titles because it prints them back, this does not.
+  assert.equal(Object.keys(index).sort().join(","), "ids,parts,slug");
+  assert.equal(html.match(/data-pack-index>(.*?)<\/script>/s)[1].includes(published[0].title), false);
+
+  // The script resolves it against the draft, so an answer made a moment ago counts, and "last"
+  // means last in reading order rather than most recently touched.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  const resume = enhance.slice(enhance.indexOf("function bindResume"), enhance.indexOf("function bindSaveOnNavigation"));
+  assert.match(resume, /for \(let i = index\.ids\.length - 1; i >= 0; i -= 1\)/, "walks back from the end");
+  assert.match(resume, /draft\.read\(\)/, "reads the draft, not the store");
+  assert.match(resume, /aria-disabled/, "and goes quiet with nothing to carry on from");
+  assert.match(resume, /#q-\$\{index\.ids\[at\]\}/, "linking to the question's own anchor");
+
+  // A disabled key must not be treated as a navigation by the save-on-leave handler.
+  assert.match(enhance, /aria-disabled"\) === "true"\) return/);
 });
 
 test("nothing overrides the pager's shared key style from behind it", () => {

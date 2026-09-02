@@ -53,6 +53,12 @@ export const SITE_COPY = Object.freeze({
   navResult: "결과",
   navQuestions: "질문",
   navIndex: "목록",
+  /*
+   * Back to the last question that was answered. Three characters because the row is four keys
+   * wide on a phone and this is the one that can be shortest without losing its meaning — "이어서"
+   * is what the action is, where "마지막 문항" would be what it points at and would not fit.
+   */
+  navResume: "이어서",
   barLabel: "아래 이동 막대",
   /* What a reader writes beside a question. Every line here is the pack's own wording. */
   depthLead: "이 선택은 내게",
@@ -332,6 +338,25 @@ ${partTabs(chrome.parts)}
  * the Parts are otherwise reachable only by scrolling to an end — the strip at the top or this at
  * the bottom. Pinned, it is under the thumb the entire way down.
  */
+/**
+ * Where every question lives, in pack order, small enough to sit on every Part.
+ *
+ * The 이어서 key has to turn "the last question answered" into a page and an anchor, and answers are
+ * a map of question id to choice with no order and no page in them. A Part page knows its own ten
+ * questions and nothing about the other ninety, so the pack's shape has to travel with it: the ids
+ * in reading order, and the Part number each one belongs to.
+ *
+ * Ids and numbers only — no titles, no choices. The result sheet embeds the full index because it
+ * has to print the questions back; this one is about 1.6KB and exists so a control can build a URL.
+ */
+function packIndex(model) {
+  const ids = model.index?.ids || [];
+  const parts = model.index?.parts || [];
+  if (!ids.length) return "";
+  const data = JSON.stringify({ slug: model.slug, ids, parts }).replace(/</g, "\\u003c");
+  return `\n  <script type="application/json" data-pack-index>${data}</script>`;
+}
+
 function pager(model) {
   const nextPart = model.parts.find((part) => part.number === model.page + 1);
   const previous = model.previousPath
@@ -343,8 +368,13 @@ function pager(model) {
   const middle = model.nextPath
     ? `<a class="pager-mid" href="/${escapeHtml(model.slug)}/result/">${escapeHtml(SITE_COPY.navResult)}</a>`
     : `<span class="pager-progress">${escapeHtml(SITE_COPY.progress(model.page, model.pages))}</span>`;
+  // Where the reader left off. The href here is the pack's own first page, which is where "carry on"
+  // means "start" — `enhance.js` rewrites it to the last answered question once it has read the
+  // draft, and marks it as doing nothing when there is nothing to carry on from.
+  const resume = `<a class="pager-resume" href="/${escapeHtml(model.slug)}/" data-resume>${escapeHtml(SITE_COPY.navResume)}</a>`;
   return `      <nav class="pager" aria-label="${escapeHtml(model.title)}">
         ${previous}
+        ${resume}
         ${middle}
         ${next}
       </nav>`;
@@ -499,7 +529,7 @@ export function renderQuestionPage(model, site = SITE) {
 ${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
 ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
-${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}
+${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
 ${pager(model)}
 ${callToAction(model)}
       </main>

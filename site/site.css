@@ -898,10 +898,22 @@ html { scroll-padding-top: 120px; }
   font-variant-numeric: tabular-nums;
 }
 
-/* The quiet slot. It is a real destination, so it is a link, but it does not compete with 다음. */
-.pager-mid {
+/* The quiet slots. Real destinations, so real links, but they do not compete with 다음. */
+.pager-mid,
+.pager-resume {
   color: var(--ab-muted);
   font-size: 14px;
+}
+
+/*
+ * 이어서 with nothing to carry on from. It stays in the row rather than disappearing — a control
+ * that comes and goes moves the three beside it — and it stops being raised, because a key that
+ * does nothing should not look pressable.
+ */
+.pager .pager-resume.is-off {
+  box-shadow: none;
+  opacity: 0.45;
+  cursor: default;
 }
 
 /*
@@ -951,19 +963,27 @@ html { scroll-padding-top: 120px; }
   }
 
   /*
-   * Three slots, sized by one ratio each, so the bar does not reshuffle between Parts as the labels
-   * change. Forward is the wider one: it is the only slot carrying two lines, and the second is a
-   * Part name. Measured at 360px, the narrowest phone worth designing for — an even split gave it
-   * 90px of room for a name that needs 102, so every long Part truncated; 1.3 gives it 117.
+   * Four keys, and only one of them has anything long to say.
+   *
+   * Sharing the row by ratio was right for three and wrong for four: at 360px an even split gave
+   * the forward key 89px for a label needing 92, so it wrapped to two lines, took the bar from 73px
+   * to 93, and the dock — offset by the bar's height — landed on top of it. Meanwhile 목록, 이어서
+   * and 결과 each sat in 60px holding 24 to 36.
+   *
+   * So the quiet three take the width of their own words and the forward key takes what is left.
+   * Their labels are the same length on every Part — 목록 and 이전 are both two characters — so the
+   * row still does not reshuffle as pages turn. Measured at 360px this gives the forward key 155px
+   * of room for a 92px label, and the Part name under it stops truncating at 360 and 390 both.
    */
   .pager > * {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
     justify-content: center;
     text-align: center;
   }
 
-  .pager .pager-next { flex-grow: 1.3; }
+  .pager .pager-next { flex: 1 1 auto; }
+
 
   /*
    * A Part name is up to twelve characters and a third of a phone is not twelve characters, so a
@@ -987,7 +1007,9 @@ html { scroll-padding-top: 120px; }
 
   /* One height for all three, taken from the tallest — 다음 over a Part name — so the row is three
      keys of one size rather than two short ones beside a tall one. */
-  .pager a { padding: 0 6px; overflow: hidden; }
+  /* 10px rather than 6: at content width a two-character key would be 41px across, under the 44 a
+     thumb wants. The height is 52 either way; this is the other axis. */
+  .pager a { padding: 0 10px; overflow: hidden; }
   .pager > * { min-height: 52px; }
 
   /*
@@ -998,7 +1020,8 @@ html { scroll-padding-top: 120px; }
    * selectors, a 260px Part name still sat in a 106px slot.
    */
   .pager .pager-prev,
-  .pager .pager-mid {
+  .pager .pager-mid,
+  .pager .pager-resume {
     display: block;
     line-height: 52px;
     overflow: hidden;
