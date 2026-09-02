@@ -1476,15 +1476,18 @@ html { scroll-padding-top: 120px; }
   line-height: 1.6;
 }
 
+/* Centred, one sentence to a line, at the owner's word. `.line` is what `sentenceLines` emits. */
 .cta {
   background: var(--ab-soft);
   border-radius: 12px;
   padding: 24px;
   margin: 48px 0 0;
+  text-align: center;
 }
 
-.cta h2 { margin: 0 0 8px; font-size: 20px; }
+.cta h2 { margin: 0 0 8px; font-size: 20px; text-wrap: balance; }
 .cta p { margin: 0 0 16px; }
+.cta .line { display: block; }
 
 /*
  * Ink, not accent. On the last Part this sits a few lines under 결과 보기, and two accent pills

@@ -470,6 +470,19 @@ function sheetPager(slug) {
  * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
  * own address, which is exactly what the invitation is anyway.
  */
+/**
+ * A paragraph set one sentence to a line, at the owner's word for the invitation block. The copy
+ * stays one string — it is read aloud, hashed and scanned as one — and only the markup breaks it,
+ * at sentence ends, so a sentence that is too long for the column still wraps inside its own line.
+ */
+function sentenceLines(text) {
+  return String(text)
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean)
+    .map((sentence) => `<span class="line">${escapeHtml(sentence)}</span>`)
+    .join("");
+}
+
 function callToAction(model, site = SITE) {
   // What the invitation points at. On a pack's own page it is that pack; elsewhere — the home page
   // and the prose pages — it is the pack itself while there is only one, and the list once there is
@@ -481,7 +494,7 @@ function callToAction(model, site = SITE) {
     : (packs.length === 1 ? escapeHtml(packs[0].path) : "/");
   return `      <aside class="cta">
         <h2>${escapeHtml(SITE_COPY.ctaTitle)}</h2>
-        <p>${escapeHtml(SITE_COPY.ctaBody)}</p>
+        <p>${sentenceLines(SITE_COPY.ctaBody)}</p>
         <a class="cta-action" href="${href}" data-invite>${escapeHtml(SITE_COPY.ctaAction)}</a>
       </aside>`;
 }

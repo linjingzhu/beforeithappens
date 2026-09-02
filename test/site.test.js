@@ -1721,6 +1721,15 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   // pack while there is one — not at the list, which would cost the other person a step.
   const home = renderIndex(indexModel({ site }), site);
   assert.match(home, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+
+  // Centred and one sentence to a line, at the owner's word: the body's two sentences are two
+  // block lines, and the copy itself is still one string.
+  const lines = [...home.matchAll(/<span class="line">([^<]+)<\/span>/g)].map((m) => m[1]);
+  assert.deepEqual(lines, ["누르면 초대 링크가 만들어져요.", "상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다."]);
+  assert.equal(lines.join(" "), SITE_COPY.ctaBody);
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.cta \{[^}]*text-align: center;/s);
+  assert.match(css, /\.cta \.line \{ display: block; \}/);
   assert.match(html, /data-invite/, "and the question page still offers it, from the dock");
   assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
 
