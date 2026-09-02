@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { PUBLISHED, SITE, publishedBySlug, siteWith } from "../site/config.js";
 import { allPages, descriptionLines, indexModel, pageModel, pagePath, partsOf } from "../site/content.js";
 import { SITE_COPY, renderIndex, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
@@ -692,6 +692,56 @@ test("the dock's words load without the pack registry behind them", async () => 
   // And the build has to ship it, or the page loads a module that is not there.
   const build = readFileSync("scripts/build-site.mjs", "utf8");
   assert.match(build, /"dock-copy\.js"/);
+});
+
+test("the home page shows what can be read now, and what is coming as a picture only", async () => {
+  const { COMING, SCENES } = await import("../site/config.js");
+  const html = renderIndex(indexModel({ site }), site);
+
+  // The published pack keeps everything it had, with its scene above it. The picture is alt="" on
+  // purpose: the heading beside it already names the pack, and a screen reader should not say the
+  // same thing twice.
+  const published = html.slice(html.indexOf('<li class="card">'), html.indexOf('<li class="card is-coming">'));
+  assert.ok(published.includes(SCENES.marriage));
+  assert.ok(published.includes('alt=""'));
+  assert.ok(published.includes('href="/marriage/"') && published.includes("100개의 질문"));
+
+  // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
+  // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
+  assert.equal(COMING.length, 2);
+  for (const entry of COMING) {
+    const start = html.indexOf(`<li class="card is-coming">`, html.indexOf(entry.scene) - 200);
+    const card = html.slice(start, html.indexOf("</li>", start));
+    assert.ok(card.includes(entry.scene), `${entry.id} shows its scene`);
+    assert.ok(card.includes(`alt="${entry.alt}"`), "and describes it, since the picture is all there is");
+    for (const interactive of ["<a ", "<button", "href=", "data-"]) {
+      assert.equal(card.includes(interactive), false, `${entry.id} must not be a control: ${interactive}`);
+    }
+    assert.equal(/<h[1-6]/.test(card), false, "no heading");
+    // Strip the tags and a coming card has nothing left to read.
+    assert.equal(card.replace(/<[^>]*>/g, "").trim(), "", "no words on the card itself");
+  }
+
+  // The names of the packs that are coming must not leak into the page anywhere else either —
+  // the design withholds them on purpose.
+  assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
+});
+
+test("every scene the site names is a file the build ships", async () => {
+  const { SCENES } = await import("../site/config.js");
+  for (const [name, path] of Object.entries(SCENES)) {
+    const file = `site${path}`;
+    assert.ok(existsSync(file), `${name}: ${file} is generated and committed`);
+    // Big enough to be a picture, small enough not to be the uncropped sheet.
+    const bytes = statSync(file).size;
+    assert.ok(bytes > 4000 && bytes < 120_000, `${name} is ${bytes} bytes`);
+  }
+  // And the generator that made them keeps the source it cut them from.
+  assert.ok(existsSync("brand/pack-scenes.jpg"), "the scene sheet stays in the repo");
+  const build = readFileSync("scripts/build-brand-assets.py", "utf8");
+  for (const name of Object.keys(SCENES)) {
+    assert.match(build, new RegExp(`"${name}": \\(`), `${name} has measured crop bounds`);
+  }
 });
 
 test("nothing is written to storage until the reader asks for it", async () => {

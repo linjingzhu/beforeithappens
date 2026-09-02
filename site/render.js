@@ -1,5 +1,5 @@
 import { escapeHtml } from "../src/html.js";
-import { publishedBySlug, SITE } from "./config.js";
+import { COMING, publishedBySlug, SCENES, SITE } from "./config.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
@@ -612,13 +612,34 @@ ${contact}${callToAction()}
   });
 }
 
+/**
+ * The home page's cards: what can be read now, and what is coming.
+ *
+ * A published card carries its scene above its own words. A coming one carries the scene and
+ * nothing else — no title, no count, no link, nothing to press. That is the owner's design and it
+ * is the honest shape for it: a card with a name and a link is a promise with a date attached, and
+ * there is no date. The picture says what is coming without saying when, and there is nothing to
+ * click that could disappoint.
+ *
+ * The scene is `alt=""` on a published card because the heading beside it already names the pack,
+ * and a screen reader reading the picture as well would say the same thing twice. On a coming card
+ * the picture is the whole content, so it carries the description a sighted reader gets from it.
+ */
 export function renderIndex(model, site = SITE) {
   const cards = model.packs
-    .map((pack) => `      <li class="card">
-        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
+    .map((pack) => {
+      const scene = SCENES[pack.slug]
+        ? `        <p class="card-scene"><img src="${escapeHtml(SCENES[pack.slug])}" alt="" width="234" height="440" loading="lazy" decoding="async"></p>\n`
+        : "";
+      return `      <li class="card">
+${scene}        <h2><a href="${escapeHtml(pack.path)}">${escapeHtml(pack.title)}</a></h2>
         <p>${escapeHtml(pack.description)}</p>
         <p class="card-meta">${pack.total}개의 질문 · ${pack.pages}${escapeHtml(SITE_COPY.partsUnit)}</p>
-      </li>`)
+      </li>`;
+    })
+    .concat(COMING.map((entry) => `      <li class="card is-coming">
+        <img src="${escapeHtml(entry.scene)}" alt="${escapeHtml(entry.alt)}" width="234" height="440" loading="lazy" decoding="async">
+      </li>`))
     .join("\n");
   const head = [
     `  <title>${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</title>`,

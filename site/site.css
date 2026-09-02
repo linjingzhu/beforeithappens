@@ -1180,6 +1180,45 @@ html { scroll-padding-top: 120px; }
 .card p { margin: 0; }
 .card-meta { color: var(--ab-muted); font-size: 14px; margin-top: 8px !important; }
 
+/*
+ * The scene on a card. The three crops differ in width and agree in height, so they are drawn to a
+ * common height and left to be whatever width that makes — which is what makes them read as one set
+ * rather than three pictures that happen to be near each other.
+ *
+ * The ground stays white because the figures were rendered on white and have no cut-out: a panel is
+ * honest about that, where a transparent PNG would have had to eat the bride's dress to get there.
+ */
+.card-scene {
+  margin: 0 0 16px !important;
+  text-align: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 0;
+}
+
+.card-scene img,
+.card.is-coming img {
+  height: 180px;
+  width: auto;
+  max-width: 100%;
+}
+
+/*
+ * A pack that is coming: the picture, centred, and nothing else.
+ *
+ * No heading, no count, no link — so the card is not a control and must not look like one. It is
+ * quieter than a real card by design: no border, a flatter ground, and it does not respond to being
+ * pointed at, because nothing happens when it is pressed.
+ */
+.card.is-coming {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-color: transparent;
+  padding: 16px 0;
+}
+
 .foot {
   padding: 24px 16px 48px;
   text-align: center;

@@ -98,6 +98,33 @@ export const SITE = Object.freeze({
  * having content; being in this list is being published, and the second is a decision. Putting it
  * back is one entry — which is the whole reason this list is written out rather than derived.
  */
+/**
+ * The scenes on the home page, one per pack, cropped from `brand/pack-scenes.jpg` by
+ * `scripts/build-brand-assets.py`. Named here so a card and its picture cannot drift apart.
+ */
+export const SCENES = Object.freeze({
+  marriage: "/brand/scene-marriage.jpg",
+  pregnancy: "/brand/scene-pregnancy.jpg",
+  childcare: "/brand/scene-childcare.jpg"
+});
+
+/**
+ * Packs that are coming, shown as a picture and nothing else.
+ *
+ * The owner's call, and the point of them is that they do nothing: a card with a title, a count and
+ * a link would be a promise with a date attached, and there is no date. A picture of two people
+ * holding a pregnancy test says what is coming without claiming when, and there is nothing to click
+ * that could disappoint.
+ *
+ * `alt` is what the picture shows, not what the pack will be called. A reader who cannot see it
+ * gets the same thing a reader who can gets — the situation — rather than a name the design is
+ * deliberately withholding.
+ */
+export const COMING = Object.freeze([
+  Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
+  Object.freeze({ id: "childcare", scene: SCENES.childcare, alt: "아이를 키우는 두 사람" })
+]);
+
 export const PUBLISHED = Object.freeze([
   Object.freeze({
     packId: "marriage-100",
