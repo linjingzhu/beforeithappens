@@ -1348,8 +1348,10 @@ test("the opening introduces the pack, so it is the same above every Part", () =
 });
 
 test("the search consoles' ownership tokens appear on the home page only, and only when set", () => {
-  // Google and Naver both read the root page for their token. A preview build has none.
-  const none = renderIndex(indexModel({ site }), site);
+  // Google and Naver both read the root page for their token. A preview build has none — the real
+  // config carries the owner's Naver token now, so the empty case is spelled out.
+  const blank = siteWith({ ...site, verification: { google: "", naver: "" } });
+  const none = renderIndex(indexModel({ site: blank }), blank);
   assert.equal(none.includes("site-verification"), false, "empty tokens emit nothing");
 
   const verified = siteWith({ ...site, verification: { google: "g-token-123", naver: "n-token-456" } });

@@ -56,7 +56,7 @@ export const SITE = Object.freeze({
    * this is for the owner who would rather paste a token than edit a zone. (M1, `docs/OWNER_ACTIONS.md`
    * X5e·X5f.)
    */
-  verification: Object.freeze({ google: "", naver: "" }),
+  verification: Object.freeze({ google: "", naver: "786e0c020098433c2ff2652ed05a5b539d326ce1" }),
   /**
    * Who operates the site, for the privacy policy — and the reason that page does or does not exist.
    *
