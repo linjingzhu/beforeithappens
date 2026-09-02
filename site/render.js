@@ -407,6 +407,11 @@ function sheetPager(slug) {
 /**
  * The invitation, and the only thing on the page that asks for anything.
  *
+ * Not on a question page any more, at the owner's word. The dock floats 함께 풀기 over every Part
+ * and does the same thing with the same binding, so the block at the foot of the page was the same
+ * invitation twice — once where it is always in reach, once after ten questions. It stays on the
+ * pages that have no dock: the sheet, the index and the standing pages.
+ *
  * It used to be a link into the app. There is no app: this site is the product, and what a reader
  * hands the other person is a link to these same questions. So it is a button rather than an
  * anchor — `enhance.js` gives it the share sheet, and with no script it falls back to the pack's
@@ -537,7 +542,6 @@ ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
 ${pager(model)}
-${callToAction(model)}
       </main>
 ${bottomDock(model)}`;
   return document_({

@@ -171,14 +171,26 @@ test("the ad slot is present, positioned, and empty", () => {
   assert.ok(slotAt < html.indexOf('class="pager"'), "and before the control that leaves the page");
 });
 
-test("every page offers the invitation, and it goes to these questions rather than to an app", () => {
+test("every page offers the invitation, and it goes to these questions rather than to an app", async () => {
   // There is no app. What a reader hands the other person is a link to the same questions, so the
   // control points at the pack — and with no script that address is the whole invitation anyway.
+  //
+  // On a question page that control is the dock's, not the block at the foot: the dock floats it
+  // over every Part with the same binding, so the block was the same invitation twice. It is still
+  // the block on the pages that have no dock.
+  const { DOCK_COPY } = await import("../site/dock-copy.js");
   for (const page of [1, LAST_PAGE]) {
     const html = renderQuestionPage(pageModel("marriage", page, { site }), site);
-    assert.ok(has(html, SITE_COPY.ctaAction));
-    assert.ok(has(html, 'class="cta-action" href="/marriage/" data-invite'), "it points at the pack");
+    assert.ok(has(html, `data-invite>${DOCK_COPY.together}<`), "the dock carries it");
+    assert.ok(has(html, 'class="dock-together" href="/marriage/"'), "and it points at the pack");
+    // `data-invite>` and not `data-invite`: the latter also matches `data-invite-state`, the line
+    // that reports the copy, which is not a second control.
+    assert.equal((html.match(/data-invite>/g) || []).length, 1, "exactly one invitation on the page");
     assert.equal(has(html, "app.example"), false, "and never at an app origin");
+  }
+
+  for (const html of [renderIndex(indexModel({ site }), site), renderResultPage("marriage", published, site)]) {
+    assert.ok(has(html, 'class="cta-action" href="/'), "the pages with no dock keep the block");
   }
 });
 
@@ -1350,9 +1362,13 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
 
   // The owner names this control, and what it does is send the other person a link to the same
   // questions — the share sheet on a phone, the clipboard on a desktop.
-  assert.ok(html.includes(SITE_COPY.ctaAction));
+  // On a question page the control is the dock's; the block it used to sit in is gone from here and
+  // still on the pages with no dock, where 둘이 함께 해보기 is its wording.
+  const sheet = renderResultPage("marriage", published, site);
+  assert.ok(sheet.includes(SITE_COPY.ctaAction));
   assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
-  assert.match(html, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.match(sheet, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.match(html, /data-invite/, "and the question page still offers it, from the dock");
   assert.match(html, /data-invite-state/, "a desktop is told the link was copied");
 
   const enhance = readFileSync("site/enhance.js", "utf8");
