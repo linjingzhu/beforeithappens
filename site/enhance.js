@@ -122,6 +122,39 @@ function bindQuestionPage(root, draft) {
 }
 
 /**
+ * Saving on the way out of a page.
+ *
+ * Ten Parts are ten documents, so turning a Part is a real navigation and used to lose whatever had
+ * not been saved. The owner's rule is that saving is an act the reader takes — and pressing 다음 is
+ * an act the reader takes. So every control that leaves this page for another page of this site
+ * writes the draft first, and the forward key says so on its face.
+ *
+ * This is not the automatic saving that was removed. That one wrote on every keystroke, unasked;
+ * this one runs because a person pressed something, and the thing they pressed says what it does.
+ *
+ * Every in-site link, not just 다음: 이전 loses the same work, 결과 reads from storage and would
+ * have shown an empty sheet, and the Part tabs at the top are navigations too. A rule that held for
+ * one control and not its neighbours would be a worse trap than no rule.
+ *
+ * `localStorage` is synchronous, so the write completes before the browser leaves. A failed write
+ * leaves the draft dirty, which is exactly right: `beforeunload` then asks, and the reader finds out
+ * rather than losing the answers quietly.
+ */
+function bindSaveOnNavigation(draft) {
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+    const link = event.target?.closest?.("a[href]");
+    // The invitation is a share sheet rather than a navigation, and `bindInvite` owns it.
+    if (!link || link.hasAttribute("data-invite") || link.target === "_blank") return;
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin) return;
+    // A jump within this same document takes nothing with it.
+    if (url.pathname === location.pathname && url.search === location.search) return;
+    draft.commit();
+  });
+}
+
+/**
  * The warning before answers are lost.
  *
  * With nothing saving on its own, a reload or a closed tab takes the unsaved answers with it — so
@@ -130,9 +163,9 @@ function bindQuestionPage(root, draft) {
  * written. Calling `preventDefault` is what asks for it; `returnValue` is the older spelling that
  * some browsers still require.
  *
- * It fires on a page turn too, because a page turn is a real navigation on this site — ten Parts
- * are ten documents. That is the honest behaviour under this rule: leaving Part 3 with unsaved
- * answers loses them, so leaving Part 3 with unsaved answers asks.
+ * It no longer fires on a page turn: `bindSaveOnNavigation` above saves before those, so by the
+ * time the browser leaves there is nothing unsaved to warn about. What is left is what it was
+ * always for — a reload, a closed tab, a link off the site.
  */
 function bindLeaveWarning(draft) {
   addEventListener("beforeunload", (event) => {
@@ -692,6 +725,7 @@ function start() {
   showProgress(draft);
   bindInvite();
   bindSave(draft, questions);
+  bindSaveOnNavigation(draft);
   bindLeaveWarning(draft);
   // Every answer moves the bar, including one made on this page a moment ago and not yet saved.
   questions.addEventListener("change", () => showProgress(draft));

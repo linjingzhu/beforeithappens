@@ -23,7 +23,8 @@ import { FEEDBACK_COPY } from "./feedback.js";
  * so the page needs no session, no account, and no request.
  */
 export const SITE_COPY = Object.freeze({
-  next: "다음",
+  /* The forward key says what it does, at the owner's word: it saves before it turns the page. */
+  next: "저장하고 다음",
   previous: "이전",
   partsLabel: "파트",
   progressLabel: "답한 질문",
@@ -37,7 +38,12 @@ export const SITE_COPY = Object.freeze({
   ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
   ctaAction: "둘이 함께 해보기",
   whyLabel: "왜 묻는 질문인가요",
-  resultAction: "결과 보기",
+  /*
+   * Not "저장하고 결과 보기". Measured at 360px it needs 126px in a 118px key, wraps to a second
+   * line, and takes the bar from 73px to 77 — which puts it back under the dock, whose offset is
+   * the bar's height. Two words say the same thing and fit.
+   */
+  resultAction: "저장하고 결과",
   /*
    * The bar's own words, and they are one word each. It used to say 질문집 목록 on Part 1, which is a
    * phrase rather than a label: measured at 360px it needed most of a slot that also has to hold

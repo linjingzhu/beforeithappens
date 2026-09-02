@@ -21,7 +21,7 @@ export const DOCK_COPY = Object.freeze({
    * Shown the moment there is something unsaved, rather than at the leave dialog. Being told at the
    * dialog is being told too late: by then the reader has already decided to go.
    */
-  unsaved: "저장하지 않은 답이 있어요. 새로고침하거나 페이지를 옮기면 사라집니다.",
+  unsaved: "저장하지 않은 답이 있어요. 새로고침하면 사라집니다.",
   /**
    * The case the button exists for. `createAnswerStore` swallows a storage failure and returns
    * `false`, which is right for a keystroke and wrong as the whole story: a private window, blocked

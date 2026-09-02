@@ -790,14 +790,26 @@ test("nothing is written to storage until the reader asks for it", async () => {
   // leaving a rule this consequential to a browser check nobody re-runs. Answering used to save as
   // it happened; the owner's rule is that saving is an act the reader takes.
   const enhance = readFileSync("site/enhance.js", "utf8");
-  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindLeaveWarning"));
+  const handlers = enhance.slice(enhance.indexOf("function bindQuestionPage"), enhance.indexOf("function bindSaveOnNavigation"));
   assert.ok(handlers.includes('addEventListener("input"'), "the draft still follows every keystroke");
   assert.ok(handlers.includes('addEventListener("change"'));
   assert.equal(/store\.write|\.commit\(\)/.test(handlers), false, "but neither handler touches storage");
   assert.ok(handlers.includes("draft.set("), "they update the draft instead");
 
-  // Only the button commits, and the warning is what stands between an unsaved draft and losing it.
+  // Typing does not commit; pressing something does. The button, and any control that leaves this
+  // page for another page of the site — ten Parts are ten documents, so turning one used to lose
+  // whatever was unsaved. That is not the automatic saving that was removed: it runs because a
+  // person pressed something, and the thing they pressed says on its face what it does.
   assert.match(enhance, /function bindSave[\s\S]*?draft\.commit\(\)/);
+  const onNav = enhance.slice(enhance.indexOf("function bindSaveOnNavigation"), enhance.indexOf("function bindLeaveWarning"));
+  assert.match(onNav, /addEventListener\("click"/);
+  assert.match(onNav, /draft\.commit\(\)/);
+  // Not the share control, not another site, not a jump inside this page: none of those lose work.
+  assert.match(onNav, /data-invite/);
+  assert.match(onNav, /url\.origin !== location\.origin/);
+  assert.match(onNav, /url\.pathname === location\.pathname/);
+  assert.match(enhance, /bindSaveOnNavigation\(draft\)/);
+
   assert.match(enhance, /addEventListener\("beforeunload"[\s\S]*?preventDefault\(\)/);
   assert.match(enhance, /bindLeaveWarning\(draft\)/);
 
@@ -808,6 +820,13 @@ test("nothing is written to storage until the reader asks for it", async () => {
   const { DOCK_COPY } = await import("../site/dock-copy.js");
   assert.equal(DOCK_COPY.saveAuto.includes("자동"), false, "it no longer says answers save automatically");
   assert.ok(DOCK_COPY.unsaved.includes("사라"), "and something says unsaved answers can be lost");
+  // A page turn saves now, so the warning must not still claim it loses answers.
+  assert.equal(DOCK_COPY.unsaved.includes("페이지를 옮기면"), false, "moving pages no longer loses work");
+
+  // The forward key carries the promise where it is acted on.
+  const { SITE_COPY: copy } = await import("../site/render.js");
+  assert.ok(copy.next.startsWith("저장하고"), "다음 says it saves first");
+  assert.ok(copy.resultAction.startsWith("저장하고"), "and so does the last Part's key");
 });
 
 test("the privacy policy waits for someone to be responsible for it", async () => {
