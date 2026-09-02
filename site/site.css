@@ -822,25 +822,59 @@ html { scroll-padding-top: 120px; }
   margin: 32px 0;
 }
 
+/*
+ * Plump, soft-cornered keys rather than flat outlines.
+ *
+ * The surface already has a light source — cards catch #FAFBFF above and drop #161B1D below — and
+ * the nav was the one place still drawing a hairline border instead of using it. Raised on that
+ * light, a control looks like something to press; outlined, it looks like a region.
+ *
+ * A 20px radius rather than a full round: at this height a fully round pill is a lozenge, and a
+ * generous corner on a squarish key is what reads as chunky rather than as a capsule. `--lift` is
+ * the control-sized shadow the sheet already defines — 5px at 10px blur — so this borrows the
+ * page's own depth rather than inventing a second one.
+ */
 .pager a {
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   padding: 0 20px;
-  border-radius: 999px;
+  border-radius: 20px;
+  font-weight: 600;
   text-decoration: none;
+  background: var(--ab-surface);
+  box-shadow: var(--lift);
+  transition: box-shadow 120ms ease, transform 120ms ease;
 }
 
-.pager-prev { border: 1px solid var(--ab-line); }
+/* Pressed in, and a hair lower. The travel is what makes it feel like a key rather than a picture
+   of one; 1px is enough to read and small enough not to shift the row. */
+.pager a:active {
+  box-shadow: var(--press);
+  transform: translateY(1px);
+}
 
-.pager-next {
+/*
+ * Two classes, not one. `.pager a` above is a class plus a type selector and outranks a bare class,
+ * so written as `.pager-next` this rule lost `background` to it and the key rendered as a blank
+ * light slab with light text on it — invisible. That is the third time this file has been bitten by
+ * the same rule; anything overriding `.pager a` is written with the parent in front of it.
+ */
+.pager .pager-next {
   flex-direction: column;
-  padding: 8px 24px;
+  padding: 8px 22px;
   background: var(--ab-ink);
   color: var(--ab-surface);
-  font-weight: 600;
   line-height: 1.3;
   text-align: center;
+  /* Ink is darker than the light source can model, so this one takes a plain soft drop rather than
+     the dual neumorphic pair, which on a dark fill reads as a smudge above and a halo below. */
+  box-shadow: 0 6px 14px var(--ab-shadow-dark);
+}
+
+.pager .pager-next:active {
+  box-shadow: 0 2px 6px var(--ab-shadow-dark);
+  transform: translateY(1px);
 }
 
 .pager-next-part {
@@ -853,7 +887,7 @@ html { scroll-padding-top: 120px; }
  * The end of the pack is a different destination, not a further page. It is also the only accent
  * control on that screen: reaching the sheet is the reader's own goal, and it outranks ours.
  */
-.pager-next.is-result {
+.pager .pager-next.is-result {
   justify-content: center;
   background: var(--ab-accent);
 }
@@ -868,7 +902,6 @@ html { scroll-padding-top: 120px; }
 .pager-mid {
   color: var(--ab-muted);
   font-size: 14px;
-  font-weight: 600;
 }
 
 /*
@@ -889,13 +922,21 @@ html { scroll-padding-top: 120px; }
  * becoming its containing block and dropping it back into the page.
  */
 @media (max-width: 899px) {
-  /* Measured, not guessed: the pager renders 67px tall at 360-430px — 다음 over a Part name, plus
-     its own padding. The sheet carries only that; a question page carries the dock above it too, so
-     it reserves both. Only the pages with fixed furniture reserve room, the class being set by the
-     renderer, so the index and the standing pages do not end in a band of nothing. The notch's
-     inset is added on top, so the row clears the home indicator rather than sitting behind it. */
-  .shell.has-bar { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
-  .shell.has-dock { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  /*
+   * The pager's height, written once.
+   *
+   * Three things depend on it — the room the sheet reserves, the room a question page reserves, and
+   * where the dock sits — and it was written into all three as a literal. Making the keys chunkier
+   * moved it from 67 to 73 and the dock, still offset by 67, sat on top of the bar. A variable is
+   * what stops the next change to this row doing that again.
+   *
+   * Measured at 360-430px: 52px keys in 10px of padding. The notch's inset is added where it is
+   * used, so the row clears the home indicator rather than sitting behind it.
+   */
+  :root { --bar-h: 73px; }
+
+  .shell.has-bar { padding-bottom: calc(var(--bar-h) + 14px + env(safe-area-inset-bottom, 0px)); }
+  .shell.has-dock { padding-bottom: calc(var(--bar-h) + 84px + env(safe-area-inset-bottom, 0px)); }
 
   .pager {
     position: fixed;
@@ -904,8 +945,7 @@ html { scroll-padding-top: 120px; }
     bottom: 0;
     z-index: 20;
     margin: 0;
-    gap: 6px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
     background: var(--ab-surface);
     border-top: 1px solid var(--ab-line);
   }
@@ -940,7 +980,15 @@ html { scroll-padding-top: 120px; }
    * Today's longest — 다투고 다시 손잡는 법 — needs 102px in a 106px slot at 360px and does not
    * truncate. These rules are what keep a longer one, in this pack or the next, inside the bar.
    */
+  .pager {
+    align-items: stretch;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* One height for all three, taken from the tallest — 다음 over a Part name — so the row is three
+     keys of one size rather than two short ones beside a tall one. */
   .pager a { padding: 0 6px; overflow: hidden; }
+  .pager > * { min-height: 52px; }
 
   /*
    * Written as `.pager .pager-prev` rather than `.pager-prev` on purpose. `.pager a` above is a
@@ -952,7 +1000,7 @@ html { scroll-padding-top: 120px; }
   .pager .pager-prev,
   .pager .pager-mid {
     display: block;
-    line-height: 44px;
+    line-height: 52px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -971,16 +1019,22 @@ html { scroll-padding-top: 120px; }
     white-space: nowrap;
   }
 
-  /* The sheet's own bar names the page the reader is on; it is a marker, not a dead link. */
+  /* The sheet's own bar names the page the reader is on; it is a marker, not a dead link, so it is
+     pressed into the surface rather than raised out of it — the one shape on the row that cannot
+     be pushed any further. */
   .pager-progress {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 52px;
+    border-radius: 20px;
+    background: var(--ab-soft);
+    box-shadow: var(--press);
+    font-weight: 600;
   }
 
   .pager.is-sheet .pager-progress {
-    border-radius: 999px;
+    border-radius: 20px;
     background: var(--ab-soft);
     color: var(--ab-ink);
     font-weight: 600;
@@ -1028,7 +1082,7 @@ html { scroll-padding-top: 120px; }
  */
 @media (max-width: 899px) {
   .dock {
-    bottom: calc(67px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px));
     padding: 8px 12px;
     gap: 8px 10px;
   }

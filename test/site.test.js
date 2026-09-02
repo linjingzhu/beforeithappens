@@ -622,7 +622,13 @@ test("the bottom bar is pinned on a phone, in the page on a desktop, and reserve
 
   // A fixed bar covers the end of the page, so the page ends above it — but only where there is a
   // bar, or the index and the standing pages would end in 80px of nothing.
-  assert.match(block, /\.shell\.has-bar \{ padding-bottom: calc\(80px \+ env\(safe-area-inset-bottom/);
+  // The pager's height is written once as `--bar-h` and read by both reservations and by the dock's
+  // offset. It was a literal in all three, and making the keys chunkier moved it from 67 to 73 —
+  // the dock, still offset by 67, sat on top of the bar.
+  assert.match(block, /--bar-h: \d+px/, "the height is named once");
+  assert.match(block, /\.shell\.has-bar \{ padding-bottom: calc\(var\(--bar-h\)/);
+  assert.match(block, /\.shell\.has-dock \{ padding-bottom: calc\(var\(--bar-h\)/);
+  assert.match(block, /bottom: calc\(var\(--bar-h\)/, "and the dock sits on top of it");
 
   // The name of the next Part must be able to shrink, or it leaves the bar entirely: measured, a
   // 260px name sat in a 106px slot and painted outside it. Both halves of the fix are load-bearing.
@@ -692,6 +698,38 @@ test("the dock's words load without the pack registry behind them", async () => 
   // And the build has to ship it, or the page loads a module that is not there.
   const build = readFileSync("scripts/build-site.mjs", "utf8");
   assert.match(build, /"dock-copy\.js"/);
+});
+
+test("nothing overrides the pager's shared key style from behind it", () => {
+  // Third time this file has been bitten by the same rule, and the last one shipped a blank key:
+  // `.pager a` is a class plus a type selector, so a bare `.pager-next` loses every property they
+  // share. It lost `background`, and a dark key with light text became light-on-light — invisible.
+  const css = readFileSync("site/site.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  // Derived from the rule itself rather than listed by hand: a hand-written list was wrong twice
+  // over — it named `color`, which `.pager a` does not set, and would have missed anything added to
+  // that rule later, which is exactly how this bug arrives.
+  const base = css.match(/\.pager a \{([^}]*)\}/);
+  assert.ok(base, ".pager a is the shared key style");
+  const shared = new Set([...base[1].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]));
+
+  for (const match of css.matchAll(/(^|\n)([^\n{}]+)\{([^}]*)\}/g)) {
+    const selector = match[2].trim();
+    // Only the classes that land on an `<a>` inside `.pager` can collide with `.pager a`.
+    // `.pager-progress` is a span and `.pager-next-part` sits inside the anchor; neither is
+    // reached by that selector, so neither is at risk.
+    // `(?![\w-])` rather than `\b`: a word boundary matches at the hyphen, so `\b` caught
+    // `.pager-next-part` — a span inside the anchor, which `.pager a` never reaches.
+    if (!/(^|,|\s)\.pager-(prev|mid|next)(?![\w-])/.test(selector)) continue;
+    // A selector that names the parent, or pairs two classes, already outranks `.pager a`.
+    const scoped = selector.split(",").every((one) => /\.pager[\s.]/.test(one.trim()));
+    if (scoped) continue;
+    const properties = [...match[3].matchAll(/([a-z-]+)\s*:/g)].map((m) => m[1]);
+    const clashes = properties.filter((name) => shared.has(name));
+    assert.deepEqual(clashes, [], `"${selector}" sets ${clashes.join(", ")} and will lose to .pager a`);
+  }
+
+  // And the key that carries the loss most visibly is written the safe way.
+  assert.match(css, /\.pager \.pager-next \{[^}]*background: var\(--ab-ink\)/s);
 });
 
 test("the home page shows what can be read now, and what is coming as a picture only", async () => {
