@@ -1133,24 +1133,19 @@ html { scroll-padding-top: 120px; }
     white-space: nowrap;
   }
 
-  /* The sheet's own bar names the page the reader is on; it is a marker, not a dead link, so it is
-     pressed into the surface rather than raised out of it — the one shape on the row that cannot
-     be pushed any further. */
   /*
    * The slot that names where you are rather than linking anywhere — 10 / 10 on the last Part, 결과
-   * on the sheet. It kept the pale pressed pill it had when the bar was pale, and against the light
-   * text the ink bar wants that measured 1.07:1: the figure was there and unreadable. One rule for
-   * both now, a step lighter than the bar so it reads as set into the strip.
+   * on the sheet. It wore a filled pill for a while, and the pill was the width of its own word: a
+   * narrow box on a row of wide keys, looking like a button that did nothing. At the owner's word a
+   * box is for something that can be pressed, so the marker is plain text now — the bar's own light
+   * ink, set in bold to say "here", and nothing drawn around it.
    */
   .pager .pager-progress {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 52px;
-    border-radius: 20px;
-    background: var(--ab-accent);
     color: var(--ab-surface);
-    box-shadow: none;
     font-weight: 600;
   }
 
