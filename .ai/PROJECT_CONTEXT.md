@@ -1,93 +1,128 @@
-# Project Context
+---
+doc_id: ai-project-context
+version: 1.0.0
+canonical_path: .ai/PROJECT_CONTEXT.md
+updated: 2026-09-03
+---
 
-Keep this file compact. It is a routing map, not full documentation.
+# Love Me Dialogue — Project Context
 
-## Repository
+This is the **only** file in `.ai/` that is allowed to know what the project
+is. Keep it a routing map: facts a run reads by name, then the shortest map
+that lets a new session act.
 
+## repository_mode
+
+```text
 repository_mode: personal
+```
+
+`.ai/REPOSITORY.md` § *Repository mode* reads this line and nothing else to
+decide merge authority. One owner, one branch protected only by CI.
+
+## Facts the checks read
+
+```text
 base_branch: stable
-primary_platform: Web / Windows; native Expo iOS+Android in `mobile/`
+merge_deploys: yes
+runtime_gate: node scripts/observe-site.mjs
+test_command: npm test
+lint_command: npm run lint
+build_command: node scripts/build-site.mjs
+generated: site/brand/*.woff2 + site/brand/COVERAGE.txt + site/brand/scene-*.jpg + site/brand/share-*.jpg ← every word the site prints, brand/*.jpg : python3 scripts/build-brand-assets.py; site/content-stamp.json ← page content : node scripts/stamp-content.mjs; src/tokens.css ← src/design-tokens.js : node scripts/build-tokens.mjs; src/questions-marriage-100.js ← question-packs/marriage.html : node scripts/build-marriage-100.mjs
+external_scripts: pagead2.googlesyndication.com (AdSense loader) : only when SITE.adsenseClient is set; t1.kakaocdn.net (Kakao JS SDK) : only when SITE.kakaoJsKey is set, fetched when the invite panel opens
+public_ids: SITE.adsenseClient, SITE.adsenseSlot, SITE.verification.google, SITE.verification.naver, SITE.kakaoJsKey — all in site/config.js; anything that authenticates lives in the host environment (docs/DEPLOY.md)
+owner_ledger: docs/OWNER_ACTIONS.md
+```
 
-## Product
+What the facts mean here:
 
-Purpose:
-- Help couples discover expectations before major life events, discuss differences safely, and record shared agreements.
+- `merge_deploys: yes` — `.github/workflows/deploy-site.yml` publishes
+  `site/dist/` to GitHub Pages on every push to `stable` that touches
+  `site/**`, `src/**` or `scripts/build-site.mjs`. A docs-only merge does not
+  deploy. **Standing approval (owner, 2026-09-03):** merge and deploy without
+  asking once tests, lint and the runtime gate pass; a change to layout or
+  copy still carries its screenshots in the pull request body.
+- External review window: Google AdSense site review requested 2026-09-02
+  (`docs/OWNER_ACTIONS.md` X7). Until the result arrives, merges are fixes and
+  small content changes; a new pack or a redesign waits.
+- `runtime_gate` — builds, serves `site/dist/`, and screenshots the home,
+  pack, about and privacy pages at 1280 and 390 into `.observe/`. Exit 0 means
+  every page answered and every screenshot was written; a person looks at
+  them. Playwright is not a dependency; see the script header.
+- `generated` — each artefact changes only in the same pull request as its
+  source, by the listed command. `npm test` fails on a stale font subset,
+  stamp or share card, and refuses a regenerated pack that differs from the
+  editorial source.
 
-Primary user value:
-- Prevent avoidable conflict by turning private assumptions into structured, psychologically safe conversations.
+## Authoritative product constraints
 
-## Architecture Map
+- The product is `lovemedialogue.com`: a static question site. Milestone 1
+  (`docs/MILESTONES.md`) is the marriage 100-question pack, free, ad-supported
+  — answers stay in the reader's browser, there is no server and no login.
+  Milestone 2 adds server storage and login; milestone 3 the app link.
+- No score, no verdict, no advice: the result sheet returns the reader's own
+  choices. The invitation link carries no answers; the shared result is a
+  compressed fragment (`site/share.js`, v2; v1 still decoded).
+- No third-party script loads by default; the two exceptions are listed under
+  `external_scripts`, each behind a configuration value, each guarded by a
+  test in `test/site.test.js`.
+- Operator: afterscent (Jeongsu Lim), contact `studio@afterscent.kr`, address
+  and privacy-policy fields from `site/config.js` — the 문의, 소개 and
+  개인정보 처리방침 pages render from them.
+- The responses shown to the user are in Korean; commit messages and pull
+  request bodies too.
 
-Core:
-- Dependency-free ES module web application with a Node HTTP API for magic-link sessions (`server/auth.mjs`), Resend login/email-bind mail (`server/mail.mjs`), couple workspace/invite (`server/workspace.mjs`), and AnswerRound persist (`server/answers.mjs`). `scripts/server.mjs` listens on `Number(process.env.PORT) || 4173`. Question content is in `src/questions.js`; projection/reveal helpers stay in `src/state.js`; product entry and pack gating live in `src/app.js`.
+## Current architecture
 
-UI:
-- Mobile-first development dashboard, single-question experience, and shared results in `index.html`, `src/app.js`, and `src/styles.css`.
-- LoveMe Expo host in `mobile/` opens S0 splash (1.2s fail-open). **This PR (LoveMe NEXT home):** splash → magic-link login (iOS system notification permission; virtual send + `[debug]`) → `질문집` home with heart balance from 0. Unsold packs show `곧 열려요` and use the marriage 3-question sample engine on existing questions only. Shop SKU `29,000원에 하트 12`; `열기` costs 10 hearts then certificate (pack name, `두 사람이 이 질문집을 마쳤어요`, 같음/가까움/이야기해요 counts, heart stamp, `홈으로`, `[debug] 수료`). Sample result after 3 questions is not the certificate. Partner has no hearts/shop. Live preview `d3be894e` stays splash→home without this login. Login keep-gates (`링크 보내기`, in-app pair connect, `계정`) remain. Magic-link consume uses the `loveme` app scheme. S1 install landing stays web-only (`src/install.js`). Designer font lock: titles and question stems MaruBuri; body, choices, buttons, `곧 열려요` Pretendard. Sample Q header `결혼 1/3`.
-- Native S4 invite-waiting + same-session fail screens live under `mobile/s4-invite/` and mount on that host. Store redirect, deferred deep link, and uninstalled join-confirm stay on the web accept flow.
+- `site/` — dependency-free ES modules rendered at build time:
+  `render.js` (pages and chrome), `pages.js` (standing pages), `seo.js`
+  (meta, JSON-LD, sitemap, verification tags, AdSense), `config.js` (every
+  owner-settable value), `enhance.js` (answers in `localStorage`, dock,
+  question map), `invite.js` (the invitation panel, app buttons),
+  `share.js` (result link codec). Built by `scripts/build-site.mjs` into
+  `site/dist/`; deployed by `.github/workflows/deploy-site.yml`.
+- `question-packs/marriage.html` is the editorial source of the marriage
+  pack; `scripts/build-marriage-100.mjs` renders it to
+  `src/questions-marriage-100.js`, and the site reads that.
+- `src/`, `server/`, `mobile/` — the earlier web app and Expo host for
+  milestones 2–3. Not under development; their tests still run and pass.
+- Tests: `node --test` under `test/` (506 on 2026-09-03), CI in
+  `.github/workflows/test-build.yml`; `scripts/lint.mjs` over 129 files.
+- `scripts/build-brand-assets.py` needs `fontTools`, `brotli` and `pillow`,
+  which is why it is not a build step.
 
-Persistence/Data:
-- File store persists `User` sessions, `CoupleWorkspace`, `CoupleMember`, email-bound `Invitation`, `AnswerRound`, `Answer`, author-only `PrivateNote`, `Agreement`, immutable `PublicLock` snapshots, `Purchase`, `Entitlement`, and webhook event IDs. Buyer login attaches a ghost workspace that stays pack-locked until the partner accepts. After the third sample public lock, remaining questions stay locked until a buyer 29,000 KRW entitlement. Local-simulator drafts are not migrated. Re-answer opens a new private round and never mutates a lock.
+## Current development slice
 
-Tests:
-- Node built-in test runner under `test/`; GitHub Actions workflow at `.github/workflows/test-build.yml`.
+- Milestone 1 is code-complete. Waiting on the AdSense review and the Daum
+  registration review; both land in `docs/OWNER_ACTIONS.md`.
+- Next: the newsletter (`docs/proposals/newsletter-ko.md` v2). D1 is decided
+  — own relay + Resend; D2–D5 are open. Not started.
+- Held: the pregnancy pack publication (`claude/pregnancy-100-publish`),
+  pending the owner's editorial pass.
 
-Build:
-- Dependency-free Node scripts copy the static application into `dist/`.
+## Permanently excluded scope
 
-## Verified Commands
+- Server-side storage of answers in milestone 1 (decided against
+  2026-09-01: built as a pull request, discarded the same evening).
+- App integration in milestone 1.
+- The Kakao SDK without a key, and any third-party script on page load.
+- The device share sheet for the invitation buttons (rejected 2026-09-02;
+  each button copies the link and opens its app).
+- A random result address: impossible without a server; the compressed
+  fragment is the design.
 
-Windows configure:
-- `npm install` (no external dependencies in the current slice)
+## Important paths
 
-Windows targeted build:
-- `npm run build`
-
-Windows full build:
-- `npm run lint && npm test && npm run build`
-
-Targeted tests:
-- `npm test`
-
-After changing anything a reader reads on the site — a question, a Part's name, the prose on a
-standing page, the home page's own words — regenerate the committed artefacts that are derived from
-it, and commit them with the change:
-- `node scripts/stamp-content.mjs` — the sitemap's `lastmod` dates (`site/content-stamp.json`)
-- `python3 scripts/build-brand-assets.py` — the subsetted fonts, the pack scenes and the share cards
-
-Both are checked by `npm test`, so a stale one fails the build rather than shipping quietly. The
-brand script needs `fontTools`, `brotli` and `pillow`, which is why it is not a build step.
-
-## Important Paths / Symbols
-
-- `src/questions.js` — structured question content
-- `src/app.js` — session-gated product views and historical local question workflow
-- `src/auth.js` / `src/auth-ui.js` — magic-link copy, Kakao/Naver/Google start, email-bind gate, pack gate, invite-waiting share, email-typo resend, same-session accept block
-- `mobile/s4-invite/` — native S4 buyer invite-waiting and same-session fail; reuses `/api/invite` and `/api/auth/force-logout`
-- `src/install.js` — recommended web install banner, `/start` Instagram CTA, `/install` landing, in-app browser hint
-- `mobile/` — Expo LoveMe host (`ios/` + `android/`). **This PR:** S0 splash (1.2s) → magic-link login → `질문집`. Live preview `d3be894e` stays splash → home. Other packs mount under `mobile/<pack>/` (S4 via `mobile/s4-invite/`, S9 via `src/s9-mount.js`, paywall via `mobile/paywall/`). Metro project root is `mobile/`; `mobile/metro.config.js` watchFolders repo-root `src/` so S4 can import `../../src/auth.js`.
-- `mobile/s0-s2-s3-api.js` — native/Expo auth client; `AUTH_FETCH_MS` 55s for magic-link, `OAUTH_FETCH_MS` 5s fail-fast
-- `mobile/paywall/` — remaining-pack gate after the third sample lock; buyer `POST /api/purchase`, partner cannot pay
-- `server/auth.mjs` — User session, 10-minute magic links, OAuth identity + email-bind gate, forced logout
-- `server/mail.mjs` — Resend transactional login/email-bind only; invites stay share links
-- `server/oauth.mjs` — provider env flags; authorize URLs only when client ids exist. Token exchange stays stubbed. The S2 social pack is not shippable; preview iOS stays on `stable`.
-- `server/workspace.mjs` — CoupleWorkspace, CoupleMember, 7-day email-bound invite, in-app pair-code generate/connect
-- `src/pair-code.js` — `loveme` consume URL, pair-code format, locked invite/pack-list copy
-- `server/answers.mjs` — AnswerRound persist, author-only drafts/notes, agree/hold, immutable PublicLock, remaining-question lock until entitlement
-- `server/entitlement.mjs` — one 29,000 KRW purchase, partner free, webhook-idempotent grant
-- `src/development.js` — development stage and history dashboard data
-- `src/state.js` — two-role state normalization, submission/reveal, comparison helpers
-- `src/styles.css` — responsive product UI
-- `docs/PRODUCT_SPEC.md` — product contract
-- `docs/DATA_MODEL.md` — planned secure server model
-- `mobile/eas.json` — EAS `preview` (internal iOS device) and `production` (store / TestFlight). Real IPA requires Apple Developer + `eas login`; see `docs/IOS_INSTALL.md`.
-
-## Known Integration Hotspots
-
-- See `.ai/memory/PROJECT_LESSONS.md`.
-
-## Context maintenance rule
-
-Update this file only with stable, evidence-backed facts that reduce future rediscovery.
-
-Do not turn it into a long architecture document.
+- `site/config.js` — every owner-settable value: packs, ids, tokens, operator
+- `site/render.js` — page renderer, dock, question map, invitation panel
+- `site/invite.js` — invitation panel behaviour (copy, open app, Kakao picker)
+- `site/share.js` — result link codec (v2, v1 compat)
+- `scripts/build-site.mjs` — the build; `scripts/observe-site.mjs` — the gate
+- `scripts/build-brand-assets.py` — fonts, scenes, share cards
+- `scripts/stamp-content.mjs` — sitemap `lastmod` from content hashes
+- `test/site.test.js` — the site's tests, incl. drift guards
+- `docs/OWNER_ACTIONS.md` — the owner ledger (row ids `N…`, `X…`)
+- `docs/MILESTONES.md` — milestone status; cites ledger rows
+- `docs/proposals/` — newsletter, SEO and service strategy proposals
+- `.ai/memory/PROJECT_LESSONS.md` — hotspots and lessons for this repository

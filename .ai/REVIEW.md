@@ -1,3 +1,10 @@
+---
+doc_id: ai-review
+version: 1.1.0
+canonical_path: .ai/REVIEW.md
+updated: 2026-09-03
+---
+
 # Adversarial Review Policy
 
 Review should try to disprove correctness, not confirm the implementer's confidence.
@@ -61,15 +68,21 @@ Examples:
 Default:
 - fresh adversarial challenge before implementation when valuable;
 - fresh final review before merge;
-- prefer opposite-family reviewer (Claude ↔ Codex).
+- prefer a reviewer that is a different model from the implementer.
 
 ## Cross-agent independence
 
-Preferred:
-- Claude implementation → Codex review
-- Codex implementation → Claude review
+*Single source, including the fallback. `.ai/MANAGER.md` § 9 points here.*
 
-If the opposite family is unavailable, spawn a fresh reviewer of the same family without the implementer's reasoning history.
+Preferred: the reviewer is a **different model** from the implementer — a
+different vendor, or a different model of the same vendor — in a fresh context.
+The report names both models (`.ai/REPORTING.md` § *Chat report*, the
+`Models` line); an unnamed reviewer is not an independent one.
+
+If no other model is available, spawn a fresh reviewer of the same model
+without the implementer's reasoning history and label the result
+`FALLBACK REVIEW`. A fresh context of the same model is distance, not
+independence, and the report must not present it as the latter.
 
 ## Resolution
 

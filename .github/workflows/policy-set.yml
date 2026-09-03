@@ -1,0 +1,28 @@
+name: policy set
+
+on:
+  push:
+    branches: [stable]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # The guard's own tests run first. A guard that has never failed on
+      # purpose has not been tested, and a broken guard that reports PASS is
+      # worse than no guard at all.
+      - name: Guard self-tests
+        run: python3 .ai/tools/test_check_policy_set.py
+
+      - name: Structural checks
+        run: python3 .ai/tools/check_policy_set.py
