@@ -1,3 +1,10 @@
+---
+doc_id: ai-ux
+version: 1.1.0
+canonical_path: .ai/UX.md
+updated: 2026-09-03
+---
+
 # UX and Runtime Verification
 
 User-facing functionality is complete only when it is understandable, discoverable, and behaves as intended—not merely when it compiles.
@@ -38,8 +45,8 @@ For UI changes that materially affect layout, workflow, state, or appearance:
 ```text
 Implement
 → compile
-→ Windows build
-→ launch
+→ run `runtime_gate` from `.ai/PROJECT_CONTEXT.md` § *Facts the checks read*
+  (a headless-browser script, an emulator, a device — whatever observes *this* product)
 → navigate to feature
 → exercise key states
 → inspect actual appearance

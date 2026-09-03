@@ -1,0 +1,12 @@
+# Terms that must not appear outside the files allowed to know what the
+# project is: .ai/PROJECT_CONTEXT.md, .ai/memory/PROJECT_LESSONS.md, and
+# anything under .ai/reports/. One term per line; `#` starts a comment.
+# Matching is case-insensitive and on whole words.
+#
+# This repository's own names. A policy file that mentions one of them has
+# stopped being portable.
+
+lovemedialogue
+afterscent
+Love Me
+LoveMe

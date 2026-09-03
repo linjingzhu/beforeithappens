@@ -5,3 +5,4 @@ data/
 *.log
 site/dist/
 __pycache__/
+.observe/

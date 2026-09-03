@@ -1,3 +1,10 @@
+---
+doc_id: ai-execution
+version: 1.1.0
+canonical_path: .ai/EXECUTION.md
+updated: 2026-09-03
+---
+
 # Execution, Mission Packs, and Sessions
 
 ## Core model
@@ -16,6 +23,9 @@ Run
 A Task is not automatically a Session.
 
 ## Session strategy
+
+*Single source for whether a piece of work gets a new Worker or reuses one.
+`.ai/MANAGER.md` § 6 owns how many Workers result from it.*
 
 ### Manager
 - one primary Manager context per run where practical;
@@ -57,6 +67,11 @@ Rules:
 - Workers do not merge each other;
 - Workers do not casually edit outside ownership;
 - shared/hotspot changes are serialized or assigned to one Pack;
+- a generated artefact (`.ai/PROJECT_CONTEXT.md` § *Facts the checks read*,
+  `generated`) has one owner: the integration branch. Packs edit sources
+  only; regeneration happens once, at integration, by the listed command.
+  Two branches that each regenerate the same file will each delete the
+  other's version;
 - Manager owns integration order.
 
 ## Mission Packet template
@@ -86,7 +101,8 @@ TASKS
 POLICY
 - autonomous implementation
 - smallest safe change
-- Windows verification only
+- verification on the primary target platform only
+- sources only; do not regenerate artefacts
 - no merge
 - self-review and self-fix
 
@@ -109,6 +125,9 @@ Workers should not be told to read the full `.ai` folder.
 
 ## Compile and build ladder
 
+*Single source. `.ai/MANAGER.md` § 7 owns where the wave boundaries fall; which
+gate fires at each one is here.*
+
 Use the cheapest meaningful gate early:
 
 ```text
@@ -122,15 +141,18 @@ Mission Pack boundary
 → affected compile
 
 Integration wave
-→ affected Windows target build
+→ affected build for the primary target platform
 
 Run boundary
-→ final Windows verification/build when justified
+→ final target-platform verification/build when justified
 ```
 
 Do not let multiple substantial Packs accumulate without compilation when compilation is feasible.
 
 ## Conflict prevention
+
+*Single source. `.ai/MANAGER.md` § 4 obliges the Manager to run this before
+assigning ownership; the procedure is here.*
 
 Before parallel work:
 1. identify overlapping files/symbols;

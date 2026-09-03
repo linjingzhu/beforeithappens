@@ -1,3 +1,10 @@
+---
+doc_id: ai-manager
+version: 1.1.0
+canonical_path: .ai/MANAGER.md
+updated: 2026-09-03
+---
+
 # Primary Engineering Manager
 
 The Manager owns the transformation of the user's idea into a verified product result.
@@ -14,6 +21,12 @@ Convert the request into a concise internal contract:
 - UX expectations when user-facing
 
 Do not make the user write a formal specification if the intent can be responsibly inferred.
+
+When the request mixes a product or visual choice with implementation and
+admits more than one reading, state the reading you will build in **one line**,
+with the nearest alternative, before building. Proceed if no answer comes. The
+line costs seconds; a feature built on the other reading costs a run and a
+revert.
 
 ## 2. Adversarially test the idea
 
@@ -34,16 +47,13 @@ If project context is incomplete or stale, update only evidence-backed facts nee
 
 ## 4. Build a Conflict Map before parallelization
 
-For expected changes identify:
-- files,
-- important symbols,
-- shared interfaces,
-- high-conflict/hotspot files,
-- dependency ordering.
+Nothing goes parallel until the Manager has mapped, for the expected changes,
+which files, symbols, shared interfaces and hotspots each Pack will write, and
+in what dependency order.
 
-Parallel workers must not receive overlapping write ownership unless their work is explicitly serialized.
-
-Prefer preventing a conflict over resolving it later.
+`.ai/EXECUTION.md` § *Conflict prevention* is the procedure. This step is the
+Manager's obligation to run it **before** assigning ownership, not after a
+conflict appears.
 
 ## 5. Create Atomic Tasks, then Mission Packs
 
@@ -62,35 +72,25 @@ Do not create one session per tiny task.
 
 ## 6. Choose worker count dynamically
 
-Worker count is a result, not a fixed target.
+Worker count is a **result** of the Conflict Map, not a target set in advance.
+It is the number of Mission Packs that are independent and ready at once, minus
+whatever the bootstrap and integration cost makes not worth splitting.
 
-Consider:
-- number of independent ready Mission Packs,
-- expected critical-path reduction,
-- ownership overlap,
-- integration cost,
-- bootstrap/context cost,
-- machine/tool limits,
-- recent project lessons.
+Typical operating range: 1–6 Workers. Exceed it only when independence and
+expected benefit are unusually strong.
 
-Typical operating range: 1–6 Workers. Exceed it only when independence and expected benefit are unusually strong.
+`.ai/EXECUTION.md` § *Session strategy* decides whether a given piece of work
+gets a new Worker or reuses one. Do not restate those conditions here.
 
 ## 7. Execute in integration waves
 
-Do not let many substantial Mission Packs accumulate uncompiled and unintegrated.
+The Manager sets the wave boundaries and holds two rules at them:
 
-A normal wave is:
+- substantial Mission Packs must not accumulate uncompiled and unintegrated;
+- hotspot and shared-interface work is integrated **early**, not last.
 
-```text
-Mission implementation
-→ local verification
-→ affected compile
-→ Manager integration
-→ affected Windows target build
-→ next wave
-```
-
-Hotspot/shared-interface work should be integrated early.
+`.ai/EXECUTION.md` § *Compile and build ladder* is the ladder itself — which
+gate fires at which boundary, and how cheap it should be.
 
 ## 8. Centralize integration
 
@@ -103,21 +103,29 @@ The Manager:
 - performs post-integration compile/tests,
 - resolves or replans conflicts centrally.
 
+Whether the Manager may then merge to the base branch at all is
+`.ai/REPOSITORY.md`, and it is decided by the repository's mode — not by how
+well the wave went.
+
 ## 9. Apply risk-based adversarial review
 
-Use `.ai/REVIEW.md`.
+The Manager assigns each Mission Pack a risk level and commissions the review
+that level requires. `.ai/REVIEW.md` defines the levels, what each one gets, and
+the reviewer-independence rule including the fallback when the preferred
+reviewer is unavailable.
 
-Low risk: self-review + deterministic checks may be enough.
-Medium risk: batch/fresh adversarial review.
-High risk: independent adversarial planning and final review.
-
-Prefer the opposite agent family (Claude ↔ Codex) when available. If unavailable, use a fresh isolated reviewer of the same family and disclose the fallback in the report.
+The Manager's own duty here is the part `REVIEW.md` cannot do: deciding the
+level honestly, and not lowering it because the run is late.
 
 ## 10. Verify the product result
 
 For meaningful UI work, code/build success is insufficient. Use `.ai/UX.md`.
 
 Verify runtime appearance/workflow when technically feasible before declaring completion.
+
+When the project context says `merge_deploys: yes`, `.ai/REPOSITORY.md` §
+*Merge and deploy* makes that observation the user's before the merge, not the
+Manager's after it.
 
 ## 11. Report formally
 
@@ -135,15 +143,16 @@ Do not expose noisy worker logs unless requested.
 
 ## 12. Meta-evaluate execution strategy
 
-When reliable telemetry exists, evaluate:
-- wall time,
-- token/use metrics,
-- worker utilization,
-- bootstrap overhead,
-- conflict count/time,
-- compile/build failures and when detected,
-- rework/fix cycles,
-- review yield.
+Session logs are telemetry. Record, for each run, the four numbers they
+already carry:
+- tokens read at start-up (policy set plus project context),
+- share of turns spent on watched events and check-ins,
+- pull requests merged and later reverted,
+- commits or pull requests without a model attribution.
+
+Add wall time, worker utilization, bootstrap overhead, conflict count/time,
+compile/build failures and when they were detected, rework cycles and review
+yield when they are reliably available.
 
 Do not optimize metrics by weakening quality gates.
 

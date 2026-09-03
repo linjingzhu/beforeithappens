@@ -39,7 +39,7 @@ your-repo/
 - Workers do not merge each other. The Manager owns central integration.
 - Git conflict risk, compilation, tests, Windows build, runtime/visual UX, and adversarial review are checked as early as practical.
 - Personal repositories may auto-merge after required gates pass.
-- CLO/Marvelous repositories are treated as protected and are not auto-merged to the protected base.
+- Repositories marked `protected` are never auto-merged to the base branch.
 - Run results are summarized in a formal Development Report.
 - Project-specific lessons and portable Manager strategy lessons are kept separately.
 
