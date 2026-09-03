@@ -1,6 +1,6 @@
 ---
 doc_id: ai-project-context
-version: 1.1.0
+version: 1.1.1
 canonical_path: .ai/PROJECT_CONTEXT.md
 updated: 2026-09-03
 ---
@@ -9,12 +9,11 @@ updated: 2026-09-03
 
 > **This is a template.** Copy it to `.ai/PROJECT_CONTEXT.md`, fill it in, and
 > delete every instruction line like this one. Keep `doc_id` and
-> `canonical_path` exactly as they are — the policy set addresses this document
-> by them.
+> `canonical_path` as they are — the set addresses this document by them.
 
-This is the **only** file in `.ai/` that is allowed to know what the project
-is. Every other policy document is written to survive being copied into an
-unrelated repository; this one exists so that they can be.
+The only file in `.ai/` allowed to know what the project is; every other
+document survives being copied elsewhere because this one exists. Keep it a
+routing map a run can read in one breath.
 
 ## repository_mode
 
@@ -50,17 +49,12 @@ public_ids: <identifiers that may be committed; ...> or none
 owner_ledger: <path of the one file listing work only the user can do>
 ```
 
-Who reads each fact:
-
-- `merge_deploys` — `.ai/REPOSITORY.md` § *Merge and deploy*.
-- `runtime_gate` — `.ai/UX.md` § *Runtime/visual gate*.
-- `test_command`, `lint_command`, `build_command` — the compile and build
-  ladder in `.ai/EXECUTION.md`, and every report's Verification block.
-- `generated` — `.ai/CORE.md` § *Generated artefacts* and `.ai/EXECUTION.md`
-  § *Worktrees and branches*.
-- `external_scripts`, `public_ids` — `.ai/CORE.md` § *Public identifiers and
-  secrets*.
-- `owner_ledger` — `.ai/REPORTING.md` § *Owner ledger*.
+Who reads each fact: `merge_deploys` → `.ai/REPOSITORY.md` § *Merge and
+deploy*; `runtime_gate` → `.ai/UX.md` § *Runtime/visual gate*; the three
+commands → the compile and build ladder and every report; `generated` →
+`.ai/CORE.md` § *Generated artefacts*; `external_scripts`, `public_ids` →
+`.ai/CORE.md` § *Public identifiers and secrets*; `owner_ledger` →
+`.ai/REPORTING.md` § *Owner ledger*.
 
 ## Authoritative product constraints
 
