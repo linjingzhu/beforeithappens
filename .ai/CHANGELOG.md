@@ -40,6 +40,28 @@ for wording, examples and ordering that change nothing about what is required.
 
 ---
 
+## 2.2.2 — 2026-09-03
+
+The start-up read, measured and cut. `CLAUDE.md`, `CORE.md` and `MANAGER.md`
+were 14,665 characters — about 3,700 tokens at four characters each — paid
+before a run read a line of the repository.
+
+- `MANAGER.md` rewritten as a twelve-item checklist, the same duties in the
+  same order, each pointing at the file that owns its mechanics:
+  5,634 → 2,755 characters;
+- `CORE.md` reworded to the same rules in fewer words: 6,482 → 3,832; every
+  requirement of 1.2.0 is still stated, the three evidence rules as `###`
+  headings so pointers still resolve;
+- `CLAUDE.md` cut to the adoption check, the read list, the trigger table and
+  the one habit: 2,549 → 1,085;
+- the context template's intro and "who reads each fact" list shortened:
+  3,032 → 2,853.
+
+PATCH: wording, ordering and length; nothing newly required, nothing removed.
+The three policy files are now 7,672 characters, about 1,900 tokens; the
+filled-in project context is the adopter's own cost, and `MANAGER.md` item 12
+records the total per run.
+
 ## 2.2.1 — 2026-09-03
 
 Found by adopting 2.2.0 into a real repository: the checks read the adopter's

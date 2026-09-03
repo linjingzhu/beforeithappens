@@ -182,7 +182,7 @@ class GuardTests(unittest.TestCase):
         # as a real entry was the guard's own first false positive here.
         code, out = run_checker(self.copy)
         self.assertEqual(code, 0, out)
-        self.assertIn("6 release entries", out)
+        self.assertIn("7 release entries", out)
 
     # -- check 6: project context -----------------------------------------
     FILLED_CONTEXT = (
