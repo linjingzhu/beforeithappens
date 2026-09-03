@@ -45,6 +45,8 @@ export function bindInvite() {
     state.hidden = !text;
     state.textContent = text || "";
     state.classList.toggle("is-error", Boolean(error));
+    // Everything the panel says that is not an error is the link having been copied — good news.
+    state.classList.toggle("is-done", Boolean(text) && !error);
   };
 
   // The clipboard can be refused outright. The address is on the screen either way, so the honest

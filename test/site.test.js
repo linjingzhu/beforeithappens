@@ -1059,6 +1059,11 @@ test("함께 풀기 opens the site's own panel, and every way out of it is an ad
   assert.match(invite, /objectType: "text"/);
   // A refused clipboard is reported, not reported as a success.
   assert.match(bind, /INVITE_COPY\.copyFailed/);
+  // And a success is green, at the owner's word: the class rides on every non-error sentence.
+  assert.match(bind, /state\.classList\.toggle\("is-done", Boolean\(text\) && !error\)/);
+  const css = readFileSync("site/site.css", "utf8");
+  assert.match(css, /\.invite-state\.is-done \{ color: #2f7d4f; font-weight: 600; \}/);
+  assert.ok(css.indexOf(".invite-state.is-done") < css.indexOf(".invite-state.is-error"), "an error still wins");
   // Closing: the button, and a click that lands on the dialog itself rather than on its contents.
   assert.match(bind, /event\.target === panel\) panel\.close\(\)/);
 });

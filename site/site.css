@@ -1535,6 +1535,11 @@ html { scroll-padding-top: 120px; }
   line-height: 1.6;
 }
 
+/* At the owner's word: the sentence that says the link is on the clipboard is the panel's one piece
+   of good news, and it is green so it reads as done. The palette has no green of its own — `--green`
+   is the accent-alt grey-blue — so this is the one place a green is named, at the depth of the
+   ink around it. */
+.invite-state.is-done { color: #2f7d4f; font-weight: 600; }
 .invite-state.is-error { color: var(--ab-error); }
 
 .invite-note {
