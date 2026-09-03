@@ -133,8 +133,9 @@ export const SITE = Object.freeze({
  * Each carries its own size because the card declares it on the `<img>`, and that declaration is
  * how the browser reserves the right space before the picture arrives. They were all written as
  * one number for a while, which was near enough while every crop was a narrow portrait — the real
- * widths ran 220 to 264 against a declared 234. The family reading a book is 395 wide, and a card
- * reserving half the room it needs shoves the row sideways the moment the picture loads.
+ * widths ran 220 to 264 against a declared 234. The drawings that arrived for 노후 and 자녀교육 are
+ * 323 and 327 wide, and a card reserving two thirds of the room it needs shoves the row sideways
+ * the moment the picture loads.
  *
  * The height is the same for every scene on purpose: `SCENE_HEIGHT` in the generator crops to it,
  * and a common height is what makes crops of different widths read as one set. `test/site.test.js`
@@ -146,9 +147,9 @@ export const SCENES = Object.freeze({
   dating: scene("dating", 220),
   marriage: scene("marriage", 234),
   pregnancy: scene("pregnancy", 221),
-  birth: scene("birth", 234),
-  education: scene("education", 395),
-  later: scene("later", 391)
+  birth: scene("birth", 231),
+  education: scene("education", 327),
+  later: scene("later", 323)
 });
 
 /**

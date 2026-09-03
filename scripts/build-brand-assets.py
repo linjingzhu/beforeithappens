@@ -203,10 +203,17 @@ APP = ROOT / "mobile" / "assets"
 #
 # A second sheet arrived later — `brand/pack-scenes-2.jpg`, three panels: a family reading a
 # picture book across the top, an old couple on a bench at bottom left, and a third at bottom right
-# the owner did not name, which is therefore not cut. It carries 교육 and, now, 노후: the bench on
-# the first sheet stood in for 노후 while nothing else did, and this one is drawn for it.
+# the owner did not name, which is therefore not cut. It carried 교육 and 노후 until the drawings
+# below replaced both.
 #
-# So the boxes are grouped by the sheet they are cut from, and a name appearing under two sheets
+# Three single drawings arrived on 2026-09-03, one per pack and each on its own white ground:
+# `pack-later.jpg` (an old couple on a bench sharing a cup — 노후), `pack-birth.jpg` (a couple with a
+# newborn — 출산) and `pack-education.jpg` (parents with a schoolgirl — 자녀교육). Each is cut to its
+# figures with a little air, measured the same way: the bounding box of everything darker than the
+# paper, widened by twenty pixels a side where the drawing allows it. They replace the newborn from
+# the first sheet and both panels from the second, which are now cut by nothing.
+#
+# So the boxes are grouped by the file they are cut from, and a name appearing under two files
 # would be a silent overwrite — `write_pack_scenes` refuses that rather than letting file order
 # decide which picture wins.
 PACK_SCENES = {
@@ -214,25 +221,10 @@ PACK_SCENES = {
         "dating": (17, 144, 349, 808),
         "marriage": (355, 140, 712, 810),
         "pregnancy": (718, 150, 1050, 810),
-        "birth": (1052, 160, 1408, 828),
     },
-    "pack-scenes-2.jpg": {
-        # The family, the book and the toys at their feet. The whole panel was taken first — blocks,
-        # globe and book stack included — and at 277x180 on the card the owner called it too big,
-        # which it was: two and a half times the width of its neighbours in a column where every
-        # other picture is about a hundred wide.
-        #
-        # So the cut comes in to the three figures, and takes the panel's full height rather than
-        # stopping at their knees: the extra height is what brings the width down (161x180, the same
-        # as the bench beside it) and it is where the letter blocks and the open picture book are,
-        # which is what still says 교육 once the globe and the book stack are outside the frame.
-        # The mat runs unbroken from one side of the panel to the other, so the sides cut across it
-        # — at card size that reads as the edge of a picture, not as damage.
-        "education": (272, 40, 968, 816),
-        # The whole bench, both arms inside the crop. Cutting it to the couple alone would end the
-        # planks in mid-air on both sides.
-        "later": (8, 868, 613, 1549),
-    },
+    "pack-later.jpg": {"later": (136, 112, 1149, 1492)},
+    "pack-birth.jpg": {"birth": (656, 0, 1172, 983)},
+    "pack-education.jpg": {"education": (544, 0, 1293, 1008)},
 }
 
 # Sized by height, not width: the figures stand, so the three crops differ in width and agree in
