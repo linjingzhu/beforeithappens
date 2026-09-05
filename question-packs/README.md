@@ -1,6 +1,6 @@
 # AB Question Packs
 
-Standalone editorial review builds for the four AB question packs.
+Standalone editorial review builds for the five AB question packs.
 
 ## Packs
 
@@ -10,10 +10,11 @@ Standalone editorial review builds for the four AB question packs.
 | Pregnancy | 100 | Emergency appendix (10) | `pregnancy.html` |
 | Birth | 100 | Emergency appendix (10) | `birth.html` |
 | Parenting | 100 | Emergency appendix (10) | `parenting.html` |
+| Later life (노후) | 100 | Emergency appendix (10) | `later.html` |
 
 The shared campaign concept is **“우리는 얼마나 알고 있었을까?”**.
 
-Pregnancy, birth, and parenting builds include per-question five-star editorial feedback, free-form notes, browser-local persistence, JSON feedback export, and a separate safety-learning appendix. The emergency appendix is educational and never replaces `119`, the attending medical team, or individualized medical advice.
+Pregnancy, birth, parenting, and later-life builds include per-question five-star editorial feedback, free-form notes, browser-local persistence, JSON feedback export, and a separate safety-learning appendix. The emergency appendix is educational and never replaces `119`, the attending medical team, or individualized medical advice.
 
 ## Status
 
