@@ -141,7 +141,7 @@ export const pregnancy100Pack = definePack({
   id: "pregnancy-100",
   surface: PACK_SURFACE.site,
   audience: "couple",
-  version: "2026-09-01",
+  version: "2026-09-05",
   locale: "ko-KR",
   title: "임신 100제",
   sections: [
