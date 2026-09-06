@@ -9,7 +9,7 @@ Standalone editorial review builds for the five AB question packs.
 | Marriage | 100 | — | `marriage.html` |
 | Pregnancy | 100 | Emergency appendix (10) | `pregnancy.html` |
 | Birth | 100 | Emergency appendix (10) | `birth.html` |
-| Parenting | 100 | Emergency appendix (10) | `parenting.html` |
+| Parenting | 100 | Emergency appendix (11) | `parenting.html` |
 | Later life (노후) | 100 | Emergency appendix (10) | `later.html` |
 
 The shared campaign concept is **“우리는 얼마나 알고 있었을까?”**.
