@@ -1,6 +1,6 @@
 # AB Question Packs
 
-Standalone editorial review builds for the five AB question packs.
+Standalone editorial review builds for the six AB question packs.
 
 ## Packs
 
@@ -11,8 +11,9 @@ Standalone editorial review builds for the five AB question packs.
 | Birth | 100 | Emergency appendix (10) | `birth.html` |
 | Parenting | 100 | Emergency appendix (11) | `parenting.html` |
 | Later life (노후) | 100 | Emergency appendix (10) | `later.html` |
+| Depression (우울, solo) | 100 | Help-line card, per-question reflection | `depression.html` |
 
-The shared campaign concept is **“우리는 얼마나 알고 있었을까?”**.
+The shared campaign concept is **“우리는 얼마나 알고 있었을까?”**. The solo depression pack turns it inward: **“나는 나를 얼마나 알고 있었을까?”** — no partner guess, no score, a warm reflection after every question, and a help-line card instead of an emergency quiz.
 
 Pregnancy, birth, parenting, and later-life builds include per-question five-star editorial feedback, free-form notes, browser-local persistence, JSON feedback export, and a separate safety-learning appendix. The emergency appendix is educational and never replaces `119`, the attending medical team, or individualized medical advice.
 
