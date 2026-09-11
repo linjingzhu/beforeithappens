@@ -149,7 +149,8 @@ export const SCENES = Object.freeze({
   pregnancy: scene("pregnancy", 221),
   birth: scene("birth", 231),
   education: scene("education", 327),
-  later: scene("later", 323)
+  later: scene("later", 323),
+  goodbye: scene("goodbye", 275)
 });
 
 /**
@@ -182,7 +183,11 @@ export const SHARE_CARDS = Object.freeze({
  * gets the same thing a reader who can gets — the situation — rather than a name the design is
  * deliberately withholding.
  *
- * In the order the stages arrive, after the one pack that can actually be read.
+ * In the order the stages arrive, after the one pack that can actually be read — and then 이별,
+ * which is not a stage and so has no place in that order. It is the branch, not the next step, and
+ * the only two positions that are not arbitrary are the ends. Last, because the cards name nothing:
+ * a row that ends on two people looking at the floor says one more thing can happen to two people,
+ * where the same picture wedged between 연애 and 임신 would read as the arc being interrupted.
  *
  * 노후 stood on a borrowed picture for a while — a bench scene from the first sheet, which the
  * owner read as 노후 when it was the closest thing there was. The second sheet carries one drawn
@@ -196,7 +201,8 @@ export const COMING = Object.freeze([
   Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
   Object.freeze({ id: "birth", scene: SCENES.birth, alt: "갓 태어난 아이를 안은 두 사람" }),
   Object.freeze({ id: "education", scene: SCENES.education, alt: "아이와 함께 그림책을 펼친 두 사람" }),
-  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 나이 든 두 사람" })
+  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 나이 든 두 사람" }),
+  Object.freeze({ id: "goodbye", scene: SCENES.goodbye, alt: "고개를 숙인 채 마주 선 두 사람" })
 ]);
 
 export const PUBLISHED = Object.freeze([

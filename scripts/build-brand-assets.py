@@ -213,6 +213,12 @@ APP = ROOT / "mobile" / "assets"
 # paper, widened by twenty pixels a side where the drawing allows it. They replace the newborn from
 # the first sheet and both panels from the second, which are now cut by nothing.
 #
+# `pack-goodbye.jpg` arrived on 2026-09-11, drawn for 이별: two people standing apart, both heads
+# bowed. Measured the same way as the three above but against a darker threshold. Its ground carries
+# a faint gradient the others do not, and the threshold that suited them reads that gradient as ink
+# out to the paper's own edge — which would have cropped the picture to the whole file and left the
+# figures swimming in white while every other card sits tight around its own.
+#
 # So the boxes are grouped by the file they are cut from, and a name appearing under two files
 # would be a silent overwrite — `write_pack_scenes` refuses that rather than letting file order
 # decide which picture wins.
@@ -225,6 +231,7 @@ PACK_SCENES = {
     "pack-later.jpg": {"later": (136, 112, 1149, 1492)},
     "pack-birth.jpg": {"birth": (656, 0, 1172, 983)},
     "pack-education.jpg": {"education": (544, 0, 1293, 1008)},
+    "pack-goodbye.jpg": {"goodbye": (49, 180, 1018, 1732)},
 }
 
 # Sized by height, not width: the figures stand, so the three crops differ in width and agree in
