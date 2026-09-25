@@ -1,8 +1,8 @@
 ---
 doc_id: ai-review
-version: 1.1.0
+version: 1.2.0
 canonical_path: .ai/REVIEW.md
-updated: 2026-09-03
+updated: 2026-09-19
 ---
 
 # Adversarial Review Policy
@@ -37,6 +37,30 @@ Inspect:
 - UX contract compliance.
 
 Findings require concrete evidence.
+
+## What a reviewer must not raise
+
+The list above is what makes a review worth commissioning. This one is what
+makes it worth reading. A review that reports everything gets skimmed, and a
+skimmed review is a gate that passes without asking.
+
+Do not raise, unless the requirement says otherwise:
+
+- style preference, and formatting the project has not made a rule;
+- optional renames;
+- refactoring nobody asked for;
+- hypothetical future problems with no path from this diff;
+- defensive code for conditions the types or the callers already exclude;
+- anything phrased as "consider" — either it is a defect or it is not.
+
+Two of these are worth naming as a pair. **Unrequested refactoring** raised as
+a finding invites the implementer to widen the change, which is the scope rule
+in `.ai/CORE.md` § *Implementation* broken by the reviewer rather than the
+author. **Speculative defensive code** turns a review into a source of the
+unnecessary complexity it exists to catch.
+
+A reviewer who finds nothing reportable returns that, and a run that treats an
+empty review as a failed review will get a padded one next time.
 
 ## Risk levels
 
