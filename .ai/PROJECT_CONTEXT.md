@@ -1,8 +1,8 @@
 ---
 doc_id: ai-project-context
-version: 1.1.0
+version: 1.1.1
 canonical_path: .ai/PROJECT_CONTEXT.md
-updated: 2026-09-03
+updated: 2026-09-25
 ---
 
 # Love Me Dialogue — Project Context
@@ -14,7 +14,7 @@ then the shortest map that lets a session act. Longer prose lives in
 ## repository_mode
 
 ```text
-repository_mode: personal
+repository_mode: protected
 ```
 
 ## Facts the checks read
@@ -75,3 +75,9 @@ random result address without a server.
 `site/config.js` (every owner value) · `site/render.js` · `site/invite.js` ·
 `test/site.test.js` (drift guards) · `docs/OWNER_ACTIONS.md` (ledger) ·
 `docs/MILESTONES.md` · `.ai/memory/PROJECT_LESSONS.md` (hotspots).
+
+## Automation state after policy adoption (2026-09-25)
+
+The owner requested the latest shared rules and removal/disablement of every GitHub Actions workflow across the repositories. This dated decision supersedes earlier instructions in this context that require Actions CI, Actions deployment, or workflow-driven automatic merges. Existing product constraints, local verification commands, history and owner records remain in force. Future unrelated changes use `repository_mode: protected`; this batch has explicit merge authorization.
+
+All tracked files under .github/workflows are removed. Actions CI, releases, deployment and other workflow-based jobs no longer execute. Local checks remain available. `merge_deploys` stays conservative where external hosting has not been independently verified; a successful merge is not deployment evidence. Do not recreate or re-enable workflows without a new owner instruction.

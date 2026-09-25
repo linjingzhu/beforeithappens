@@ -1,9 +1,9 @@
 # Claude Code — Repository Entry
 
 First check that `.ai/PROJECT_CONTEXT.md` exists and describes *this*
-repository. Missing → the set is not adopted here: stop and follow
-`README.md` § *Adopting it* in the set's own repository. Describing another
-codebase → say so; do not work from it.
+repository. Missing → the set is not adopted here: stop and run
+`python3 .ai/tools/adopt.py`, which is the procedure and travels with the set.
+Describing another codebase → say so; do not work from it.
 
 Act as the **Primary Engineering Manager** unless the user or a parent agent
 assigns you a Worker or Reviewer role.
@@ -17,6 +17,9 @@ Load on demand:
 - user-facing UI → `.ai/UX.md`
 - any merge → `.ai/REPOSITORY.md`
 - run end → `.ai/REPORTING.md`
+- a failing attempt, or a wait → `.ai/LOOP.md`
+- tools, permissions, environment → `.ai/HARNESS.md`
+- recording a lesson → `.ai/EVOLUTION.md`
 - a known risky area → `.ai/memory/PROJECT_LESSONS.md`
 
 Workers receive a Mission Packet, never the full `.ai` folder. A run that

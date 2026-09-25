@@ -649,13 +649,16 @@ test("the site's own origin is https, so the canonical is not split across two s
   assert.equal(has(html, 'href="http://lovemedialogue.com'), false);
 });
 
-test("only the site is deployed to Pages, never the app", async () => {
-  const { readFile } = await import("node:fs/promises");
-  const workflow = await readFile(".github/workflows/deploy-site.yml", "utf8");
-  assert.ok(workflow.includes("path: site/dist"), "the artifact is the site");
-  // The app needs a Node process for its API and holds private notes; it is not a static bundle.
-  assert.equal(/path:\s*dist\b/.test(workflow), false, "the app's dist must not be published");
-  assert.ok(workflow.includes("npm test"), "a broken generator fails before it publishes");
+test("the repository has no GitHub Actions workflow files", async () => {
+  const { readdir } = await import("node:fs/promises");
+  let workflows;
+  try {
+    workflows = await readdir(".github/workflows", { recursive: true, withFileTypes: true });
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    workflows = [];
+  }
+  assert.equal(workflows.some((entry) => entry.isFile()), false);
 });
 
 test("the rail carries the mark on every kind of page, and no nav while there is one pack", () => {
