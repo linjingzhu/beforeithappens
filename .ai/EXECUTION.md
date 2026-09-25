@@ -1,8 +1,8 @@
 ---
 doc_id: ai-execution
-version: 1.1.0
+version: 1.2.0
 canonical_path: .ai/EXECUTION.md
-updated: 2026-09-03
+updated: 2026-09-19
 ---
 
 # Execution, Mission Packs, and Sessions
@@ -21,6 +21,53 @@ Run
 ```
 
 A Task is not automatically a Session.
+
+## Sizing the work
+
+Before deciding how many Workers, decide whether the question arises. Size the
+task first, because the cost of planning a small change is paid whether or not
+the plan was needed.
+
+| Size | What it is | What it gets |
+| --- | --- | --- |
+| **S** | one clear change in one place | the Manager does it directly. No plan, no Packet, no subagent — the cheapest verification that answers the question, and nothing else |
+| **M** | an ordinary feature across a few files | find the existing implementation first, split into Packets only where work is genuinely independent, build and test, independent review |
+| **L** | several subsystems, or a change to a shared interface | explore, then plan, then implement; parallelise only independent Packs; strengthen regression cover; a Conflict Map before any of it |
+
+Getting this wrong is expensive in both directions. Planning an **S** burns a
+run's budget producing structure nobody reads. Treating an **L** as **M**
+skips the Conflict Map, and the cost arrives later as a merge.
+
+When the size is not obvious, it is **M**.
+
+## Resuming interrupted work
+
+A run that finds a feature already in progress continues it. It does not start
+it again, and this is where an agent most easily destroys work that was not
+its own.
+
+First establish which of two states this is:
+
+- **New** — no branch, no worktree, nothing in progress for this feature.
+- **Resuming** — a branch, a worktree, or uncommitted changes for it exist.
+
+Read the state before deciding: current branch, `git status`, the diff,
+which files changed, whether the build and tests currently pass. That reading
+is what tells you which ladder rungs (§ *Compile and build ladder*) are already
+behind you.
+
+When resuming:
+
+- keep the existing branch and worktree; do not create a second one;
+- do not switch away from the feature branch mid-work;
+- do not reset, delete or overwrite changes already made;
+- do not redo implementation that is already done and passing;
+- change existing work only where it conflicts with the current requirement,
+  and only as far as that conflict reaches;
+- continue from the first rung not yet passed, not from the beginning.
+
+`.ai/REPOSITORY.md` § *Branch lifecycle* owns what a branch may do; this
+section owns only the question of whether a run is starting or continuing.
 
 ## Session strategy
 

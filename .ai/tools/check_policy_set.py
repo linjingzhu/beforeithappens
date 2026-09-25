@@ -10,7 +10,7 @@ not prose, per LESSONS_FROM_PRACTICE.md entry 14. The one exception is the
 portability denylist, which searches for proper nouns rather than for a rule,
 and is opt-in per repository.
 
-Standard library only. Run from the repository root:
+Python 3.11+ standard library only. Run from the repository root:
 
     python3 .ai/tools/check_policy_set.py [repository root]
 
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 import sys
+import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,12 +36,15 @@ AI = ROOT / ".ai"
 INSTANCE_PATHS = {
     ".ai/PROJECT_CONTEXT.md",
     ".ai/memory/PROJECT_LESSONS.md",
+    # A roadmap names the features of one product, so it is an instance file
+    # like the two above, not a policy document. The auto-dev skill writes it.
+    ".ai/ROADMAP.md",
 }
 INSTANCE_DIRS = (".ai/reports/",)
 
 # Files that exist only where the set itself lives, not in a repository that
-# adopted it: the adoption procedure copies `.ai/` and `CLAUDE.md`, nothing
-# else. In an adopting repository the root `README.md` is the adopter's own,
+# adopted it: adoption copies the policy and capabilities, not these files.
+# In an adopting repository the root `README.md` is the adopter's own,
 # names its product, and is not part of the set — so the checks read it, and
 # resolve references to it, only at the set's home.
 SET_HOME_FILES = ("README.md", "LESSONS_FROM_PRACTICE.md")
@@ -51,8 +55,8 @@ DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 # `path.md` § *Section name*  — the set's cross-reference form.
 SECTION_REF = re.compile(r"`([A-Za-z0-9_./-]+\.md)`\s*§\s*\*([^*]+)\*")
-# Any backticked markdown path.
-PATH_REF = re.compile(r"`([A-Za-z0-9_./-]+\.md)`")
+# Backticked document and capability paths, including native Codex files.
+PATH_REF = re.compile(r"`([A-Za-z0-9_./-]+\.(?:md|toml|yaml))`")
 HEADING = re.compile(r"^(#{2,6})\s+(.+?)\s*$", re.M)
 
 
@@ -96,12 +100,22 @@ def at_set_home() -> bool:
 
 
 def policy_docs() -> list[Path]:
-    """The documents the structural checks read: `.ai/**` and `CLAUDE.md`
-    everywhere, plus the set-home files where the set itself lives."""
-    docs = [ROOT / "CLAUDE.md"] if (ROOT / "CLAUDE.md").exists() else []
+    """The policy, harness entry points and committed capability definitions,
+    plus the set-home files where the set itself lives.
+
+    The capability definitions are in this list for their references. An agent
+    definition or a skill is mostly pointers into `.ai/`, and a pointer nothing
+    resolves is a pointer that rots between releases.
+    """
+    docs = [ROOT / name for name in ("CLAUDE.md", "AGENTS.md") if (ROOT / name).exists()]
     if at_set_home():
         docs += [ROOT / name for name in SET_HOME_FILES if (ROOT / name).exists()]
-    return sorted(set(docs + repo_files(".ai/**/*.md")))
+    for pattern in (
+        ".ai/**/*.md", ".claude/**/*.md", ".agents/skills/**/*.md",
+        ".agents/skills/**/agents/openai.yaml", ".codex/agents/*.toml",
+    ):
+        docs += repo_files(pattern)
+    return sorted(set(docs))
 
 
 def rel(p: Path) -> str:
@@ -211,6 +225,16 @@ def check_front_matter(report: Report) -> None:
 # NOT VERIFIED: whether the pointed-at section actually says what the pointer
 # claims. A resolving reference can still be a wrong one.
 # --------------------------------------------------------------------------
+# Project capabilities the set ships and that travel, but that an adopting
+# repository may not have: it can delete one, or never have taken it. Referring
+# to one is therefore like referring to an instance file — resolved where the
+# set lives, tolerated as absent where it does not. This is the same set-home
+# distinction as SET_HOME_FILES, reached from the other direction.
+TRAVELLING_DIRS = (
+    ".claude/agents/", ".claude/skills/", ".codex/agents/", ".agents/skills/",
+)
+
+
 def resolve(ref: str, source: Path) -> tuple[Path | None, bool]:
     """Resolve a reference the way a reader would.
 
@@ -234,6 +258,8 @@ def resolve(ref: str, source: Path) -> tuple[Path | None, bool]:
         if candidate.exists():
             return candidate, False
         if is_instance(as_rel):
+            return None, True
+        if as_rel.startswith(TRAVELLING_DIRS) and not at_set_home():
             return None, True
     return None, False
 
@@ -558,6 +584,115 @@ def check_project_context(report: Report) -> None:
     )
 
 
+# --------------------------------------------------------------------------
+# Check 7 — capability definitions
+#
+# Question: does every committed capability — an agent definition, a skill —
+# carry the two fields a harness needs to offer it: a `name` that can be
+# written down, and a `description` that says when to reach for it, with the
+# name matching where it lives?
+#
+# A Mission Packet names an agent (`.ai/HARNESS.md` § Tools a Mission Packet
+# may assume) and a run invokes a skill by name. Either one declaring a
+# different name, or none, asks for something the harness will not find. The
+# two differ only in where the name must match: an agent is its file, a skill
+# is its directory.
+#
+# NOT VERIFIED: whether the agent or skill is any good, whether its tool list
+# is right, or whether the description triggers it at the moment it should.
+# Those are answered by using it, not by reading it.
+# --------------------------------------------------------------------------
+AGENTS_DIR = Path(".claude/agents")
+SKILLS_DIR = Path(".claude/skills")
+CODEX_AGENTS_DIR = Path(".codex/agents")
+CODEX_SKILLS_DIR = Path(".agents/skills")
+CAPABILITY_DIRS = (AGENTS_DIR, SKILLS_DIR, CODEX_AGENTS_DIR, CODEX_SKILLS_DIR)
+CAPABILITY_FIELDS = ("name", "description")
+
+
+def capability_definitions() -> list[tuple[Path, str]]:
+    """Every committed capability, paired with the name its front matter must
+    declare: an agent definition is named by its file, a skill by its folder."""
+    found = [(p, p.stem) for p in sorted((ROOT / AGENTS_DIR).glob("*.md"))]
+    found += [(p, p.stem) for p in sorted((ROOT / CODEX_AGENTS_DIR).glob("*.toml"))]
+    for directory in (SKILLS_DIR, CODEX_SKILLS_DIR):
+        found += [(p, p.parent.name) for p in sorted((ROOT / directory).glob("*/SKILL.md"))]
+    return found
+
+
+def check_capability_definitions(report: Report) -> None:
+    present = [d for d in CAPABILITY_DIRS if (ROOT / d).is_dir()]
+    failures: list[str] = []
+
+    if at_set_home():
+        for directory in CAPABILITY_DIRS:
+            if directory not in present:
+                failures.append(
+                    f"{directory.as_posix()} is missing, but the set ships the capabilities "
+                    "`.ai/HARNESS.md` points at"
+                )
+        if not (ROOT / "AGENTS.md").is_file():
+            failures.append("AGENTS.md is missing, but the set ships the Codex entry point")
+
+    if not present:
+        report.add(
+            "capability definitions",
+            "does the set still ship the capabilities it names?" if at_set_home()
+            else "no Claude or Codex capabilities in this repository — nothing to check",
+            failures,
+        )
+        return
+
+    definitions = capability_definitions()
+    for directory in present:
+        if not any(path.is_relative_to(ROOT / directory) for path, _ in definitions):
+            # A skill folder with no SKILL.md is the shape this catches: the
+            # harness lists nothing, and the run that named it gets no error.
+            failures.append(f"{directory.as_posix()} exists but ships no definition")
+
+    for path, expected in definitions:
+        name = rel(path)
+        text = path.read_text(encoding="utf-8")
+        if path.suffix == ".toml":
+            try:
+                fields = tomllib.loads(text)
+            except tomllib.TOMLDecodeError as exc:
+                failures.append(f"{name}: invalid TOML: {exc}")
+                continue
+            required = (*CAPABILITY_FIELDS, "developer_instructions")
+            for field in ("model", "model_reasoning_effort", "sandbox_mode"):
+                if field in fields and (not isinstance(fields[field], str) or not fields[field].strip()):
+                    failures.append(f"{name}: `{field}` must be a non-empty string")
+            if "sandbox_mode" in fields and fields["sandbox_mode"] not in (
+                "read-only", "workspace-write", "danger-full-access",
+            ):
+                failures.append(f"{name}: invalid `sandbox_mode`")
+        else:
+            fields = parse_front_matter(text)
+            if fields is None:
+                failures.append(f"{name}: no front matter block")
+                continue
+            required = CAPABILITY_FIELDS
+        for field in required:
+            if field not in fields:
+                failures.append(f"{name}: missing `{field}`")
+            elif not isinstance(fields[field], str) or not fields[field].strip():
+                failures.append(f"{name}: `{field}` must be a non-empty string")
+        declared = fields.get("name", "")
+        if declared and declared != expected:
+            failures.append(
+                f"{name}: declares `{declared}`, so anything naming "
+                f"`{expected}` would not find it"
+            )
+
+    report.add(
+        "capability definitions",
+        f"do all {len(definitions)} capability definitions carry a name "
+        "matching where they live, and a description saying when to use them?",
+        failures,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     global ROOT, AI
     argv = sys.argv[1:] if argv is None else argv
@@ -571,6 +706,7 @@ def main(argv: list[str] | None = None) -> int:
     check_heading_ownership(report)
     check_portability(report)
     check_changelog(report)
+    check_capability_definitions(report)
     check_project_context(report)
     report.print()
     return 1 if report.failed else 0

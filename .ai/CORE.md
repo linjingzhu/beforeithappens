@@ -1,8 +1,8 @@
 ---
 doc_id: ai-core
-version: 1.2.1
+version: 1.3.0
 canonical_path: .ai/CORE.md
-updated: 2026-09-03
+updated: 2026-09-19
 ---
 
 # Core Development Constitution
@@ -34,6 +34,18 @@ needless dependencies. Keep backward compatibility unless the task changes
 it. Fix small, clearly related adjacent defects; split unrelated discoveries
 into follow-ups. "Code written" is not "feature complete".
 
+### Comments
+
+A comment earns its place by explaining what the code cannot: a non-obvious
+reason, a constraint, an external contract, a hard algorithm, a trap someone
+already fell into. Fix or delete a comment the change made false.
+
+Never write the conversation into the code. Not the user's instruction, not
+the Mission Packet, not what the run did or that a line changed — those belong
+in the commit message and the pull request, where they can be read against the
+diff. A code comment addressed to whoever asked for the change is a comment
+addressed to nobody who will ever read it.
+
 ## Token discipline
 
 Useful development per token, not session count.
@@ -48,6 +60,11 @@ Useful development per token, not session count.
 - Wait on events, not sleeps: one lookup after the completion signal.
 - Before a context reset, write a state card (branch, open pull requests,
   unfinished items, verification commands); read it first afterwards.
+- Stable prefix: same read order every run, volatile content last. Load a
+  document when its trigger fires, never in case.
+- Breadth-first search goes to a subagent; keep the conclusion, not the files.
+- Bound the output too: the fewest facts that let the user decide, plus what
+  is unverified.
 - Never fabricate token or cost numbers.
 
 ## Target platform

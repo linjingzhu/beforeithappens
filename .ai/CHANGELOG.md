@@ -40,6 +40,222 @@ for wording, examples and ordering that change nothing about what is required.
 
 ---
 
+## 3.0.0 — 2026-09-25
+
+- Applied the shared release to this repository, preserving local product context and memories. Removed all tracked Actions workflows at the owner’s request; local structural checks remain available.
+
+Remove the bundled GitHub Actions automation while retaining local verification.
+This is a breaking adoption CLI change: existing callers must remove
+`--with-ci` from their commands.
+
+- Remove the policy-set Actions workflow and the adoption option that copied it.
+- Keep the policy checker and regression suites available as local commands;
+  adoption still runs the policy checker before returning its result.
+- Verify that adoption creates no workflows and preserves any workflows the
+  target repository already owns.
+- Update installation examples and verification instructions for local use.
+
+---
+
+## 2.6.0 — 2026-09-25
+
+Codex can now use the Claude-defined workflow and roles with the same shared
+policy gates.
+
+- Add `AGENTS.md`, the Codex `auto-dev` skill and its explicit-invocation
+  policy, and native Codex definitions for the two read-only agents.
+- Map model roles to Codex models in `HARNESS.md`; keep the reviewer model
+  selectable per run so it can differ from the implementer.
+- Let the Codex reviewer accept roadmap evidence before a diff exists, and
+  distinguish incomplete verification from a complete review PASS.
+- Carry the Codex entry, skills and agents through adoption while preserving
+  an adopter's existing entry and capabilities.
+- Extend capability, reference and portability checks to Codex files and add
+  regression coverage for adoption and malformed native agent definitions.
+  The tools now require Python 3.11+ for standard-library TOML parsing.
+
+---
+
+## 2.5.0 — 2026-09-20
+
+The set could say how to build well and had nothing to say about **what to
+build next**, so every run began with a person deciding. `auto-dev` is that
+decision made repeatable: propose a roadmap from evidence, challenge it, then
+execute, verify and merge one item at a time.
+
+It owns an order and its gates, and nothing else. Each of its six steps names
+the document that owns the rule it applies — `EXECUTION.md` for sizing and
+Mission Packets, `REVIEW.md` for the adversarial passes, `LOOP.md` for the
+attempt budget, `REPOSITORY.md` for the merge, `REPORTING.md` for the report.
+A procedure that restated any of them would be a second owner for a rule, which
+is the defect § *Single source* exists to prevent.
+
+- **the mode never starts itself.** The user starts it and nothing else does —
+  not an open-ended task, not a ready backlog, not a schedule, not a previous
+  run that left work. A mode that chooses what to build is choosing product
+  scope, which `CORE.md` § *Autonomy* puts among the few things to ask about,
+  so a mode that could enter itself has already decided. No standing approval,
+  project-context line or roadmap item can waive it; those widen only what
+  happens after the user has started a run;
+- **one gate waits for a person**, and it is the roadmap. Everything after it
+  runs on the set's ordinary gates, and a run that is late does not lower one:
+  speed is seventh of eight in `CORE.md` § *Priority*;
+- `.ai/ROADMAP.md` is a new instance file, exempt from front matter and from
+  the portability denylist for the same reason the project context is — a
+  roadmap names one product's features on purpose. It is also the state card
+  `CORE.md` § *Token discipline* asks for before a context reset, which is what
+  makes an interrupted loop resumable rather than restartable;
+- check 7 widened from agent definitions to **capability definitions**: an
+  agent is named by its file, a skill by its folder, and either one declaring
+  a different name is unreachable by whatever names it;
+- **capability definitions now have their references checked.** A skill is
+  mostly pointers into `.ai/`; a section renamed in `REVIEW.md` broke one
+  silently, because nothing read those files for references. They are also
+  scanned by the portability denylist now, which is the same argument: a
+  capability that travels must survive the copy;
+- `adopt.py` carries `.claude/skills/` alongside `.claude/agents/`, still never
+  over a file the target already has;
+- nine tests: four for the skill's shape, one that a dangling pointer inside a
+  capability fails, one that a roadmap may name the product, and three for the
+  copying, including an adopted tree passing with the capabilities it received.
+
+---
+
+## 2.4.0 — 2026-09-19
+
+Read a working Claude Code setup someone had assembled by hand, and kept only
+what the set could not already answer. Most of it was already here, worded
+differently; three things were not, and one thing the set had been *requiring*
+without shipping: `HARNESS.md` told a Mission Packet it could name a search
+agent and a review agent, and there was nothing in the repository to name.
+
+- **the set now ships two agent definitions**:
+  `.claude/agents/fast-explorer.md` (read-only search, returns a conclusion and
+  the paths behind it, under 150 tokens) and
+  `.claude/agents/adversarial-reviewer.md` (independent review, returns `PASS`
+  or a severity, a file and line, and a fix). Neither
+  pins a model — a search wants the cheapest one that can read code, and a
+  reviewer's model is decided against whoever implemented, per `REVIEW.md` §
+  *Cross-agent independence*. They are committed because a contributor who
+  clones the repository can spawn them and one who does not have them cannot;
+- `REVIEW.md` gained § *What a reviewer must not raise*. The list of what to
+  look for is what makes a review worth commissioning; this one is what makes
+  it worth reading. Unrequested refactoring was already out of scope — this
+  names it as the reviewer breaking the scope rule rather than the author;
+- `EXECUTION.md` gained § *Sizing the work* — a small change is the Manager's
+  to do directly, without a plan, a Packet or a subagent, and when the size is
+  not obvious it is medium — and § *Resuming interrupted work*, because the
+  expensive shape is a second branch for work that already has one;
+- `CORE.md` gained § *Comments*: what a comment must earn, and the rule that
+  the conversation never goes into the code. Not the instruction, not the
+  Packet, not that a line changed;
+- `HARNESS.md` now states the test for what belongs in a committed harness
+  file: if a new contributor cloning the repository would **behave**
+  differently without it, it is a capability and is committed; if only their
+  prose would read differently, it is preference and is not;
+- `adopt.py` copies `.claude/agents/`, and never over a file the target already
+  has — with or without `--force`. An adopter's own copy of a definition is
+  their harness;
+- a seventh check reads those definitions: front matter, a `name`, a
+  `description`, and a `name` matching the file, because a packet naming an
+  agent that does not resolve fails at spawn. It is a failure at the set's home
+  if the directory is missing, and nothing to check anywhere else — the third
+  time this set has had to tell its own home from a repository that adopted it,
+  after 2.2.1 and 2.3.1. Cross-references into `.claude/agents/` are resolved
+  the same way, or `HARNESS.md`'s pointers would dangle in every adopted tree;
+- six tests for the new check and two for the copying, including the one that
+  asserts the distinction above in both directions.
+
+Deliberately not absorbed: a feature-development skill, a UX specification
+format, and a repository-root entry file, each of which conflicts with a rule
+this set already states and paid for. Where the two disagreed — Mission Packet
+fields, how many workers, naming vendor models, the report format — the set
+kept its own.
+
+---
+
+## 2.3.1 — 2026-09-03
+
+Found by asking how the set is used as a GitHub template, and then trying it:
+a repository made with **"Use this template"** fails its own checks on the
+first run, before its owner has changed anything. The button copies every
+tracked file, and `LESSONS_FROM_PRACTICE.md` is how the checks tell the set's
+home from a repository that adopted it — so the new tree claims to be the set,
+and the checks read its `README.md` as the set's own. 2.2.1 fixed this defect
+for the documented path; the template path reintroduced it.
+
+- added `adopt.py --from-template`, which finishes such a tree in place:
+  removes `LESSONS_FROM_PRACTICE.md` (the entire correctness fix — verified by
+  removing only that and watching the checks pass), reseeds the portability
+  denylist from `--name` because the shipped seeds are another project's names
+  and prove nothing about yours, and **reports** rather than deletes a
+  `README.md` that is still this set's front page. It refuses a tree with no
+  marker to remove instead of guessing;
+- eight tests, one of which asserts the failure first: a copied tree with the
+  adopter's own README fails, and the mode makes it pass. A fix whose defect
+  was never reproduced is a fix nobody can check;
+- documented the button and its extra step in `README.md` and
+  `.ai/tools/README.md` § *GitHub's "Use this template"*.
+
+PATCH: no rule was added, removed or widened. A path that was broken now works,
+and nothing previously compliant changed.
+
+## 2.3.0 — 2026-09-03
+
+The harness, the loop, and adoption as a command. 2.2.0 checked the repository
+that adopted the set; this release is about how a run is operated and how a new
+repository gets one.
+
+- added `.ai/HARNESS.md`: what the environment owes a run before its first edit,
+  the rule that a run finding one of those missing names it and stops rather
+  than substituting a weaker check, why the entry file is a contract and not a
+  manual, where harness configuration belongs (committed, never on one
+  machine), and what a Mission Packet may assume about tools;
+- added `.ai/LOOP.md`: the four-step unit loop, an attempt budget — the same
+  failure twice means the diagnosis is wrong, three ends the attempt — five
+  signs a loop is not converging, and three stop conditions of which going
+  quiet is not one;
+- added `.ai/EVOLUTION.md`: five triggers that oblige a run to record a lesson,
+  a table of where each kind goes, the rule that a lesson expressible over
+  structure becomes a check with its blind spot written down, and pruning.
+  `MANAGER.md` is untouched: it keeps § 12 and its run metrics, and is being
+  improved in a separate run — moving § 12's content here is left to whoever
+  owns that file;
+- added four token rules to `CORE.md` § *Token discipline*, written in the
+  compressed voice 2.2.2 gave that file: a stable prefix with volatile content
+  last, load a document when its trigger fires rather than in case, send
+  breadth-first search to a subagent and keep the conclusion, and bound the
+  report as well as the reading. `CLAUDE.md` gains the three new triggers and
+  points its adoption line at `adopt.py`, which travels, instead of at a
+  `README.md` that does not;
+- added `.ai/tools/adopt.py` and `.ai/tools/test_adopt.py` (13 tests): one
+  command copies what travels, writes both instance files with the templates'
+  instruction lines removed, fills the facts from `--set key=value`, and runs
+  the checks in the new tree. It ends green or exits non-zero naming every fact
+  still unanswered; an existing instance is kept unless `--force` says
+  otherwise. CI runs the adoption tests, so a set that cannot be adopted green
+  fails here instead of in someone's new repository;
+- `CLAUDE.md` no longer points at `README.md` for the adoption procedure, a
+  file the adoption procedure does not copy. It points at `adopt.py`, which
+  does travel. This run found the same defect 2.2.1 fixed, from the other
+  side — by adopting rather than by reading — and reached the opposite fix:
+  make `LESSONS_FROM_PRACTICE.md` travel so the citations resolve. 2.2.1 was
+  merged first and is kept, because copying that file would make an adopting
+  repository look like the set's own home and the checks would then read the
+  adopter's `README.md` as this one's. `adopt.py` copies `CLAUDE.md` and
+  `.ai/` only, and `.ai/tools/README.md` records why.
+
+- fixed a brittle test the new release entry broke: the guard suite asserted
+  the changelog held "5 release entries", a count kept in two places that drifts
+  on every release. It now reads the count from the changelog it is checking.
+
+Start-up read: 8,205 characters against 2.2.2's 7,672. Seven trigger and rule
+lines cost 533 characters at every turn of every run, and that is the price of
+this release — recorded here rather than left for someone to measure later.
+
+MINOR: three documents and four rules were added, and two defects fixed.
+Nothing previously compliant became non-compliant.
+
 ## 2.2.2 — 2026-09-03
 
 The start-up read, measured and cut. `CLAUDE.md`, `CORE.md` and `MANAGER.md`
