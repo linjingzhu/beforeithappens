@@ -14,6 +14,7 @@ Standard library only:
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -180,9 +181,188 @@ class GuardTests(unittest.TestCase):
     def test_format_example_in_a_code_fence_is_not_a_release(self) -> None:
         # The changelog documents its own format inside a fence. Reading that
         # as a real entry was the guard's own first false positive here.
+        #
+        # The expected count is read from the changelog rather than written
+        # here: a number kept in two places drifts, and this one would drift on
+        # every release (entry 6).
+        text = (self.copy / ".ai" / "CHANGELOG.md").read_text(encoding="utf-8")
+        releases = len(re.findall(r"^## \d+\.\d+\.\d+ — ", text, re.M))
+        self.assertGreater(releases, 0, "no release entries to count")
+
         code, out = run_checker(self.copy)
         self.assertEqual(code, 0, out)
-        self.assertIn("7 release entries", out)
+        self.assertIn(f"{releases} release entries", out)
+
+    # -- check 7: capability definitions -----------------------------------
+    def test_agent_definition_without_front_matter(self) -> None:
+        agent = self.copy / ".claude" / "agents" / "fast-explorer.md"
+        agent.write_text("Just prose, no front matter.\n", encoding="utf-8")
+        self.assert_fails_with("no front matter block")
+
+    def test_agent_definition_missing_description(self) -> None:
+        agent = self.copy / ".claude" / "agents" / "fast-explorer.md"
+        text = agent.read_text(encoding="utf-8")
+        agent.write_text(text.replace("description:", "summary:", 1), encoding="utf-8")
+        self.assert_fails_with("missing `description`")
+
+    def test_agent_name_not_matching_its_file(self) -> None:
+        # A Mission Packet names the agent by file; a definition declaring a
+        # different name is one the harness will not find.
+        agent = self.copy / ".claude" / "agents" / "fast-explorer.md"
+        text = agent.read_text(encoding="utf-8")
+        agent.write_text(text.replace("name: fast-explorer", "name: explorer", 1), encoding="utf-8")
+        self.assert_fails_with("would not find it")
+
+    def test_agents_directory_present_but_empty(self) -> None:
+        for path in (self.copy / ".claude" / "agents").glob("*.md"):
+            path.unlink()
+        self.assert_fails_with("ships no definition")
+
+    def test_the_set_must_keep_shipping_its_agents(self) -> None:
+        # At the set's home the definitions are not optional: HARNESS.md names
+        # them, so losing them silently would leave that pointer dangling.
+        shutil.rmtree(self.copy / ".claude")
+        self.assert_fails_with("the set ships the capabilities")
+
+    def test_skill_without_front_matter(self) -> None:
+        skill = self.copy / ".claude" / "skills" / "auto-dev" / "SKILL.md"
+        skill.write_text("Just prose, no front matter.\n", encoding="utf-8")
+        self.assert_fails_with("no front matter block")
+
+    def test_skill_name_not_matching_its_directory(self) -> None:
+        # A skill is invoked by the name of its folder, not of its file — every
+        # one of them is called SKILL.md, so the folder is the only name there
+        # is. A definition declaring a different one cannot be reached.
+        skill = self.copy / ".claude" / "skills" / "auto-dev" / "SKILL.md"
+        text = skill.read_text(encoding="utf-8")
+        skill.write_text(text.replace("name: auto-dev", "name: autodev", 1), encoding="utf-8")
+        self.assert_fails_with("would not find it")
+
+    def test_skill_directory_without_a_skill_file(self) -> None:
+        # The quiet shape: a folder that looks like a skill and offers nothing.
+        for path in (self.copy / ".claude" / "skills").glob("*/SKILL.md"):
+            path.unlink()
+        self.assert_fails_with("ships no definition")
+
+    def test_a_capability_pointer_that_resolves_to_nothing(self) -> None:
+        # A skill is mostly pointers into `.ai/`. They are checked for the same
+        # reason the policy documents' are: nothing else notices when one rots.
+        skill = self.copy / ".claude" / "skills" / "auto-dev" / "SKILL.md"
+        text = skill.read_text(encoding="utf-8")
+        skill.write_text(text.replace("`.ai/LOOP.md`", "`.ai/CADENCE.md`"), encoding="utf-8")
+        self.assert_fails_with("which does not exist")
+
+    def test_an_adopted_tree_without_agents_is_not_a_failure(self) -> None:
+        # The same tree minus the set-home marker is an adopting repository,
+        # which may never have taken the agents. Absent is not broken there,
+        # and the references into them are not dangling either.
+        shutil.rmtree(self.copy / ".claude")
+        shutil.rmtree(self.copy / ".codex" / "agents")
+        shutil.rmtree(self.copy / ".agents" / "skills")
+        (self.copy / "LESSONS_FROM_PRACTICE.md").unlink()
+        code, out = run_checker(self.copy)
+        self.assertEqual(code, 0, out)
+        self.assertIn("nothing to check", out)
+
+    def test_missing_codex_entry_is_reported_at_set_home(self) -> None:
+        (self.copy / "AGENTS.md").unlink()
+        self.assert_fails_with("AGENTS.md is missing")
+
+    def test_missing_codex_capabilities_are_reported_at_set_home(self) -> None:
+        shutil.rmtree(self.copy / ".codex" / "agents")
+        self.assert_fails_with(".codex/agents is missing")
+
+    def test_codex_skill_name_must_match_its_directory(self) -> None:
+        self.edit(
+            ".agents/skills/auto-dev/SKILL.md",
+            lambda t: t.replace("name: auto-dev", "name: other-skill", 1),
+        )
+        self.assert_fails_with("would not find it")
+
+    def test_native_agent_invalid_toml_is_reported(self) -> None:
+        self.edit(".codex/agents/fast-explorer.toml", lambda t: t + '\nname = "duplicate"\n')
+        self.assert_fails_with("invalid TOML")
+
+    def test_native_agent_missing_instructions_is_reported(self) -> None:
+        self.edit(
+            ".codex/agents/fast-explorer.toml",
+            lambda t: t.replace("developer_instructions", "instructions", 1),
+        )
+        self.assert_fails_with("missing `developer_instructions`")
+
+    def test_native_agent_name_must_match_its_file(self) -> None:
+        self.edit(
+            ".codex/agents/fast-explorer.toml",
+            lambda t: t.replace('name = "fast-explorer"', 'name = "other-explorer"', 1),
+        )
+        self.assert_fails_with("would not find it")
+
+    def test_native_agent_non_string_description_is_reported(self) -> None:
+        self.edit(
+            ".codex/agents/fast-explorer.toml",
+            lambda t: re.sub(r'^description = .*$', 'description = 123', t, count=1, flags=re.M),
+        )
+        self.assert_fails_with("`description` must be a non-empty string")
+
+    def test_native_agent_model_is_optional(self) -> None:
+        self.edit(
+            ".codex/agents/fast-explorer.toml",
+            lambda t: re.sub(r'^model = .*\n', '', t, count=1, flags=re.M),
+        )
+        code, out = run_checker(self.copy)
+        self.assertEqual(code, 0, out)
+
+    def test_native_agent_invalid_sandbox_is_reported(self) -> None:
+        self.edit(
+            ".codex/agents/fast-explorer.toml",
+            lambda t: re.sub(r'^sandbox_mode = .*$', 'sandbox_mode = "readonly"', t, count=1, flags=re.M),
+        )
+        self.assert_fails_with("invalid `sandbox_mode`")
+
+    def test_codex_entry_references_are_checked(self) -> None:
+        self.edit("AGENTS.md", lambda t: t + "\nRead `.codex/agents/missing.toml`.\n")
+        self.assert_fails_with("references `.codex/agents/missing.toml`, which does not exist")
+
+    def test_native_agent_references_are_checked(self) -> None:
+        self.edit(".codex/agents/fast-explorer.toml", lambda t: t + '\n# Read `.ai/MISSING.md`.\n')
+        self.assert_fails_with(".codex/agents/fast-explorer.toml: references `.ai/MISSING.md`")
+
+    def test_codex_skill_references_are_checked(self) -> None:
+        self.edit(".agents/skills/auto-dev/SKILL.md", lambda t: t + "\nRead `.ai/MISSING.md`.\n")
+        self.assert_fails_with(".agents/skills/auto-dev/SKILL.md: references `.ai/MISSING.md`")
+
+    def test_codex_skill_metadata_references_are_checked(self) -> None:
+        self.edit(
+            ".agents/skills/auto-dev/agents/openai.yaml",
+            lambda t: t + "\n# Read `.ai/MISSING.md`.\n",
+        )
+        self.assert_fails_with("agents/openai.yaml: references `.ai/MISSING.md`")
+
+    def test_codex_entry_and_capabilities_are_portable(self) -> None:
+        term = first_denylisted_term(self.copy)
+        paths = (
+            "AGENTS.md", ".codex/agents/fast-explorer.toml",
+            ".agents/skills/auto-dev/SKILL.md", ".agents/skills/auto-dev/agents/openai.yaml",
+        )
+        for path in paths:
+            self.edit(path, lambda t: t + f"\n# {term}\n")
+        code, out = run_checker(self.copy)
+        self.assertEqual(code, 1, out)
+        for path in paths:
+            self.assertIn(f"{path}: 1x `{term}`", out)
+
+    # -- check 4: the roadmap is an instance file --------------------------
+    def test_the_roadmap_may_name_the_project(self) -> None:
+        # A roadmap lists one product's features by name. It is an instance
+        # file for the same reason the project context is, and a check that
+        # forbade the name would forbid the file.
+        term = first_denylisted_term(self.copy)
+        (self.copy / ".ai" / "ROADMAP.md").write_text(
+            f"# Roadmap\n\n## Ship the {term} importer\n\nstate: proposed\n",
+            encoding="utf-8",
+        )
+        code, out = run_checker(self.copy)
+        self.assertEqual(code, 0, out)
 
     # -- check 6: project context -----------------------------------------
     FILLED_CONTEXT = (
@@ -224,7 +404,7 @@ class GuardTests(unittest.TestCase):
 
     # -- adopting repository -----------------------------------------------
     def test_adopting_repository_without_set_home_files_passes(self) -> None:
-        # The adoption procedure copies `.ai/` and `CLAUDE.md`, nothing else.
+        # Adoption copies the policy and capabilities, not the set-home files.
         # The adopter's README names its product and is not the set's.
         term = first_denylisted_term(self.copy)
         (self.copy / "LESSONS_FROM_PRACTICE.md").unlink(missing_ok=True)
