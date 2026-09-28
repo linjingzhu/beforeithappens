@@ -3,6 +3,9 @@ import { PACK_AUDIENCE, PACK_SURFACE } from "./pack-schema.js";
 import { marriagePack } from "./questions.js";
 import { marriage100Pack } from "./questions-marriage-100.js";
 import { pregnancy100Pack } from "./questions-pregnancy-100.js";
+import { birth100Pack } from "./questions-birth-100.js";
+import { parenting100Pack } from "./questions-parenting-100.js";
+import { later100Pack } from "./questions-later-100.js";
 
 /**
  * The registry: every pack that has content, in one place, addressable by either of its two ids.
@@ -18,7 +21,14 @@ import { pregnancy100Pack } from "./questions-pregnancy-100.js";
  * ordering, lookup, and the invariant that the app never advertises a pack with nothing in it —
  * follows from being in this list.
  */
-const CONTENT_PACKS = Object.freeze([marriagePack, marriage100Pack, pregnancy100Pack]);
+const CONTENT_PACKS = Object.freeze([
+  marriagePack,
+  marriage100Pack,
+  pregnancy100Pack,
+  birth100Pack,
+  parenting100Pack,
+  later100Pack
+]);
 
 const APP_PACKS = CONTENT_PACKS.filter((pack) => pack.surface === PACK_SURFACE.app);
 

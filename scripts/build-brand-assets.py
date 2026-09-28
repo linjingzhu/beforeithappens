@@ -208,7 +208,7 @@ APP = ROOT / "mobile" / "assets"
 #
 # Three single drawings arrived on 2026-09-03, one per pack and each on its own white ground:
 # `pack-later.jpg` (an old couple on a bench sharing a cup — 노후), `pack-birth.jpg` (a couple with a
-# newborn — 출산) and `pack-education.jpg` (parents with a schoolgirl — 자녀교육). Each is cut to its
+# newborn — 출산) and `pack-education.jpg` (parents with a schoolgirl — 육아). Each is cut to its
 # figures with a little air, measured the same way: the bounding box of everything darker than the
 # paper, widened by twenty pixels a side where the drawing allows it. They replace the newborn from
 # the first sheet and both panels from the second, which are now cut by nothing.
@@ -230,7 +230,11 @@ PACK_SCENES = {
     },
     "pack-later.jpg": {"later": (136, 112, 1149, 1492)},
     "pack-birth.jpg": {"birth": (656, 0, 1172, 983)},
-    "pack-education.jpg": {"education": (544, 0, 1293, 1008)},
+    # The sheet is named for the drawing's subject; the crop is named for the pack it stands on,
+    # because `site/config.js` looks a card's scene up by the pack's slug. 육아 100제 is the pack
+    # that carries 자녀교육 — 배움의 시작 and 화면 너머의 세계 are two of its ten parts — so the
+    # parents with a schoolgirl is its picture, not a seventh pack's.
+    "pack-education.jpg": {"parenting": (544, 0, 1293, 1008)},
     "pack-goodbye.jpg": {"goodbye": (49, 180, 1018, 1732)},
 }
 

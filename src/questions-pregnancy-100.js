@@ -2,13 +2,13 @@
  * 임신 100제 — a site pack. Generated; do not edit by hand.
  *
  * Source: `question-packs/pregnancy.html`, the editorial review build.
- * Regenerate: `node scripts/build-pregnancy-100.mjs`. `test/pregnancy-100.test.js` fails if this
- * file and that one disagree.
+ * Regenerate: `node scripts/build-site-packs.mjs pregnancy`. `test/site-packs.test.js` fails if
+ * this file and that one disagree.
  *
- * The source's 11th section — the emergency appendix — is not here on purpose. It is a quiz with
- * right and wrong answers about obstetric emergencies, which cannot live inside a site whose whole
- * contract is that there is no score and no verdict, and `question-packs/README.md` requires
- * medical review before that material is promoted to any runtime.
+ * The source's last section — the emergency appendix — is not here on purpose. It is a quiz with
+ * right and wrong answers about emergencies, which cannot live inside a site whose whole contract is
+ * that there is no score and no verdict, and `question-packs/README.md` requires medical review
+ * before that material is promoted to any runtime.
  */
 import { definePack, PACK_SURFACE } from "./pack-schema.js";
 
