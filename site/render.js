@@ -112,18 +112,32 @@ export const SITE_COPY = Object.freeze({
  */
 function depthBlock(question) {
   const options = SITE_COPY.importanceOptions
-    .map((option) => `            <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
+    .map((option) => `              <option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`)
     .join("\n");
+  // Folded, at the owner's word (2026-09-28). Three empty fields under every question made the page
+  // read as a form to fill in rather than a question to answer, and a reader who wanted to answer a
+  // hundred met three hundred boxes. Closed, the question and its four answers are the whole card;
+  // the notes are one line away for whoever wants them.
+  //
+  // `<details>` rather than a script: the fold works with no JavaScript, which is the same contract
+  // the rest of the page keeps. A reader who saved a note gets it opened for them —
+  // `site/enhance.js` opens the fold when it restores one, so nothing is hidden behind a closed
+  // summary that the reader put there.
+  //
+  // The lead is the summary now, so it is no longer a `<label for>`; the select carries its own
+  // accessible name instead, the way both textareas already do.
   return `
-        <div class="q-depth">
-          <label class="q-depth-lead" for="importance-${escapeHtml(question.id)}">${escapeHtml(SITE_COPY.depthLead)}</label>
-          <select id="importance-${escapeHtml(question.id)}" data-note="importance">
-            <option value="">${escapeHtml(SITE_COPY.importancePlaceholder)}</option>
+        <details class="q-depth">
+          <summary class="q-depth-lead">${escapeHtml(SITE_COPY.depthLead)}</summary>
+          <div class="q-depth-body">
+            <select id="importance-${escapeHtml(question.id)}" data-note="importance" aria-label="${escapeHtml(SITE_COPY.importancePlaceholder)}">
+              <option value="">${escapeHtml(SITE_COPY.importancePlaceholder)}</option>
 ${options}
-          </select>
-          <textarea data-note="reason" rows="3" placeholder="${escapeHtml(SITE_COPY.reasonPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.reasonPlaceholder)}"></textarea>
-          <textarea data-note="guess" rows="3" placeholder="${escapeHtml(SITE_COPY.guessPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.guessPlaceholder)}"></textarea>
-        </div>`;
+            </select>
+            <textarea data-note="reason" rows="3" placeholder="${escapeHtml(SITE_COPY.reasonPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.reasonPlaceholder)}"></textarea>
+            <textarea data-note="guess" rows="3" placeholder="${escapeHtml(SITE_COPY.guessPlaceholder)}" aria-label="${escapeHtml(SITE_COPY.guessPlaceholder)}"></textarea>
+          </div>
+        </details>`;
 }
 
 /**
@@ -164,18 +178,16 @@ function feedbackExport() {
 }
 
 function questionArticle(question, site = SITE) {
+  // The answer, and nothing under it. Each choice used to print the name of the value it stands
+  // for — a second line in the accent colour — and the owner took it off on 2026-09-28: the answer
+  // already says what it is, and a tag under it read as the page naming the reader's choice back
+  // at them. `valueLabel` stays in the pack, like `mood`: it is the author's record of the axis a
+  // question runs along, and what the page prints is a separate decision from what a pack holds.
   const choices = question.choices
-    .map((choice) => {
-      // The name of the value a choice stands for, where the pack's author wrote one. It is what
-      // makes four plausible answers legible as four different things to want.
-      const value = choice.valueLabel
-        ? `<em class="q-choice-value">${escapeHtml(choice.valueLabel)}</em>`
-        : "";
-      return `          <li><label class="q-choice">
+    .map((choice) => `          <li><label class="q-choice">
             <input type="radio" name="q-${escapeHtml(question.id)}" value="${escapeHtml(choice.id)}">
-            <span>${escapeHtml(choice.label)}${value}</span>
-          </label></li>`;
-    })
+            <span>${escapeHtml(choice.label)}</span>
+          </label></li>`)
     .join("\n");
   // The pack writes a mood for every question and the page does not print it. It is a note about
   // the arc — the tenth question of a Part is meant to land differently from the first — and beside

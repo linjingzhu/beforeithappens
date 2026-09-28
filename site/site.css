@@ -431,13 +431,53 @@ html { scroll-padding-top: 120px; }
  * part of the card that asks for sentences.
  */
 .q-depth {
-  display: grid;
-  gap: 8px;
   margin-top: 18px;
 }
 
+/*
+ * The summary is the whole control, so it gets a control's hit area and a marker that says which
+ * way it opens. `list-style: none` plus the WebKit pseudo-element is the pair that removes the
+ * browser's own triangle in every engine; the caret after it is the site's own, and it turns.
+ */
 .q-depth-lead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ab-muted);
+}
+
+.q-depth-lead::-webkit-details-marker { display: none; }
+
+.q-depth-lead::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+  transition: transform 120ms ease;
+}
+
+.q-depth[open] .q-depth-lead::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+
+.q-depth[open] .q-depth-lead { color: var(--ab-ink); }
+
+.q-depth-lead:focus-visible {
+  outline: 2px solid var(--ab-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.q-depth-body {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 .q-depth select,
@@ -795,14 +835,6 @@ html { scroll-padding-top: 120px; }
  * What a choice stands for. Four plausible answers read as one blur without it; named, they read as
  * four different things a person might want.
  */
-.q-choice-value {
-  display: block;
-  margin-top: 4px;
-  color: var(--ab-accent);
-  font-size: 13px;
-  font-style: normal;
-}
-
 .q-example {
   margin: 0 0 16px;
   color: var(--ab-muted);
