@@ -1778,6 +1778,16 @@ html { scroll-padding-top: 120px; }
 
 /* The ways out of a 404. A row of links, wrapping on a phone; nothing else on that page moves. */
 /*
+ * Who wrote the page and when it last changed. Quiet, above the row of ways on: a reader looking
+ * for it finds it, and a reader who is not looking is not made to read a date first.
+ */
+.prose-byline {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--ab-muted);
+}
+
+/*
  * A row of ways on: under the 404's apology, and under a 읽을거리 page. Same shape because it is
  * the same thing — a page that has said what it has to say, pointing at where to go next.
  */
