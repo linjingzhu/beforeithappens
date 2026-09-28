@@ -1880,6 +1880,90 @@ test("AdSense is two ids away, and absent until they are set", () => {
   assert.match(build, /google\.com, \$\{publisher\}, DIRECT, f08c47fec0942fa0/);
 });
 
+/**
+ * The error page carries no ad loader, and the trust pages a reviewer looks for all exist.
+ *
+ * Google's own approval slides name three checks — the code is complete and in the `<head>`, the
+ * site is reachable by the crawler, and the site is policy compliant — and three violations behind
+ * most rejections: low value content, replicated content, deceptive navigation.
+ *
+ * The 404 sits on the wrong side of the first violation. It is twenty-nine words and a row of ways
+ * out, which is the page AdSense means by "little or no content", and this site never placed a unit
+ * on it. That was not enough on its own: auto ads inject where no slot was declared, so the loader
+ * itself is what has to be absent. Every other page keeps it.
+ */
+test("no ad loader reaches the error page, and every other page has one in the head", async () => {
+  const { renderNotFoundPage, renderStandingPage } = await import("../site/render.js");
+  const { standingPages } = await import("../site/pages.js");
+  const withAds = siteWith({ ...site, adsenseClient: "ca-pub-1234567890123456" });
+
+  const notFound = renderNotFoundPage(withAds);
+  assert.equal(notFound.includes("googlesyndication"), false, "an error page is not an ad surface");
+  assert.equal(notFound.includes("adsbygoogle"), false);
+  assert.match(notFound, /<meta name="robots" content="noindex">/, "and it stays out of the index");
+
+  // Everything a reader can actually read does carry it, inside the head where AdSense asks for it.
+  const rest = [
+    renderIndex(indexModel({ site: withAds }), withAds),
+    renderQuestionPage(pageModel("marriage", 1, { site: withAds }), withAds),
+    ...standingPages({ site: withAds }).map((page) => renderStandingPage(page, withAds))
+  ];
+  for (const html of rest) {
+    const head = html.slice(0, html.indexOf("</head>"));
+    assert.ok(head.includes("pagead2.googlesyndication.com"), "the loader is in the head");
+  }
+});
+
+test("the site carries the four pages a reviewer looks for, and links them from every page", async () => {
+  const { standingPages, footerLinks } = await import("../site/pages.js");
+  // 소개 · 문의 · 개인정보 처리방침 · 이용약관. The last three are emitted only once the operator's
+  // identity and address exist, which is why this asserts the live config rather than a fixture:
+  // what matters is that the deployed site has them, not that the code could make them.
+  assert.deepEqual(
+    standingPages({ site: SITE }).map((page) => page.path),
+    ["/about/", "/contact/", "/privacy/", "/terms/"]
+  );
+  assert.deepEqual(footerLinks({ site: SITE }).map((link) => link.path), standingPages({ site: SITE }).map((p) => p.path));
+
+  // And the footer that links them is on every kind of page, so no page is a dead end.
+  const pages = [
+    renderIndex(indexModel({ site }), site),
+    renderQuestionPage(pageModel("marriage", 1, { site }), site),
+    renderResultPage("marriage", published, site)
+  ];
+  for (const html of pages) {
+    for (const link of footerLinks({ site: SITE })) {
+      assert.ok(has(html, `href="${link.path}"`), `${link.path} is linked`);
+    }
+  }
+});
+
+/**
+ * 이용약관 says who it binds and what it does not promise.
+ *
+ * The clause that matters is the third: several packs ask about medical decisions, money and care,
+ * and none of them was written by a clinician or a lawyer. A site that takes ad money for pages
+ * about pregnancy and end-of-life care owes its reader that sentence where they will meet it.
+ */
+test("the terms name the operator, refuse to be advice, and point at 119", async () => {
+  const { termsCopy } = await import("../site/pages.js");
+  const copy = termsCopy({ site: SITE });
+  const text = JSON.stringify(copy);
+  assert.ok(copy.sections.length >= 6, "a term per thing it governs");
+  assert.match(text, /afterscent/i, "it names the operator it binds");
+  assert.match(text, /lovemedialogue\.com/, "and the site it covers");
+  assert.match(text, /의료·법률·재무·심리 상담을 대신하지 않으며/);
+  assert.match(text, /119/, "and says where to go when it is urgent");
+  assert.match(text, /브라우저에만 저장/, "and repeats where the answers live");
+  assert.match(text, new RegExp(SITE.contactEmail.replace(".", "\\.")), "with an address to write to");
+
+  // It waits on an identity, the way 문의 and 처리방침 do: a term between "the operator" and nobody
+  // is a template, not a term.
+  const { standingPages } = await import("../site/pages.js");
+  const anonymous = siteWith({ operator: Object.freeze({}), contactEmail: "" });
+  assert.equal(standingPages({ site: anonymous }).some((page) => page.slug === "terms"), false);
+});
+
 test("둘이 함께 해보기 sends the invite link, and the link carries no answers", async () => {
   const { INVITE_COPY } = await import("../site/invite-copy.js");
   const html = renderQuestionPage(pageModel(PUBLISHED[0].slug, 1, { site }), site);
