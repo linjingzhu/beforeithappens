@@ -598,7 +598,7 @@ export const parenting100Pack = definePack({
     scene: "저녁 준비와 급한 업무가 겹쳤습니다.",
     mood: "현실감",
     choices: [
-      { id: "c100-s05-04-a", label: "그런 날은 써도 된다", valueLabel: "지친 날은" },
+      { id: "c100-s05-04-a", label: "그런 날은 써도 된다", valueLabel: "지친 날 허용" },
       { id: "c100-s05-04-b", label: "30분 같은 상한을 두고 쓴다", valueLabel: "상한 안에서" },
       { id: "c100-s05-04-c", label: "다른 방법(음악·놀이)을 먼저 쓴다", valueLabel: "대안 먼저" },
       { id: "c100-s05-04-d", label: "쓰지 않는다", valueLabel: "돌봄용 금지" }
@@ -769,7 +769,7 @@ export const parenting100Pack = definePack({
     choices: [
       { id: "c100-s06-07-a", label: "금지한다고 분명히 말한다", valueLabel: "분명히 금지" },
       { id: "c100-s06-07-b", label: "아이 없는 자리에서만 하게 한다", valueLabel: "아이 없을 때만" },
-      { id: "c100-s06-07-c", label: "비교한 사람의 자녀인 쪽이 그 자리에서 말한다", valueLabel: "비교한 쪽 가족이" },
+      { id: "c100-s06-07-c", label: "비교한 사람의 자녀인 쪽이 그 자리에서 말한다", valueLabel: "비교한 쪽이 말함" },
       { id: "c100-s06-07-d", label: "듣고 넘긴다", valueLabel: "넘김" }
     ]
   },

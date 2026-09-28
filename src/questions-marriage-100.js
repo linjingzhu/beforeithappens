@@ -546,7 +546,7 @@ export const marriage100Pack = definePack({
     scene: "한쪽 부모님이 혼자 생활하기 어려워졌고 직접 돌봄, 경제 지원, 합가 중 결정을 해야 합니다.",
     mood: "따뜻한 약속",
     choices: [
-      { id: "m100-s04-10-a", label: "각자가 자기 부모님의 직접 돌봄을 중심으로 맡는다", valueLabel: "각자 자기 부모를" },
+      { id: "m100-s04-10-a", label: "각자가 자기 부모님의 직접 돌봄을 중심으로 맡는다", valueLabel: "각자 직접 돌봄" },
       { id: "m100-s04-10-b", label: "부부가 시간과 비용을 공동으로 나누어 맡는다", valueLabel: "부부 공동 돌봄" },
       { id: "m100-s04-10-c", label: "외부 돌봄을 우선하고 부부는 정서·경제 지원을 맡는다", valueLabel: "전문 돌봄 우선" },
       { id: "m100-s04-10-d", label: "합가를 포함해 가족이 함께 사는 방식을 우선 검토한다", valueLabel: "합가 우선" }
@@ -1030,7 +1030,7 @@ export const marriage100Pack = definePack({
       { id: "m100-s08-07-a", label: "두 사람이 모두 원한다는 확신이 생길 때까지 결혼을 미룬다", valueLabel: "확신까지 기다림" },
       { id: "m100-s08-07-b", label: "확신하지 못하는 상태와 재논의 시점을 합의하고 결혼한다", valueLabel: "불확실성 합의" },
       { id: "m100-s08-07-c", label: "한 사람이 자녀 계획을 포기할 수 있을 때 결혼한다", valueLabel: "한 사람의 양보" },
-      { id: "m100-s08-07-d", label: "핵심 삶의 방향이 다르면 관계를 다시 검토한다", valueLabel: "방향이 다르면" }
+      { id: "m100-s08-07-d", label: "핵심 삶의 방향이 다르면 관계를 다시 검토한다", valueLabel: "방향 차이 재검토" }
     ]
   },
   {

@@ -952,7 +952,7 @@ export const birth100Pack = definePack({
       { id: "b100-s08-01-a", label: "양가 부모까지", valueLabel: "양가 부모" },
       { id: "b100-s08-01-b", label: "산모의 부모만", valueLabel: "친정만" },
       { id: "b100-s08-01-c", label: "아무도 받지 않는다", valueLabel: "없음" },
-      { id: "b100-s08-01-d", label: "산모가 그때 정한다", valueLabel: "그날 산모가" }
+      { id: "b100-s08-01-d", label: "산모가 그때 정한다", valueLabel: "그날 산모 뜻" }
     ]
   },
   {
@@ -1171,7 +1171,7 @@ export const birth100Pack = definePack({
     mood: "진지함",
     choices: [
       { id: "b100-s09-08-a", label: "산모가 준비됐다고 할 때", valueLabel: "산모 기준" },
-      { id: "b100-s09-08-b", label: "두 사람 모두 준비됐을 때", valueLabel: "둘 다 준비되면" },
+      { id: "b100-s09-08-b", label: "두 사람 모두 준비됐을 때", valueLabel: "둘 다 준비" },
       { id: "b100-s09-08-c", label: "의료진이 허락한 시점", valueLabel: "의료진 허락 후" },
       { id: "b100-s09-08-d", label: "정해 둔 기간(예: 100일) 뒤", valueLabel: "정한 기간 뒤" }
     ]
