@@ -89,10 +89,18 @@ function restoreQuestionPage(root, draft) {
   for (const article of root.querySelectorAll("[data-question]")) {
     const item = answers.items[article.getAttribute("data-question")];
     if (!item) continue;
+    let restored = false;
     for (const field of NOTE_FIELDS) {
       const control = article.querySelector(`[data-note="${field}"]`);
-      if (control && item[field]) control.value = item[field];
+      if (control && item[field]) {
+        control.value = item[field];
+        restored = true;
+      }
     }
+    // The notes block is folded shut, so a restored note would come back invisible — the reader
+    // would see a closed summary where they had written something and reasonably conclude it was
+    // lost. Anything that came back opens its own fold; a question with no note stays closed.
+    if (restored) article.querySelector("details.q-depth")?.setAttribute("open", "");
   }
 }
 

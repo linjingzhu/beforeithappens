@@ -128,7 +128,7 @@ for (const spec of SPECS) {
   });
 }
 
-test("a published page shows the Part's line, the scene and the value names, and no mood", () => {
+test("a published page shows the Part's line and the scene, and neither the mood nor the value name", () => {
   // One pack's page stands for all four: they are rendered by the same function from the same
   // shape, and what this holds is the renderer's contract rather than 임신's own.
   const model = pageModel("pregnancy", 1, {});
@@ -144,12 +144,18 @@ test("a published page shows the Part's line, the scene and the value names, and
     }
     for (const choice of question.choices) {
       assert.ok(html.includes(choice.label), choice.id);
-      assert.ok(html.includes(`>${choice.valueLabel}</em>`), `${choice.id} value name`);
+      // The value name is pack data the page stopped printing on 2026-09-28, for the same reason
+      // the mood was never printed: the answer already says what it is, and a tag under it read as
+      // the page naming the reader's choice back at them. It stays in the pack as the author's
+      // record of the axis; what the page prints is a separate decision from what a pack holds.
+      assert.equal(html.includes(`>${choice.valueLabel}</em>`), false, `${choice.id} value name`);
     }
   }
   // And a pack that wrote none of it renders without empty shells: the elements are omitted, not
   // emitted blank, so a reader never meets a gap they cannot account for. Every site pack now
   // carries the full set, so the bare case is built here rather than borrowed from one of them.
+  // `q-choice-value` is in the list although no pack prints one any more: the page stopped printing
+  // the value name on 2026-09-28 and this is what would catch it coming back by accident.
   const bare = {
     ...model,
     part: { ...model.part, blurb: "" },
@@ -164,6 +170,37 @@ test("a published page shows the Part's line, the scene and the value names, and
   for (const marker of ["q-mood", "q-choice-value", "q-scene", "part-blurb"]) {
     assert.equal(plain.includes(marker), false, `${marker} is absent where there is nothing to say`);
   }
+});
+
+/**
+ * The notes under a question are folded shut, at the owner's word (2026-09-28).
+ *
+ * Three empty fields under every question made the page read as a form to fill in rather than a
+ * question to answer. Closed, the question and its four answers are the whole card.
+ *
+ * `<details>` and not a script, so the fold works with scripting off — the same contract the rest
+ * of the page keeps — and it starts closed, so `open` never appears in the markup the build emits.
+ */
+test("the notes under a question are folded, and the fold needs no script", () => {
+  const html = renderQuestionPage(pageModel("later", 1, {}), undefined);
+  const folds = html.match(/<details class="q-depth">/g) || [];
+  assert.equal(folds.length, 10, "one fold per question on the page");
+  assert.equal(html.includes("<details class=\"q-depth\" open"), false, "and every one starts closed");
+  assert.match(html, /<summary class="q-depth-lead">이 선택은 내게<\/summary>/);
+  assert.equal((html.match(/<div class="q-depth-body">/g) || []).length, 10);
+
+  // The three fields are still there, and still reachable by name: the lead is a summary now and
+  // can no longer be the select's `<label for>`, so the select carries its own accessible name.
+  for (const field of ["importance", "reason", "guess"]) {
+    assert.equal((html.match(new RegExp(`data-note="${field}"`, "g")) || []).length, 10);
+  }
+  assert.match(html, /data-note="importance" aria-label="중요도를 선택해요"/);
+  assert.equal(html.includes("<label class=\"q-depth-lead\""), false, "the lead is not a label any more");
+
+  // A note that was saved comes back opened, or the reader meets a closed summary where they wrote
+  // something and concludes it was lost.
+  const enhance = readFileSync("site/enhance.js", "utf8");
+  assert.match(enhance, /details\.q-depth"\)\?\.setAttribute\("open", ""\)/);
 });
 
 /**
