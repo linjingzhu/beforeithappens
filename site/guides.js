@@ -277,6 +277,10 @@ export function guidePages({ site = SITE, published = PUBLISHED } = {}) {
       path: entry.path,
       title: entry.title,
       description: entry.description,
+      // An article, so it carries Article structured data with an author and a date. The index that
+      // lists them is not one — it is a table of contents, and saying otherwise to a crawler would
+      // be claiming a byline for a list of links.
+      kind: "article",
       sections: entry.sections,
       links: Object.freeze([
         Object.freeze({ path: entry.packPath, label: guideBackLabel(entry, published) }),

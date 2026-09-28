@@ -5,7 +5,7 @@ import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
 import { footerLinks, NOT_FOUND_COPY } from "./pages.js";
-import { headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData, verificationTags } from "./seo.js";
+import { contentDate, headTags, siteStructuredData, standaloneHead, standingStructuredData, structuredData, verificationTags } from "./seo.js";
 import { RESULT_COPY } from "./result.js";
 // Debug only; goes with `SITE.debugFeedback` and `site/feedback.js`.
 import { FEEDBACK_COPY } from "./feedback.js";
@@ -67,6 +67,18 @@ export const SITE_COPY = Object.freeze({
   footerLabel: "사이트 안내",
   /** The row under a prose page: where it leads next. */
   proseLinksLabel: "이어서 보기",
+  /**
+   * Who wrote a page of prose and when it last changed — «AfterScent · 2026년 9월 28일 고침».
+   *
+   * The date is the content stamp's, the same number the sitemap tells a crawler, so the page and
+   * the sitemap cannot disagree. A page with no stamp is signed without a date rather than with
+   * today's: an invented date is worse than none.
+   */
+  byline: (publisher, date) => (date ? `${publisher} · ${date} 고침` : publisher),
+  bylineDate: (iso) => {
+    const [y, m, d] = String(iso).split("-");
+    return `${Number(y)}년 ${Number(m)}월 ${Number(d)}일`;
+  },
   /** The line on a pack's first page that points at the article written for it. */
   guideLink: (title) => `${title} — 왜 이 질문들인지 먼저 읽어 보기`,
   progress: (page, pages) => `${page} / ${pages}`,
@@ -883,6 +895,8 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
 ${page.links.map((link) => `        <a href="${escapeHtml(link.path)}">${escapeHtml(link.label)}</a>`).join("\n")}
       </nav>\n`
     : "";
+  const stamped = contentDate(page.path);
+  const byline = `      <p class="prose-byline">${escapeHtml(SITE_COPY.byline(site.publisher || site.name, stamped ? SITE_COPY.bylineDate(stamped) : ""))}</p>\n`;
   const head = [
     standaloneHead({
       title: `${page.title} · ${site.name}`,
@@ -900,7 +914,7 @@ ${page.links.map((link) => `        <a href="${escapeHtml(link.path)}">${escapeH
     invite: true,
     body: `      <main class="page">
 ${sections}
-${contact}${links}${callToAction()}
+${byline}${contact}${links}${callToAction()}
       </main>`
   });
 }

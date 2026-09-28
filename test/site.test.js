@@ -1996,6 +1996,52 @@ test("every published pack has an article, linked both ways", async () => {
   }
 });
 
+/**
+ * Every page of prose says who wrote it and when it last changed.
+ *
+ * Google evaluates a site on experience, expertise, authoritativeness and trustworthiness, and the
+ * last of those is the one an unsigned page fails. The site had five thousand words of prose and
+ * not a name or a date on any of it.
+ *
+ * The date is the content stamp's — the same number the sitemap hands a crawler — so the page and
+ * the sitemap cannot disagree, and a page with no stamp is signed without a date rather than with
+ * today's. An invented date is worse than none, which is why the sitemap omits it too.
+ */
+test("every prose page is signed, with the date the sitemap also reports", async () => {
+  const { renderStandingPage } = await import("../site/render.js");
+  const { standingPages } = await import("../site/pages.js");
+  const { guidePages } = await import("../site/guides.js");
+  const { contentDate } = await import("../site/seo.js");
+  const { SITE_COPY } = await import("../site/render.js");
+
+  const pages = [...guidePages({ site }), ...standingPages({ site })];
+  assert.ok(pages.length >= 10);
+  for (const page of pages) {
+    const html = renderStandingPage(page, site);
+    const byline = html.match(/<p class="prose-byline">([^<]*)<\/p>/);
+    assert.ok(byline, `${page.path} is signed`);
+    assert.ok(byline[1].includes(SITE.publisher), `${page.path} names the publisher`);
+    const date = contentDate(page.path);
+    assert.ok(date, `${page.path} is stamped`);
+    assert.ok(byline[1].includes(SITE_COPY.bylineDate(date)), `${page.path} shows the stamped date`);
+  }
+
+  // A page with no stamp is signed without a date rather than with a guessed one.
+  const unstamped = renderStandingPage({ ...pages[0], path: "/nowhere/" }, site);
+  const bare = unstamped.match(/<p class="prose-byline">([^<]*)<\/p>/)[1];
+  assert.equal(bare.trim(), SITE.publisher, "no stamp, no date");
+
+  // The articles say so to a crawler too; the index that lists them does not claim a byline.
+  const [index, ...articles] = guidePages({ site });
+  for (const page of articles) {
+    const html = renderStandingPage(page, site);
+    assert.match(html, /"@type":"Article"/, `${page.path} is an article`);
+    assert.match(html, new RegExp(`"datePublished":"${contentDate(page.path)}"`));
+    assert.match(html, new RegExp(`"author":\\{"@type":"Organization","name":"${SITE.publisher}"\\}`));
+  }
+  assert.equal(renderStandingPage(index, site).includes('"@type":"Article"'), false, "a list of links is not an article");
+});
+
 test("the terms name the operator, refuse to be advice, and point at 119", async () => {
   const { termsCopy } = await import("../site/pages.js");
   const copy = termsCopy({ site: SITE });

@@ -203,8 +203,39 @@ export function siteStructuredData(site = SITE, description = "") {
 }
 
 /** The trail for a standing page: the site, then the page. */
-export function standingStructuredData({ title, path }, site = SITE) {
-  return breadcrumbs([{ name: site.name, path: "/" }, { name: title, path }], site);
+/**
+ * The date this page's content last moved, or "" for a page with no stamp.
+ *
+ * The same number the sitemap's `lastmod` uses, from the same place, so the date a reader sees on
+ * the page and the date a crawler is told cannot disagree. A page with no stamp shows nothing
+ * rather than today: a guessed date is worse than none, which is why the sitemap omits it too.
+ */
+export function contentDate(path) {
+  return CONTENT_STAMP[path]?.date || "";
+}
+
+export function standingStructuredData({ title, path, description = "", kind = "" }, site = SITE) {
+  const crumbs = breadcrumbs([{ name: site.name, path: "/" }, { name: title, path }], site);
+  if (kind !== "article") return crumbs;
+
+  // An article says who wrote it and when it last changed. Both are facts the site already holds —
+  // the publisher in `SITE`, the date in the content stamp — and both are what a reader and a
+  // reviewer look for first on a page of prose that is not signed.
+  const date = contentDate(path);
+  const by = { "@type": "Organization", name: site.publisher || site.name };
+  // `ldJson`, not a bare stringify: it escapes `<` so a title can never close the script element.
+  const article = ldJson({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    ...(description ? { description } : {}),
+    inLanguage: site.locale,
+    ...(site.origin ? { mainEntityOfPage: absoluteUrl(site.origin, path) } : {}),
+    author: by,
+    publisher: by,
+    ...(date ? { datePublished: date, dateModified: date } : {})
+  });
+  return crumbs ? `${crumbs}\n  ${article}` : article;
 }
 
 export function structuredData(model, site = SITE) {
