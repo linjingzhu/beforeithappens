@@ -1,0 +1,11 @@
+# Throwaway probe: does this repository get a hosted runner at all?
+#
+# Nothing but an echo. If this never leaves the queue, the deploy workflow is not the problem —
+# scheduling is. Delete this branch once the answer is in.
+name: runner probe
+on: push
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "runner reached at $(date -u)"
