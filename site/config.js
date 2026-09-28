@@ -122,9 +122,19 @@ export const SITE = Object.freeze({
  * that shelf. `marriage-100` is the site's own pack — a hundred questions, free — and is a
  * different pack from the app's twelve-question `marriage`, which stays sold and stays private.
  *
- * `pregnancy-100` is registered and built and deliberately **not** here. Being in the registry is
- * having content; being in this list is being published, and the second is a decision. Putting it
- * back is one entry — which is the whole reason this list is written out rather than derived.
+ * Being in the registry is having content; being in this list is being published, and the second is
+ * a decision. The owner took it on 2026-09-28 for the four lifecycle packs that were written and
+ * waiting — 임신, 출산, 육아, 노후 — so the site now publishes the arc rather than one station on it.
+ * Each is one entry, which is the whole reason this list is written out rather than derived.
+ *
+ * 우울 100제 is written (`question-packs/depression.html`) and is **not** here, and not because it
+ * is unfinished. It is a pack one person answers alone, and every surface around a pack on this site
+ * is built for two: the invite panel, the 상대는 무엇을 고를까요 prompt under every question, the
+ * result page that waits for the other person's sheet. Publishing it here would ask a reader to send
+ * their depression answers to a partner to be guessed at, and would drop the per-question reflection
+ * and the help line the pack is written around. It needs a solo surface, not an entry.
+ *
+ * Order is the order of a life, which is also the order the rail lists them in.
  */
 /**
  * The scenes on the home page, one per pack, cropped from the owner's sheets in `brand/` by
@@ -133,7 +143,7 @@ export const SITE = Object.freeze({
  * Each carries its own size because the card declares it on the `<img>`, and that declaration is
  * how the browser reserves the right space before the picture arrives. They were all written as
  * one number for a while, which was near enough while every crop was a narrow portrait — the real
- * widths ran 220 to 264 against a declared 234. The drawings that arrived for 노후 and 자녀교육 are
+ * widths ran 220 to 264 against a declared 234. The drawings that arrived for 노후 and 육아 are
  * 323 and 327 wide, and a card reserving two thirds of the room it needs shoves the row sideways
  * the moment the picture loads.
  *
@@ -148,8 +158,9 @@ export const SCENES = Object.freeze({
   marriage: scene("marriage", 234),
   pregnancy: scene("pregnancy", 221),
   birth: scene("birth", 231),
-  education: scene("education", 327),
-  later: scene("later", 323)
+  parenting: scene("parenting", 327),
+  later: scene("later", 323),
+  goodbye: scene("goodbye", 275)
 });
 
 /**
@@ -167,37 +178,50 @@ const shareCard = (name) => Object.freeze({ src: `/brand/share-${name}.jpg`, wid
 export const SHARE_CARDS = Object.freeze({
   /** Every page that is not a pack — the home page and the prose pages — shares this one. */
   home: shareCard("home"),
-  marriage: shareCard("marriage")
+  marriage: shareCard("marriage"),
+  pregnancy: shareCard("pregnancy"),
+  birth: shareCard("birth"),
+  parenting: shareCard("parenting"),
+  later: shareCard("later")
 });
 
 /**
  * Packs that are coming, shown as a picture and nothing else.
  *
  * The owner's call, and the point of them is that they do nothing: a card with a title, a count and
- * a link would be a promise with a date attached, and there is no date. A picture of two people
- * holding a pregnancy test says what is coming without claiming when, and there is nothing to click
- * that could disappoint.
+ * a link would be a promise with a date attached, and there is no date. A picture says what is
+ * coming without claiming when, and there is nothing to click that could disappoint.
  *
  * `alt` is what the picture shows, not what the pack will be called. A reader who cannot see it
  * gets the same thing a reader who can gets — the situation — rather than a name the design is
  * deliberately withholding.
  *
- * In the order the stages arrive, after the one pack that can actually be read.
+ * Four of these were holders until the packs behind them were written; they are cards in
+ * `PUBLISHED` now, and a scene may not be in both lists at once — the same picture standing in a
+ * card with a name and in a card that withholds one says two different things about the same pack.
+ * What is left is 연애, which has a drawing and no questions yet, and 이별.
  *
- * 노후 stood on a borrowed picture for a while — a bench scene from the first sheet, which the
- * owner read as 노후 when it was the closest thing there was. The second sheet carries one drawn
- * for it, so the holder now shows what it means and the borrowed one is not cut at all.
- *
- * The holders name nothing, so each promises whatever its picture shows. 육아 is the one still
- * without a picture — `docs/OWNER_ACTIONS.md` N8.
+ * 이별 is not a stage and so has no place in the lifecycle's order. It is the branch, not the next
+ * step, and the only two positions that are not arbitrary are the ends. Last, because the cards
+ * name nothing: a row that ends on two people looking at the floor says one more thing can happen
+ * to two people, where the same picture wedged between 연애 and 임신 would read as the arc being
+ * interrupted.
  */
 export const COMING = Object.freeze([
   Object.freeze({ id: "dating", scene: SCENES.dating, alt: "반지를 사이에 둔 두 사람" }),
-  Object.freeze({ id: "pregnancy", scene: SCENES.pregnancy, alt: "임신을 앞둔 두 사람" }),
-  Object.freeze({ id: "birth", scene: SCENES.birth, alt: "갓 태어난 아이를 안은 두 사람" }),
-  Object.freeze({ id: "education", scene: SCENES.education, alt: "아이와 함께 그림책을 펼친 두 사람" }),
-  Object.freeze({ id: "later", scene: SCENES.later, alt: "벤치에 나란히 앉은 나이 든 두 사람" })
+  Object.freeze({ id: "goodbye", scene: SCENES.goodbye, alt: "고개를 숙인 채 마주 선 두 사람" })
 ]);
+
+/**
+ * The line above the first question, on every pack's first page.
+ *
+ * It is the same sentence for all of them because it is not about the subject: it says there is no
+ * right answer and that the other person's sheet opens later, which is the site's contract and does
+ * not change between 임신 and 노후. Written once so a pack cannot be published with a slightly
+ * different promise on it.
+ */
+const READER_LEAD =
+  "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요.";
 
 export const PUBLISHED = Object.freeze([
   Object.freeze({
@@ -219,7 +243,55 @@ export const PUBLISHED = Object.freeze([
       "그 다름을 하나씩 알아가는 순간, 결혼은 조금 더 따뜻하고 선명한 약속이 되지 않을까요?"
     ]),
     /** Shown above the questions, before the first one. */
-    lead: "각 질문에는 네 개의 답이 있고, 어느 쪽도 더 옳지 않습니다. 지금 자신의 답을 골라 보고, 상대의 답이 궁금해지면 그때 같이 열어 보세요."
+    lead: READER_LEAD
+  }),
+  Object.freeze({
+    packId: "pregnancy-100",
+    slug: "pregnancy",
+    title: "임신 100제",
+    navTitle: "임신 100제",
+    tagline: "몸이 달라지는 열 달을, 우리는 어떻게 함께 건널까요?",
+    description: Object.freeze([
+      "입덧과 병원, 돈과 일, 양가와 말하지 못한 두려움까지 — 임신은 한 사람의 몸에서 시작되지만 두 사람이 함께 운영하는 시간입니다.",
+      "그냥 지나가면 서운함으로 남는 것들을, 아이가 오기 전에 하나씩 꺼내 봅니다."
+    ]),
+    lead: READER_LEAD
+  }),
+  Object.freeze({
+    packId: "birth-100",
+    slug: "birth",
+    title: "출산 100제",
+    navTitle: "출산 100제",
+    tagline: "그날 분만실에서, 우리는 같은 장면을 그리고 있을까요?",
+    description: Object.freeze([
+      "진통과 무통, 면회와 수유, 회복과 산후 돌봄까지 — 출산은 하루가 아니라 몇 주에 걸친 두 사람의 일입니다.",
+      "급한 순간에는 의논할 시간이 없습니다. 미리 골라 둔 답은, 그날의 결정을 조금 덜 외롭게 합니다."
+    ]),
+    lead: READER_LEAD
+  }),
+  Object.freeze({
+    packId: "parenting-100",
+    slug: "parenting",
+    title: "육아 100제",
+    navTitle: "육아 100제",
+    tagline: "아이를 키우는 하루를, 우리는 얼마나 같게 보고 있을까요?",
+    description: Object.freeze([
+      "밤중 수유와 훈육, 화면과 배움, 돈과 시간의 저울까지 — 육아는 사랑만으로 굴러가지 않고 두 사람이 정한 규칙으로 굴러갑니다.",
+      "누가 무엇을 하는지 말로 정해 두지 않으면, 한 사람의 하루가 조용히 무너집니다."
+    ]),
+    lead: READER_LEAD
+  }),
+  Object.freeze({
+    packId: "later-100",
+    slug: "later",
+    title: "노후 100제",
+    navTitle: "노후 100제",
+    tagline: "함께 늙어 간다는 것을, 우리는 어디까지 이야기해 두었을까요?",
+    description: Object.freeze([
+      "은퇴와 남은 돈, 달라지는 몸과 우리가 살 집, 자식과의 거리, 돌봄과 마지막 날까지 — 미루면 언젠가 남은 한 사람이 혼자 결정하게 됩니다.",
+      "가장 말하기 어려운 이야기를, 아직 둘 다 건강한 지금 꺼내 봅니다."
+    ]),
+    lead: READER_LEAD
   })
 ]);
 

@@ -137,8 +137,11 @@ test("audience is carried, because a solo pack must never enter the two-person m
   // records.
   assert.deepEqual(
     packsFor(PACK_AUDIENCE.couple).map((p) => p.id),
-    ["marriage-preparation", "marriage-100", "pregnancy-100"]
+    ["marriage-preparation", "marriage-100", "pregnancy-100", "birth-100", "parenting-100", "later-100"]
   );
+  // 우울 100제 is written and is not registered, for this reason: it is answered alone, and every
+  // surface a registered site pack meets — the invite panel, the 상대의 답 prompt, the result page
+  // that waits for a second sheet — is built for two. It needs a solo surface before an entry.
   assert.deepEqual(packsFor(PACK_AUDIENCE.solo), [], "no solo pack is registered yet");
 
   const solo = definePack(validPack({ id: "solo-pack", audience: PACK_AUDIENCE.solo }));
@@ -177,7 +180,11 @@ test("every app pack points at a real catalog row, and no site pack claims one",
     assert.equal(pack.catalogId, undefined, `${pack.id} is a site pack and must not claim a shelf`);
     assert.equal(packByCatalogId(pack.id), null, "a site pack is not reachable by catalog lookup");
   }
-  assert.deepEqual(allPacks().map((pack) => pack.surface), ["app", "site", "site"]);
+  assert.deepEqual(
+    allPacks().map((pack) => pack.surface),
+    ["app", "site", "site", "site", "site", "site"],
+    "one app pack, and the five the site publishes"
+  );
   // `pregnancy` is a 곧 열려요 row in the app. Publishing a site pack on the same subject must not
   // flip it open, because the app has no content and no screen for it.
   assert.equal(packByCatalogId("pregnancy"), null, "the app's pregnancy row stays empty");

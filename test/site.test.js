@@ -62,14 +62,21 @@ test("an unpublished pack, or a page past the end, is a definite no", () => {
 test("the site publishes only what it names, never whatever the registry happens to hold", () => {
   // The registry holds the app's content too. A site that published everything it found would put
   // a pack in front of the public the first time someone registered one.
-  assert.deepEqual(PUBLISHED.map((entry) => entry.packId), ["marriage-100"]);
-  // Registered and built, and deliberately not published — the registry is content, this is a
-  // decision, and the two are not the same thing.
-  assert.equal(questionsFor("pregnancy-100").length, 100, "the pack exists");
-  assert.equal(pageModel("pregnancy", 1, { site }), null, "and the site emits no page for it");
+  assert.deepEqual(
+    PUBLISHED.map((entry) => entry.packId),
+    ["marriage-100", "pregnancy-100", "birth-100", "parenting-100", "later-100"],
+    "the five lifecycle packs, in the order of a life"
+  );
+  // Registered and built and deliberately not published — the registry is content, this is a
+  // decision, and the two are not the same thing. 결혼 준비 is the app's pack, sold and private.
+  assert.equal(questionsFor("marriage-preparation").length, 12, "the app's pack exists");
   assert.equal(pageModel("marriage-preparation", 1, { site }), null, "the app's pack is not on the site");
+  // 연애 has a holder card on the home page and no questions behind it, so it is not a page either.
   assert.equal(pageModel("dating", 1, { site }), null);
-  assert.deepEqual(indexModel({ site }).packs.map((p) => p.slug), ["marriage"]);
+  assert.deepEqual(
+    indexModel({ site }).packs.map((p) => p.slug),
+    ["marriage", "pregnancy", "birth", "parenting", "later"]
+  );
 });
 
 test("the model knows where it is in the series", () => {
@@ -649,7 +656,23 @@ test("the site's own origin is https, so the canonical is not split across two s
   assert.equal(has(html, 'href="http://lovemedialogue.com'), false);
 });
 
-test("the repository has no GitHub Actions workflow files", async () => {
+/**
+ * One workflow, and the reason it is the only one.
+ *
+ * All three were removed on 2026-09-25 under `.ai/HARNESS.md` § *Cost-bearing automation*: hosted
+ * automation is billed, the repository was private, and Actions minutes on a private repository are
+ * metered. This test was written the same day to keep them out.
+ *
+ * The repository was made public on 2026-09-28, which is the condition that rule was guarding
+ * against — Actions is free on a public repository — and the owner asked for deployment back. So
+ * the list is a list rather than a ban: `deploy-site.yml` publishes `site/dist` to Pages on a push
+ * to `stable`, and nothing else runs. `test-build.yml` and `policy-set.yml` stay out; a check that
+ * runs on every push and every pull request is a different decision from a deploy that runs when
+ * the site actually changes, and it has not been taken.
+ *
+ * Adding a second workflow fails here, which is the point: it should be a decision, not a file.
+ */
+test("the only workflow the repository runs is the one that publishes the site", async () => {
   const { readdir } = await import("node:fs/promises");
   let workflows;
   try {
@@ -658,10 +681,19 @@ test("the repository has no GitHub Actions workflow files", async () => {
     if (error.code !== "ENOENT") throw error;
     workflows = [];
   }
-  assert.equal(workflows.some((entry) => entry.isFile()), false);
+  assert.deepEqual(
+    workflows.filter((entry) => entry.isFile()).map((entry) => entry.name).sort(),
+    ["deploy-site.yml"]
+  );
+
+  // And it publishes what the build makes, from the branch the site is released on.
+  const deploy = readFileSync(".github/workflows/deploy-site.yml", "utf8");
+  assert.match(deploy, /branches: \[stable\]/, "a push to stable is what deploys");
+  assert.match(deploy, /path: site\/dist/, "only the site goes up, never the app in dist/");
+  assert.match(deploy, /npm test/, "and a broken generator fails here rather than publishing");
 });
 
-test("the rail carries the mark on every kind of page, and no nav while there is one pack", () => {
+test("the rail carries the mark on every kind of page, and lists every published pack", () => {
   // Checked on all three page kinds because the shell is where that usually rots.
   const pages = [
     renderQuestionPage(pageModel("marriage", 1, { site }), site),
@@ -674,15 +706,31 @@ test("the rail carries the mark on every kind of page, and no nav while there is
     assert.ok(has(html, 'src="/brand/logo.png"'), "and the mark");
   }
 
-  // With one pack published the nav would name the page the reader is already on, under a heading
-  // for a category with one member. So the rail carries the mark alone; the nav returns at two.
-  assert.equal(indexModel({ site }).packs.length, 1, "one pack today");
+  // Five packs, so the rail's nav is on. It appeared when the fourth and fifth were published with
+  // no change to the renderer, which is what building it from `indexModel` was for; the guard that
+  // hides a list of one stays, so a site cut back to a single pack loses the nav again.
+  const railPacks = indexModel({ site }).packs;
+  assert.equal(railPacks.length, 5);
   for (const html of pages) {
-    assert.equal(has(html, "rail-nav"), false, "no nav for a list of one");
-    assert.equal(has(html, "rail-item"), false);
+    assert.ok(has(html, "rail-nav"), "the nav is on the page");
     // On the markup, not the word: "질문집" is also the label on the first page's back link.
-    assert.equal(has(html, "rail-label"), false, "and no heading for it either");
+    assert.ok(has(html, "rail-label"), "under a heading that says what the list is");
+    const items = html.match(/<a class="rail-item[^"]*" href="([^"]+)"/g) || [];
+    assert.equal(items.length, railPacks.length, "one entry per published pack, and no more");
+    for (const pack of railPacks) {
+      assert.ok(has(html, `href="${pack.path}"`), `${pack.navTitle} is linked`);
+      assert.ok(has(html, pack.navTitle), "by the name the rail gives it");
+    }
   }
+
+  // And the reader's own pack is marked, once, on the two page kinds that belong to a pack. `true`
+  // rather than `page`: the entry links to the pack's first Part and the reader may be on its
+  // seventh, which is what the Part tab marks.
+  for (const html of [pages[0], pages[2]]) {
+    assert.equal((html.match(/class="rail-item is-current"/g) || []).length, 1);
+    assert.ok(has(html, `<a class="rail-item is-current" href="${pagePath("marriage", 1)}" aria-current="true">`));
+  }
+  assert.equal(has(pages[1], "rail-item is-current"), false, "the home page is not one of the packs");
 });
 
 test("the Part tabs are links to real pages, one per Part, with exactly one marked current", () => {
@@ -1111,9 +1159,15 @@ test("the home page shows what can be read now, and what is coming as a picture 
   // purpose: the heading beside it already names the pack, and a screen reader should not say the
   // same thing twice.
   const published = html.slice(html.indexOf('<li class="card">'), html.indexOf('<li class="card is-coming">'));
-  assert.ok(published.includes(SCENES.marriage.src));
   assert.ok(published.includes('alt=""'));
   assert.ok(published.includes('href="/marriage/"') && published.includes("100개의 질문"));
+  // Every published pack, with its own picture. A card whose scene is missing renders without one
+  // rather than failing, so the row would go ragged and nothing would say why.
+  for (const pack of indexModel({ site }).packs) {
+    assert.ok(SCENES[pack.slug], `${pack.slug} has a scene declared`);
+    assert.ok(published.includes(SCENES[pack.slug].src), `${pack.slug} shows it`);
+    assert.ok(published.includes(`href="${pack.path}"`), `${pack.slug} is linked`);
+  }
 
   // A coming pack is a picture and nothing else: no heading, no count, and — the whole point —
   // nothing to press. A card with a link would be a promise with a date on it, and there is no date.
@@ -1135,14 +1189,20 @@ test("the home page shows what can be read now, and what is coming as a picture 
     assert.equal(card.replace(/<[^>]*>/g, "").trim(), SITE_COPY.comingLabel, "one line, and only that");
   }
 
-  // The names of the packs that are coming must not leak into the page anywhere else either —
-  // the design withholds them on purpose.
-  assert.equal(html.includes("임신 100제") || html.includes("육아 100제"), false);
+  // The names of the packs that are coming must not leak into the page anywhere else either — the
+  // design withholds them on purpose. Four of the six holders became cards with names on
+  // 2026-09-28, so this is held as "the names on the page are exactly the published ones" rather
+  // than as a list of words to look for, which would have passed by going out of date.
+  const names = [...html.matchAll(/<h2><a href="[^"]*">([^<]+)<\/a><\/h2>/g)].map(([, name]) => name);
+  assert.deepEqual(names, indexModel({ site }).packs.map((pack) => pack.title));
+  assert.equal(/연애|이별/.test(html), false, "and the two that are still coming are not named at all");
 });
 
 test("the whole published card is the control, without swallowing the link's name", () => {
   const html = renderIndex(indexModel({ site }), site);
-  const card = html.slice(html.indexOf('<li class="card">'), html.indexOf("</li>"));
+  // From the card's own start: the rail's pack nav is a list too, and its `</li>` comes first.
+  const cardStart = html.indexOf('<li class="card">');
+  const card = html.slice(cardStart, html.indexOf("</li>", cardStart));
 
   // The anchor stays on the heading. Wrapping one around the card would look identical and read
   // very differently: an anchor takes its accessible name from everything inside it, so a screen
@@ -1832,10 +1892,12 @@ test("둘이 함께 해보기 sends the invite link, and the link carries no ans
   assert.ok(sheet.includes(SITE_COPY.ctaAction));
   assert.equal(SITE_COPY.ctaAction, "둘이 함께 해보기");
   assert.match(sheet, /<a class="cta-action" href="\/marriage\/" data-invite>/);
-  // The panel calls this link a 질문집 주소, so from a page with no pack of its own it points at the
-  // pack while there is one — not at the list, which would cost the other person a step.
+  // The panel calls this link a 질문집 주소, so from a page with no pack of its own it pointed at the
+  // pack while there was one. There are five, and there is no one of them to send: the link is the
+  // list, where the other person picks the same pack rather than being handed a different one.
   const home = renderIndex(indexModel({ site }), site);
-  assert.match(home, /<a class="cta-action" href="\/marriage\/" data-invite>/);
+  assert.ok(indexModel({ site }).packs.length > 1);
+  assert.match(home, /<a class="cta-action" href="\/" data-invite>/);
 
   // Centred and one sentence to a line, at the owner's word: the body's two sentences are two
   // block lines, and the copy itself is still one string.

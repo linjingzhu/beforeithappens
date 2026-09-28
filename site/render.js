@@ -601,15 +601,16 @@ function inviteScript() {
  * The left rail: the mark, then one entry per published pack.
  *
  * It is built from `indexModel`, the same list the index page renders, so a pack cannot appear in
- * one and not the other. Today that is one entry; the markup is a list because it will not be, and
- * a list of one costs nothing while a list grown out of a single hard-coded link costs a rewrite.
+ * one and not the other. It was one entry for a long time and the markup was a list anyway; on
+ * 2026-09-28 four more packs were published and the nav appeared on its own, with nothing here to
+ * change. That is what the list was for.
  */
 function rail(site, currentSlug) {
   const packs = indexModel({ site }).packs;
-  // A list of one is not a list: with a single pack published, the rail's nav names the page the
-  // reader is already on, under a heading for a category with one member. So the rail carries the
-  // mark alone until there is a second pack, and the nav comes back on its own when there is —
-  // which is the same list, appearing when it starts saying something.
+  // A list of one is not a list: with a single pack published, the rail's nav would name the page
+  // the reader is already on, under a heading for a category with one member. So the nav appears at
+  // two and the guard stays — a site cut back to one pack should lose the nav again rather than
+  // print a heading over its own title.
   const nav = packs.length < 2
     ? ""
     : `
