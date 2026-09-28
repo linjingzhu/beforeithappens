@@ -115,7 +115,13 @@ export async function readSourceSections(path) {
         // line beside it is not extracted — there are ten of them cycling across the hundred, so it
         // glosses the mood tag rather than the question, and printing it ten times to a page is
         // noise where the tag says the same thing in a word.
-        example: text(article.match(/<div class="scene"><b>[^<]*<\/b><p>([\s\S]*?)<\/p>/)?.[1] || ""),
+        // `scene`, not `example`: the schema's `example` shows a reader how to answer and is the
+        // app's; a scene is the situation both readers are picturing, which is what the source's
+        // `<div class="scene">` holds. It was read into `example` at first, which the page does
+        // print — as `q-example`, a muted line — so the same kind of sentence was set one way in
+        // 결혼 100제 and another way in the four packs beside it. Under `scene` they all get the
+        // recessed box, which is what says "this is the situation, not the question".
+        scene: text(article.match(/<div class="scene"><b>[^<]*<\/b><p>([\s\S]*?)<\/p>/)?.[1] || ""),
         mood: text(article.match(/<span class="mood">([\s\S]*?)<\/span>/)?.[1] || ""),
         // `<label>` with nothing on it: the review build's star ratings are `<label title="1점">`
         // and the 우울 pack's follow-up is `<label>` around a `<select>`, so the bare-label-then-radio
@@ -156,7 +162,7 @@ export function toPack(sections, idPrefix) {
         id: questionId,
         sectionId: id,
         title: question.title,
-        example: question.example,
+        scene: question.scene,
         mood: question.mood,
         choices: question.choices.map((choice, choiceIndex) => ({
           id: `${questionId}-${"abcd"[choiceIndex]}`,
@@ -183,7 +189,7 @@ export function renderModule(spec, { sections, questions }) {
     id: ${literal(question.id)},
     sectionId: ${literal(question.sectionId)},
     title: ${literal(question.title)},
-    example: ${literal(question.example)},
+    scene: ${literal(question.scene)},
     mood: ${literal(question.mood)},
     choices: [
 ${choices}

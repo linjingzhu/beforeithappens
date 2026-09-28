@@ -48,7 +48,7 @@ for (const spec of SPECS) {
         id: question.id,
         sectionId: question.sectionId,
         title: question.title,
-        example: question.example,
+        scene: question.scene,
         mood: question.mood,
         choices: question.choices.map((choice) => ({
           id: choice.id,
@@ -71,9 +71,9 @@ for (const spec of SPECS) {
     assert.equal(pack.questions.length, 100);
     const scenes = new Set();
     for (const question of pack.questions) {
-      assert.ok(question.example.length > 10, `${question.id} has a real scene`);
+      assert.ok(question.scene.length > 10, `${question.id} has a real scene`);
       assert.ok(question.mood, `${question.id} has a mood`);
-      scenes.add(question.example);
+      scenes.add(question.scene);
       assert.equal(question.choices.length, 4);
       const values = new Set(question.choices.map((choice) => choice.valueLabel));
       assert.equal(values.size, 4, `${question.id} names four different values`);
@@ -164,4 +164,50 @@ test("a published page shows the Part's line, the scene and the value names, and
   for (const marker of ["q-mood", "q-choice-value", "q-scene", "part-blurb"]) {
     assert.equal(plain.includes(marker), false, `${marker} is absent where there is nothing to say`);
   }
+});
+
+/**
+ * Nothing the site publishes says the same thing twice.
+ *
+ * The owner's rule, 2026-09-28: 같은 질문, 같은 답지가 있어서는 안 된다. No question was ever a
+ * duplicate, but 62 answers repeated a sentence another answer already made — «파트너» stood alone as
+ * three different answers in 출산 100제 — and 471 value names repeated a tag. They came from the packs
+ * being written to one template: four packs asking "who does this?" all reach for the same word.
+ *
+ * Held at three levels, because they are three different failures for a reader:
+ * - **A question** is the pack's unit. Two of them with the same words is the same question asked
+ *   twice, whichever pack it is in, so this is checked across all five at once.
+ * - **An answer** is what the reader chooses and what the result sheet prints back. Two identical
+ *   sentences read as the same answer, so these are unique across all five too.
+ * - **A value name** is the tag under an answer, and it is read inside one pack, next to the other
+ *   ninety-nine. So it is unique per pack rather than globally: 소득 비율 naming the same value in
+ *   two different packs is the same value, and forcing a second word for it would be a worse label.
+ */
+test("no two questions, answers or value names repeat", () => {
+  const norm = (text) => String(text || "").replace(/\s+/g, "").replace(/[?？.,·]/g, "");
+  const seen = (pairs) => {
+    const index = new Map();
+    for (const [key, where] of pairs) index.set(key, (index.get(key) || []).concat(where));
+    return [...index.entries()].filter(([, where]) => where.length > 1);
+  };
+
+  const titles = [];
+  const answers = [];
+  for (const entry of PUBLISHED) {
+    const pack = findPack(entry.packId);
+    const values = [];
+    const scenes = [];
+    for (const question of pack.orderedQuestions) {
+      titles.push([norm(question.title), `${entry.slug}/${question.id}`]);
+      if (question.scene) scenes.push([norm(question.scene), question.id]);
+      for (const choice of question.choices) {
+        answers.push([norm(choice.label), `${entry.slug}/${choice.id}`]);
+        if (choice.valueLabel) values.push([norm(choice.valueLabel), choice.id]);
+      }
+    }
+    assert.deepEqual(seen(values), [], `${entry.title}: a value name is used twice`);
+    assert.deepEqual(seen(scenes), [], `${entry.title}: a scene is used twice`);
+  }
+  assert.deepEqual(seen(titles), [], "a question is asked twice");
+  assert.deepEqual(seen(answers), [], "an answer says what another answer already said");
 });

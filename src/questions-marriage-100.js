@@ -263,7 +263,7 @@ export const marriage100Pack = definePack({
       { id: "m100-s02-08-a", label: "공동 할 일을 마친 뒤 남은 시간은 자유롭게 쓴다", valueLabel: "공동 일 우선" },
       { id: "m100-s02-08-b", label: "주당 시간 한도를 정하고 그 안에서는 방해하지 않는다", valueLabel: "취미 시간 한도" },
       { id: "m100-s02-08-c", label: "미리 정한 부부 시간을 제외하면 각자 자유롭게 쓴다", valueLabel: "부부 시간 보호" },
-      { id: "m100-s02-08-d", label: "취미보다 함께 보내는 저녁을 기본으로 둔다", valueLabel: "함께함 우선" }
+      { id: "m100-s02-08-d", label: "취미보다 함께 보내는 저녁을 기본으로 둔다", valueLabel: "함께 보내는 저녁" }
     ]
   },
   {
@@ -275,7 +275,7 @@ export const marriage100Pack = definePack({
     choices: [
       { id: "m100-s02-09-a", label: "귀가 후 공동 일을 먼저 끝내고 함께 쉰다", valueLabel: "일 먼저" },
       { id: "m100-s02-09-b", label: "각자 정한 휴식 뒤 약속한 시간에 일을 시작한다", valueLabel: "휴식 뒤 시작" },
-      { id: "m100-s02-09-c", label: "평일 일은 최소화하고 주말에 몰아서 처리한다", valueLabel: "주말 집중" },
+      { id: "m100-s02-09-c", label: "평일 일은 최소화하고 주말에 몰아서 처리한다", valueLabel: "주말에 몰아서" },
       { id: "m100-s02-09-d", label: "먼저 움직일 수 있는 사람이 시작하고 나중에 다른 일로 균형을 맞춘다", valueLabel: "먼저 하고 보완" }
     ]
   },
@@ -288,7 +288,7 @@ export const marriage100Pack = definePack({
     choices: [
       { id: "m100-s02-10-a", label: "회복이 급한 사람은 필수 가사에서도 잠시 완전히 빠진다", valueLabel: "완전한 회복 시간" },
       { id: "m100-s02-10-b", label: "필수 가사만 남기고 두 사람 모두 해야 할 양을 줄인다", valueLabel: "함께 기준 낮추기" },
-      { id: "m100-s02-10-c", label: "외부 서비스를 이용해 두 사람의 기존 역할을 유지한다", valueLabel: "외부 도움" },
+      { id: "m100-s02-10-c", label: "외부 서비스를 이용해 두 사람의 기존 역할을 유지한다", valueLabel: "서비스로 대체" },
       { id: "m100-s02-10-d", label: "지친 사람도 가능한 최소 역할을 맡고 재점검 날짜를 정한다", valueLabel: "최소 역할과 재점검" }
     ]
   },
@@ -546,7 +546,7 @@ export const marriage100Pack = definePack({
     scene: "한쪽 부모님이 혼자 생활하기 어려워졌고 직접 돌봄, 경제 지원, 합가 중 결정을 해야 합니다.",
     mood: "따뜻한 약속",
     choices: [
-      { id: "m100-s04-10-a", label: "각자가 자기 부모님의 직접 돌봄을 중심으로 맡는다", valueLabel: "각자 부모 책임" },
+      { id: "m100-s04-10-a", label: "각자가 자기 부모님의 직접 돌봄을 중심으로 맡는다", valueLabel: "각자 자기 부모를" },
       { id: "m100-s04-10-b", label: "부부가 시간과 비용을 공동으로 나누어 맡는다", valueLabel: "부부 공동 돌봄" },
       { id: "m100-s04-10-c", label: "외부 돌봄을 우선하고 부부는 정서·경제 지원을 맡는다", valueLabel: "전문 돌봄 우선" },
       { id: "m100-s04-10-d", label: "합가를 포함해 가족이 함께 사는 방식을 우선 검토한다", valueLabel: "합가 우선" }
@@ -782,7 +782,7 @@ export const marriage100Pack = definePack({
     choices: [
       { id: "m100-s06-08-a", label: "문제를 더 작은 행동 단위로 나눠 새 규칙을 만든다", valueLabel: "작은 규칙" },
       { id: "m100-s06-08-b", label: "담당·환경·시간을 바꾸는 실험을 일정 기간 해본다", valueLabel: "환경 실험" },
-      { id: "m100-s06-08-c", label: "부부 상담이나 신뢰할 제3자의 도움을 받는다", valueLabel: "외부 도움" },
+      { id: "m100-s06-08-c", label: "부부 상담이나 신뢰할 제3자의 도움을 받는다", valueLabel: "상담·제3자" },
       { id: "m100-s06-08-d", label: "핵심 가치 충돌인지 확인하고 관계의 한계를 논의한다", valueLabel: "관계 한계 확인" }
     ]
   },
@@ -859,7 +859,7 @@ export const marriage100Pack = definePack({
     mood: "작은 차이",
     choices: [
       { id: "m100-s07-04-a", label: "생활비를 정확히 반씩 부담한다", valueLabel: "정확히 반반" },
-      { id: "m100-s07-04-b", label: "각자 소득 비율에 따라 부담한다", valueLabel: "소득 비례" },
+      { id: "m100-s07-04-b", label: "각자 소득 비율에 따라 부담한다", valueLabel: "비율 부담" },
       { id: "m100-s07-04-c", label: "더 많이 버는 사람이 생활비 대부분을 부담한다", valueLabel: "고소득자 부담" },
       { id: "m100-s07-04-d", label: "가사·돌봄 기여까지 함께 계산해 부담을 정한다", valueLabel: "전체 기여" }
     ]
@@ -1030,7 +1030,7 @@ export const marriage100Pack = definePack({
       { id: "m100-s08-07-a", label: "두 사람이 모두 원한다는 확신이 생길 때까지 결혼을 미룬다", valueLabel: "확신까지 기다림" },
       { id: "m100-s08-07-b", label: "확신하지 못하는 상태와 재논의 시점을 합의하고 결혼한다", valueLabel: "불확실성 합의" },
       { id: "m100-s08-07-c", label: "한 사람이 자녀 계획을 포기할 수 있을 때 결혼한다", valueLabel: "한 사람의 양보" },
-      { id: "m100-s08-07-d", label: "핵심 삶의 방향이 다르면 관계를 다시 검토한다", valueLabel: "관계 재검토" }
+      { id: "m100-s08-07-d", label: "핵심 삶의 방향이 다르면 관계를 다시 검토한다", valueLabel: "방향이 다르면" }
     ]
   },
   {

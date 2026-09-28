@@ -376,13 +376,24 @@ html { scroll-padding-top: 120px; }
   margin: 0 0 32px;
 }
 
+/*
+ * The gap between two questions is three times what it was, at the owner's word (2026-09-28).
+ *
+ * It was 24px — one card's padding — which set the distance between two questions equal to the
+ * distance between a question and its own answers, so ten cards read as one long column of blocks.
+ * 72px is wider than anything inside a card, which is what makes a card read as one thing and the
+ * space after it as the end of it. The last card drops it: the gap belongs between questions, and
+ * under the tenth it would only push the pager down.
+ */
 .q {
   background: var(--ab-card);
   border-radius: 20px;
   box-shadow: var(--lift-card);
   padding: 24px;
-  margin: 0 0 24px;
+  margin: 0 0 72px;
 }
+
+.q:last-of-type { margin-bottom: 24px; }
 
 .q h2 {
   font-family: MaruBuri, Georgia, serif;

@@ -36,7 +36,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-01",
     sectionId: "s01",
     title: "임신 테스트가 양성이라면 누구에게 가장 먼저 알리고 싶나요?",
-    example: "아직 병원 확인 전인데 가족이 모이는 일정이 잡혀 있습니다.",
+    scene: "아직 병원 확인 전인데 가족이 모이는 일정이 잡혀 있습니다.",
     mood: "미소",
     choices: [
       { id: "p100-s01-01-a", label: "병원에서 확인하기 전에는 두 사람만 안다", valueLabel: "확인 뒤에" },
@@ -49,7 +49,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-02",
     sectionId: "s01",
     title: "임신 사실을 직장에는 언제 알리는 것이 편안한가요?",
-    example: "입덧과 병원 일정 때문에 업무 조정이 필요해지기 시작합니다.",
+    scene: "입덧과 병원 일정 때문에 업무 조정이 필요해지기 시작합니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s01-02-a", label: "확인 즉시 상사에게 알리고 일정 조정을 요청한다", valueLabel: "바로 알림" },
@@ -62,7 +62,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-03",
     sectionId: "s01",
     title: "초기 유산 가능성이 있는 시기에도 가까운 사람에게 알릴까요?",
-    example: "도움은 필요하지만 나쁜 결과까지 설명해야 할 수 있습니다.",
+    scene: "도움은 필요하지만 나쁜 결과까지 설명해야 할 수 있습니다.",
     mood: "조심스러움",
     choices: [
       { id: "p100-s01-03-a", label: "알린다. 나쁜 소식이 오면 그것도 함께 나눈다", valueLabel: "함께 겪기" },
@@ -75,7 +75,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-04",
     sectionId: "s01",
     title: "태명은 누가 어떤 방식으로 정하고 싶나요?",
-    example: "양가에서 서로 다른 태명을 먼저 제안합니다.",
+    scene: "양가에서 서로 다른 태명을 먼저 제안합니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s01-04-a", label: "두 사람이 정하고 양가에는 결과만 알린다", valueLabel: "둘이 정함" },
@@ -88,7 +88,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-05",
     sectionId: "s01",
     title: "임신 사진과 초음파 사진을 SNS에 올려도 될까요?",
-    example: "한 사람은 기록하고 싶고 다른 사람은 사생활이 걱정됩니다.",
+    scene: "한 사람은 기록하고 싶고 다른 사람은 사생활이 걱정됩니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s01-05-a", label: "공개 계정에 올린다", valueLabel: "공개 기록" },
@@ -101,7 +101,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-06",
     sectionId: "s01",
     title: "성별을 알게 되었을 때 공개 범위는 어디까지가 좋을까요?",
-    example: "가족이 성별 공개 이벤트를 기대합니다.",
+    scene: "가족이 성별 공개 이벤트를 기대합니다.",
     mood: "안도",
     choices: [
       { id: "p100-s01-06-a", label: "가족 이벤트를 열어 다 함께 알게 한다", valueLabel: "이벤트로 공개" },
@@ -114,7 +114,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-07",
     sectionId: "s01",
     title: "주변의 임신 축하와 조언이 부담스러울 때 누가 경계를 전달할까요?",
-    example: "반복되는 연락과 음식 권유가 스트레스가 됩니다.",
+    scene: "반복되는 연락과 음식 권유가 스트레스가 됩니다.",
     mood: "웃음",
     choices: [
       { id: "p100-s01-07-a", label: "각자 자기 쪽 가족과 지인에게 직접 말한다", valueLabel: "각자 자기 쪽" },
@@ -127,7 +127,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-08",
     sectionId: "s01",
     title: "계획과 다른 시기에 임신했을 때, 두 사람의 감정이 다르면 어떻게 할까요?",
-    example: "한 사람은 기쁘고 다른 사람은 두려움이 더 큽니다.",
+    scene: "한 사람은 기쁘고 다른 사람은 두려움이 더 큽니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s01-08-a", label: "그날 밤 각자의 감정을 있는 그대로 다 말한다", valueLabel: "바로 다 말하기" },
@@ -140,7 +140,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-09",
     sectionId: "s01",
     title: "임신 사실을 아직 알리고 싶지 않은데 술자리나 모임이 있다면 어떻게 대응할까요?",
-    example: "거절 이유를 설명하라는 압박을 받습니다.",
+    scene: "거절 이유를 설명하라는 압박을 받습니다.",
     mood: "희망",
     choices: [
       { id: "p100-s01-09-a", label: "이유를 대지 않고 불참한다", valueLabel: "불참" },
@@ -153,7 +153,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s01-10",
     sectionId: "s01",
     title: "임신 기록을 사진·영상·일기 중 어느 정도 남기고 싶나요?",
-    example: "한 사람은 모든 과정을 남기고 싶고 다른 사람은 촬영이 불편합니다.",
+    scene: "한 사람은 모든 과정을 남기고 싶고 다른 사람은 촬영이 불편합니다.",
     mood: "여운",
     choices: [
       { id: "p100-s01-10-a", label: "매주 배 사진과 짧은 일기를 남긴다", valueLabel: "매주 기록" },
@@ -166,7 +166,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-01",
     sectionId: "s02",
     title: "입덧으로 집안일이 어려워지면 어떤 기준으로 역할을 다시 나눌까요?",
-    example: "냄새 때문에 요리와 설거지를 할 수 없습니다.",
+    scene: "냄새 때문에 요리와 설거지를 할 수 없습니다.",
     mood: "미소",
     choices: [
       { id: "p100-s02-01-a", label: "요리와 설거지는 파트너가 전부 맡는다", valueLabel: "파트너가 전담" },
@@ -179,7 +179,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-02",
     sectionId: "s02",
     title: "임신 중 피로를 주변이 “유난”이라고 말할 때 파트너는 어떻게 대응해야 할까요?",
-    example: "가족 모임을 일찍 떠나자 불평이 나옵니다.",
+    scene: "가족 모임을 일찍 떠나자 불평이 나옵니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s02-02-a", label: "그 자리에서 바로 \"몸이 힘든 게 맞다\"고 말한다", valueLabel: "바로 편들기" },
@@ -192,7 +192,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-03",
     sectionId: "s02",
     title: "체중과 외모 변화에 관한 농담이나 평가에 어떤 경계를 둘까요?",
-    example: "가족이 배와 체중을 반복해서 언급합니다.",
+    scene: "가족이 배와 체중을 반복해서 언급합니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s02-03-a", label: "가족이라도 몸 이야기는 아예 꺼내지 말라고 한다", valueLabel: "몸 이야기 금지" },
@@ -205,7 +205,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-04",
     sectionId: "s02",
     title: "성생활의 빈도와 방식이 달라질 때 어떤 원칙으로 조율할까요?",
-    example: "한 사람은 불안하고 다른 사람은 거절로 느낍니다.",
+    scene: "한 사람은 불안하고 다른 사람은 거절로 느낍니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s02-04-a", label: "의료진에게 물어 안전 범위를 확인하고 정한다", valueLabel: "의료진 확인" },
@@ -218,7 +218,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-05",
     sectionId: "s02",
     title: "임신 중 음식 제한을 두 사람 모두 함께 지켜야 할까요?",
-    example: "임산부 앞에서 금지된 음식을 먹는 문제로 서운함이 생깁니다.",
+    scene: "임산부 앞에서 금지된 음식을 먹는 문제로 서운함이 생깁니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s02-05-a", label: "파트너도 임신 기간 내내 똑같이 제한한다", valueLabel: "똑같이 제한" },
@@ -231,10 +231,10 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-06",
     sectionId: "s02",
     title: "카페인·운동·여행처럼 권고 범위가 다양한 선택은 누가 결정할까요?",
-    example: "검색 결과와 의료진 설명이 조금씩 다릅니다.",
+    scene: "검색 결과와 의료진 설명이 조금씩 다릅니다.",
     mood: "안도",
     choices: [
-      { id: "p100-s02-06-a", label: "임신한 사람이 몸 상태에 따라 혼자 정한다", valueLabel: "임산부가 정함" },
+      { id: "p100-s02-06-a", label: "임신한 사람이 몸 상태에 따라 혼자 정한다", valueLabel: "몸 상태 따라" },
       { id: "p100-s02-06-b", label: "주치의 설명을 기준으로 삼고 그 안에서 정한다", valueLabel: "의료진 기준" },
       { id: "p100-s02-06-c", label: "가장 보수적인 권고에 맞춘다", valueLabel: "가장 안전하게" },
       { id: "p100-s02-06-d", label: "둘이 의견이 갈리면 더 걱정하는 쪽에 맞춘다", valueLabel: "걱정하는 쪽에" }
@@ -244,7 +244,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-07",
     sectionId: "s02",
     title: "몸이 힘든 날 약속을 당일 취소해도 되는 범위는 어디까지일까요?",
-    example: "중요한 가족 행사를 앞두고 컨디션이 급격히 나빠집니다.",
+    scene: "중요한 가족 행사를 앞두고 컨디션이 급격히 나빠집니다.",
     mood: "웃음",
     choices: [
       { id: "p100-s02-07-a", label: "어떤 약속이든 몸이 힘들면 당일 취소한다", valueLabel: "몸이 우선" },
@@ -257,7 +257,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-08",
     sectionId: "s02",
     title: "임부복·보조용품·마사지 비용은 어떤 비용으로 볼까요?",
-    example: "기존 개인지출 원칙으로는 부담이 한쪽에 몰립니다.",
+    scene: "기존 개인지출 원칙으로는 부담이 한쪽에 몰립니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s02-08-a", label: "임신과 관련된 것은 모두 공동 지출로 한다", valueLabel: "전부 공동" },
@@ -270,7 +270,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-09",
     sectionId: "s02",
     title: "임신으로 수면이 깨질 때 침실을 분리하는 선택을 어떻게 생각하나요?",
-    example: "한 사람의 잦은 뒤척임으로 두 사람 모두 잠을 못 잡니다.",
+    scene: "한 사람의 잦은 뒤척임으로 두 사람 모두 잠을 못 잡니다.",
     mood: "희망",
     choices: [
       { id: "p100-s02-09-a", label: "출산 전까지 각방을 쓴다", valueLabel: "각방" },
@@ -283,7 +283,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s02-10",
     sectionId: "s02",
     title: "배를 만지거나 사진 찍으려는 사람에게 어떤 규칙을 적용할까요?",
-    example: "친척이 허락 없이 몸에 손을 댑니다.",
+    scene: "친척이 허락 없이 몸에 손을 댑니다.",
     mood: "여운",
     choices: [
       { id: "p100-s02-10-a", label: "누구든 만지지 못하게 한다", valueLabel: "아무도 안 됨" },
@@ -296,7 +296,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-01",
     sectionId: "s03",
     title: "산부인과와 주치의는 무엇을 가장 우선해 선택할까요?",
-    example: "거리, 비용, 설명 방식, 분만 연계가 서로 다릅니다.",
+    scene: "거리, 비용, 설명 방식, 분만 연계가 서로 다릅니다.",
     mood: "미소",
     choices: [
       { id: "p100-s03-01-a", label: "집이나 직장에서 가까운 곳", valueLabel: "거리" },
@@ -309,7 +309,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-02",
     sectionId: "s03",
     title: "파트너는 산전 진료에 어느 정도 동행해야 할까요?",
-    example: "평일 진료와 중요한 검사가 겹칩니다.",
+    scene: "평일 진료와 중요한 검사가 겹칩니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s03-02-a", label: "모든 진료에 휴가를 내서라도 함께 간다", valueLabel: "매번 동행" },
@@ -322,7 +322,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-03",
     sectionId: "s03",
     title: "검사 결과를 두 사람 중 누가 먼저 확인하는 것이 좋을까요?",
-    example: "앱 알림으로 민감한 결과가 먼저 도착합니다.",
+    scene: "앱 알림으로 민감한 결과가 먼저 도착합니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s03-03-a", label: "알림이 오면 먼저 본 사람이 확인하고 알린다", valueLabel: "먼저 본 사람" },
@@ -335,7 +335,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-04",
     sectionId: "s03",
     title: "추가 비용이 드는 선택검사는 어떤 기준으로 결정할까요?",
-    example: "의료진은 선택 사항이라고 설명하지만 불안이 큽니다.",
+    scene: "의료진은 선택 사항이라고 설명하지만 불안이 큽니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s03-04-a", label: "의료진이 권하지 않으면 하지 않는다", valueLabel: "의료진 권고만" },
@@ -348,7 +348,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-05",
     sectionId: "s03",
     title: "태아 이상 가능성이 제시되면 정보를 얼마나 깊게 알아볼까요?",
-    example: "검색할수록 불안이 커지고 의견이 갈립니다.",
+    scene: "검색할수록 불안이 커지고 의견이 갈립니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s03-05-a", label: "논문과 사례까지 찾아 최대한 깊이 알아본다", valueLabel: "끝까지 파악" },
@@ -361,7 +361,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-06",
     sectionId: "s03",
     title: "의학적 판단이 가족의 믿음이나 민간요법과 충돌하면 무엇을 우선할까요?",
-    example: "가족이 병원 권고와 다른 방법을 강하게 권합니다.",
+    scene: "가족이 병원 권고와 다른 방법을 강하게 권합니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s03-06-a", label: "의료진 권고만 따르고 가족에게 그렇게 말한다", valueLabel: "의료진만" },
@@ -374,7 +374,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-07",
     sectionId: "s03",
     title: "응급 신호가 애매할 때 바로 병원에 갈 기준은 무엇인가요?",
-    example: "야간에 통증이 있지만 심한지 판단하기 어렵습니다.",
+    scene: "야간에 통증이 있지만 심한지 판단하기 어렵습니다.",
     mood: "침착함",
     choices: [
       { id: "p100-s03-07-a", label: "조금이라도 이상하면 밤이라도 바로 간다", valueLabel: "즉시 병원" },
@@ -387,7 +387,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-08",
     sectionId: "s03",
     title: "진료실에서 의료진에게 질문하고 기록하는 역할은 누가 맡을까요?",
-    example: "진료실에서 긴장해 중요한 질문을 자주 잊습니다.",
+    scene: "진료실에서 긴장해 중요한 질문을 자주 잊습니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s03-08-a", label: "파트너가 질문 목록을 들고 묻고 적는다", valueLabel: "파트너가 담당" },
@@ -400,20 +400,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s03-09",
     sectionId: "s03",
     title: "건강정보 검색의 범위와 신뢰할 출처를 어떻게 정할까요?",
-    example: "커뮤니티 경험담과 공식 권고가 충돌합니다.",
+    scene: "커뮤니티 경험담과 공식 권고가 충돌합니다.",
     mood: "희망",
     choices: [
       { id: "p100-s03-09-a", label: "정부·병원 공식 자료만 본다", valueLabel: "공식 자료만" },
       { id: "p100-s03-09-b", label: "커뮤니티 경험담도 참고하되 의료진에게 확인한다", valueLabel: "참고 후 확인" },
       { id: "p100-s03-09-c", label: "검색은 하지 않고 진료 때 묻는다", valueLabel: "검색 안 함" },
-      { id: "p100-s03-09-d", label: "각자 원하는 대로 찾아보고 서로 강요하지 않는다", valueLabel: "각자 자유" }
+      { id: "p100-s03-09-d", label: "각자 원하는 대로 찾아보고 서로 강요하지 않는다", valueLabel: "각자 알아서" }
     ]
   },
   {
     id: "p100-s03-10",
     sectionId: "s03",
     title: "검사나 진료 내용을 양가에 어디까지 공유할까요?",
-    example: "매번 결과를 알려 달라는 요청이 들어옵니다.",
+    scene: "매번 결과를 알려 달라는 요청이 들어옵니다.",
     mood: "여운",
     choices: [
       { id: "p100-s03-10-a", label: "진료 때마다 결과를 양가에 알린다", valueLabel: "매번 공유" },
@@ -426,7 +426,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-01",
     sectionId: "s04",
     title: "임신 준비 공부는 누가 얼마나 주도해야 할까요?",
-    example: "한 사람만 책·앱·병원 정보를 찾아 지칩니다.",
+    scene: "한 사람만 책·앱·병원 정보를 찾아 지칩니다.",
     mood: "미소",
     choices: [
       { id: "p100-s04-01-a", label: "두 사람이 같은 책과 앱을 각자 본다", valueLabel: "둘 다 같은 내용" },
@@ -439,7 +439,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-02",
     sectionId: "s04",
     title: "태교를 반드시 함께 해야 한다는 기대를 어떻게 생각하나요?",
-    example: "한 사람은 매일 태담을 원하고 다른 사람은 어색해합니다.",
+    scene: "한 사람은 매일 태담을 원하고 다른 사람은 어색해합니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s04-02-a", label: "매일 정해진 시간에 둘이 함께 한다", valueLabel: "매일 함께" },
@@ -452,7 +452,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-03",
     sectionId: "s04",
     title: "파트너의 술·흡연·늦은 귀가를 임신 기간에 얼마나 조정할까요?",
-    example: "임산부만 생활을 제한한다는 불공정감이 생깁니다.",
+    scene: "임산부만 생활을 제한한다는 불공정감이 생깁니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s04-03-a", label: "임신 기간 동안 파트너도 술·담배·늦은 귀가를 끊는다", valueLabel: "함께 끊기" },
@@ -465,7 +465,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-04",
     sectionId: "s04",
     title: "임산부가 부탁하기 전에 파트너가 알아서 해야 할 일은 어디까지인가요?",
-    example: "“말하면 도와준다”는 태도가 정신적 노동으로 느껴집니다.",
+    scene: "“말하면 도와준다”는 태도가 정신적 노동으로 느껴집니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s04-04-a", label: "집안일 전부를 파트너가 알아서 맡는다", valueLabel: "전부 알아서" },
@@ -478,7 +478,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-05",
     sectionId: "s04",
     title: "신체적 통증을 완전히 이해할 수 없을 때 어떤 반응이 도움이 될까요?",
-    example: "해결책보다 공감을 원하지만 자꾸 조언부터 합니다.",
+    scene: "해결책보다 공감을 원하지만 자꾸 조언부터 합니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s04-05-a", label: "말없이 옆에서 안아 주거나 마사지한다", valueLabel: "몸으로 위로" },
@@ -491,7 +491,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-06",
     sectionId: "s04",
     title: "임신 관련 앱과 일정 관리를 두 사람 모두 해야 할까요?",
-    example: "병원·영양제·준비물 일정이 한 사람에게 집중됩니다.",
+    scene: "병원·영양제·준비물 일정이 한 사람에게 집중됩니다.",
     mood: "안도",
     choices: [
       { id: "p100-s04-06-a", label: "같은 앱을 둘 다 깔고 알림을 함께 받는다", valueLabel: "앱 공유" },
@@ -504,7 +504,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-07",
     sectionId: "s04",
     title: "임신 중 감정 기복과 상처 주는 말을 어디까지 구분해 다룰까요?",
-    example: "몸이 힘든 날 다툼에서 심한 말이 나옵니다.",
+    scene: "몸이 힘든 날 다툼에서 심한 말이 나옵니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s04-07-a", label: "임신 중 나온 말은 몸 탓으로 보고 넘긴다", valueLabel: "몸 탓으로 넘김" },
@@ -517,7 +517,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-08",
     sectionId: "s04",
     title: "파트너도 임신 과정에서 느끼는 두려움을 언제 어떻게 말할까요?",
-    example: "걱정을 말하면 임산부 부담을 키울까 숨기고 있습니다.",
+    scene: "걱정을 말하면 임산부 부담을 키울까 숨기고 있습니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s04-08-a", label: "느낄 때마다 바로 임산부에게 말한다", valueLabel: "바로 말하기" },
@@ -530,7 +530,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-09",
     sectionId: "s04",
     title: "임산부가 쉬는 동안 파트너의 개인 휴식은 어떻게 보장할까요?",
-    example: "한 사람은 몸 때문에 쉬고 다른 사람은 집안일로 지칩니다.",
+    scene: "한 사람은 몸 때문에 쉬고 다른 사람은 집안일로 지칩니다.",
     mood: "희망",
     choices: [
       { id: "p100-s04-09-a", label: "주말 중 반나절은 파트너가 온전히 쉰다", valueLabel: "정해진 휴식" },
@@ -543,7 +543,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s04-10",
     sectionId: "s04",
     title: "“도움”이 아니라 공동 책임이라고 느끼게 하는 기준은 무엇인가요?",
-    example: "한 사람이 모든 지시와 확인을 맡고 있습니다.",
+    scene: "한 사람이 모든 지시와 확인을 맡고 있습니다.",
     mood: "여운",
     choices: [
       { id: "p100-s04-10-a", label: "각자 맡은 일은 확인 없이 끝까지 책임진다", valueLabel: "확인 없는 책임" },
@@ -556,7 +556,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-01",
     sectionId: "s05",
     title: "임신으로 업무 조정이 필요할 때 경력과 건강 중 무엇을 우선할까요?",
-    example: "승진 프로젝트와 안정이 필요한 시기가 겹칩니다.",
+    scene: "승진 프로젝트와 안정이 필요한 시기가 겹칩니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s05-01-a", label: "프로젝트에서 빠지고 안정을 택한다", valueLabel: "건강 우선" },
@@ -569,7 +569,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-02",
     sectionId: "s05",
     title: "소득이 줄어들면 공동생활비 분담을 어떻게 바꿀까요?",
-    example: "휴직으로 한 사람의 월수입이 크게 감소합니다.",
+    scene: "휴직으로 한 사람의 월수입이 크게 감소합니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s05-02-a", label: "소득 비율에 맞춰 분담 비율을 바꾼다", valueLabel: "소득 비율로" },
@@ -582,7 +582,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-03",
     sectionId: "s05",
     title: "육아휴직은 누가 언제 얼마나 사용할까요?",
-    example: "제도상 가능하지만 두 사람의 직장 문화가 다릅니다.",
+    scene: "제도상 가능하지만 두 사람의 직장 문화가 다릅니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s05-03-a", label: "임신한 사람이 길게 쓰고 파트너는 출산 직후만 쓴다", valueLabel: "임산부 위주" },
@@ -595,7 +595,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-04",
     sectionId: "s05",
     title: "직장에서 임신 차별을 경험하면 어디까지 대응할까요?",
-    example: "중요한 업무에서 반복적으로 배제됩니다.",
+    scene: "중요한 업무에서 반복적으로 배제됩니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s05-04-a", label: "상사에게 직접 문제를 제기한다", valueLabel: "직접 제기" },
@@ -608,7 +608,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-05",
     sectionId: "s05",
     title: "야근·출장·교대근무는 임신 기간에 어떻게 조정할까요?",
-    example: "파트너의 장기 출장이 만삭 시기와 겹칩니다.",
+    scene: "파트너의 장기 출장이 만삭 시기와 겹칩니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s05-05-a", label: "파트너가 출장을 거절하거나 조정한다", valueLabel: "파트너가 조정" },
@@ -621,7 +621,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-06",
     sectionId: "s05",
     title: "출산 후 복귀 시점을 임신 중에 얼마나 확정할까요?",
-    example: "회사는 계획을 요구하지만 회복과 돌봄 상황은 알 수 없습니다.",
+    scene: "회사는 계획을 요구하지만 회복과 돌봄 상황은 알 수 없습니다.",
     mood: "안도",
     choices: [
       { id: "p100-s05-06-a", label: "복귀 날짜를 정해 회사에 확정해 준다", valueLabel: "날짜 확정" },
@@ -634,7 +634,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-07",
     sectionId: "s05",
     title: "경력 손실을 부부 공동의 비용으로 어떻게 보상할까요?",
-    example: "한 사람의 연봉과 승진 가능성이 크게 줄어듭니다.",
+    scene: "한 사람의 연봉과 승진 가능성이 크게 줄어듭니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s05-07-a", label: "줄어든 소득만큼 파트너 명의 자산을 나눠 둔다", valueLabel: "자산으로 보상" },
@@ -647,7 +647,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-08",
     sectionId: "s05",
     title: "프리랜서·자영업처럼 휴직 보장이 없을 때 무엇을 줄일까요?",
-    example: "쉬면 수입이 바로 사라지는 상황입니다.",
+    scene: "쉬면 수입이 바로 사라지는 상황입니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s05-08-a", label: "일을 줄이지 않고 출산 직전까지 한다", valueLabel: "끝까지 일함" },
@@ -660,7 +660,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-09",
     sectionId: "s05",
     title: "각자의 직장에 임신 사실과 일정 조정을 설명하는 일은 누가 맡을까요?",
-    example: "파트너의 회사에도 일정 조정 설명이 필요합니다.",
+    scene: "파트너의 회사에도 일정 조정 설명이 필요합니다.",
     mood: "희망",
     choices: [
       { id: "p100-s05-09-a", label: "각자 자기 직장에 직접 설명한다", valueLabel: "각자 직접" },
@@ -673,7 +673,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s05-10",
     sectionId: "s05",
     title: "임신 중 퇴사 제안을 받거나 하고 싶을 때 어떤 조건을 확인할까요?",
-    example: "몸은 힘들지만 퇴사 후 경제적 의존이 걱정됩니다.",
+    scene: "몸은 힘들지만 퇴사 후 경제적 의존이 걱정됩니다.",
     mood: "여운",
     choices: [
       { id: "p100-s05-10-a", label: "퇴사 후 생활비를 파트너 소득으로 감당할 수 있는지", valueLabel: "생활비 감당" },
@@ -686,20 +686,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-01",
     sectionId: "s06",
     title: "아기용품은 출산 전에 어느 수준까지 준비할까요?",
-    example: "커뮤니티 추천 목록이 계속 늘어납니다.",
+    scene: "커뮤니티 추천 목록이 계속 늘어납니다.",
     mood: "미소",
     choices: [
       { id: "p100-s06-01-a", label: "필수품만 사고 나머지는 태어난 뒤 산다", valueLabel: "필수품만" },
       { id: "p100-s06-01-b", label: "추천 목록을 다 갖춰 두고 시작한다", valueLabel: "목록 전부" },
       { id: "p100-s06-01-c", label: "물려받거나 빌릴 수 있는 것을 먼저 채운다", valueLabel: "물려받기 먼저" },
-      { id: "p100-s06-01-d", label: "예산을 정해 두고 그 안에서만 산다", valueLabel: "예산 안에서" }
+      { id: "p100-s06-01-d", label: "예산을 정해 두고 그 안에서만 산다", valueLabel: "예산 한도" }
     ]
   },
   {
     id: "p100-s06-02",
     sectionId: "s06",
     title: "고가 유모차·카시트·가구는 무엇을 기준으로 선택할까요?",
-    example: "안전, 디자인, 브랜드, 중고 가격이 충돌합니다.",
+    scene: "안전, 디자인, 브랜드, 중고 가격이 충돌합니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s06-02-a", label: "안전 인증과 사용 후기", valueLabel: "안전" },
@@ -712,7 +712,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-03",
     sectionId: "s06",
     title: "새 제품과 중고 제품의 경계는 어디에 둘까요?",
-    example: "절약하고 싶지만 위생과 안전이 걱정됩니다.",
+    scene: "절약하고 싶지만 위생과 안전이 걱정됩니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s06-03-a", label: "카시트처럼 안전과 직결된 것만 새것으로 산다", valueLabel: "안전 용품만 새것" },
@@ -725,7 +725,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-04",
     sectionId: "s06",
     title: "태교여행은 필수 경험인가 선택 소비인가요?",
-    example: "예산은 빠듯하지만 지금 아니면 어렵다는 말이 많습니다.",
+    scene: "예산은 빠듯하지만 지금 아니면 어렵다는 말이 많습니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s06-04-a", label: "예산을 넘겨서라도 해외로 간다", valueLabel: "해외로 간다" },
@@ -738,12 +738,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-05",
     sectionId: "s06",
     title: "임신·출산 비용을 기존 5:5 원칙으로 나누는 것이 공정할까요?",
-    example: "몸의 부담과 소득 감소는 한쪽에 집중됩니다.",
+    scene: "몸의 부담과 소득 감소는 한쪽에 집중됩니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s06-05-a", label: "5:5를 그대로 유지한다", valueLabel: "5:5 유지" },
       { id: "p100-s06-05-b", label: "소득 비율로 나눈다", valueLabel: "소득 비율" },
-      { id: "p100-s06-05-c", label: "파트너가 임신·출산 비용을 전부 낸다", valueLabel: "파트너 전액" },
+      { id: "p100-s06-05-c", label: "파트너가 임신·출산 비용을 전부 낸다", valueLabel: "비용은 파트너" },
       { id: "p100-s06-05-d", label: "공동 계좌에서 내고 나누지 않는다", valueLabel: "나누지 않음" }
     ]
   },
@@ -751,7 +751,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-06",
     sectionId: "s06",
     title: "양가에서 큰돈이나 물품을 지원할 때 간섭은 어디까지 받아들일까요?",
-    example: "지원과 함께 병원·이름·육아 방식 요구가 따라옵니다.",
+    scene: "지원과 함께 병원·이름·육아 방식 요구가 따라옵니다.",
     mood: "안도",
     choices: [
       { id: "p100-s06-06-a", label: "지원을 받지 않고 간섭도 받지 않는다", valueLabel: "지원 거절" },
@@ -764,7 +764,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-07",
     sectionId: "s06",
     title: "보험과 저축은 임신 중 어느 수준까지 준비할까요?",
-    example: "불안을 자극하는 상품 권유가 이어집니다.",
+    scene: "불안을 자극하는 상품 권유가 이어집니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s06-07-a", label: "태아보험과 실손을 먼저 들고 저축은 뒤로 미룬다", valueLabel: "보험 먼저" },
@@ -777,20 +777,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-08",
     sectionId: "s06",
     title: "준비물 구매를 누가 조사하고 최종 결정할까요?",
-    example: "비교와 반품 업무가 한 사람에게 쏠립니다.",
+    scene: "비교와 반품 업무가 한 사람에게 쏠립니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s06-08-a", label: "한 사람이 조사하고 다른 사람이 결제와 반품을 맡는다", valueLabel: "조사와 처리 분담" },
       { id: "p100-s06-08-b", label: "품목을 반으로 나눠 각자 조사하고 결정한다", valueLabel: "품목 분담" },
       { id: "p100-s06-08-c", label: "임신한 사람이 조사와 결정을 다 한다", valueLabel: "임산부 전담" },
-      { id: "p100-s06-08-d", label: "파트너가 조사와 결정을 다 한다", valueLabel: "파트너 전담" }
+      { id: "p100-s06-08-d", label: "파트너가 조사와 결정을 다 한다", valueLabel: "파트너가 결정" }
     ]
   },
   {
     id: "p100-s06-09",
     sectionId: "s06",
     title: "베이비샤워·만삭사진·성별공개 행사에 얼마까지 쓸까요?",
-    example: "추억의 가치와 보여주기 소비라는 시선이 갈립니다.",
+    scene: "추억의 가치와 보여주기 소비라는 시선이 갈립니다.",
     mood: "희망",
     choices: [
       { id: "p100-s06-09-a", label: "하고 싶은 것은 비용을 따지지 않고 다 한다", valueLabel: "다 한다" },
@@ -803,7 +803,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s06-10",
     sectionId: "s06",
     title: "예상치 못한 고위험 임신 비용에 대비해 어떤 지출을 먼저 줄일까요?",
-    example: "추가 진료와 휴직으로 예산이 흔들립니다.",
+    scene: "추가 진료와 휴직으로 예산이 흔들립니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s06-10-a", label: "외식·여행 같은 생활 지출부터 줄인다", valueLabel: "생활 지출" },
@@ -816,7 +816,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-01",
     sectionId: "s07",
     title: "양가 부모의 병원 동행은 어디까지 허용할까요?",
-    example: "초음파를 함께 보고 싶다는 요청이 옵니다.",
+    scene: "초음파를 함께 보고 싶다는 요청이 옵니다.",
     mood: "미소",
     choices: [
       { id: "p100-s07-01-a", label: "진료는 두 사람만 가고 사진을 보내 드린다", valueLabel: "사진만 공유" },
@@ -829,11 +829,11 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-02",
     sectionId: "s07",
     title: "시댁과 친정의 임신 관련 조언이 충돌하면 누가 정리할까요?",
-    example: "음식과 생활 습관을 두고 서로 다른 요구가 나옵니다.",
+    scene: "음식과 생활 습관을 두고 서로 다른 요구가 나옵니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s07-02-a", label: "각자 자기 부모에게 우리 방식을 설명한다", valueLabel: "각자 자기 부모" },
-      { id: "p100-s07-02-b", label: "의료진 말을 기준으로 삼고 양쪽에 똑같이 전한다", valueLabel: "의료진 기준" },
+      { id: "p100-s07-02-b", label: "의료진 말을 기준으로 삼고 양쪽에 똑같이 전한다", valueLabel: "의료진 말대로" },
       { id: "p100-s07-02-c", label: "임신한 사람이 원하는 대로 하고 양가에는 말하지 않는다", valueLabel: "조용히 우리 식" },
       { id: "p100-s07-02-d", label: "양쪽 조언을 다 듣고 절충한다", valueLabel: "절충" }
     ]
@@ -842,23 +842,23 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-03",
     sectionId: "s07",
     title: "가족이 태아의 성별에 실망을 표현하면 어떻게 대응할까요?",
-    example: "축하 자리에서 선호 성별 이야기가 반복됩니다.",
+    scene: "축하 자리에서 선호 성별 이야기가 반복됩니다.",
     mood: "단호함",
     choices: [
       { id: "p100-s07-03-a", label: "그 자리에서 그런 말은 듣지 않겠다고 말한다", valueLabel: "즉시 제지" },
       { id: "p100-s07-03-b", label: "그 가족의 자녀인 쪽이 나중에 따로 말한다", valueLabel: "자기 가족은 자기가" },
-      { id: "p100-s07-03-c", label: "웃어넘기고 아이 이야기를 하지 않는다", valueLabel: "웃어넘김" },
-      { id: "p100-s07-03-d", label: "그런 말을 하는 자리에는 당분간 가지 않는다", valueLabel: "거리 두기" }
+      { id: "p100-s07-03-c", label: "웃어넘기고 아이 이야기를 하지 않는다", valueLabel: "웃고 넘어감" },
+      { id: "p100-s07-03-d", label: "그런 말을 하는 자리에는 당분간 가지 않는다", valueLabel: "그 자리 피함" }
     ]
   },
   {
     id: "p100-s07-04",
     sectionId: "s07",
     title: "아기 이름에 양가 의견을 얼마나 반영할까요?",
-    example: "돌림자와 종교적 의미를 두고 압박이 있습니다.",
+    scene: "돌림자와 종교적 의미를 두고 압박이 있습니다.",
     mood: "현실감",
     choices: [
-      { id: "p100-s07-04-a", label: "두 사람이 정하고 양가 의견은 받지 않는다", valueLabel: "둘이 정함" },
+      { id: "p100-s07-04-a", label: "두 사람이 정하고 양가 의견은 받지 않는다", valueLabel: "양가 의견 없이" },
       { id: "p100-s07-04-b", label: "돌림자만 따르고 나머지는 우리가 정한다", valueLabel: "돌림자만 수용" },
       { id: "p100-s07-04-c", label: "양가 후보를 받아 그중에서 고른다", valueLabel: "후보 중 선택" },
       { id: "p100-s07-04-d", label: "작명은 양가에 맡긴다", valueLabel: "양가에 맡김" }
@@ -868,11 +868,11 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-05",
     sectionId: "s07",
     title: "임신 중 가족 행사 참석 의무를 얼마나 줄일까요?",
-    example: "장거리 이동이 필요한 명절과 만삭이 겹칩니다.",
+    scene: "장거리 이동이 필요한 명절과 만삭이 겹칩니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s07-05-a", label: "임신 기간에는 장거리 행사에 가지 않는다", valueLabel: "장거리 불참" },
-      { id: "p100-s07-05-b", label: "파트너만 가고 임산부는 집에 남는다", valueLabel: "파트너만 참석" },
+      { id: "p100-s07-05-b", label: "파트너만 가고 임산부는 집에 남는다", valueLabel: "파트너만 감" },
       { id: "p100-s07-05-c", label: "무리해서라도 함께 가되 당일 돌아온다", valueLabel: "당일치기 참석" },
       { id: "p100-s07-05-d", label: "가족이 우리 집으로 오게 한다", valueLabel: "집으로 초대" }
     ]
@@ -881,7 +881,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-06",
     sectionId: "s07",
     title: "집에 머물며 돕겠다는 가족의 제안을 받을까요?",
-    example: "도움은 필요하지만 함께 지내는 스트레스가 큽니다.",
+    scene: "도움은 필요하지만 함께 지내는 스트레스가 큽니다.",
     mood: "안도",
     choices: [
       { id: "p100-s07-06-a", label: "출산 전후 정해진 기간만 함께 지낸다", valueLabel: "기간 한정" },
@@ -894,12 +894,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-07",
     sectionId: "s07",
     title: "출산 전 집 열쇠나 비밀번호를 가족에게 공유해도 될까요?",
-    example: "응급상황을 이유로 자유로운 출입을 원합니다.",
+    scene: "응급상황을 이유로 자유로운 출입을 원합니다.",
     mood: "웃음",
     choices: [
       { id: "p100-s07-07-a", label: "공유하지 않는다", valueLabel: "공유 안 함" },
       { id: "p100-s07-07-b", label: "응급 때만 쓰기로 약속하고 한 분에게만 준다", valueLabel: "한 분에게만" },
-      { id: "p100-s07-07-c", label: "만삭부터 출산 후까지만 알려 주고 나중에 바꾼다", valueLabel: "기간 한정" },
+      { id: "p100-s07-07-c", label: "만삭부터 출산 후까지만 알려 주고 나중에 바꾼다", valueLabel: "그 기간만" },
       { id: "p100-s07-07-d", label: "양가 모두에게 알려 드린다", valueLabel: "양가 모두" }
     ]
   },
@@ -907,7 +907,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-08",
     sectionId: "s07",
     title: "가족이 아기용품을 상의 없이 사 올 때 어떻게 대응할까요?",
-    example: "집 공간과 취향에 맞지 않는 물건이 쌓입니다.",
+    scene: "집 공간과 취향에 맞지 않는 물건이 쌓입니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s07-08-a", label: "사 오기 전에 꼭 물어봐 달라고 말한다", valueLabel: "먼저 묻기 요청" },
@@ -920,20 +920,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s07-09",
     sectionId: "s07",
     title: "임산부 몸 상태를 다른 가족에게 전달하는 창구는 누가 될까요?",
-    example: "매일 상태를 묻는 연락이 부담됩니다.",
+    scene: "매일 상태를 묻는 연락이 부담됩니다.",
     mood: "희망",
     choices: [
       { id: "p100-s07-09-a", label: "파트너가 양가 연락을 모두 맡는다", valueLabel: "파트너 창구" },
       { id: "p100-s07-09-b", label: "각자 자기 가족에게 전한다", valueLabel: "각자 자기 가족" },
       { id: "p100-s07-09-c", label: "가족 단체방에 주 1회 한 번만 올린다", valueLabel: "주 1회 단체방" },
-      { id: "p100-s07-09-d", label: "임신한 사람이 직접 답한다", valueLabel: "본인이 직접" }
+      { id: "p100-s07-09-d", label: "임신한 사람이 직접 답한다", valueLabel: "본인이 답함" }
     ]
   },
   {
     id: "p100-s07-10",
     sectionId: "s07",
     title: "가족의 종교적 태교나 의식을 어디까지 받아들일까요?",
-    example: "원치 않는 기도·부적·행사 참여를 권합니다.",
+    scene: "원치 않는 기도·부적·행사 참여를 권합니다.",
     mood: "여운",
     choices: [
       { id: "p100-s07-10-a", label: "참여하지 않겠다고 분명히 말한다", valueLabel: "거절" },
@@ -946,7 +946,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-01",
     sectionId: "s08",
     title: "임신 중 우울·불안 신호를 누가 어떻게 먼저 꺼낼까요?",
-    example: "잠과 식사가 무너졌지만 단순한 호르몬 문제로 넘깁니다.",
+    scene: "잠과 식사가 무너졌지만 단순한 호르몬 문제로 넘깁니다.",
     mood: "조심스러움",
     choices: [
       { id: "p100-s08-01-a", label: "알아챈 파트너가 \"요즘 힘들어 보여\"라고 먼저 말한다", valueLabel: "파트너가 먼저" },
@@ -959,7 +959,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-02",
     sectionId: "s08",
     title: "상담이나 정신건강 진료를 받는 기준을 어떻게 정할까요?",
-    example: "한 사람은 필요하다고 느끼고 다른 사람은 과하다고 봅니다.",
+    scene: "한 사람은 필요하다고 느끼고 다른 사람은 과하다고 봅니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s08-02-a", label: "한 사람이라도 필요하다고 느끼면 받는다", valueLabel: "한 명이 원하면" },
@@ -972,7 +972,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-03",
     sectionId: "s08",
     title: "임신이 관계를 행복하게 만들어야 한다는 압박을 어떻게 내려놓을까요?",
-    example: "기쁘지 않은 감정을 말하기 어려워집니다.",
+    scene: "기쁘지 않은 감정을 말하기 어려워집니다.",
     mood: "솔직함",
     choices: [
       { id: "p100-s08-03-a", label: "기쁘지 않은 날은 그렇다고 서로 말하기로 한다", valueLabel: "솔직히 말하기" },
@@ -985,7 +985,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-04",
     sectionId: "s08",
     title: "임신 전과 같은 데이트와 친밀감을 얼마나 유지할까요?",
-    example: "모든 대화가 아기 이야기로만 채워집니다.",
+    scene: "모든 대화가 아기 이야기로만 채워집니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s08-04-a", label: "주 1회 아기 이야기 없는 데이트를 지킨다", valueLabel: "주간 데이트" },
@@ -998,7 +998,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-05",
     sectionId: "s08",
     title: "몸의 변화로 자신감이 떨어질 때 파트너에게 어떤 지지를 원하나요?",
-    example: "칭찬이 부담스럽고 침묵도 서운합니다.",
+    scene: "칭찬이 부담스럽고 침묵도 서운합니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s08-05-a", label: "예쁘다고 자주 말해 준다", valueLabel: "말로 표현" },
@@ -1011,10 +1011,10 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-06",
     sectionId: "s08",
     title: "임신 준비에 무관심해 보이는 파트너에게 어떻게 문제를 제기할까요?",
-    example: "한 사람만 수업과 준비물을 챙깁니다.",
+    scene: "한 사람만 수업과 준비물을 챙깁니다.",
     mood: "안도",
     choices: [
-      { id: "p100-s08-06-a", label: "서운함을 느낀 그날 바로 말한다", valueLabel: "바로 말하기" },
+      { id: "p100-s08-06-a", label: "서운함을 느낀 그날 바로 말한다", valueLabel: "그날 바로" },
       { id: "p100-s08-06-b", label: "구체적으로 맡아 줄 일을 정해 부탁한다", valueLabel: "일을 맡기기" },
       { id: "p100-s08-06-c", label: "산전 수업에 함께 가자고 하고 거기서 느끼게 한다", valueLabel: "수업에 데려가기" },
       { id: "p100-s08-06-d", label: "말하지 않고 혼자 하되 나중에 기억해 둔다", valueLabel: "말 없이 감당" }
@@ -1024,7 +1024,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-07",
     sectionId: "s08",
     title: "친구 모임과 개인 취미를 임신 중 어느 정도 유지할까요?",
-    example: "한 사람의 외출은 자유롭고 다른 사람은 제약이 큽니다.",
+    scene: "한 사람의 외출은 자유롭고 다른 사람은 제약이 큽니다.",
     mood: "웃음",
     choices: [
       { id: "p100-s08-07-a", label: "두 사람 모두 임신 전과 같이 유지한다", valueLabel: "둘 다 그대로" },
@@ -1037,7 +1037,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-08",
     sectionId: "s08",
     title: "임신과 출산에 대한 공포가 다를 때 어떤 대화를 먼저 할까요?",
-    example: "한 사람은 정보를 원하고 다른 사람은 피하고 싶어 합니다.",
+    scene: "한 사람은 정보를 원하고 다른 사람은 피하고 싶어 합니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s08-08-a", label: "무엇이 가장 무서운지 각자 하나씩 말한다", valueLabel: "두려움 하나씩" },
@@ -1050,7 +1050,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-09",
     sectionId: "s08",
     title: "유산·사산 경험이 있다면 이번 임신의 불안을 어떻게 함께 감당할까요?",
-    example: "검사 전마다 한 사람이 일상생활을 하기 어렵습니다.",
+    scene: "검사 전마다 한 사람이 일상생활을 하기 어렵습니다.",
     mood: "조심스러움",
     choices: [
       { id: "p100-s08-09-a", label: "검사 전날은 파트너가 곁에 있는 것으로 정한다", valueLabel: "곁에 있기" },
@@ -1063,12 +1063,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s08-10",
     sectionId: "s08",
     title: "두 사람의 갈등이 커질 때 임신을 이유로 대화를 미룰 수 있을까요?",
-    example: "스트레스가 걱정되어 중요한 문제를 계속 덮습니다.",
+    scene: "스트레스가 걱정되어 중요한 문제를 계속 덮습니다.",
     mood: "여운",
     choices: [
       { id: "p100-s08-10-a", label: "임신 중이어도 미루지 않고 그날 이야기한다", valueLabel: "미루지 않음" },
       { id: "p100-s08-10-b", label: "날짜를 정해 미루고 그날은 꼭 이야기한다", valueLabel: "날짜 정해 미룸" },
-      { id: "p100-s08-10-c", label: "출산 후로 미루고 지금은 덮는다", valueLabel: "출산 뒤로" },
+      { id: "p100-s08-10-c", label: "출산 후로 미루고 지금은 덮는다", valueLabel: "지금은 덮음" },
       { id: "p100-s08-10-d", label: "상담사와 함께 이야기한다", valueLabel: "상담사와" }
     ]
   },
@@ -1076,7 +1076,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-01",
     sectionId: "s09",
     title: "출산 방식에 관한 최종 결정권은 누구에게 있어야 할까요?",
-    example: "당사자 희망, 파트너 의견, 의료진 권고가 다릅니다.",
+    scene: "당사자 희망, 파트너 의견, 의료진 권고가 다릅니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s09-01-a", label: "출산하는 사람", valueLabel: "출산하는 사람" },
@@ -1089,20 +1089,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-02",
     sectionId: "s09",
     title: "출산 중 함께 있을 사람의 범위를 어떻게 정할까요?",
-    example: "친정엄마와 시어머니가 모두 참여를 원합니다.",
+    scene: "친정엄마와 시어머니가 모두 참여를 원합니다.",
     mood: "호기심",
     choices: [
       { id: "p100-s09-02-a", label: "파트너 한 사람만", valueLabel: "파트너만" },
       { id: "p100-s09-02-b", label: "파트너와 출산하는 사람의 어머니", valueLabel: "파트너와 친정" },
       { id: "p100-s09-02-c", label: "출산하는 사람이 원하는 사람 누구든", valueLabel: "본인이 정함" },
-      { id: "p100-s09-02-d", label: "아무도 들어오지 않고 의료진만", valueLabel: "의료진만" }
+      { id: "p100-s09-02-d", label: "아무도 들어오지 않고 의료진만", valueLabel: "의료진 외 없음" }
     ]
   },
   {
     id: "p100-s09-03",
     sectionId: "s09",
     title: "산후조리원 이용 여부와 등급은 어떤 기준으로 결정할까요?",
-    example: "회복 욕구와 높은 비용이 충돌합니다.",
+    scene: "회복 욕구와 높은 비용이 충돌합니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s09-03-a", label: "예산 안에서 가장 가까운 곳", valueLabel: "예산과 거리" },
@@ -1115,20 +1115,20 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-04",
     sectionId: "s09",
     title: "모유수유와 분유 계획을 임신 중 어디까지 정할까요?",
-    example: "가족은 완모를 당연하게 기대하지만 당사자는 부담스럽습니다.",
+    scene: "가족은 완모를 당연하게 기대하지만 당사자는 부담스럽습니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s09-04-a", label: "완모를 목표로 준비한다", valueLabel: "완모 목표" },
       { id: "p100-s09-04-b", label: "처음부터 혼합수유로 정한다", valueLabel: "혼합수유" },
       { id: "p100-s09-04-c", label: "처음부터 분유로 정한다", valueLabel: "분유" },
-      { id: "p100-s09-04-d", label: "정하지 않고 출산 후 몸 상태에 따라 한다", valueLabel: "출산 뒤 결정" }
+      { id: "p100-s09-04-d", label: "정하지 않고 출산 후 몸 상태에 따라 한다", valueLabel: "몸 상태 보고" }
     ]
   },
   {
     id: "p100-s09-05",
     sectionId: "s09",
     title: "출산 직후 면회는 언제부터 누구에게 허용할까요?",
-    example: "가족은 당일 방문을 원하고 산모는 쉬고 싶습니다.",
+    scene: "가족은 당일 방문을 원하고 산모는 쉬고 싶습니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s09-05-a", label: "출산 당일부터 양가 부모만", valueLabel: "당일 부모만" },
@@ -1141,7 +1141,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-06",
     sectionId: "s09",
     title: "산후도우미와 가족 도움 중 무엇을 우선할까요?",
-    example: "비용 부담과 사생활 스트레스가 서로 다릅니다.",
+    scene: "비용 부담과 사생활 스트레스가 서로 다릅니다.",
     mood: "안도",
     choices: [
       { id: "p100-s09-06-a", label: "비용을 들여 산후도우미를 쓴다", valueLabel: "도우미" },
@@ -1154,12 +1154,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-07",
     sectionId: "s09",
     title: "파트너의 출산휴가 기간을 어떻게 배치할까요?",
-    example: "입원 중 쓸지 퇴원 후에 집중할지 선택해야 합니다.",
+    scene: "입원 중 쓸지 퇴원 후에 집중할지 선택해야 합니다.",
     mood: "웃음",
     choices: [
       { id: "p100-s09-07-a", label: "출산일부터 이어서 쓴다", valueLabel: "출산일부터" },
       { id: "p100-s09-07-b", label: "퇴원하거나 조리원에서 나온 날부터 쓴다", valueLabel: "집에 온 날부터" },
-      { id: "p100-s09-07-c", label: "출산 때 며칠, 나머지는 집에 온 뒤로 나눠 쓴다", valueLabel: "나눠서" },
+      { id: "p100-s09-07-c", label: "출산 때 며칠, 나머지는 집에 온 뒤로 나눠 쓴다", valueLabel: "나눠 쓰기" },
       { id: "p100-s09-07-d", label: "휴가 없이 연차로 필요한 날만 쓴다", valueLabel: "연차로만" }
     ]
   },
@@ -1167,12 +1167,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-08",
     sectionId: "s09",
     title: "출산 가방과 비상연락망 준비는 누가 소유할까요?",
-    example: "예정일이 다가오는데 한 사람만 내용을 알고 있습니다.",
+    scene: "예정일이 다가오는데 한 사람만 내용을 알고 있습니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s09-08-a", label: "파트너가 준비하고 임산부가 확인한다", valueLabel: "파트너 준비" },
       { id: "p100-s09-08-b", label: "임산부가 준비하고 파트너에게 위치와 내용을 알려 준다", valueLabel: "임산부 준비" },
-      { id: "p100-s09-08-c", label: "함께 앉아 하루 잡고 같이 싼다", valueLabel: "함께 준비" },
+      { id: "p100-s09-08-c", label: "함께 앉아 하루 잡고 같이 싼다", valueLabel: "같이 싸기" },
       { id: "p100-s09-08-d", label: "가방은 임산부, 연락망은 파트너가 맡는다", valueLabel: "나눠 준비" }
     ]
   },
@@ -1180,10 +1180,10 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-09",
     sectionId: "s09",
     title: "출산 후 반려동물·집안일·첫째 돌봄은 누가 맡을까요?",
-    example: "퇴원 직후 평소 역할을 수행하기 어렵습니다.",
+    scene: "퇴원 직후 평소 역할을 수행하기 어렵습니다.",
     mood: "희망",
     choices: [
-      { id: "p100-s09-09-a", label: "파트너가 전부 맡는다", valueLabel: "파트너 전담" },
+      { id: "p100-s09-09-a", label: "파트너가 전부 맡는다", valueLabel: "파트너가 전부" },
       { id: "p100-s09-09-b", label: "가족에게 몇 주간 맡긴다", valueLabel: "가족에게" },
       { id: "p100-s09-09-c", label: "도우미나 돌봄 서비스를 쓴다", valueLabel: "서비스 이용" },
       { id: "p100-s09-09-d", label: "산모는 아기만, 나머지는 파트너와 가족이 나눈다", valueLabel: "산모는 아기만" }
@@ -1193,7 +1193,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s09-10",
     sectionId: "s09",
     title: "원하는 출산 계획이 바뀌었을 때 실패로 느끼지 않도록 어떤 말을 합의할까요?",
-    example: "응급 상황으로 계획과 다른 선택이 필요해집니다.",
+    scene: "응급 상황으로 계획과 다른 선택이 필요해집니다.",
     mood: "여운",
     choices: [
       { id: "p100-s09-10-a", label: "\"네가 잘못한 것은 없다\"고 먼저 말하기로 한다", valueLabel: "잘못 아님" },
@@ -1206,7 +1206,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-01",
     sectionId: "s10",
     title: "고위험 임신으로 장기 안정이 필요하면 생활을 어떻게 재편할까요?",
-    example: "집안일·수입·돌봄이 갑자기 중단됩니다.",
+    scene: "집안일·수입·돌봄이 갑자기 중단됩니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s10-01-a", label: "파트너가 휴직하고 집을 맡는다", valueLabel: "파트너 휴직" },
@@ -1219,7 +1219,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-02",
     sectionId: "s10",
     title: "예정일보다 일찍 입원하면 누가 무엇을 먼저 처리할까요?",
-    example: "업무, 반려동물, 가족 연락, 준비물이 동시에 남습니다.",
+    scene: "업무, 반려동물, 가족 연락, 준비물이 동시에 남습니다.",
     mood: "침착함",
     choices: [
       { id: "p100-s10-02-a", label: "파트너가 병원에 남고 나머지는 가족에게 맡긴다", valueLabel: "파트너는 병원에" },
@@ -1232,7 +1232,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-03",
     sectionId: "s10",
     title: "두 사람이 의료진 설명을 다르게 이해했을 때 어떻게 확인할까요?",
-    example: "한 사람은 안심하고 다른 사람은 위험하다고 느낍니다.",
+    scene: "한 사람은 안심하고 다른 사람은 위험하다고 느낍니다.",
     mood: "유쾌한 차이",
     choices: [
       { id: "p100-s10-03-a", label: "다음 진료를 기다리지 않고 바로 병원에 전화한다", valueLabel: "바로 전화" },
@@ -1245,7 +1245,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-04",
     sectionId: "s10",
     title: "임신 중 큰 지출이나 이사 같은 결정을 계속 진행할까요?",
-    example: "이미 계약 준비 중인데 건강 변수가 생깁니다.",
+    scene: "이미 계약 준비 중인데 건강 변수가 생깁니다.",
     mood: "현실감",
     choices: [
       { id: "p100-s10-04-a", label: "예정대로 진행한다", valueLabel: "진행" },
@@ -1258,7 +1258,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-05",
     sectionId: "s10",
     title: "파트너가 중요한 진료나 출산에 함께하지 못하면 대체 지원자는 누구인가요?",
-    example: "출장·질병·돌봄 때문에 부재할 수 있습니다.",
+    scene: "출장·질병·돌봄 때문에 부재할 수 있습니다.",
     mood: "걱정",
     choices: [
       { id: "p100-s10-05-a", label: "임신한 사람의 어머니", valueLabel: "친정 어머니" },
@@ -1271,7 +1271,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-06",
     sectionId: "s10",
     title: "가족이 우리의 결정을 존중하지 않을 때 지원을 거절할 수 있을까요?",
-    example: "경제적 도움과 통제 요구가 함께 옵니다.",
+    scene: "경제적 도움과 통제 요구가 함께 옵니다.",
     mood: "단호함",
     choices: [
       { id: "p100-s10-06-a", label: "통제가 따라오면 지원을 바로 거절한다", valueLabel: "바로 거절" },
@@ -1284,7 +1284,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-07",
     sectionId: "s10",
     title: "임신 중 관계가 심각하게 악화되면 누구에게 도움을 요청할까요?",
-    example: "반복되는 모욕·위협·통제로 안전이 걱정됩니다.",
+    scene: "반복되는 모욕·위협·통제로 안전이 걱정됩니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s10-07-a", label: "여성긴급전화 1366 같은 전문기관", valueLabel: "전문기관" },
@@ -1297,12 +1297,12 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-08",
     sectionId: "s10",
     title: "상실이나 중대한 진단을 겪을 때 공개와 애도 방식은 어떻게 정할까요?",
-    example: "한 사람은 말하고 싶고 다른 사람은 숨고 싶습니다.",
+    scene: "한 사람은 말하고 싶고 다른 사람은 숨고 싶습니다.",
     mood: "진지함",
     choices: [
       { id: "p100-s10-08-a", label: "말하고 싶은 사람이 자기 가족과 친구에게만 알린다", valueLabel: "각자 범위" },
       { id: "p100-s10-08-b", label: "두 사람이 합의한 사람에게만 함께 알린다", valueLabel: "합의한 범위" },
-      { id: "p100-s10-08-c", label: "상담사와 함께 방식을 정한다", valueLabel: "상담사와" },
+      { id: "p100-s10-08-c", label: "상담사와 함께 방식을 정한다", valueLabel: "전문가와 정함" },
       { id: "p100-s10-08-d", label: "누구에게도 알리지 않고 둘이서 애도한다", valueLabel: "둘이서만" }
     ]
   },
@@ -1310,11 +1310,11 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-09",
     sectionId: "s10",
     title: "의견이 끝내 합의되지 않는 의료 선택에서 적용할 마지막 원칙은 무엇인가요?",
-    example: "시간은 촉박하고 두 사람의 위험 인식이 다릅니다.",
+    scene: "시간은 촉박하고 두 사람의 위험 인식이 다릅니다.",
     mood: "희망",
     choices: [
       { id: "p100-s10-09-a", label: "임신한 사람의 결정을 따른다", valueLabel: "임산부 결정" },
-      { id: "p100-s10-09-b", label: "의료진 권고를 따른다", valueLabel: "의료진 권고" },
+      { id: "p100-s10-09-b", label: "의료진 권고를 따른다", valueLabel: "의료진 판단대로" },
       { id: "p100-s10-09-c", label: "두 선택 중 더 안전한 쪽을 택한다", valueLabel: "더 안전한 쪽" },
       { id: "p100-s10-09-d", label: "다른 병원에서 한 번 더 의견을 듣는다", valueLabel: "2차 소견" }
     ]
@@ -1323,7 +1323,7 @@ export const pregnancy100Pack = definePack({
     id: "p100-s10-10",
     sectionId: "s10",
     title: "임신 기간 동안 반드시 지키고 싶은 두 사람의 한 가지 약속은 무엇인가요?",
-    example: "수많은 계획 중 관계를 지킬 최소 원칙을 정해야 합니다.",
+    scene: "수많은 계획 중 관계를 지킬 최소 원칙을 정해야 합니다.",
     mood: "여운",
     choices: [
       { id: "p100-s10-10-a", label: "어떤 결정도 한 사람이 혼자 내리지 않는다", valueLabel: "혼자 정하지 않기" },
