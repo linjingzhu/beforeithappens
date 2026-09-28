@@ -1923,7 +1923,12 @@ test("the site carries the four pages a reviewer looks for, and links them from 
     standingPages({ site: SITE }).map((page) => page.path),
     ["/about/", "/contact/", "/privacy/", "/terms/"]
   );
-  assert.deepEqual(footerLinks({ site: SITE }).map((link) => link.path), standingPages({ site: SITE }).map((p) => p.path));
+  // The footer carries those four and the 읽을거리 index in front of them — the one link a reader
+  // might follow for its own sake rather than because something went wrong.
+  assert.deepEqual(
+    footerLinks({ site: SITE }).map((link) => link.path),
+    ["/guide/", "/about/", "/contact/", "/privacy/", "/terms/"]
+  );
 
   // And the footer that links them is on every kind of page, so no page is a dead end.
   const pages = [
@@ -1945,6 +1950,52 @@ test("the site carries the four pages a reviewer looks for, and links them from 
  * and none of them was written by a clinician or a lawyer. A site that takes ad money for pages
  * about pregnancy and end-of-life care owes its reader that sentence where they will meet it.
  */
+/**
+ * 읽을거리 — the prose the site did not have.
+ *
+ * Google's approval slides put low value content first among the reasons a site is refused, and the
+ * site was fifty pages of question lists and five of prose: a reviewer opening three pages at random
+ * met three lists. These are five articles, one per pack, saying why those questions are in that
+ * order, what to do when the answers differ, and what the pack refuses to do.
+ *
+ * They are checked for two things beyond existing. Each one links to its pack and each pack's first
+ * page links back, so neither is reachable only from the footer — an orphan page is a page Google
+ * does not index. And none of them cites a study: no research was gathered for four of the five
+ * packs, and prose that borrowed a citation's authority without earning it would be worse than
+ * prose with none.
+ */
+test("every published pack has an article, linked both ways", async () => {
+  const { guidePages, guideFor } = await import("../site/guides.js");
+  const pages = guidePages({ site });
+  assert.equal(pages.length, PUBLISHED.length + 1, "one per pack, plus the index that lists them");
+
+  const index = pages[0];
+  assert.equal(index.path, "/guide/");
+  assert.deepEqual(index.links.map((link) => link.path), PUBLISHED.map((entry) => `/guide/${entry.slug}/`));
+
+  for (const entry of PUBLISHED) {
+    const guide = guideFor(entry.slug, { site });
+    assert.ok(guide, `${entry.slug} has an article`);
+    assert.ok(guide.sections.length >= 4, `${entry.slug}: an article, not a paragraph`);
+    const words = JSON.stringify(guide.sections).split(/\s+/).length;
+    assert.ok(words > 200, `${entry.slug}: ${words} words is not an article`);
+
+    // It points at its pack, and the pack's first page points back.
+    assert.ok(guide.links.some((link) => link.path === `/${entry.slug}/`), `${entry.slug}: links to its pack`);
+    const first = renderQuestionPage(pageModel(entry.slug, 1, { site }), site);
+    assert.ok(has(first, `href="/guide/${entry.slug}/"`), `${entry.slug}: page one links to its article`);
+    // And only the first Part carries it: a reader on Part 7 is already reading.
+    const seventh = renderQuestionPage(pageModel(entry.slug, 7, { site }), site);
+    assert.equal(has(seventh, `href="/guide/${entry.slug}/"`), false);
+  }
+
+  // No borrowed authority. Four of the five packs gathered no sources, so no article claims any.
+  const prose = JSON.stringify(pages);
+  for (const tell of ["연구에 따르면", "조사에 따르면", "통계", "논문", "%"]) {
+    assert.equal(prose.includes(tell), false, `an article claims «${tell}» without a source behind it`);
+  }
+});
+
 test("the terms name the operator, refuse to be advice, and point at 119", async () => {
   const { termsCopy } = await import("../site/pages.js");
   const copy = termsCopy({ site: SITE });

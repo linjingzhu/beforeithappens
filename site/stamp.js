@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { COMING, SITE } from "./config.js";
 import { allPages, indexModel } from "./content.js";
 import { standingPages } from "./pages.js";
+import { guidePages } from "./guides.js";
 import { SITE_COPY } from "./render.js";
 
 /**
@@ -60,11 +61,18 @@ export function contentHashes({ site = SITE } = {}) {
     });
   }
 
-  for (const page of standingPages({ site })) {
+  // 읽을거리 and the standing pages are the same shape — a title, a line, and sections of prose —
+  // so they are hashed the same way. The guides are in the sitemap, and a sitemap entry with no
+  // `lastmod` beside sixty that have one is the crawler being told these six are the ones nobody
+  // knows anything about.
+  for (const page of [...guidePages({ site }), ...standingPages({ site })]) {
     hashes[page.path] = digest({
       title: page.title,
       description: page.description,
-      sections: page.sections.map((section) => [section.heading, ...section.paragraphs])
+      sections: page.sections.map((section) => [section.heading, ...section.paragraphs]),
+      // The row of ways on is part of what the page says: a guide that starts pointing somewhere
+      // else has changed, even when its prose has not.
+      links: (page.links || []).map((link) => [link.path, link.label])
     });
   }
 

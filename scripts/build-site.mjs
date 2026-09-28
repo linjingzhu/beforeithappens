@@ -4,6 +4,7 @@ import { SITE, siteWith } from "../site/config.js";
 import { allPages, indexModel } from "../site/content.js";
 import { renderIndex, renderNotFoundPage, renderQuestionPage, renderResultPage, renderStandingPage } from "../site/render.js";
 import { standingPages } from "../site/pages.js";
+import { guidePages } from "../site/guides.js";
 import { questionsFor } from "../src/packs.js";
 import { PUBLISHED } from "../site/config.js";
 import { pagesFiles, robotsTxt, sitemapXml } from "../site/seo.js";
@@ -83,6 +84,16 @@ for (const page of standing) {
   await writeFile(join(dir, "index.html"), renderStandingPage(page, site));
 }
 
+// 읽을거리 — one article per published pack, plus the index that lists them. Same shape as a
+// standing page and rendered by the same function; they live under /guide/ so a nested slug becomes
+// a nested directory, which `mkdir recursive` already handles.
+const guides = guidePages({ site });
+for (const page of guides) {
+  const dir = join(OUT, page.slug);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, "index.html"), renderStandingPage(page, site));
+}
+
 // Served by GitHub Pages for any path it does not have, with a 404 status. Not a standing page:
 // it has no URL of its own, so it is not in the sitemap and carries noindex rather than a canonical.
 await writeFile(join(OUT, "404.html"), renderNotFoundPage(site));
@@ -91,7 +102,7 @@ await writeFile(join(OUT, "404.html"), renderNotFoundPage(site));
 // standing pages are not: they are what a reader or a reviewer looks for. The home page is not
 // passed in — `sitemapXml` emits the root itself, because leaving it to a caller is how it came to
 // be missing.
-await writeFile(join(OUT, "sitemap.xml"), sitemapXml([...pages, ...standing], site));
+await writeFile(join(OUT, "sitemap.xml"), sitemapXml([...pages, ...guides, ...standing], site));
 await writeFile(join(OUT, "robots.txt"), robotsTxt(site));
 
 // What Pages needs, decided in `pagesFiles` so a test can assert it without reading a build.
@@ -99,6 +110,6 @@ for (const [name, body] of Object.entries(pagesFiles(site))) {
   await writeFile(join(OUT, name), body);
 }
 
-console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"}, ${standing.length} standing)`);
+console.log(`Built AB question site to ${OUT}/ (${pages.length} question page${pages.length === 1 ? "" : "s"}, ${guides.length} guides, ${standing.length} standing)`);
 if (!site.contactEmail) console.log("  note: SITE.contactEmail is unset, so no 문의 page is built");
 if (!site.origin) console.log("  note: AB_SITE_ORIGIN is unset, so pages carry no canonical URL");
