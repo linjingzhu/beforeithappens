@@ -66,19 +66,134 @@ export const ABOUT_COPY = Object.freeze({
         "됩니다. 혼자 읽고 혼자 답해도 자신의 생각을 정리하는 데는 충분합니다.",
         "다만 이 질문들은 원래 두 사람을 위해 쓰였습니다. 같은 질문에 상대도 답하고 서로의 답을 나란히 놓고 볼 수 있게 하는 것이 앱에서 하는 일입니다."
       ])
+    }),
+    Object.freeze({
+      heading: "질문은 어떻게 만들어지나요",
+      paragraphs: Object.freeze([
+        "한 주제를 열 개의 장으로 나누고, 장마다 열 개의 질문을 씁니다. 한 질문에는 네 개의 답이 있고, 네 답은 하나의 축 위에 서로 다른 지점으로 놓습니다 — 누가 할지, 언제 할지, 어디까지 할지, 무엇을 먼저 둘지. 같은 말을 네 가지 어조로 바꿔 쓴 답은 답이 아니라 장식이라고 봅니다.",
+        "그래서 다섯 질문집 2,500개의 답 중에 같은 문장은 하나도 없습니다. 질문도 마찬가지입니다. 이것은 편집자의 다짐이 아니라 자동 검사로 막아 둔 규칙이어서, 같은 문장이 다시 들어오면 배포가 멈춥니다.",
+        "질문마다 그 질문이 놓이는 장면을 한 줄 붙입니다. 「돈을 어떻게 관리할까요」보다 「한 사람이 모르는 지출이 통장에서 빠져나갔습니다」가 먼저 떠올라야 답을 고를 수 있기 때문입니다. 장면도 백 개가 모두 다릅니다."
+      ])
+    }),
+    Object.freeze({
+      heading: "답은 어디에 저장되나요",
+      paragraphs: Object.freeze([
+        "이 브라우저 안에만 남습니다. 계정도, 서버도, 로그인도 없습니다. 「임시 저장」을 누른 순간에만 저장되고, 그 전까지는 아무것도 기록되지 않습니다.",
+        "상대와 비교할 때도 답은 링크 주소 안에 담겨 두 사람 사이에서만 오갑니다. 이곳으로 보내지지 않고, 이곳에 남지도 않습니다. 「지우기」를 누르면 저장된 것과 화면의 것이 함께 사라집니다."
+      ])
+    }),
+    Object.freeze({
+      heading: "누가 만드나요",
+      paragraphs: Object.freeze([
+        "AfterScent에서 만들고 운영합니다. 질문은 한 문장씩 사람이 쓰고 고칩니다.",
+        "질문 문장이 어색하거나, 다뤄 주었으면 하는 주제가 있다면 문의 페이지로 알려 주세요. 읽고 고칩니다."
+      ])
     })
   ])
 });
 
+/**
+ * 이용약관.
+ *
+ * Short, like the 처리방침, and for the same reason: there is no account to terminate, no payment
+ * to refund and no user-submitted content to moderate, so most of what such a page usually governs
+ * does not exist here. What is left is what a reader actually needs to know before relying on the
+ * questions — that they are not advice, that the answers are theirs and stay on their device, and
+ * who to write to.
+ *
+ * The 「전문적인 조언이 아닙니다」 clause is the one that matters. Several packs ask about medical
+ * decisions, money and care; none of them is written by a clinician or a lawyer, and the site says
+ * so where a reader will meet it rather than in a footnote.
+ *
+ * Not legal advice, and not a lawyer's work — the same caveat the 처리방침 carries. It wants review
+ * before it is relied on.
+ */
+export function termsCopy({ site = SITE } = {}) {
+  const op = site.operator || {};
+  const operator = op.business || site.publisher || site.name;
+  return Object.freeze({
+    title: "이용약관",
+    description: "이 사이트를 어떤 약속 아래 쓰실 수 있는지 적어 둔 문서입니다.",
+    sections: Object.freeze([
+      Object.freeze({
+        heading: "제1조 (목적과 적용)",
+        paragraphs: Object.freeze([
+          `이 약관은 ${operator}(이하 「운영자」)가 제공하는 ${site.name} 웹사이트(${site.customDomain || site.origin})의 이용 조건을 정합니다.`,
+          "이 사이트는 회원가입과 로그인이 없습니다. 페이지를 여는 것만으로 이 약관에 따라 이용하시는 것으로 봅니다."
+        ])
+      }),
+      Object.freeze({
+        heading: "제2조 (서비스의 내용)",
+        paragraphs: Object.freeze([
+          "운영자는 두 사람이 함께 지날 시기에 관한 질문집을 웹페이지로 제공합니다. 이용료는 없습니다.",
+          "질문에 답한 내용은 이용자의 브라우저에만 저장됩니다. 운영자는 그 내용을 수집하지 않고, 보관하지 않으며, 볼 수 없습니다. 자세한 것은 개인정보 처리방침에 적었습니다."
+        ])
+      }),
+      Object.freeze({
+        heading: "제3조 (전문적인 조언이 아닙니다)",
+        paragraphs: Object.freeze([
+          "질문집은 두 사람이 대화를 시작하도록 돕기 위한 읽을거리입니다. 의료·법률·재무·심리 상담을 대신하지 않으며, 그 분야의 전문가가 감수한 문서가 아닙니다.",
+          "건강, 임신과 출산, 자금, 돌봄, 마음의 어려움에 관한 결정은 해당 분야의 전문가와 상의해 주세요. 응급 상황이라고 판단되면 이 사이트를 닫고 119 또는 의료기관에 연락하시기 바랍니다.",
+          "질문에 대한 어떤 답도 더 옳거나 그르지 않습니다. 이 사이트는 점수를 매기지 않고, 관계를 진단하지 않으며, 무엇을 하라고 권하지 않습니다."
+        ])
+      }),
+      Object.freeze({
+        heading: "제4조 (저작권)",
+        paragraphs: Object.freeze([
+          "사이트의 질문, 답지, 문안, 그림을 포함한 모든 창작물의 저작권은 운영자에게 있습니다.",
+          "개인적으로 읽고, 답하고, 상대에게 링크를 보내는 것은 자유입니다. 무단으로 복제해 재배포하거나 상업적으로 이용하는 것은 허락 없이는 하실 수 없습니다. 인용이나 제휴는 문의 페이지로 연락해 주세요."
+        ])
+      }),
+      Object.freeze({
+        heading: "제5조 (광고)",
+        paragraphs: Object.freeze([
+          "사이트에는 제3자 광고가 실릴 수 있습니다. 광고의 내용과 그 광고주가 제공하는 상품·서비스에 대해서는 운영자가 책임지지 않습니다.",
+          "광고 게재에 쓰이는 쿠키에 대해서는 개인정보 처리방침에 적었습니다."
+        ])
+      }),
+      Object.freeze({
+        heading: "제6조 (운영자의 책임)",
+        paragraphs: Object.freeze([
+          "운영자는 사이트가 끊기지 않고 제공된다고 보장하지 않습니다. 점검, 장애, 그 밖의 사유로 중단될 수 있습니다.",
+          "이용자의 브라우저에 저장된 답은 이용자가 관리합니다. 브라우저의 저장 공간을 비우거나, 시크릿 창을 닫거나, 다른 기기에서 열면 답은 남아 있지 않습니다. 운영자는 그 답을 복구해 드릴 수 없습니다.",
+          "이 사이트를 읽고 내린 결정과 그 결과에 대해 운영자는 책임지지 않습니다."
+        ])
+      }),
+      Object.freeze({
+        heading: "제7조 (약관의 변경)",
+        paragraphs: Object.freeze([
+          "약관이 바뀌면 이 페이지에 바뀐 내용을 올립니다. 바뀐 약관은 올린 때부터 적용됩니다.",
+          "문의는 " + (site.contactEmail || "문의 페이지") + "로 받습니다."
+        ])
+      })
+    ])
+  });
+}
+
 export const CONTACT_COPY = Object.freeze({
   title: "문의",
-  description: "질문 내용, 오탈자, 제휴 문의를 받습니다.",
+  description: "질문 내용, 오탈자, 제휴 문의를 받습니다. 보내신 메일은 사람이 읽습니다.",
   sections: Object.freeze([
     Object.freeze({
       heading: "무엇이든 물어보세요",
       paragraphs: Object.freeze([
-        "질문 문장이 어색하거나, 오탈자를 발견하셨거나, 다뤄 주었으면 하는 주제가 있다면 알려 주세요.",
-        "답변에는 며칠이 걸릴 수 있습니다."
+        "질문 문장이 어색하거나, 오탈자를 발견하셨거나, 다뤄 주었으면 하는 주제가 있다면 알려 주세요. 답지 네 개가 서로 구별되지 않는다거나, 장면이 낯설다거나, 이 문항은 불편했다는 이야기도 그대로 도움이 됩니다.",
+        "아래 주소로 메일을 보내 주세요. 자동응답이 아니라 사람이 읽고, 고칠 것은 고칩니다. 답변에는 며칠이 걸릴 수 있습니다."
+      ])
+    }),
+    Object.freeze({
+      heading: "이런 것도 받습니다",
+      paragraphs: Object.freeze([
+        "새 주제 제안 — 지금은 결혼·임신·출산·육아·노후 다섯 가지가 열려 있고, 연애와 이별은 준비 중입니다. 그 밖에 두 사람이 미리 맞춰 두면 좋았을 시기가 있다면 알려 주세요.",
+        "인용과 제휴 — 질문집의 일부를 소개하거나 함께 무언가를 하고 싶으시다면, 어떤 형태인지 적어 보내 주세요.",
+        "오류 신고 — 페이지가 열리지 않거나, 저장한 답이 사라졌거나, 화면이 깨진다면 쓰신 기기와 브라우저를 함께 알려 주시면 빨리 찾을 수 있습니다."
+      ])
+    }),
+    Object.freeze({
+      heading: "보내지 않으셔도 되는 것",
+      paragraphs: Object.freeze([
+        "질문에 답하신 내용은 보내지 않으셔도 됩니다. 답은 이곳으로 오지 않고 여러분의 브라우저에만 남으며, 저희는 그것을 볼 수 없고 보고 싶지도 않습니다.",
+        "건강 상태, 진단 내용, 가족의 개인정보처럼 민감한 이야기는 메일에 적지 말아 주세요. 상담이 필요한 일이라면 해당 분야의 전문가에게 닿는 편이 훨씬 낫습니다."
       ])
     })
   ])
@@ -280,6 +395,20 @@ export function standingPages({ site = SITE } = {}) {
     pages.push(Object.freeze({
       slug: "privacy",
       path: "/privacy/",
+      title: copy.title,
+      description: copy.description,
+      sections: copy.sections
+    }));
+  }
+
+  // 이용약관 names the operator it binds and gives an address to write to, so it waits on the same
+  // two facts 문의 and 처리방침 wait on. A term that says who it is between is a term; one that
+  // says "the operator" and names nobody is a template.
+  if ((op.business || op.owner) && site.contactEmail) {
+    const copy = termsCopy({ site });
+    pages.push(Object.freeze({
+      slug: "terms",
+      path: "/terms/",
       title: copy.title,
       description: copy.description,
       sections: copy.sections

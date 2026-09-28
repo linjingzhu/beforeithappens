@@ -670,7 +670,7 @@ function footerNav(site) {
  * `chrome` is a model rather than markup — `{ title, parts }` — so what a page hands over is its
  * identity, not its layout. A page renderer below returns only its own content.
  */
-function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "", invite = false }) {
+function document_({ site, head, body, scripts = "", currentSlug = "", chrome = null, bottom = "", invite = false, ads = true }) {
   // Stated by the renderer rather than sniffed with `:has(.pager)`. The class reserves the room the
   // fixed furniture covers, so getting it wrong on a page that has some hides the footer behind it
   // — and a selector the browser may not support is the wrong place to put that. `:has` is used
@@ -692,7 +692,7 @@ ${head}
   <link rel="preload" href="/brand/pretendard-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/brand/maruburi-600.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${adsenseScript(site)}
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">${ads ? adsenseScript(site) : ""}
 </head>
 <body>
   <div class="${shell}">
@@ -834,6 +834,12 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
     .join("\n");
   return document_({
     site,
+    // No ad loader on this one. AdSense forbids Google-served ads on a page with little or no
+    // content, and an error page is that page by definition — twenty-nine words and a row of ways
+    // out. The unit on every other page is declared in the markup and this one never had one, but
+    // the loader alone is enough: auto ads inject where the publisher never placed a slot, so a
+    // page that must not carry an ad must not carry the loader either.
+    ads: false,
     head: [
       `  <title>${escapeHtml(copy.title)} · ${escapeHtml(site.name)}</title>`,
       '  <meta name="robots" content="noindex">'
