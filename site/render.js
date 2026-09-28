@@ -1,5 +1,6 @@
 import { escapeHtml } from "../src/html.js";
 import { COMING, publishedBySlug, SCENES, SITE } from "./config.js";
+import { guideFor } from "./guides.js";
 import { absoluteUrl, descriptionLines, indexModel } from "./content.js";
 import { DOCK_COPY } from "./dock-copy.js";
 import { INVITE_COPY } from "./invite-copy.js";
@@ -64,6 +65,10 @@ export const SITE_COPY = Object.freeze({
   homeDescription: "질문은 미처 알지 못했던 서로의 마음을 발견하게 합니다. 같은 답에서는 닮은 마음을, 다른 답에서는 새로운 모습을 만나게 됩니다.",
   packsLabel: "질문집",
   footerLabel: "사이트 안내",
+  /** The row under a prose page: where it leads next. */
+  proseLinksLabel: "이어서 보기",
+  /** The line on a pack's first page that points at the article written for it. */
+  guideLink: (title) => `${title} — 왜 이 질문들인지 먼저 읽어 보기`,
   progress: (page, pages) => `${page} / ${pages}`,
   ctaTitle: "이 질문, 혼자 답하고 끝내지 마세요.",
   ctaBody: "누르면 초대 링크가 만들어져요. 상대가 같은 질문에 답하면, 두 사람 다 답한 질문만 나란히 열립니다.",
@@ -712,11 +717,14 @@ ${invite ? invitePanel(site) + "\n" : ""}${scripts}
 }
 
 export function renderQuestionPage(model, site = SITE) {
+  // Only on the first Part. A reader on Part 7 is already reading; the line would be an exit sign
+  // in the middle of the room. It sits under the lead, which is also first-page-only.
+  const guide = model.first ? guideFor(model.slug, { site }) : null;
   // Only the Part's own content. Its name and its siblings' tabs are the shell's, because they are
   // the same on every Part of the pack.
   const body = `      <main class="page">
         <h2 class="part-title"><span class="part-title-n">${escapeHtml(SITE_COPY.partOrdinal(model.part.number))}</span> ${escapeHtml(model.part.title)}</h2>
-${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}        <section class="questions">
+${model.part.blurb ? `        <p class="part-blurb">${escapeHtml(model.part.blurb)}</p>\n` : ""}${model.lead ? `        <p class="lead">${escapeHtml(model.lead)}</p>\n` : ""}${guide ? `        <p class="lead-guide"><a href="${escapeHtml(guide.path)}">${escapeHtml(SITE_COPY.guideLink(guide.title))}</a></p>\n` : ""}        <section class="questions">
 ${model.questions.map((question) => questionArticle(question, site)).join("\n")}
         </section>
 ${site?.debugFeedback ? feedbackExport() : ""}${adSlot(model, site)}${packIndex(model)}
@@ -868,6 +876,13 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
   const contact = page.email
     ? `      <p class="prose-contact"><a href="mailto:${escapeHtml(page.email)}">${escapeHtml(page.email)}</a></p>\n`
     : "";
+  // Where a prose page leads next. The 읽을거리 pages use it to point at their pack and at each
+  // other, so neither a guide nor a pack is something a reader can only arrive at from the footer.
+  const links = page.links?.length
+    ? `      <nav class="prose-links" aria-label="${escapeHtml(SITE_COPY.proseLinksLabel)}">
+${page.links.map((link) => `        <a href="${escapeHtml(link.path)}">${escapeHtml(link.label)}</a>`).join("\n")}
+      </nav>\n`
+    : "";
   const head = [
     standaloneHead({
       title: `${page.title} · ${site.name}`,
@@ -885,7 +900,7 @@ ${section.paragraphs.map((paragraph) => `        <p>${escapeHtml(paragraph)}</p>
     invite: true,
     body: `      <main class="page">
 ${sections}
-${contact}${callToAction()}
+${contact}${links}${callToAction()}
       </main>`
   });
 }

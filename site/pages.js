@@ -1,4 +1,5 @@
 import { PUBLISHED, SITE } from "./config.js";
+import { guidePages } from "./guides.js";
 
 /**
  * The site's standing pages — the ones that are not questions.
@@ -420,10 +421,20 @@ export function standingPages({ site = SITE } = {}) {
 
 /** What the footer links to: the standing pages, plus the index when a reader is not on it. */
 export function footerLinks({ site = SITE } = {}) {
-  return Object.freeze(standingPages({ site }).map((page) => Object.freeze({
-    path: page.path,
-    title: page.title
-  })));
+  // 읽을거리 first: it is the only one of these a reader might actually want, and the three that
+  // follow are the ones a reader looks for when something has gone wrong or they want to know who
+  // is behind this. The guides come from their own module, so a site with no pack has no such link.
+  const guides = guidePages({ site });
+  const reading = guides.length
+    ? [Object.freeze({ path: guides[0].path, title: guides[0].title })]
+    : [];
+  return Object.freeze([
+    ...reading,
+    ...standingPages({ site }).map((page) => Object.freeze({
+      path: page.path,
+      title: page.title
+    }))
+  ]);
 }
 
 /** Used by the About page to say what is published without hard-coding a count. */

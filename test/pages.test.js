@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SITE, siteWith } from "../site/config.js";
 import { ABOUT_COPY, CONTACT_COPY, footerLinks, standingPages } from "../site/pages.js";
+import { guidePages } from "../site/guides.js";
 import { renderIndex, renderQuestionPage, renderStandingPage } from "../site/render.js";
 import { indexModel, pageModel } from "../site/content.js";
 
@@ -26,9 +27,13 @@ test("문의 is built from the address, and not built without one", () => {
 });
 
 test("the footer links only to pages the build actually emits", () => {
-  // A footer link to a page that is not built is a 404 nobody finds until a reader does.
+  // A footer link to a page that is not built is a 404 nobody finds until a reader does. The set is
+  // the standing pages plus the 읽을거리 index, which is emitted by the same loop from its own module.
   for (const setup of [site, siteWith({ origin: site.origin, contactEmail: "x@example.com" })]) {
-    const built = new Set(standingPages({ site: setup }).map((page) => page.path));
+    const built = new Set([
+      ...guidePages({ site: setup }).slice(0, 1).map((page) => page.path),
+      ...standingPages({ site: setup }).map((page) => page.path)
+    ]);
     const linked = footerLinks({ site: setup }).map((link) => link.path);
     assert.ok(linked.length > 0);
     for (const path of linked) assert.ok(built.has(path), `${path} is linked and built`);

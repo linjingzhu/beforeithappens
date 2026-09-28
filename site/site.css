@@ -1777,12 +1777,28 @@ html { scroll-padding-top: 120px; }
 }
 
 /* The ways out of a 404. A row of links, wrapping on a phone; nothing else on that page moves. */
-.notfound-links {
+/*
+ * A row of ways on: under the 404's apology, and under a 읽을거리 page. Same shape because it is
+ * the same thing — a page that has said what it has to say, pointing at where to go next.
+ */
+.notfound-links,
+.prose-links {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 24px;
   margin: 0 0 32px;
   font-size: 19px;
+}
+
+/*
+ * The line on a pack's first page that points at the article written for it. Quieter than the lead
+ * above it: a reader who came to answer questions should meet the questions, not be sent away from
+ * them, so this reads as an offer rather than a step.
+ */
+.lead-guide {
+  margin: -16px 0 32px;
+  font-size: 15px;
+  color: var(--ab-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
