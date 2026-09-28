@@ -1,0 +1,92 @@
+# Publishes the question site to GitHub Pages.
+#
+# Only `site/dist/` goes up. The app in `dist/` is not deployed here: it needs a Node process for
+# its API and holds couples' private notes, so it stays on its own host. Pages serves the public,
+# cacheable half — which is the separation `docs/WEB_SERVICE_STRATEGY.md` asked for, arriving as
+# two deploy targets rather than two repositories.
+name: Deploy question site
+
+on:
+  push:
+    branches: [stable]
+    # Only when something that can change the output changes. A commit touching the app or the
+    # native project does not need to redeploy a static site.
+    paths:
+      - "site/**"
+      - "src/**"
+      - "scripts/build-site.mjs"
+      - "scripts/build-tokens.mjs"
+      - ".github/workflows/deploy-site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A queued deploy replaces a waiting one, but never interrupts a running one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The site is generated from the same modules the tests cover, so a broken generator fails
+      # here rather than publishing a broken page.
+      - name: Verify
+        run: |
+          npm run lint
+          npm test
+
+      - name: Build site
+        env:
+          # Overrides the default in site/config.js.
+          AB_SITE_ORIGIN: https://lovemedialogue.com
+        run: node scripts/build-site.mjs
+
+      - name: Confirm the custom domain survived the build
+        run: |
+          test -f site/dist/CNAME || { echo "CNAME missing: Pages would drop the custom domain"; exit 1; }
+          grep -qx "lovemedialogue.com" site/dist/CNAME
+
+      # `enablement` is kept because it is free once Pages exists: the action only calls the create
+      # endpoint when the get returns 404, and it also switches an existing site's source to
+      # Actions. It cannot do the very first creation here — `GITHUB_TOKEN` is refused with
+      # "Resource not accessible by integration" regardless of the `pages: write` permission above,
+      # so turning Pages on the first time is a person in Settings. The step below says so, because
+      # the raw error does not.
+      - id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Explain a failure the error message does not
+        if: failure() && steps.pages.outcome == 'failure'
+        run: |
+          echo "::error::GitHub Pages is not enabled for this repository, and a workflow token is not"
+          echo "::error::allowed to enable it. Turn it on once by hand:"
+          echo "::error::  Settings -> Pages -> Build and deployment -> Source = GitHub Actions"
+          echo "::error::Then re-run this workflow. Every deploy after that is automatic."
+          exit 1
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

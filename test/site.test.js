@@ -656,7 +656,23 @@ test("the site's own origin is https, so the canonical is not split across two s
   assert.equal(has(html, 'href="http://lovemedialogue.com'), false);
 });
 
-test("the repository has no GitHub Actions workflow files", async () => {
+/**
+ * One workflow, and the reason it is the only one.
+ *
+ * All three were removed on 2026-09-25 under `.ai/HARNESS.md` § *Cost-bearing automation*: hosted
+ * automation is billed, the repository was private, and Actions minutes on a private repository are
+ * metered. This test was written the same day to keep them out.
+ *
+ * The repository was made public on 2026-09-28, which is the condition that rule was guarding
+ * against — Actions is free on a public repository — and the owner asked for deployment back. So
+ * the list is a list rather than a ban: `deploy-site.yml` publishes `site/dist` to Pages on a push
+ * to `stable`, and nothing else runs. `test-build.yml` and `policy-set.yml` stay out; a check that
+ * runs on every push and every pull request is a different decision from a deploy that runs when
+ * the site actually changes, and it has not been taken.
+ *
+ * Adding a second workflow fails here, which is the point: it should be a decision, not a file.
+ */
+test("the only workflow the repository runs is the one that publishes the site", async () => {
   const { readdir } = await import("node:fs/promises");
   let workflows;
   try {
@@ -665,7 +681,16 @@ test("the repository has no GitHub Actions workflow files", async () => {
     if (error.code !== "ENOENT") throw error;
     workflows = [];
   }
-  assert.equal(workflows.some((entry) => entry.isFile()), false);
+  assert.deepEqual(
+    workflows.filter((entry) => entry.isFile()).map((entry) => entry.name).sort(),
+    ["deploy-site.yml"]
+  );
+
+  // And it publishes what the build makes, from the branch the site is released on.
+  const deploy = readFileSync(".github/workflows/deploy-site.yml", "utf8");
+  assert.match(deploy, /branches: \[stable\]/, "a push to stable is what deploys");
+  assert.match(deploy, /path: site\/dist/, "only the site goes up, never the app in dist/");
+  assert.match(deploy, /npm test/, "and a broken generator fails here rather than publishing");
 });
 
 test("the rail carries the mark on every kind of page, and lists every published pack", () => {
